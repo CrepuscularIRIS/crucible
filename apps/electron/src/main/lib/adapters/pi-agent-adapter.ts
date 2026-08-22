@@ -1230,6 +1230,28 @@ export function isPiBashToolAvailable(
   return platform !== 'win32' || runtimeEnv?.shellKind === 'git-bash' || runtimeEnv?.shellKind === 'wsl'
 }
 
+/**
+ * Prime fork 自带四条 session 斜杠命令：/compact /refine /goal /autonomous。
+ * 它们会在 prompt 解析阶段被 Prime 截走，绕过 Proma 的整套语义：
+ *
+ * - `/goal` 会强行激活 Prime 内置的 ipython 工具。该工具不在 Proma 传入的
+ *   customTools 里，因此**没有经过 wrapToolWithPermission 包装** —— 等于在任何
+ *   权限模式（含 plan）下，用户一句话就能拿到不受管控的 Python 内核。
+ * - `/compact` 会被 Prime 吞掉且不发 agent_end，Proma 侧收不到终态，
+ *   最后被判成「空回复」错误；Proma 自己有压缩入口，不该走这条。
+ *
+ * Prime 的 parseSlashCommand 要求 text.startsWith('/') 且不做 trim，
+ * 故前置一个空格即可彻底避开解析，对模型语义没有影响。
+ * 只挡这四条，扩展命令（extensionCommands）仍照常工作。
+ */
+const PRIME_SESSION_COMMANDS = new Set(['compact', 'refine', 'goal', 'autonomous'])
+
+export function shieldPrimeSessionCommands(prompt: string): string {
+  if (!prompt.startsWith('/')) return prompt
+  const name = /^\/(\S+)/.exec(prompt)?.[1]
+  return name && PRIME_SESSION_COMMANDS.has(name) ? ` ${prompt}` : prompt
+}
+
 function buildBuiltinToolDefinitions(
   sdk: PiSdk,
   cwd: string,
@@ -1666,24 +1688,22 @@ export class PiAgentAdapter implements AgentProviderAdapter {
                 resetAssistantStream()
                 break
               }
-              // Prime 的 agent_end 没有 willRetry：重试改由 AgentSession 层驱动
-              //（auto_retry_start/end 事件 + prompt() 在重试期间不 resolve），
-              // 因此这里恒按"不重试"处理，重试 UI 状态走下方 auto_retry 分支。
+              // Prime 在**派发完 agent_end 之后**才判断是否重试
+              //（agent-session 先 _emit(event)，再走 _handleRetryableError），
+              // 所以此刻根本不知道会不会重试。
+              //
+              // 曾经在这里按「不重试」结算：第一次 429 就把错误交给上层，
+              // orchestrator 据此 completeRun 并 dispose session，
+              // 8 次原生重试全部落空 —— 一次瞬时故障就毁掉整轮任务。
+              // 现在一律保持 deferred，等 prompt() 把整条重试链跑完再结算。
               const deferredRetryError = retryTerminalGate.peek()
-              const waitsForNativeOverflowRecovery = shouldDeferPiOverflowTerminalError(
+              if (shouldDeferPiOverflowTerminalError(
                 deferredRetryError?.assistantMessage,
                 model.contextWindow,
                 false,
                 active.abortRequested,
-              )
-              // Pi 在 agent_end 后才会检测 overflow 并压缩。此时若先将错误交给
-              // orchestrator，会触发外层恢复或清理，打断同 transcript 的 continue。
-              const terminalRetryError = waitsForNativeOverflowRecovery
-                ? undefined
-                : retryTerminalGate.settle(false)
-              if (waitsForNativeOverflowRecovery) pendingNativeOverflowRecovery = true
-              if (terminalRetryError) {
-                emitTerminalRetryError(terminalRetryError)
+              )) {
+                pendingNativeOverflowRecovery = true
               }
               // Pi can start auto-compaction after agent_end but before session.prompt()
               // resolves. Defer the terminal result until then, otherwise the orchestrator's
@@ -1860,7 +1880,7 @@ export class PiAgentAdapter implements AgentProviderAdapter {
                 return
               }
               currentInterrupt?.resolveAccepted()
-              await session.prompt(prompt, { source: 'rpc' })
+              await session.prompt(shieldPrimeSessionCommands(prompt), { source: 'rpc' })
               persistPiEntryBindings()
               if (compactContextRequested) {
                 try {
@@ -1891,9 +1911,20 @@ export class PiAgentAdapter implements AgentProviderAdapter {
                 retryTerminalGate.settle(true)
                 pendingNativeOverflowRecovery = false
                 pendingTerminalResult = undefined
-              } else if (pendingTerminalResult) {
-                queue.push(pendingTerminalResult)
-                pendingTerminalResult = undefined
+              } else {
+                // prompt() 已经 await 完整条重试链（Prime 的 directPrompt 策略
+                // completionIncludesRetryChain=true），到这里才真正知道结局：
+                // 仍挂着 deferred 错误 = 重试已耗尽或压根没重试，此时才呈现给上层。
+                // 若还要为压缩续跑，则本轮不是终态，错误留到续跑结束再判。
+                if (!pendingCompactionContinuation) {
+                  const terminalRetryError = retryTerminalGate.settle(false)
+                  pendingNativeOverflowRecovery = false
+                  if (terminalRetryError) emitTerminalRetryError(terminalRetryError)
+                }
+                if (pendingTerminalResult) {
+                  queue.push(pendingTerminalResult)
+                  pendingTerminalResult = undefined
+                }
               }
             } finally {
               if (active.interrupting) {

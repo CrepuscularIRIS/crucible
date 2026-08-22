@@ -425,9 +425,16 @@ async function findPiCatalogModel(provider: ProviderType, modelId: string): Prom
   }
 
   // Generic/custom channels can still match a provider-scoped catalog ID exactly.
-  for (const candidate of fallbackProviders) {
-    const model = findCatalogModelById(await getCatalogModels(candidate), modelId)
-    if (model) return model
+  //
+  // 千问例外：Prime 目录里没有 DashScope，但 opencode provider 下恰好有同名的
+  // qwen3.x 条目（api=anthropic-messages、按 OpenCode Zen 定价、contextWindow 262144）。
+  // 跨供应商命中它会把别家的价格与上下文窗口当成本渠道的，导致 total_cost_usd
+  // 与 maxBudgetUsd 全错。宁可无目录（走推断值），也不要错目录。
+  if (provider !== 'qwen') {
+    for (const candidate of fallbackProviders) {
+      const model = findCatalogModelById(await getCatalogModels(candidate), modelId)
+      if (model) return model
+    }
   }
 
   // Only relax aliases after every exact lookup has failed.
@@ -532,6 +539,25 @@ export async function resolvePiReasoningCapability(
   })
 }
 
+/**
+ * 通义千问（DashScope 兼容模式）的显式 compat。
+ *
+ * Prime 的 detectCompat 只按 baseUrl / provider 名识别，没有 dashscope 分支，
+ * 于是全部落到 OpenAI 默认值 —— 实测会直接打不通：
+ *   - maxTokensField 默认 max_completion_tokens，配合思考预算返回 400
+ *     "max_completion_tokens must be greater than thinking_budget [32768]"；
+ *   - 发 reasoning_effort 而不发 enable_thinking，思考档位既不生效又触发上面的冲突；
+ *   - 发 store:false，DashScope 不接受该字段。
+ * 实测可用的组合是 max_tokens + enable_thinking，因此在此显式钉死。
+ */
+const QWEN_COMPAT = {
+  thinkingFormat: 'qwen',
+  maxTokensField: 'max_tokens',
+  supportsStore: false,
+  supportsReasoningEffort: false,
+  supportsDeveloperRole: false,
+} as const
+
 async function resolvePiModelDefaults(input: PiAgentQueryOptions): Promise<PiModelDefaults> {
   const catalogModel = input.model ? await findPiCatalogModel(input.provider, input.model) : undefined
   const codexAlignedCapabilities = getCodexAlignedGPT5Capabilities(input.model)
@@ -549,7 +575,10 @@ async function resolvePiModelDefaults(input: PiAgentQueryOptions): Promise<PiMod
     thinkingLevelMap: providerSpecificCapabilities?.thinkingLevelMap
       ?? catalogModel?.thinkingLevelMap,
     // Prime compat 无 forceAdaptiveThinking：Claude 自适应思考旗标在此运行时不生效，不再透传。
-    compat: providerSpecificCapabilities?.compat,
+    // 千问必须显式给 compat，否则 Prime 按 OpenAI 默认值发参数，DashScope 直接 400。
+    compat: input.provider === 'qwen'
+      ? { ...providerSpecificCapabilities?.compat, ...QWEN_COMPAT }
+      : providerSpecificCapabilities?.compat,
     input: catalogModel ? [...catalogModel.input] : ['text', 'image'],
     cost: catalogModel ? { ...catalogModel.cost } : { ...ZERO_MODEL_COST },
     // Codex 对齐策略优先；其他模型仍保留 catalog 与 shared inference 中更大的已验证能力。

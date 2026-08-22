@@ -80,6 +80,11 @@ for (const key of Object.keys(process.env)) {
 
 import { createApplicationMenu } from './menu'
 import { registerIpcHandlers } from './ipc'
+import { patchIpcMainForWeb, startWebBridge } from './lib/web-bridge'
+
+// 必须在任何 registerIpcHandlers() 之前执行：web-bridge 靠包住 ipcMain.handle
+// 来登记处理器，晚于注册就登记不到，浏览器侧会得到「未注册的 IPC 通道」。
+patchIpcMainForWeb()
 import { createTray, destroyTray, getTray, setTrayFlash } from './tray'
 import { initializeRuntime } from './lib/runtime-init'
 import { seedDefaultSkills } from './lib/config-paths'
@@ -731,6 +736,9 @@ async function bootstrap(): Promise<void> {
 
   // Create main window (will be shown when ready)
   createWindow()
+
+  // 浏览器端入口：主进程当后端，浏览器是它的第二个视图。仅回环监听。
+  safeRun('startWebBridge', () => startWebBridge(getMainWindow))
 
   // 为 Dock、任务栏右键菜单与首次启动参数提供任务/日程的直接入口。
   safeRun('configurePlanningQuickEntries', () => {
