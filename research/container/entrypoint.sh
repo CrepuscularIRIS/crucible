@@ -30,6 +30,7 @@ exec node /opt/prime-agent/packages/coding-agent/dist/bundle/cli.js -p \
   --autonomous \
   --goal "$GOAL" \
   --goal-token-budget "${GOAL_TOKEN_BUDGET:-2000000}" \
+  --autonomous-gate "python3 /gates/integrity.py /work/artifacts" \
   --autonomous-gate "python3 /gates/prereg.py /work/artifacts" \
   --autonomous-gate "python3 /gates/reconcile.py /work/artifacts" \
   --autonomous-gate "python3 /gates/review.py /work/artifacts" \

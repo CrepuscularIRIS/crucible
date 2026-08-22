@@ -41,31 +41,44 @@ def sha256_file(path: str) -> str:
         return hashlib.sha256(fh.read()).hexdigest()
 
 
+MAX_REGEX_INPUT = 1 << 20  # 1 MiB：给模型写的 pattern 一个有界输入，避免灾难性回溯
+
+
+def confined(base: str, rel: str) -> str:
+    """把模型给的相对路径钉死在 base 内（挡 ..、绝对路径、符号链接逃逸）。"""
+    base_real = os.path.realpath(base)
+    target = os.path.realpath(os.path.join(base_real, str(rel)))
+    if target != base_real and not target.startswith(base_real + os.sep):
+        raise ValueError("路径逃出 run 目录")
+    if os.path.exists(target) and not os.path.isfile(target):
+        raise ValueError("目标不是普通文件")
+    return target
+
+
 def recompute_metric(spec: dict[str, Any], raw_dir: str) -> float:
-    """与 skills/register/src/register/recompute.py 等价（stdlib-only 版）。"""
+    """与 skills/register/src/register/recompute.py 等价（stdlib-only 版）。
+
+    宿主侧是裁决层，**永不执行模型写的代码**：kind='python' 一律拒绝（容器内的同名
+    gate 仍可执行，那里本来就是沙箱）。路径一律 confined，报错文本不回显文件内容或
+    模型给的 pattern——那条回显曾经把宿主文件读进 artifacts 日志。
+    """
     kind = spec.get("kind")
+    if kind == "python":
+        raise ValueError("宿主 gate 拒绝 recompute kind='python'（裁决层不执行模型代码）")
     if kind == "json":
-        with open(os.path.join(raw_dir, spec["path"]), encoding="utf-8") as fh:
+        with open(confined(raw_dir, spec["path"]), encoding="utf-8") as fh:
             node: Any = json.load(fh)
         for part in str(spec["key"]).split("."):
             node = node[part]
         return float(node)
     if kind == "regex":
-        with open(os.path.join(raw_dir, spec["file"]), encoding="utf-8", errors="replace") as fh:
-            text = fh.read()
+        with open(confined(raw_dir, spec["file"]), encoding="utf-8", errors="replace") as fh:
+            text = fh.read(MAX_REGEX_INPUT)
         match = re.search(spec["pattern"], text)
         if not match:
-            raise ValueError(f"regex 未命中: {spec['pattern']}")
+            raise ValueError("regex 未命中")
         captured = match.group(spec.get("group", 1)) if match.groups() else match.group(0)
         return float(captured)
-    if kind == "python":
-        result = subprocess.run(
-            [sys.executable, "-c", spec["source"]],
-            cwd=raw_dir, capture_output=True, text=True, timeout=120,
-        )
-        if result.returncode != 0:
-            raise ValueError(f"python 规约失败: {result.stderr.strip()[:200]}")
-        return float(result.stdout.strip().splitlines()[-1])
     raise ValueError(f"未知 recompute kind: {kind!r}")
 
 

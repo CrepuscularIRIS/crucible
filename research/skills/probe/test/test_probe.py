@@ -72,7 +72,7 @@ def test_probe_run_produces_provenance_and_lands(setup):
     assert "metrics.json" in out["collected"]
     prov = json.load(open(os.path.join(R.run_dir, "results", pid, "provenance.json")))
     assert prov["produced_by"] == "probe.run"
-    assert prov["worktree_mode"] == "git-worktree"
+    assert prov["worktree_mode"] == "git-clone"
     assert R.state["probes"][pid]["state"] == "RUNNING"
     result = R.land(pid)
     assert 0.60 <= result["metric"] <= 0.70

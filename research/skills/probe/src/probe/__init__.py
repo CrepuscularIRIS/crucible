@@ -53,20 +53,28 @@ def _collect(src_dir: str, raw_dir: str, rel_paths: list[str]) -> list[str]:
 
 
 def _prepare_worktree(pid: str, case_dir: str, worktree_root: str) -> tuple[str, str]:
-    """返回 (worktree 路径, mode)。git 仓库用 worktree；否则整树拷贝。"""
+    """返回 (worktree 路径, mode)。
+
+    用 `git clone` 而不是 `git worktree add`，有两个理由：
+    - clone 只读源即可（case 现在是只读挂载），worktree add 要往 case 的 .git 里写；
+    - clone 不复制 config 与 hooks，模型改不到宿主 git 的执行面。
+    重跑是被支持的路径（崩溃恢复），所以这里必须可重入——旧的 worktree add 会因为
+    分支已存在而直接抛 CalledProcessError，把唯一的恢复路径堵死。
+    """
     is_git = os.path.isdir(os.path.join(case_dir, ".git"))
-    branch = f"probe/{pid}"
     wt = os.path.join(worktree_root, pid)
     if os.path.exists(wt):
         shutil.rmtree(wt)
     os.makedirs(worktree_root, exist_ok=True)
     if is_git:
-        subprocess.run(
-            ["git", "worktree", "add", "-b", branch, wt, "HEAD"],
-            cwd=case_dir, capture_output=True, text=True, check=True,
+        result = subprocess.run(
+            ["git", "clone", "--quiet", "--no-hardlinks", "--shared", case_dir, wt],
+            capture_output=True, text=True,
         )
-        return wt, "git-worktree"
-    shutil.copytree(case_dir, wt)
+        if result.returncode == 0:
+            return wt, "git-clone"
+        # clone 失败（浅仓库/无提交等）不该让整个 probe 死掉：退回整树拷贝
+    shutil.copytree(case_dir, wt, symlinks=True, ignore=shutil.ignore_patterns(".git"))
     return wt, "copy-fallback"
 
 
@@ -81,9 +89,16 @@ def run_sync(pid: str, R: Register | None = None, case_dir: str | None = None) -
         if not run_dir:
             raise ProbeError("未设置 CRUCIBLE_RUN_DIR 且未传入 R")
         R = Register(run_dir)
+    R._reload_if_stale()  # 共享实例可能已被别处写过；先对齐磁盘再判状态
     if pid not in R.state["probes"]:
         raise ProbeError(f"未知 probe: {pid}（先 R.prereg(...)）")
     p = R.state["probes"][pid]
+    # 只有还没落地的 probe 能执行。落地后重跑会覆写 raw/，而 register 里留着旧指标——
+    # 于是 gate 从新文件重算，和已经据此改过的信念状态对不上。
+    if p["state"] not in ("PREREG", "RUNNING"):
+        raise ProbeError(
+            f"{pid} 状态 {p['state']}，不可再执行；结果已落地。要重测请预登记一个新 probe"
+        )
     prereg_path = os.path.join(R.run_dir, p["prereg_path"])
     with open(prereg_path, encoding="utf-8") as fh:
         spec = json.load(fh)
@@ -118,10 +133,18 @@ def run_sync(pid: str, R: Register | None = None, case_dir: str | None = None) -
     ))
     copied = _collect(wt, raw_dir, targets)
 
+    # 采集到的原始文件当场记摘要：land() 重算前会核对，把"重算所依据的文件"
+    # 与"probe.run 真正产出的文件"绑在一起。执行后再改 raw/ 就会被挡下。
+    digests: dict[str, str] = {}
+    for rel in copied:
+        with open(os.path.join(raw_dir, rel), "rb") as fh:
+            digests[rel] = hashlib.sha256(fh.read()).hexdigest()
+
     provenance = {
         "produced_by": "probe.run",
         "eval_cmd": spec["eval_cmd"],
         "eval_cmd_hash": spec["eval_cmd_hash"],
+        "raw_sha256": digests,
         "unix_started": started,
         "unix_finished": finished,
         "exit_code": proc.returncode,
@@ -140,6 +163,7 @@ def run_sync(pid: str, R: Register | None = None, case_dir: str | None = None) -
     R.journal.append(
         "probe.run", proc.returncode == 0,
         pid=pid, exit_code=proc.returncode, mode=mode, collected=copied,
+        raw_sha256=digests,
     )
     return {
         "pid": pid,

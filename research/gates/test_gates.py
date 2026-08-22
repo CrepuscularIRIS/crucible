@@ -192,3 +192,117 @@ def test_review_catches_verdict_state_mismatch(landed_run):
     code, out = run_gate("review", run_dir)
     assert code == 1
     assert "不一致" in out
+
+
+# ---------- 整套 gate 的联合契约（这些是"为什么缺陷能出厂"的直接答案） ----------
+
+def test_all_gates_green_together_with_unprobed_live_claim(landed_run):
+    """三道 gate 必须能被同一份报告同时满足。
+
+    这是本轮评审发现的第一个死锁：review 要求 register 里每个 claim 都有 verdict 行，
+    reconcile 又拒绝报告里任何没有 artifact 的 H#。只要存在一个还没跑 probe 的 LIVE
+    claim（grill 派生新假设时必然出现），模型就无解——写它被 reconcile 拒，
+    不写它被 review 拒。十个单 gate 测试都发现不了，因为它们从不同时跑。
+    """
+    run_dir, h1, h2, pid, metric = landed_run
+    from register import Register
+
+    R = Register(str(run_dir))
+    h3 = R.abduce("均值受尾部影响", "mechanism", predicts=["尾部占比 > 0.2"], conflicts=f"与 {h2} 不同：它讲的是尾部而非中心")
+    _write_report(run_dir, metric, h1, h2, verdicts=[(h1, "LIVE"), (h2, "REFUTED"), (h3, "LIVE")])
+    for gate in ("integrity", "prereg", "reconcile", "review"):
+        code, out = run_gate(gate, run_dir)
+        assert code == 0, f"{gate} 未通过：\n{out}"
+
+
+def test_integrity_catches_hand_edited_register(landed_run):
+    """把 register.json 里的 claim 直接改成终态——journal 里没有对应的 land。"""
+    run_dir, h1, h2, pid, metric = landed_run
+    reg_path = run_dir / "register.json"
+    reg = json.load(open(reg_path, encoding="utf-8"))
+    reg["claims"][h1]["state"] = "SUPPORTED"
+    reg["claims"][h1]["killed_by"] = pid
+    json.dump(reg, open(reg_path, "w", encoding="utf-8"), ensure_ascii=False)
+    code, out = run_gate("integrity", run_dir)
+    assert code == 1, out
+    assert "applied 未点名" in out or "land ok" in out
+
+
+def test_integrity_refuses_empty_campaign(tmp_path):
+    """什么都没发生的战役不能拿绿灯——空循环没有拒绝条件可踩。"""
+    run_dir = tmp_path / "empty"
+    run_dir.mkdir()
+    json.dump({"claims": {}, "probes": {}, "evidence": [], "constraints": []},
+              open(run_dir / "register.json", "w", encoding="utf-8"))
+    (run_dir / "journal.jsonl").write_text('{"op":"set_case","ok":true}\n', encoding="utf-8")
+    (run_dir / "report.md").write_text("# r\n\n## 核心结论\n\n## 评审\n", encoding="utf-8")
+    code, out = run_gate("integrity", run_dir)
+    assert code == 1, out
+    assert "空跑" in out
+
+
+def test_reconcile_catches_bracketed_uncited_number(landed_run):
+    """[0.91] 这类任意方括号不再享受频段豁免——否则加个括号就能藏住任何数字。"""
+    run_dir, h1, h2, pid, metric = landed_run
+    _write_report(run_dir, metric, h1, h2)
+    text = (run_dir / "report.md").read_text(encoding="utf-8")
+    (run_dir / "report.md").write_text(text + "\n最终准确率 [0.91]，显著高于基线。\n", encoding="utf-8")
+    code, out = run_gate("reconcile", run_dir)
+    assert code == 1, out
+    assert "0.91" in out
+
+
+def test_reconcile_rejects_precision_dodge(landed_run):
+    """降精度不能当脱逃路线：真值 0.646… 时 '约 1 (P1)' 必须被拒。"""
+    run_dir, h1, h2, pid, metric = landed_run
+    _write_report(run_dir, metric, h1, h2)
+    text = (run_dir / "report.md").read_text(encoding="utf-8")
+    (run_dir / "report.md").write_text(text + f"\n准确率约 1 ({pid})。\n", encoding="utf-8")
+    code, out = run_gate("reconcile", run_dir)
+    assert code == 1, out
+    assert "幻觉数字" in out
+
+
+def test_reconcile_finds_hid_without_word_boundary(landed_run):
+    """中文里 '假设H9的分析' 没有词边界——\\b 会整条漏掉。"""
+    run_dir, h1, h2, pid, metric = landed_run
+    _write_report(run_dir, metric, h1, h2)
+    text = (run_dir / "report.md").read_text(encoding="utf-8")
+    (run_dir / "report.md").write_text(text + "\n据H99的分析可知该效应稳健。\n", encoding="utf-8")
+    code, out = run_gate("reconcile", run_dir)
+    assert code == 1, out
+    assert "H99" in out
+
+
+def test_host_gate_refuses_python_recompute(landed_run):
+    """宿主是裁决层，永不执行模型写的代码。"""
+    sys.path.insert(0, GATES)
+    from common import recompute_metric
+
+    with pytest.raises(ValueError, match="python"):
+        recompute_metric({"kind": "python", "source": "print(1)"}, str(landed_run[0]))
+
+
+def test_host_gate_confines_paths(landed_run):
+    """recompute 的路径不得逃出 raw/——否则 gate 会把宿主任意文件读进 artifacts 日志。"""
+    sys.path.insert(0, GATES)
+    from common import recompute_metric
+
+    with pytest.raises(ValueError, match="逃出"):
+        recompute_metric({"kind": "json", "path": "../../../../etc/hostname", "key": "x"},
+                         str(landed_run[0]))
+
+
+def test_recompute_implementations_agree(landed_run):
+    """双份实现的等价性必须有测试盯着，否则'改一处同步另一处'只是注释里的愿望。"""
+    sys.path.insert(0, GATES)
+    from common import recompute_metric
+    from register.recompute import run_spec
+
+    run_dir, h1, h2, pid, metric = landed_run
+    raw = str(run_dir / "results" / pid / "raw")
+    spec_json = {"kind": "json", "path": "metrics.json", "key": "mean"}
+    assert recompute_metric(spec_json, raw) == run_spec(spec_json, raw)
+    (run_dir / "results" / pid / "raw" / "eval.log").write_text("mean=0.6465\n", encoding="utf-8")
+    spec_re = {"kind": "regex", "file": "eval.log", "pattern": r"mean=([0-9.]+)", "group": 1}
+    assert recompute_metric(spec_re, raw) == run_spec(spec_re, raw)

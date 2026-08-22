@@ -22,6 +22,7 @@ R.land(pid)                    # 从原始文件重算指标，机械应用 rule
 R.attach(claim, entry, kind="figure")                   # figure 等证据必须经此挂接
 R.claim_view(h)                # 仅 claim+证据（grill 的 prompt 唯一来源）
 R.stale()                      # 欠账清单（heartbeat 目标）
+R.settle_owed(source, why)     # 还账：补了解释/新假设后销掉 TRIAGE 欠条
 ```
 
 ## 四验证器（拒绝即抛 `RefusalError`，理由落 journal）

@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Step 0 go/no-go 验收：四项判据的机械评估。
 # 用法: check.sh <RUN_DIR>
-set -euo pipefail
+# set -e 会让第一条不达标的判据直接终止脚本——四项判据于是永远只跑到第一个 ✗，
+# 后面三项和总计都不打印。验收脚本必须把四项都跑完再报分。
+set -uo pipefail
 RUN="${1:?用法: check.sh <RUN_DIR>}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 

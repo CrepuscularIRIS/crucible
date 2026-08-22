@@ -1,4 +1,4 @@
-解决本 case 上的 H*：让每个 live claim 都有一个落地的判别性 probe，以写出通过三道 gate（prereg / reconcile / review）的 /work/artifacts/report.md 结束本轮战役。
+解决本 case 上的 H*：让每个 live claim 都有一个落地的判别性 probe，以写出通过四道 gate（prereg / reconcile / review）的 /work/artifacts/report.md 结束本轮战役。
 
 过程纪律（不可协商）：
 1. 会话开始（以及每次被压缩之后）先执行 loop skill 的 ORIENT：print(R)、R.constraints()、grill.poll()、await register.ensure_heartbeat()。

@@ -17,16 +17,35 @@ import os
 import re
 import sys
 
-# 预登记频段表达式（如 [0.56, 1.0]）是 prereg 内容而非结果数字，豁免出处要求
-BAND_EXPR = re.compile(r"\[[^\]]*\d+\.\d+[^\]]*\]")
+# 预登记频段：**严格**两个数值的 [lo, hi]，别的括号内容一概不豁免。
+# （早先的宽松版 \[[^\]]*\d+\.\d+[^\]]*\] 把 "[0.91]" 这类任意方括号也豁免了，
+#  等于给"我不想解释的数字"开了一扇后门。）
+BAND_EXPR = re.compile(r"\[\s*-?\d+(?:\.\d+)?\s*[,，]\s*-?\d+(?:\.\d+)?\s*\]")
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from common import conclude, load_prereg, load_register, recompute_metric
+from review import VERDICT_LINE  # 与 review gate 用同一个 verdict 行口径
 
-HID = re.compile(r"\bH\d+\b")
+# 中文里 "假设H1被否证" 没有词边界，\b 会漏掉——与 review.py 保持同一个模式
+HID = re.compile(r"H\d+")
 NUMBER = re.compile(r"\d+\.\d+")
 CITED = re.compile(r"(\d+(?:\.\d+)?)\s*[（(]\s*(P\d+)\s*[)）]")
+
+
+def strip_verdict_lines(text: str) -> str:
+    """去掉形如 `- H1: SUPPORTED` 的 verdict 行再做 claim 引用检查。
+
+    verdict 行的语义是"逐条枚举 register 状态"，含未检验的 LIVE claim 本就合法；
+    它不是证据性断言。不豁免它，review（要求每个 claim 都有 verdict 行）与本 gate
+    （拒绝任何无 artifact 的 H# 出现）就互相矛盾，报告无解。
+
+    只豁免 verdict 行本身，不豁免整个「## 评审」段——段落切分会一路吃到文末，
+    把跟在后面的散文一起放行。
+    """
+    return "\n".join(
+        line for line in text.splitlines() if not VERDICT_LINE.fullmatch(line.rstrip())
+    )
 
 
 def main(run_dir: str) -> int:
@@ -42,8 +61,8 @@ def main(run_dir: str) -> int:
     claims = reg.get("claims", {})
     probes = reg.get("probes", {})
 
-    # 1) 引用的 claim 必须存在且有 artifact
-    for hid in sorted(set(HID.findall(text))):
+    # 1) 引用的 claim 必须存在且有 artifact（verdict 行除外，见 strip_verdict_lines）
+    for hid in sorted(set(HID.findall(strip_verdict_lines(text)))):
         c = claims.get(hid)
         if c is None:
             refusals.append(f"报告引用了不存在的 claim {hid}")
@@ -73,7 +92,12 @@ def main(run_dir: str) -> int:
             in_band = any(s <= match.start() and match.end() <= e for s, e in band_spans)
             if not in_cite and not in_band:
                 refusals.append(f"第 {line_no} 行数字 {match.group(0)} 缺少 (P#) 出处")
-        for _, _, pid, v, raw in spans:
+        for s, e, pid, v, raw in spans:
+            # 频段内的 (P#) 标注不是"结果数字的出处"——频段是预登记内容。
+            # 不这样切，第 4 条（数字要带出处）与第 5 条（带出处的数字要对得上重算值）
+            # 会把同一个频段数字同时判为"该标"和"标了就是幻觉"。
+            if any(bs <= s and e <= be for bs, be in band_spans):
+                continue
             cited_pairs.append((pid, v))
             raw_strings.setdefault(pid, []).append(raw)
 
@@ -98,9 +122,12 @@ def main(run_dir: str) -> int:
             refusals.append(f"{pid} 重算失败: {exc}")
             continue
         for v, raw in zip(values, raw_strings.get(pid, [])):
-            # 容差按引用值的显示精度：引用值须是重算值的正确舍入（半宽 = 末位 0.5）
+            # 容差按引用值的显示精度：引用值须是重算值的正确舍入（半宽 = 末位 0.5）。
+            # 但半宽有上限：否则"约 1 (P1)" 会以 ±0.5 的容差通过一个真值 0.6465 的对账，
+            # 降精度就成了合法的脱逃路线。上限取指标量级的 1%（近零时给一个绝对下限）。
             decimals = len(raw.split(".")[1]) if "." in raw else 0
-            tolerance = 0.5 * (10 ** -decimals) + 1e-9
+            half_width = 0.5 * (10 ** -decimals)
+            tolerance = min(half_width, max(0.01 * abs(metric), 1e-6)) + 1e-9
             if abs(v - metric) > tolerance:
                 refusals.append(
                     f"幻觉数字：报告称 {v} (P#={pid})，从原始文件重算为 {metric:.6f}"

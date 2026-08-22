@@ -30,7 +30,10 @@ STARTED="$(date -Is)"
 set +e
 timeout "${RUN_TIMEOUT:-0}" true 2>/dev/null || true
 COMPOSE="docker compose -f $ROOT/container/compose.yaml"
-RUN_V=(-v "$CRUCIBLE_ART_DIR:/work/artifacts" -v "$CRUCIBLE_CASE_DIR:/work/case" -v "$GOAL_FILE:/work/goal.md:ro")
+# case 只读：可写的 case 等于把宿主 git 仓库的 .git/config 与 hooks 交给模型，
+# 下一次宿主侧任何 git 操作就替它执行代码。probe 改用 git clone 建工作树（clone
+# 只读源即可，且不复制 config/hooks）。
+RUN_V=(-v "$CRUCIBLE_ART_DIR:/work/artifacts" -v "$CRUCIBLE_CASE_DIR:/work/case:ro" -v "$GOAL_FILE:/work/goal.md:ro")
 # 以当前宿主用户身份运行容器：产物属主正确，宿主 gate/tar 不再需要 sudo
 RUN_USER=(-u "$(id -u):$(id -g)")
 if [ "${RUN_TIMEOUT:-0}" = "0" ]; then
@@ -43,7 +46,7 @@ set -e
 FINISHED="$(date -Is)"
 
 # ── 宿主重跑三道 gate（裁决层；容器内同名 gate 只是转向） ──
-declare -a GATES=(prereg reconcile review)
+declare -a GATES=(integrity prereg reconcile review)
 declare -a GATE_RESULTS=()
 ALL_PASS=1
 for g in "${GATES[@]}"; do
@@ -56,12 +59,19 @@ for g in "${GATES[@]}"; do
 done
 
 # ── which-bound-ended：不同结局永不合并 ──
+# 注意两件事：
+#  1. 信号致死（SIGTERM=143 等）不是 gate 判负，必须单列——否则"我把它停了"
+#     会在证据链里变成"它没通过评审"。
+#  2. 不再 grep container.log 判 limit-exhausted：那是模型自己的 stdout，
+#     它只要在总结里打印 "tokens" 就能把一次判负洗成一次额度耗尽。
 if [ "$CONTAINER_EXIT" -eq 0 ] && [ "$ALL_PASS" -eq 1 ]; then
   BOUND="gates-passed"
-elif grep -q "retry_exhausted\|max-turns\|max_turns\|token" "$ART/container.log" 2>/dev/null; then
-  BOUND="limit-exhausted"
 elif [ "$CONTAINER_EXIT" -eq 124 ]; then
   BOUND="wall-clock-timeout"
+elif [ "$CONTAINER_EXIT" -ge 128 ]; then
+  BOUND="signal-$((CONTAINER_EXIT - 128))"
+elif [ "$CONTAINER_EXIT" -ne 0 ]; then
+  BOUND="agent-exit-$CONTAINER_EXIT"
 else
   BOUND="gates-failed"
 fi

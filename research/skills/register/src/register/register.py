@@ -22,6 +22,7 @@ from .journal import Journal, atomic_write_json, utc_now_iso
 from .recompute import RecomputeError, run_spec, validate_spec
 from .states import (
     ALIVE_CLAIM_STATES,
+    TERMINAL_CLAIM_STATES,
     LAND_MOVABLE,
     PROBE_TRANSITIONS,
     TEXT_MOVES,
@@ -368,6 +369,38 @@ class Register:
 
     # ---------- prereg / land ----------
 
+    def _normalize_predictions(self, predictions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """把 on_hit 的值规范成 claim id 列表，并当场校验 id 存在。返回新对象。
+
+        为什么必须在 prereg 就做：on_hit 写成裸字符串（`{"kill": "H2"}`）在 land 时会被
+        逐字符迭代，第一个字符 'H' 变成"未知 claim: H"，probe 从此永远卡在 RUNNING。
+        在预登记处拒绝，模型还记得上下文；在落地处崩溃，它只会反复重试同一个必败调用。
+        """
+        out: list[dict[str, Any]] = []
+        for i, br in enumerate(predictions):
+            if not isinstance(br, dict):
+                raise RefusalError(f"分支 {i} 必须是 dict（含 band 与 on_hit）")
+            norm: dict[str, list[str]] = {}
+            for key, value in (br.get("on_hit") or {}).items():
+                if key not in ON_HIT_KEYS:
+                    raise RefusalError(f"分支 {i} 的 on_hit 含未知动作 {key!r}（允许: {ON_HIT_KEYS}）")
+                if isinstance(value, str):
+                    targets = [value]
+                elif isinstance(value, (list, tuple)):
+                    targets = [str(t) for t in value]
+                else:
+                    raise RefusalError(
+                        f"分支 {i} 的 on_hit.{key} 必须是 claim id 或 id 列表，得到 {type(value).__name__}"
+                    )
+                for t in targets:
+                    if t not in self.state["claims"]:
+                        raise RefusalError(
+                            f"分支 {i} 的 on_hit.{key} 指向不存在的 claim {t!r}——先 abduce 出它再预登记"
+                        )
+                norm[key] = targets
+            out.append({**br, "on_hit": norm})
+        return out
+
     def _validate_prereg_predictions(self, predictions: list[dict[str, Any]]) -> None:
         if not predictions or not isinstance(predictions, list):
             raise RefusalError("predictions 必须是非空列表（每个分支一个频段 + on_hit 动作）")
@@ -379,10 +412,6 @@ class Register:
                 raise RefusalError(f"分支 {i} 的 band 必须是 [lo, hi] 数值对") from exc
             if lo > hi:
                 raise RefusalError(f"分支 {i} 的 band lo>hi")
-            on_hit = br.get("on_hit") or {}
-            for key in on_hit:
-                if key not in ON_HIT_KEYS:
-                    raise RefusalError(f"分支 {i} 的 on_hit 含未知动作 {key!r}（允许: {ON_HIT_KEYS}）")
             bands.append([lo, hi])
         # lethality：≥1 对不重叠频段，且 ≥1 分支 kill/scope 了某个 claim
         overlapped_pair = any(
@@ -429,6 +458,7 @@ class Register:
                 raise RefusalError("severity 必须写明（这个检验有多重的判别力）")
             if not str(eval_cmd).strip():
                 raise RefusalError("eval_cmd 不能为空")
+            predictions = self._normalize_predictions(predictions)
             self._validate_prereg_predictions(predictions)
             validate_spec(recompute)
         except RefusalError as exc:
@@ -486,13 +516,29 @@ class Register:
         self._save()
         self.journal.append("probe_transition", True, pid=pid, to=target.value, via=via)
 
+    def _rollback(self) -> None:
+        """磁盘是唯一事实源：拒绝路径上把内存态丢回磁盘。
+
+        没有这一步，一次被拒的 land 留下的半套内存变更会因为 mtime 未变而躲过
+        _reload_if_stale，被下一次任何成功操作的 _save() 带上磁盘。
+        """
+        try:
+            self.reload()
+        except (OSError, ValueError):
+            pass
+
     def land(self, pid: str) -> dict[str, Any]:
         """重算指标并机械应用 rule。四道防线里有三道在这里：precedence / provenance / recompute。"""
         self._reload_if_stale()
         try:
             return self._land(pid)
         except RefusalError as exc:
+            self._rollback()
             self.journal.append("land", False, pid=pid, reason=str(exc))
+            raise
+        except Exception as exc:  # noqa: BLE001 —— 非 RefusalError 也必须留痕再抛
+            self._rollback()
+            self.journal.append("land", False, pid=pid, reason=f"{type(exc).__name__}: {exc}")
             raise
 
     def _land(self, pid: str) -> dict[str, Any]:
@@ -526,9 +572,20 @@ class Register:
         started = float(prov.get("unix_started", 0))
         if started <= float(p["unix_prereg_ts"]):
             raise RefusalError("precedence: 结果开始时间不晚于 prereg 登记时间（先登记后执行）")
+        exit_code = prov.get("exit_code")
+        if exit_code not in (0, None):
+            raise RefusalError(
+                f"provenance: eval 以退出码 {exit_code} 结束——崩溃/中断的运行不予落地；"
+                "修好 eval 后 probe.run 重跑，或如实把它记成失败"
+            )
         raw_dir = os.path.join(result_dir, "raw")
         if not os.path.isdir(raw_dir):
             raise RefusalError(f"provenance: 缺 raw/ 目录（{os.path.relpath(raw_dir, self.run_dir)}）")
+        # 重算所依据的文件必须就是 probe.run 产出的那些（执行后被改过就挡下）
+        for rel, want in (prov.get("raw_sha256") or {}).items():
+            target = os.path.join(raw_dir, rel)
+            if not os.path.isfile(target) or _sha256_file(target) != want:
+                raise RefusalError(f"provenance: 原始文件 {rel} 与 probe.run 记录的摘要不符（执行后被改动？）")
         # recompute：从原始文件重算，绝不采信任何报告值
         try:
             metric = run_spec(spec["recompute"], raw_dir)
@@ -561,21 +618,34 @@ class Register:
             self.journal.append("land", True, pid=pid, metric=metric, branch=None, triage=True)
             return {"pid": pid, "metric": metric, "branch": None, "probe_state": "TRIAGE", "owed": owed}
         on_hit = hit.get("on_hit") or {}
-        applied: dict[str, list[str]] = {}
+        # 两阶段：先把整张待应用表解析并校验完，全部合法才动第一个字节。
+        # 边验边改会在中途拒绝时留下"半套已生效"的状态——磁盘上没有、journal 里也没有，
+        # 而下一次任何成功操作的 _save() 会把它带出去（claim 变成终态却无人杀它）。
+        plan: list[tuple[str, str, ClaimState]] = []
+        seen_targets: set[str] = set()
         for action, target_state in (
             ("kill", ClaimState.REFUTED),
             ("support", ClaimState.SUPPORTED),
             ("artifact", ClaimState.ARTIFACT),
             ("contest", ClaimState.CONTESTED),
+            ("scope", ClaimState.SCOPED),
         ):
             for target in on_hit.get(action, []) or []:
-                self._land_settle(target, target_state, pid)
-                applied.setdefault(action, []).append(target)
-        for target in on_hit.get("scope", []) or []:
-            c = self._require_claim(target, alive=True)
-            c["state"] = ClaimState.SCOPED.value
-            c["history"].append({"ts": utc_now_iso(), "to": "SCOPED", "via": f"land:{pid}"})
-            applied.setdefault("scope", []).append(target)
+                if target in seen_targets:
+                    raise RefusalError(f"on_hit 对同一个 claim {target} 指定了多个动作，无法机械执行")
+                self._require_claim(target, alive=True)  # 只校验，不改
+                if target_state not in LAND_MOVABLE:
+                    raise RefusalError(f"land 不可将 claim 置为 {target_state.value}")
+                seen_targets.add(target)
+                plan.append((action, target, target_state))
+        applied: dict[str, list[str]] = {}
+        for action, target, target_state in plan:
+            c = self.state["claims"][target]
+            c["state"] = target_state.value
+            if target_state in TERMINAL_CLAIM_STATES:
+                c["killed_by"] = pid
+            c["history"].append({"ts": utc_now_iso(), "to": target_state.value, "via": f"land:{pid}"})
+            applied.setdefault(action, []).append(target)
         p["state"] = ProbeState.LANDED.value
         p["result"] = {
             "metric": metric,
@@ -691,6 +761,26 @@ class Register:
         self._save()
         self.journal.append("attach", True, eid=eid, claim=claim, kind=kind)
         return eid
+
+    def settle_owed(self, source: str, why: str) -> dict[str, Any]:
+        """把某个 source 的欠账标记为已还（TRIAGE 后补了解释/新假设时调用）。
+
+        没有这个出口，一次 TRIAGE 会让 stale() 永远非空，30 分钟一次的 heartbeat
+        就会在整场战役剩下的时间里反复催同一笔已经还过的账。
+        """
+        self._reload_if_stale()
+        if not str(why).strip():
+            raise RefusalError("还账必须写明 why（落 journal，供 gate 审计）")
+        hit = [c for c in self.state["constraints"] if c.get("source") == source and c.get("owed")]
+        if not hit:
+            raise RefusalError(f"没有来源为 {source!r} 的未还欠账；R.stale() 看当前欠账清单")
+        for c in hit:
+            c["owed"] = False
+            c["settled_why"] = str(why)
+            c["settled_ts"] = utc_now_iso()
+        self._save()
+        self.journal.append("settle_owed", True, source=source, count=len(hit), why=str(why)[:300])
+        return {"source": source, "settled": len(hit)}
 
     def add_constraint(self, text: str, source: str = "human", owed: bool = False) -> None:
         self._reload_if_stale()

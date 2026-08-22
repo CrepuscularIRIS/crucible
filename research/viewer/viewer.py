@@ -75,12 +75,11 @@ def render_run(run_dir: str) -> str:
 
     # ── 宿主 gate 结果 ──
     gates_html = []
-    for g in ("prereg", "reconcile", "review"):
-        log = os.path.join(run_dir, f"gate-{g}.host.log")
-        status = "—"
-        if os.path.exists(log):
-            tail = open(log, encoding="utf-8").read().strip().splitlines()
-            status = "pass" if any("PASS" in l for l in tail) else "fail"
+    # 裁决只认 ledger.json（宿主按退出码写的），不认 gate 日志里的字样：
+    # 日志含模型可控文本，模型只要让 "PASS" 出现在拒因里，评委看到的徽章就变绿。
+    host_gates = ledger.get("host_gates", {}) or {}
+    for g in ("integrity", "prereg", "reconcile", "review"):
+        status = host_gates.get(g, "—")
         gates_html.append(
             f"<span class='gate gate-{status}' style='color:{OK_COLOR.get(status, '#6b7280')}'>"
             f"{esc(g)}: {esc(status)}</span>"
@@ -110,7 +109,8 @@ def render_run(run_dir: str) -> str:
         spec = read_json(os.path.join(run_dir, p.get("prereg_path", "prereg/x.json"))) or {}
         res = p.get("result") or {}
         bands = "; ".join(
-            f"{esc(b.get('branch'))}: [{b.get('band',[('?','?')])[0]}, {b.get('band',[0,'?'])[1]}]"
+            f"{esc(b.get('branch'))}: [{esc((b.get('band') or ['?', '?'])[0])}, "
+            f"{esc((b.get('band') or ['?', '?'])[-1])}]"
             for b in spec.get("predictions", [])
         )
         hit = res.get("branch")
@@ -119,7 +119,7 @@ def render_run(run_dir: str) -> str:
             f"<div class='probe'><h3>{esc(pid)} · claim {esc(p.get('claim'))} · {esc(p.get('state'))}</h3>"
             f"<div class='mono small'>prereg 登记: {esc(spec.get('prereg_ts','?'))}（先于执行，precedence 的根基）</div>"
             f"<div>频段: {bands}</div>"
-            + (f"<div>重算指标: <b>{metric}</b> → 命中分支 <b>{esc(hit)}</b>"
+            + (f"<div>重算指标: <b>{esc(metric)}</b> → 命中分支 <b>{esc(hit)}</b>"
                f"（applied: {esc(json.dumps(res.get('applied',{}), ensure_ascii=False))}）</div>" if metric is not None else "")
             + "</div>"
         )
@@ -149,12 +149,22 @@ def render_run(run_dir: str) -> str:
         else:
             evidence.append(f"<li><b>{esc(e.get('eid'))}</b> → {esc(e.get('claim'))}: {esc(e.get('kind'))}</li>")
     figs = ""
-    fig_dir = os.path.join(run_dir, "figures")
+    fig_dir = os.path.realpath(os.path.join(run_dir, "figures"))
+    MAX_FIG_BYTES = 8 << 20
     if os.path.isdir(fig_dir):
         for name in sorted(os.listdir(fig_dir)):
-            if name.endswith((".png", ".jpg")):
-                b64 = base64.b64encode(open(os.path.join(fig_dir, name), "rb").read()).decode()
-                figs += f"<img src='data:image/png;base64,{b64}' alt='{esc(name)}'>"
+            if not name.endswith((".png", ".jpg")):
+                continue
+            path = os.path.realpath(os.path.join(fig_dir, name))
+            # 符号链接可以把宿主任意文件（比如 .env）指进来，然后被 base64 内联进
+            # 评委看的这张页面里。只收 figures/ 内的普通文件。
+            if not path.startswith(fig_dir + os.sep) or not os.path.isfile(path):
+                continue
+            if os.path.getsize(path) > MAX_FIG_BYTES:
+                continue
+            with open(path, "rb") as fh:
+                b64 = base64.b64encode(fh.read()).decode()
+            figs += f"<img src='data:image/png;base64,{b64}' alt='{esc(name)}'>"
     parts.append("<section><h2>证据</h2><ul>" + "".join(evidence) + "</ul>" + figs + "</section>")
 
     # ── journal 时间线 ──
