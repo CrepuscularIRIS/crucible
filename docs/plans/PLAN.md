@@ -30,7 +30,7 @@ Proma 前端  +  Prime 运行时（原生能力尽量全开）
 
 ---
 
-## P0 · 把 Prime 完整适配进 Proma（**唯一的当前任务**）
+## P0 · 把 Prime 完整适配进 Proma（**已实现** · 990ac95 / a272a68，运行时证据补齐见 P3.4）
 
 现状一句话：**Proma 现在把 Prime 定义性的特性关着在跑。**
 Prime 唯一的内置工具是 `ipython`（`tools/index.ts:46-47`，`allToolNames = new Set(["ipython"])`），
@@ -199,9 +199,11 @@ CLI 的每个非 daemon 模式都经由 daemon（`main.ts:224-227`），所以�
 
 ---
 
-## P2 · 重建研究层 = skills + agents + MCP + 极少 gate
+## P2 · 重建研究层 = skills + agents + MCP + 极少 gate（**已实现** · fb9bba6，两个关键缺口由 P3 闭合）
 
-**顺序**：P0 验收通过之前不开始。
+**顺序**：P0 验收通过之前不开始。（实际上 P2 先于 P0 证据补齐落地了——
+2026-08-22 复审确认架构对齐，但 probe_run 宿主执行与 gate 无强制执行点
+两项必须在任何真实战役之前修复，见 P3。）
 
 ### 分工原则（判断一件事该放哪）
 
@@ -240,6 +242,127 @@ CLI 的每个非 daemon 模式都经由 daemon（`main.ts:224-227`），所以�
 只要存在一个未检验的假设，报告在数学上就无解。
 **通用防御：一个断言"所有 gate 对同一份诚实产物同时通过"的集成测试。**
 旧的 10 个 gate 测试每个只跑一道、各自全绿，把三处矛盾全藏住了。
+
+---
+
+## P3 · 封边与实证（**当前阶段**）
+
+**现状**：P0/P1/P2 已实现（990ac95 · a272a68 · fb9bba6 · 99bc832）。
+2026-08-22 复审确认：架构与目标一致，旧编排引擎无残留，五个 skill 引用的
+工具全部真实存在，trace gate 是"捏造战役全绿"教训的直接解毒剂。
+但两个关键缺口未闭合、P0 验收证据只有 2/5——P3 是"能对用户说这套系统
+可信"之前的全部剩余工作。P3 之后只剩 skill/MCP 打磨与真实战役迭代。
+
+**已拍板（2026-08-22）**：probe_run 执行边界三选一
+（沙箱 / 逐次审批展示冻结命令 / 裸宿主+清环境变量）选 **方案 A —— 沙箱执行**。
+本机已实测 bwrap 0.9.0 可用：只读根、清空环境、断网全部生效
+（`bwrap --ro-bind / / --unshare-net --clearenv` 冒烟通过，写工作区被拒）。
+
+### P3.1 · probe_run 沙箱化（红线修复，最高优先）
+
+**问题**：`server.ts` 的 probe_run 用 `/bin/sh -c` 在宿主执行模型写的
+evalCommand，且继承完整 `process.env`（含可能的密钥）。直接违反红线
+"LLM 生成的代码绝不在宿主执行"。旧架构为此付出了整个容器；重建时丢了。
+README 里的"预登记冻结 + 调用可见"是可见性，不是隔离。
+
+**做法（bwrap）**：
+- 沙箱契约：`--clearenv` 后只显式给 `PATH` / `HOME=/tmp` / `LANG` 三个 ·
+  工作区 `--ro-bind`（只读——顺带让探针无法碰 journal/register）·
+  tmpfs `/tmp`（探针的中间文件只能写这里）· `--unshare-net`（无网络，
+  与命令纪律"无网络依赖"本来就一致）· `--unshare-pid --die-with-parent` ·
+  超时上限（超时按非零退出处理，不落地）。
+- **沙箱内零可写挂载**（除 tmpfs）：探针只需要 stdout，
+  `raw/output.txt` 由 server 在沙箱外捕获落盘，探针自己不写 raw。
+- **供给检测，fail closed**：与 RLM 供给检测同构——找不到 `bwrap` 时
+  probe_run **结构性拒绝**并给安装引导（`apt install bubblewrap`），
+  **绝不静默回落裸宿主执行**。非 Linux 平台同样拒绝，天花板写明。
+  docker / GPU 直通（`--gpus`）是将来的扩展位，本阶段不做。
+- **skill 同步更新**（防 impossible-instructions 复发）：research-probe
+  的"命令纪律"写明沙箱契约——只读工作区、无网络、中间文件写 /tmp、
+  结果走 stdout；probe_run 的工具描述同步说明。
+
+**验收（破坏必须变红）**：
+1. 探针内 `env` 看不到哨兵密钥变量（实测，不是推断）；
+2. 探针写工作区 → 失败；`curl` → 失败；
+3. 卸掉/藏起 bwrap → probe_run 结构性拒绝，而不是回落宿主执行；
+4. 诚实探针照常落地，指标与沙箱前一致。
+
+### P3.2 · gate 执行点收进 server（"硬"名副其实）
+
+**问题**：三道 gate 目前只由模型按 report skill 的嘱咐自己跑——没有任何
+结构阻止跳过或谎报绿。这正是 F2（有观测无更新），整套产品文档要防的就是它。
+
+**做法**：
+- `report_declare` 在 server 内直接调用三道 gate 的 TS 函数（同包导入，
+  不起子进程）：任何一道红 → **declare 拒绝**并逐条给出理由；
+  全绿 → 把 `gate.verdict` 事件写进 journal，工具结果里返回三道裁决。
+- 独立 gate 脚本保留：用户/CI 的最终人工复核通道不变。
+  research-report 里"自己先跑一遍"改为"declare 会替你跑，红了会拒绝；
+  用户仍可独立复跑"。
+- 全绿集成测试扩展：诚实产物（含未检验 LIVE 假设）declare 成功；
+  四类篡改分别 declare 拒绝。**不许出现"declare 数学上无解"的产物**——
+  这是 impossible-instructions 检测器的既有职责，扩展时一并覆盖。
+
+### P3.3 · journal 会话内防篡改（提升下限，不假装是墙）
+
+server 每次 append 后在内存记住 journal 的 sha256；每个工具调用先校验
+当前文件哈希再干活，不符 → 全部工具拒绝并记 tamper 事件。
+**天花板写进 README**：server 重启后基线重置（届时靠 trace 的逐字重放兜底）；
+同用户进程终究能伪造一切——真正的墙是把 agent 本身关进沙箱，本阶段明确不做。
+验收：工具追加 → 手改 journal → 下一个工具调用拒绝。
+
+### P3.4 · P0 验收证据补齐（五项，缺一不可）
+
+99bc832 的 e2e 只证明了 kernel 供给与真实 ipython 调用两项。按 P0 完成
+条件补齐，每项都要正反向：
+
+1. **权限拒绝**：UI 拒绝 ipython → 调用被拒；批准 → 执行；
+2. **kernel 跨压缩**：定义变量 → 真实 /compact → 变量仍在；
+3. **rlm() 真拉起子代理**：`await rlm(...)` 返回句柄、产出可回收
+   ——research-grill 的全部根基，本项最高优先；
+4. **auto-refine 真触发**：单会话 >25 assistant 轮 → refinement 事件出现
+   且徽章可见；
+5. **MCP 首轮可用**：npx 冷启动 stdio server，新会话第一条消息即列出其工具。
+
+### P3.5 · 决策与小修
+
+- **collaboration 工具 vs rlm()**（P0.4 遗留，不再悬置）：先查清 10 个
+  `mcp__collaboration__` 工具的实际消费方——若只是 Agent 模式的子代理分发，
+  与 rlm() 职责重叠，按最高原则**撤出 Agent 会话**（Chat 在用就留给 Chat）；
+  若另有产品职责则写下结论。
+- **graveyard 复活加结构约束**：`claim_transition` 迁回 LIVE 时要求非空
+  `note` 点名新证据来源（目前只有 abduce skill 里一句散文）。
+- **floor 谓词**（种子数/样本下限 → CONTESTED）：**明确不做**。
+  在 research-report"存活假设"一节加一行诚实声明模板即可。
+
+### P3.6 · 首场真实战役（P2+P3 的总验收）
+
+前五项全部完成后，按 `research/README.md` 三步接线，在 Proma UI 里用
+Qwen 跑一场小而真的战役，全程不碰命令行（gate 人工复跑除外）：
+
+1. abduce 登记 ≥2 条可判别假设 → prereg（期间 server 至少拒绝过一次
+   装饰性探针为佳）→ 沙箱 probe 落地；
+2. grill 经 `rlm()` 拉起对抗者，attack_record 落 typed 证据；
+3. report：declare 内嵌 gate 全绿；用户独立复跑三道 gate 同绿；
+4. UI 全程可见：skill 使用标记、MCP 调用事件、ipython 权限询问。
+
+对照基线：`archive/2026-08-22-superseded/research/artifacts/`（toy-2..9）。
+**这一场跑通，"与 Fable5/PrimeAgent 能力目标功能等价"才从论证变成演示。**
+
+### P3 完成条件
+
+- [ ] 红线恢复：模型写的命令只在沙箱执行，且缺 bwrap 时 fail closed
+- [ ] declare 即裁决：不过 gate 的报告无法 declare
+- [ ] journal 会话内篡改会被工具拒绝
+- [ ] 五项 P0 证据全绿（正反向都有）
+- [ ] collaboration/rlm 二选一有结论
+- [ ] 首场真实战役全流程走通并留档
+
+### P3 之后
+
+只剩打磨循环：skill 措辞随战役复盘迭代、MCP 工具面按摩擦点微调、
+UI 证据面（gate 徽章、战役状态视图）按需增补。**没有 Plugins 一腿**：
+Proma 无插件系统（`noExtensions:true`），能力目标也不需要它。
 
 ---
 
@@ -282,8 +405,11 @@ CLI 的每个非 daemon 模式都经由 daemon（`main.ts:224-227`），所以�
 
 ---
 
-## 下一步（P0.1 之前唯一要做的事）
+## 下一步
 
-**kernel 供给三选一需要你拍板**（见 P0.1）：
-分发自带 Python / 检测 uv 并用我们的 UI 引导 / 仅在有 uv 时开放。
-定了之后 P0.1 才能动工——它是后面所有事情的地基。
+**P3.1：probe_run 沙箱化。** 方案 A 已拍板，bwrap 已实测可用（见 P3 开头）。
+它是红线修复，先于其余所有 P3 项。
+
+（历史：P0.1 之前悬置的 kernel 供给三选一已按"检测 uv / 钉
+`PRIME_AGENT_KERNEL_PYTHON`，缺失则不注册并由 UI 引导"落地——
+即当初的方案 (b)(c) 合体，990ac95 的 `pi-ipython-rlm.ts`。）
