@@ -34,6 +34,7 @@ exec node /opt/prime-agent/packages/coding-agent/dist/bundle/cli.js -p \
   --autonomous-gate "python3 /gates/reconcile.py /work/artifacts" \
   --autonomous-gate "python3 /gates/review.py /work/artifacts" \
   --autonomous-max-turns "${AUTONOMOUS_MAX_TURNS:-200}" \
+  --autonomous-max-tokens "${AUTONOMOUS_MAX_TOKENS:-2000000}" \
   --autonomous-max-continuations "${AUTONOMOUS_MAX_CONTINUATIONS:-8}" \
   --no-skills \
   --skill /opt/crucible-skills/register \

@@ -17,6 +17,9 @@ import os
 import re
 import sys
 
+# 预登记频段表达式（如 [0.56, 1.0]）是 prereg 内容而非结果数字，豁免出处要求
+BAND_EXPR = re.compile(r"\[[^\]]*\d+\.\d+[^\]]*\]")
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from common import conclude, load_prereg, load_register, recompute_metric
@@ -56,17 +59,23 @@ def main(run_dir: str) -> int:
         if not has_artifact:
             refusals.append(f"{hid} 被报告引用但没有任何 artifact（无落地 probe / 无挂接证据）")
 
-    # 2) 小数必须带 (P#) 出处；成对记录 (pid, value)
+    # 2) 小数必须带 (P#) 出处；成对记录 (pid, value, 原始字符串)
     cited_pairs: list[tuple[str, float]] = []
+    raw_strings: dict[str, list[str]] = {}
     for line_no, line in enumerate(text.splitlines(), 1):
         spans = [
-            (m.start(1), m.end(1), m.group(2), float(m.group(1)))
+            (m.start(1), m.end(1), m.group(2), float(m.group(1)), m.group(1))
             for m in CITED.finditer(line)
         ]
+        band_spans = [(m.start(), m.end()) for m in BAND_EXPR.finditer(line)]
         for match in NUMBER.finditer(line):
-            if not any(s <= match.start() and match.end() <= e for s, e, _, _ in spans):
+            in_cite = any(s <= match.start() and match.end() <= e for s, e, _, _, _ in spans)
+            in_band = any(s <= match.start() and match.end() <= e for s, e in band_spans)
+            if not in_cite and not in_band:
                 refusals.append(f"第 {line_no} 行数字 {match.group(0)} 缺少 (P#) 出处")
-        cited_pairs.extend((pid, v) for _, _, pid, v in spans)
+        for _, _, pid, v, raw in spans:
+            cited_pairs.append((pid, v))
+            raw_strings.setdefault(pid, []).append(raw)
 
     cited: dict[str, list[float]] = {}
     for pid, v in cited_pairs:
@@ -88,8 +97,11 @@ def main(run_dir: str) -> int:
         except Exception as exc:  # noqa: BLE001 - gate 必须把一切重算失败记为拒绝
             refusals.append(f"{pid} 重算失败: {exc}")
             continue
-        for v in values:
-            if abs(v - metric) > 1e-6 * max(1.0, abs(metric)):
+        for v, raw in zip(values, raw_strings.get(pid, [])):
+            # 容差按引用值的显示精度：引用值须是重算值的正确舍入（半宽 = 末位 0.5）
+            decimals = len(raw.split(".")[1]) if "." in raw else 0
+            tolerance = 0.5 * (10 ** -decimals) + 1e-9
+            if abs(v - metric) > tolerance:
                 refusals.append(
                     f"幻觉数字：报告称 {v} (P#={pid})，从原始文件重算为 {metric:.6f}"
                 )
