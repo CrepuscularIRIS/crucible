@@ -1697,6 +1697,14 @@ export interface AgentRefineNowResult {
   reason?: string
 }
 
+/** RLM（Prime ipython kernel）供给状态（进程级，与会话无关） */
+export interface AgentRlmSupplyState {
+  /** 供给是否就绪；就绪时本会话即可用 ipython/rlm/goal */
+  available: boolean
+  /** 就绪时的来源说明，或不可用时的引导文案 */
+  detail: string
+}
+
 // ===== IPC 通道常量 =====
 
 /**
@@ -1771,6 +1779,8 @@ export const AGENT_IPC_CHANNELS = {
   REFINE_SESSION: 'agent:refine-session',
   /** 读取会话 refine 状态（harness_state.json 摘要） */
   GET_REFINE_STATE: 'agent:get-refine-state',
+  /** 读取 RLM（ipython kernel）供给状态（P0.1） */
+  GET_RLM_SUPPLY: 'agent:get-rlm-supply',
 
   // 标题生成
   /** 生成 Agent 会话标题 */

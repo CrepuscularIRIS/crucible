@@ -156,7 +156,7 @@ import type {
   BrowserTabInput,
   BrowserCreateTabInput,
   AgentRefineNowResult,
-  AgentRefineState, AgentAutonomousPassthrough } from '@proma/shared'
+  AgentRefineState, AgentAutonomousPassthrough, AgentRlmSupplyState } from '@proma/shared'
 import type { UserProfile, AppSettings } from '../types'
 import { getRuntimeStatus, getGitRepoStatus, reinitializeRuntime } from './lib/runtime-init'
 import { browserController } from './lib/browser-controller'
@@ -2276,6 +2276,15 @@ export function registerIpcHandlers(): void {
     AGENT_IPC_CHANNELS.GET_REFINE_STATE,
     (_, sessionId: string): AgentRefineState => {
       return getAgentRefineState(sessionId)
+    }
+  )
+
+  // RLM（P0.1）：读取 ipython kernel 供给状态，供 UI 显示可用性/引导安装
+  ipcMain.handle(
+    AGENT_IPC_CHANNELS.GET_RLM_SUPPLY,
+    async (): Promise<AgentRlmSupplyState> => {
+      const { detectIpythonKernelSupply } = await import('./lib/adapters/pi-ipython-rlm')
+      return detectIpythonKernelSupply()
     }
   )
 

@@ -554,6 +554,8 @@ export interface ElectronAPI {
   refineSession: (sessionId: string) => Promise<import('@proma/shared').AgentRefineNowResult>
   /** 读取会话 refine 状态摘要（Track B #2） */
   getRefineState: (sessionId: string) => Promise<import('@proma/shared').AgentRefineState>
+  /** 读取 RLM（ipython kernel）供给状态（P0.1） */
+  getRlmSupply: () => Promise<import('@proma/shared').AgentRlmSupplyState>
 
   /** 迁移 Chat 对话记录到 Agent 会话 */
   migrateChatToAgent: (conversationId: string, agentSessionId: string) => Promise<void>
@@ -1780,6 +1782,9 @@ const electronAPI: ElectronAPI = {
   },
   getRefineState: (sessionId: string) => {
     return ipcRenderer.invoke(AGENT_IPC_CHANNELS.GET_REFINE_STATE, sessionId)
+  },
+  getRlmSupply: (): Promise<import('@proma/shared').AgentRlmSupplyState> => {
+    return ipcRenderer.invoke(AGENT_IPC_CHANNELS.GET_RLM_SUPPLY)
   },
   deleteAgentSession: (id: string) => {
     return ipcRenderer.invoke(AGENT_IPC_CHANNELS.DELETE_SESSION, id)

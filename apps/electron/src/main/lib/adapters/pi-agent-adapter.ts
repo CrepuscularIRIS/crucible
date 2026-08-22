@@ -78,6 +78,12 @@ import {
 } from './pi-message-adapter'
 import { DEFAULT_CONTEXT_WINDOW, buildModel } from './pi-model-registry'
 import { computeResidencyKey, ResidentSessionRegistry } from './pi-session-residency'
+import {
+  captureWiredIpythonDefinition,
+  createRlmIpythonToolDefinition,
+  detectIpythonKernelSupply,
+  type RlmIpythonWiring,
+} from './pi-ipython-rlm'
 import type { AgentRefineEntrySummary, AgentRefineNowResult, AgentRefineState } from '@proma/shared'
 import { PendingPromptSkillActivationTracker } from './pi-skill-activation-tracker'
 import { createPiRetryTerminalGate, mapPiNativeRetryEvent } from './pi-retry-control'
@@ -1280,22 +1286,30 @@ export function isPiBashToolAvailable(
  * Prime fork 自带四条 session 斜杠命令：/compact /refine /goal /autonomous。
  * 它们会在 prompt 解析阶段被 Prime 截走，绕过 Proma 的整套语义：
  *
- * - `/goal` 会强行激活 Prime 内置的 ipython 工具。该工具不在 Proma 传入的
- *   customTools 里，因此**没有经过 wrapToolWithPermission 包装** —— 等于在任何
- *   权限模式（含 plan）下，用户一句话就能拿到不受管控的 Python 内核。
+ * - `/goal` 会强行激活 ipython 工具。P0.1 起 RLM 可用时 ipython 已作为
+ *   customTools 注册并经过权限包装，强行激活拿到的也是受管控的定义，因此放行；
+ *   RLM 供给缺失时 goal 无工具可用（Prime 直接抛错），仍需 shield。
  * - `/compact` 会被 Prime 吞掉且不发 agent_end，Proma 侧收不到终态，
  *   最后被判成「空回复」错误；Proma 自己有压缩入口，不该走这条。
+ * - `/refine`、`/autonomous` 与 Proma 自有的 refine 入口/会话自治配置重叠，
+ *   走 Prime 的旁路会让 UI 状态与实际运行脱节，保持 shield。
  *
  * Prime 的 parseSlashCommand 要求 text.startsWith('/') 且不做 trim，
  * 故前置一个空格即可彻底避开解析，对模型语义没有影响。
- * 只挡这四条，扩展命令（extensionCommands）仍照常工作。
+ * 只挡这四类，扩展命令（extensionCommands）仍照常工作。
  */
-const PRIME_SESSION_COMMANDS = new Set(['compact', 'refine', 'goal', 'autonomous'])
+const PRIME_SESSION_COMMANDS = new Set(['compact', 'refine', 'autonomous'])
 
 export function shieldPrimeSessionCommands(prompt: string): string {
   if (!prompt.startsWith('/')) return prompt
   const name = /^\/(\S+)/.exec(prompt)?.[1]
-  return name && PRIME_SESSION_COMMANDS.has(name) ? ` ${prompt}` : prompt
+  if (!name) return prompt
+  if (name === 'goal') {
+    // RLM 就绪时 /goal 交由 Prime 处理（goal 状态 + kernel goal skill）；
+    // 未就绪时强行激活的 ipython 不存在，Prime 会直接报错，仍以空格避开。
+    return detectIpythonKernelSupply().available ? prompt : ` ${prompt}`
+  }
+  return PRIME_SESSION_COMMANDS.has(name) ? ` ${prompt}` : prompt
 }
 
 function buildBuiltinToolDefinitions(
@@ -1936,6 +1950,15 @@ export class PiAgentAdapter implements AgentProviderAdapter {
     const autoCompactionReserveTokens = calculatePiAutoCompactionReserveTokens(
       model.contextWindow ?? DEFAULT_CONTEXT_WINDOW,
     )
+    // RLM（P0.1）：仅在 kernel 供给就绪时注册 ipython。execute 委托给会话内
+    // 已接线的内置定义（hostHandlers/provisioner/快照全在它里面），权限走与
+    // bash/edit 相同的 wrapToolWithPermission 路径；供给缺失时保持不注册，
+    // 避免 Prime 在无 TTY 的主进程里走 readline 确认装 uv 而挂死。
+    const rlmSupply = detectIpythonKernelSupply()
+    const rlmWiring: RlmIpythonWiring = {}
+    if (!rlmSupply.available) {
+      console.warn(`[Pi SDK] RLM 未启用：${rlmSupply.detail}。安装 uv 或设置 PRIME_AGENT_KERNEL_PYTHON 后可用。`)
+    }
     const customTools = [
       buildCurrentSessionCompactionTool(
         sdk,
@@ -1948,6 +1971,12 @@ export class PiAgentAdapter implements AgentProviderAdapter {
         indirectCanUseTool,
         input.runtimeEnv,
       ),
+      ...(rlmSupply.available
+        ? [wrapToolWithPermission(
+          createRlmIpythonToolDefinition(sdk, cwd, rlmWiring),
+          { canUseTool: indirectCanUseTool },
+        ) as ToolDefinition]
+        : []),
       ...buildPromaProductToolDefinitions(sdk, indirectCanUseTool),
       ...wrapCustomToolDefinitions(input.customTools, indirectCanUseTool),
     ]
@@ -2012,7 +2041,12 @@ export class PiAgentAdapter implements AgentProviderAdapter {
       additionalSkillPaths: input.additionalSkillPaths ?? [],
       skillsOverride: createPromaSkillsOverride(input.additionalSkillPaths),
       ...(extensionFactories.length > 0 && { extensionFactories }),
-      systemPromptOverride: () => appendWindowsBaseModeInstruction(input.systemPrompt, input.runtimeEnv),
+      // P0.2：不再整体替换系统提示。customPrompt（systemPromptOverride 的返回值）
+      // 会让 buildSystemPrompt 走自定义分支，整段丢掉 buildRlmPrompt 与
+      // buildSubagentGuidance——kernel 开了但模型不知道 rlm() 的契约。
+      // Proma 的会话上下文改走 append 段，落在 Prime RLM 契约之后；基础提示
+      // 保持 Prime 默认（含 RLM 学说、子代理指引、harness 状态注入）。
+      appendSystemPromptOverride: () => [appendWindowsBaseModeInstruction(input.systemPrompt, input.runtimeEnv)].filter(Boolean),
     })
     await resourceLoader.reload()
     const skillDiagnostics = resourceLoader.getSkills().diagnostics
@@ -2044,6 +2078,12 @@ export class PiAgentAdapter implements AgentProviderAdapter {
         },
       }),
     })
+    if (rlmSupply.available) {
+      // 回填委托目标：会话内置 ipython 定义携带完整 RLM 接线（provisioner、
+      // hostHandlers、kernel 快照目录）。结构变化时 capture 会抛错并使本次
+      // 会话创建失败——绝不静默退化为无 RLM 的空壳。
+      captureWiredIpythonDefinition(session, rlmWiring)
+    }
     session.agent.toolExecution = 'sequential'
     // Pi session artifact 可以来自旧版本，不能假设其历史 tool_result 已通过当前校验。
     // transformContext 在每个 provider 请求前执行，能隔离 resume 的坏图片而不篡改原 artifact。

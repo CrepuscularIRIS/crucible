@@ -23,6 +23,7 @@ import { AgentHeader } from './AgentHeader'
 import { AgentMessageQueue } from './AgentMessageQueue'
 import { ContextUsageBadge } from './ContextUsageBadge'
 import { RefineBadge } from './RefineBadge'
+import { RlmSupplyBadge } from './RlmSupplyBadge'
 import { PermissionBanner } from './PermissionBanner'
 import { PermissionModeSelector } from './PermissionModeSelector'
 import { AskUserBanner } from './AskUserBanner'
@@ -2918,6 +2919,10 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
     {
       key: 'refine',
       node: <RefineBadge sessionId={sessionId} streaming={streaming} />,
+    },
+    {
+      key: 'rlm-supply',
+      node: <RlmSupplyBadge />,
     },
   ], [
     planQuotaChannelId,
