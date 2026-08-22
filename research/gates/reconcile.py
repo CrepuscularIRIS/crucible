@@ -21,6 +21,10 @@ import sys
 # （早先的宽松版 \[[^\]]*\d+\.\d+[^\]]*\] 把 "[0.91]" 这类任意方括号也豁免了，
 #  等于给"我不想解释的数字"开了一扇后门。）
 BAND_EXPR = re.compile(r"\[\s*-?\d+(?:\.\d+)?\s*[,，]\s*-?\d+(?:\.\d+)?\s*\]")
+# 行内代码里的数字免出处：这是给"假设陈述里的参数"（如 `U(0.3, 1.0)`）留的**显式**
+# 逃生口。必须模型主动标记，因此可审计——比"括号里的数字大概不是结果"这种隐式
+# 启发式安全得多。
+CODE_SPAN = re.compile(r"`[^`\n]*`")
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -74,7 +78,12 @@ def main(run_dir: str) -> int:
             hid in (p.get("result", {}) or {}).get("applied", {}).get(action, [])
             for p in probes.values() if p.get("state") == "LANDED"
             for action in ("kill", "scope", "support", "artifact", "contest")
-        ) or any(e.get("claim") == hid for e in reg.get("evidence", []))
+        ) or any(e.get("claim") == hid for e in reg.get("evidence", [])) or any(
+            # 被 grill 攻击过也算"已被交手"：报告里如实记一句"对 H3 发起过攻击、
+            # 攻击被验证器拒绝"是过程陈述，不是拿它当证据。真正要挡的是把从未
+            # 检验过的假设当结论用——那由 review 的 headline 规则挡住。
+            a.get("claim") == hid for a in (reg.get("attacks", {}) or {}).values()
+        )
         if not has_artifact:
             refusals.append(f"{hid} 被报告引用但没有任何 artifact（无落地 probe / 无挂接证据）")
 
@@ -87,6 +96,7 @@ def main(run_dir: str) -> int:
             for m in CITED.finditer(line)
         ]
         band_spans = [(m.start(), m.end()) for m in BAND_EXPR.finditer(line)]
+        band_spans += [(m.start(), m.end()) for m in CODE_SPAN.finditer(line)]
         for match in NUMBER.finditer(line):
             in_cite = any(s <= match.start() and match.end() <= e for s, e, _, _, _ in spans)
             in_band = any(s <= match.start() and match.end() <= e for s, e in band_spans)

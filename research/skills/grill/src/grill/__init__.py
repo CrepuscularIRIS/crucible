@@ -69,7 +69,10 @@ def build_prompt(view: dict[str, Any], gid: str, result_path: str, lens_index: i
 
 {LENSES[lens]}
 
-你看到的唯一材料是这个 claim 的"主张+证据"视图（提出者的推理与辩护被刻意隐藏）：
+你看到的唯一材料是这个 claim 的"主张+证据"视图（提出者的推理与辩护被刻意隐藏）。
+视图里的 `graveyard` 是已经死掉的假设，`other_live_predicts` 是其它存活假设各自预言的
+可观察量——提新假设时这两份是硬约束：新假设必须预言**没有人预言过**的量，并且
+`conflicts` 必须点名 graveyard 里至少一个 id：
 
 ```json
 {view_json}

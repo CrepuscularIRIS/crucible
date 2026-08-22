@@ -151,6 +151,17 @@ class Register:
             "kind": c["kind"],
             "state": c["state"],
             "claim": c["text"],
+            # graveyard 与其它 live 假设的 predicts 必须给攻击者看到：abduce 的两道
+            # 验证器（distinctness 要求预言别人没预言过的量；conflicts 要求点名
+            # graveyard）离开这两份材料就无法满足。不给却要求，等于让子代理必败。
+            "graveyard": [
+                {"id": g["id"], "state": g["state"], "text": g["text"]}
+                for g in self._graveyard()
+            ],
+            "other_live_predicts": {
+                cid: other["predicts"]
+                for cid, other in self._alive_claims().items() if cid != h
+            },
             "arbor4": {
                 k: c.get(k, "")
                 for k in ("mechanism", "hypothesis", "observable", "conflicts")
