@@ -1,11 +1,11 @@
 # 唯一权威计划 · Prime 原生优先，研究层做成 skill
 
-**本文取代并作废以下全部计划**：
-`2026-08-22-research-min-core.md`、`2026-08-22-phase1-integration-first.md`、
-`2026-08-22-hands-on-test-plan.md`、`HANDOFF-2026-08-22.md`、
-`ARCHITECTURE-DECISION-2026-08-22.md`。
-它们的**事实与审计结论**仍可查阅（尤其 `docs/reviews/2026-08-22-implementation-review.md`），
-但**执行顺序一律以本文为准**。
+**本文是唯一权威计划。** 此前的全部计划与上一版研究运行时已归档到
+`archive/2026-08-22-superseded/`（含 `research/` 整个目录与五份计划文档），
+**不再使用**；那里的 README 记下了重建时要带走的五条科学约束与三个教训。
+
+仍然有效、未归档：`docs/reviews/2026-08-22-implementation-review.md`（失败模式）、
+`docs/product/{Fable5,PrimeAgent}.md`（能力目标）。
 
 `docs/product/PrimeAgent.md` 与 `Fable5.md` 保留为**能力目标**，不是实现蓝图：
 只对齐面向用户与 agent 的能力，不复刻内部细节。
@@ -188,21 +188,14 @@ CLI 的每个非 daemon 模式都经由 daemon（`main.ts:224-227`），所以�
 
 ---
 
-## P1 · 删除旧研究层
+## P1 · 清掉旧研究层
 
-**两侧都删**（这是你的决定，我只记录范围）：
+**`research/` 已归档**到 `archive/2026-08-22-superseded/research/`（已完成）。
+那五条实测出来的科学约束与三个教训写在该目录的 README 里——
+**代码不再使用，约束带走**，重建时它们会变成 skill 的写法与 MCP 的接口。
 
-- `research/`（整个目录：5 个 skill、4 个 gate、容器、viewer、artifacts 脚本）
-- Proma 里的研究专用逻辑（P0 阶段梳理时逐个标出）
-
-**保留**：`docs/reviews/2026-08-22-implementation-review.md` 与本文——
-里面的**失败模式**是重建时最有价值的东西（尤其"四道 gate 曾对捏造的战役全绿"、
-以及三次 impossible-instructions）。
-
-**删除前先做一件事**：把旧实现里**经过实测的科学约束**摘成一页纸
-（互斥频段、先登记后执行、从原始文件重算、终态必须可追溯到落地 probe、
-攻击者必须看得到 graveyard）。**代码删掉，约束保留**——重建时它们会变成
-skill 的写法与 MCP 的接口。
+**还剩一件事**：Proma 里的研究专用逻辑（P0 阶段梳理时逐个标出并清掉）。
+判断标准：只服务于旧研究流程、与通用 agent 能力无关的代码。
 
 ---
 
