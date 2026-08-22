@@ -134,6 +134,7 @@ export function computeResidencyKey(parts: {
   additionalSkillPaths: string[]
   projectInstructionFiles: string[]
   projectScope?: string
+  autonomous?: string
 }): string {
   return [
     parts.provider,
@@ -146,6 +147,7 @@ export function computeResidencyKey(parts: {
     [...parts.additionalSkillPaths].sort().join('|'),
     [...parts.projectInstructionFiles].sort().join('|'),
     parts.projectScope ?? '',
+    parts.autonomous ?? '',
   ].join('§')
 }
 

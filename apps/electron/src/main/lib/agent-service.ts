@@ -31,7 +31,8 @@ import type {
   PromaPermissionMode,
   AgentExternalRunSource,
   AgentMessage,
-} from '@proma/shared'
+  AgentRefineNowResult,
+  AgentRefineState } from '@proma/shared'
 import { PiAgentAdapter } from './adapters/pi-agent-adapter'
 import { PiUtilityAdapter } from './adapters/pi-utility-adapter'
 import { AgentEventBus } from './agent-event-bus'
@@ -46,6 +47,8 @@ import { AgentStreamForwarder } from './agent-stream-forwarder'
 import { AgentQueueCoordinator } from './agent-queue-coordinator'
 
 // ===== 实例创建 =====
+
+import type { AgentProviderAdapter } from '@proma/shared'
 
 const eventBus = new AgentEventBus()
 const useUtilityAgentRuntime = process.env.PROMA_AGENT_RUNTIME !== 'in-process'
@@ -448,6 +451,24 @@ export async function generateAgentTitle(input: AgentGenerateTitleInput): Promis
 /**
  * 中止指定会话的 Agent 执行
  */
+/** Track B #3：手动触发会话 harness refine（UI 动作直达 session.refine()） */
+export async function refineAgentSession(sessionId: string): Promise<AgentRefineNowResult> {
+  const refineCapable = adapter as Partial<AgentProviderAdapter>
+  if (!refineCapable.refineNow) {
+    return { scheduled: false, reason: '当前运行时不支持 refine（utility 模式）' }
+  }
+  return refineCapable.refineNow(sessionId)
+}
+
+/** Track B #2：读取会话 refine 状态（harness_state.json / refinements.jsonl 摘要） */
+export function getAgentRefineState(sessionId: string): AgentRefineState {
+  const refineCapable = adapter as Partial<AgentProviderAdapter>
+  if (!refineCapable.getRefineState) {
+    return { resident: false, autoRefine: { enabled: false, turnInterval: 25 } }
+  }
+  return refineCapable.getRefineState(sessionId)
+}
+
 export function stopAgent(sessionId: string): void {
   orchestrator.stop(sessionId, agentQueueCoordinator.isDispatching(sessionId))
 }

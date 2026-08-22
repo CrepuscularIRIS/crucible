@@ -777,6 +777,8 @@ export interface AgentSessionMeta {
   stoppedByUser?: boolean
   /** 该会话当前的权限模式（持久化到磁盘，重启后恢复）。未设置时新会话默认 auto */
   permissionMode?: PromaPermissionMode
+  /** 研究模式：Prime autonomous 配置透传（Track B #4） */
+  autonomous?: AgentAutonomousPassthrough
   /** 来源定时任务 ID（该会话由定时任务自动创建/复用时标记，用于侧栏显示钟表图标 + 跳转设置） */
   sourceAutomationId?: string
   /**
@@ -1646,6 +1648,55 @@ export interface PermissionResponse {
   alwaysAllow: boolean
 }
 
+
+// ===== Prime auto-refine（Track B）=====
+
+/** harness_state.json / refinements.jsonl 里一条经验教训的摘要 */
+export interface AgentRefineEntrySummary {
+  /** 条目写入时间（ISO） */
+  ts: string
+  /** 条目类别：prompt / memory / skill / subagent */
+  kind: string
+  /** 内容摘要（截断） */
+  summary: string
+}
+
+/** 会话的 refine 状态（renderer 拉取，用于"经验已记录"提示） */
+export interface AgentRefineState {
+  /** 常驻会话是否在手（决定"立即提炼"可用性） */
+  resident: boolean
+  /** auto-refine 设置（会话内生效值） */
+  autoRefine: { enabled: boolean; turnInterval: number }
+  /** harness 目录摘要；undefined 表示尚无经验记录 */
+  harness?: {
+    /** 已记录条目数 */
+    entries: number
+    /** 最近一条时间 */
+    lastTs?: string
+    /** 最近若干条摘要 */
+    recent: AgentRefineEntrySummary[]
+  }
+}
+
+/** Prime autonomous 配置（研究模式会话透传给 createAgentSession；Track B #4） */
+export interface AgentAutonomousPassthrough {
+  /** 开关；关闭时不向 SDK 传 autonomous */
+  enabled: boolean
+  /** 宿主端门命令（如 python gates/*.py）；空数组=无门 */
+  gates: string[]
+  /** 连续注入上限（Prime 默认 3） */
+  maxContinuations?: number
+  /** 轮数上限（Prime 默认 12） */
+  maxTurns?: number
+}
+
+/** 手动"立即提炼"结果 */
+export interface AgentRefineNowResult {
+  scheduled: boolean
+  /** 未调度原因（会话未驻留等） */
+  reason?: string
+}
+
 // ===== IPC 通道常量 =====
 
 /**
@@ -1711,6 +1762,15 @@ export const AGENT_IPC_CHANNELS = {
   DELETE_WORKSPACE: 'agent:delete-workspace',
   /** 重排工作区顺序 */
   REORDER_WORKSPACES: 'agent:reorder-workspaces',
+
+  // Prime auto-refine（Track B）
+  /** 读取/更新会话的 autonomous 透传配置（研究模式） */
+  GET_SESSION_AUTONOMOUS: 'agent:get-session-autonomous',
+  UPDATE_SESSION_AUTONOMOUS: 'agent:update-session-autonomous',
+  /** 手动触发当前会话的 harness refine（session.refine()） */
+  REFINE_SESSION: 'agent:refine-session',
+  /** 读取会话 refine 状态（harness_state.json 摘要） */
+  GET_REFINE_STATE: 'agent:get-refine-state',
 
   // 标题生成
   /** 生成 Agent 会话标题 */

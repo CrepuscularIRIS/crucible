@@ -1468,6 +1468,9 @@ export class AgentOrchestrator {
       const piCustomTools = [...piBuiltinTools, ...piMcpTools, ...(extensions.piCustomTools ?? [])]
       const queryOptions: PiAgentQueryOptions = {
         sessionId,
+        // 研究模式：会话 meta 里的 Prime autonomous 配置透传（Track B #4）
+        // 常规会话无该字段即不传，产品信任姿态不变。
+        ...(sessionMeta?.autonomous?.enabled ? { autonomous: sessionMeta.autonomous } : {}),
         prompt: finalPrompt,
         // 旧持久化模型 ID 可能带 `[1m]` 上下文后缀；Pi runtime 不支持该变体：
         // 智谱等端点不识别 glm-5.2[1m] 这类后缀，会返回 1211「模型不存在」。

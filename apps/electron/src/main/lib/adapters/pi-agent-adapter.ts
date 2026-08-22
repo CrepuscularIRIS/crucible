@@ -78,6 +78,7 @@ import {
 } from './pi-message-adapter'
 import { DEFAULT_CONTEXT_WINDOW, buildModel } from './pi-model-registry'
 import { computeResidencyKey, ResidentSessionRegistry } from './pi-session-residency'
+import type { AgentRefineEntrySummary, AgentRefineNowResult, AgentRefineState } from '@proma/shared'
 import { PendingPromptSkillActivationTracker } from './pi-skill-activation-tracker'
 import { createPiRetryTerminalGate, mapPiNativeRetryEvent } from './pi-retry-control'
 import {
@@ -105,11 +106,31 @@ export interface PiResidentSession {
   resourceLoader: ResourceLoader
   model: Awaited<ReturnType<typeof buildModel>>['model']
   hooks: PiResidentHookSlots
+  /** Prime 写经验教训的 harness 目录（session-artifacts/<id>/harness） */
+  harnessDir: string
+  /** 会话内生效的 auto-refine 设置（只读摘要，供 UI 显示） */
+  autoRefine: { enabled: boolean; turnInterval: number }
   dispose(): void
 }
 
 /** 空闲多久后释放常驻会话；auto-refine 的轮数计数在驻留期间持续累计。 */
 const PI_RESIDENT_SESSION_IDLE_MS = 10 * 60_000
+
+/** 从 SettingsManager 安全读取 auto-refine 摘要（未配置时用 Prime 默认值）。 */
+function readAutoRefineSettings(
+  settingsManager: { getSettings?: () => unknown },
+): { enabled: boolean; turnInterval: number } {
+  try {
+    const raw = (settingsManager as { getSettings?: () => { autoRefine?: { enabled?: boolean; turnInterval?: number } } })
+      .getSettings?.()?.autoRefine
+    return {
+      enabled: raw?.enabled ?? true,
+      turnInterval: raw?.turnInterval ?? 25,
+    }
+  } catch {
+    return { enabled: true, turnInterval: 25 }
+  }
+}
 type BashOperations = import('@earendil-works/pi-coding-agent').BashOperations
 type BashToolOptions = import('@earendil-works/pi-coding-agent').BashToolOptions
 type SkillLoadResult = ReturnType<ResourceLoader['getSkills']>
@@ -137,6 +158,8 @@ export interface PiAgentQueryOptions extends AgentQueryInput {
   channelName?: string
   maxTurns?: number
   permissionMode: PromaPermissionMode
+  /** 研究模式：Prime autonomous 配置（Track B #4，透传给 createAgentSession） */
+  autonomous?: import('@proma/shared').AgentAutonomousPassthrough
   canUseTool?: (
     toolName: string,
     input: Record<string, unknown>,
@@ -1431,6 +1454,7 @@ export class PiAgentAdapter implements AgentProviderAdapter {
         systemPrompt: input.systemPrompt,
         additionalSkillPaths: input.additionalSkillPaths ?? [],
         projectInstructionFiles: (input.projectInstructionFiles ?? []).map((f) => `${f.path}#${f.content.length}`),
+        autonomous: input.autonomous ? `${input.autonomous.enabled}|${input.autonomous.gates.join('|')}|${input.autonomous.maxTurns ?? ''}|${input.autonomous.maxContinuations ?? ''}` : '',
         projectScope: input.projectInstructionScope
           ? `${input.projectInstructionScope.projectRoot}#${[...(input.projectInstructionScope.initialSources ?? [])].sort().join('|')}`
           : undefined,
@@ -1455,6 +1479,7 @@ export class PiAgentAdapter implements AgentProviderAdapter {
       resident.hooks.canUseTool = input.canUseTool
       const compactionRequestRef = resident.hooks.compactionRequestRef
       const { session, sessionManager, resourceLoader, model } = resident
+      this.#piSessionRoot = input.piSessionDir
       let pendingCompactionContinuation: string | undefined
       let automaticCompactionContinuations = 0
       let pendingTerminalResult: SDKMessage | undefined
@@ -2010,6 +2035,14 @@ export class PiAgentAdapter implements AgentProviderAdapter {
       thinkingLevel: input.thinkingLevel ?? 'off',
       noTools: 'builtin',
       customTools,
+      ...(input.autonomous?.enabled && {
+        autonomous: {
+          enabled: true,
+          ...(input.autonomous.gates.length > 0 && { gates: { commands: input.autonomous.gates } }),
+          ...(input.autonomous.maxContinuations != null && { maxContinuations: input.autonomous.maxContinuations }),
+          ...(input.autonomous.maxTurns != null && { maxTurns: input.autonomous.maxTurns }),
+        },
+      }),
     })
     session.agent.toolExecution = 'sequential'
     // Pi session artifact 可以来自旧版本，不能假设其历史 tool_result 已通过当前校验。
@@ -2071,6 +2104,8 @@ export class PiAgentAdapter implements AgentProviderAdapter {
     installRuntimeGuardHooks(session, () => hooks.runtimeGuard)
     installCurrentSessionCompactionHooks(session)
 
+    // Prime 的 session artifacts 与 sessions 目录同级：…/session-artifacts/<sdkSessionId>/harness
+    const harnessDir = join(dirname(input.piSessionDir), 'session-artifacts', session.sessionId, 'harness')
     const resident: PiResidentSession = {
       key: residencyKey,
       session,
@@ -2078,11 +2113,66 @@ export class PiAgentAdapter implements AgentProviderAdapter {
       resourceLoader,
       model,
       hooks,
+      harnessDir,
+      // settingsManager 未显式配置时沿用 Prime 默认值（见 prime refinement.ts）
+      autoRefine: readAutoRefineSettings(settingsManager as unknown as { getSettings?: () => unknown }),
       dispose: () => { session.dispose() },
     }
     this.residentSessions.install(input.sessionId, resident, owner)
     return resident
   }
+
+  /** Track B #3：手动"立即提炼"。/refine 斜杠命令仍被 shield，这里是 UI 动作直达。 */
+  async refineNow(sessionId: string): Promise<AgentRefineNowResult> {
+    const entry = this.residentSessions.get(sessionId)
+    const resident = entry?.session
+    if (!resident) {
+      return { scheduled: false, reason: '会话未驻留（发送一条消息后再试，或等待空闲超时后重建）' }
+    }
+    if (entry?.owner) {
+      return { scheduled: false, reason: '会话正在执行任务，请等本轮结束再提炼' }
+    }
+    await resident.session.refine()
+    return { scheduled: true }
+  }
+
+  /** Track B #2：读取 harness_state.json / refinements.jsonl 摘要，供"经验已记录"提示。 */
+  getRefineState(sessionId: string): AgentRefineState {
+    const resident = this.residentSessions.get(sessionId)?.session
+    const state: AgentRefineState = {
+      resident: resident != null,
+      autoRefine: resident?.autoRefine ?? { enabled: true, turnInterval: 25 },
+    }
+    const harnessDir = resident?.harnessDir
+      ?? (this.#piSessionRoot
+        ? join(dirname(this.#piSessionRoot), 'session-artifacts', sessionId, 'harness')
+        : '')
+    const refinements = join(harnessDir, 'refinements.jsonl')
+    if (!existsSync(refinements)) return state
+    const recent: AgentRefineEntrySummary[] = []
+    let count = 0
+    let lastTs: string | undefined
+    try {
+      const lines = readFileSync(refinements, 'utf-8').split('\n').filter(Boolean)
+      count = lines.length
+      for (const line of lines.slice(-5).reverse()) {
+        try {
+          const parsed = JSON.parse(line) as Record<string, unknown>
+          recent.push({
+            ts: typeof parsed.ts === 'string' ? parsed.ts : String(parsed.timestamp ?? ''),
+            kind: String(parsed.kind ?? parsed.type ?? 'unknown'),
+            summary: String(parsed.summary ?? parsed.instructions ?? parsed.content ?? '').slice(0, 120),
+          })
+          lastTs = recent[0]?.ts || lastTs
+        } catch { /* 跳过坏行 */ }
+      }
+    } catch { /* 读取失败按无记录处理 */ }
+    if (count > 0) state.harness = { entries: count, lastTs, recent }
+    return state
+  }
+
+  /** 最近一次 query 的 sessions 根目录，非驻留时用于拼 harness 兜底路径 */
+  #piSessionRoot = ''
 
   abort(sessionId: string): void {
     const active = this.activeSessions.get(sessionId)

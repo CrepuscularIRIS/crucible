@@ -22,6 +22,7 @@ import { AgentMessages, type AgentHistoryQuoteNavigationRequest } from './AgentM
 import { AgentHeader } from './AgentHeader'
 import { AgentMessageQueue } from './AgentMessageQueue'
 import { ContextUsageBadge } from './ContextUsageBadge'
+import { RefineBadge } from './RefineBadge'
 import { PermissionBanner } from './PermissionBanner'
 import { PermissionModeSelector } from './PermissionModeSelector'
 import { AskUserBanner } from './AskUserBanner'
@@ -2913,6 +2914,10 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
           onCompact={handleCompact}
         />
       ),
+    },
+    {
+      key: 'refine',
+      node: <RefineBadge sessionId={sessionId} streaming={streaming} />,
     },
   ], [
     planQuotaChannelId,

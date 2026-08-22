@@ -52,6 +52,8 @@ export interface AgentQueryInput {
  * 职责：接收查询输入，返回 SDKMessage 异步迭代流。
  * SDK 返回完整 JSON 对象（includePartialMessages: false），外部直接透传。
  */
+import type { AgentRefineNowResult, AgentRefineState } from './agent'
+
 export interface AgentProviderAdapter {
   /** 发起查询，返回 SDKMessage 异步迭代流 */
   query(input: AgentQueryInput): AsyncIterable<SDKMessage>
@@ -70,4 +72,8 @@ export interface AgentProviderAdapter {
   cancelQueuedMessage?(sessionId: string, messageUuid: string): Promise<void>
   /** 动态切换活跃查询的权限模式（可选，仅支持 SDK 原生 setPermissionMode 的 Provider） */
   setPermissionMode?(sessionId: string, mode: string): Promise<void>
+  /** 手动触发常驻会话的 harness refine（可选，Track B #3：UI 动作而非文本解析） */
+  refineNow?(sessionId: string): Promise<AgentRefineNowResult>
+  /** 读取会话 refine 状态（可选，Track B #2：harness_state.json 摘要） */
+  getRefineState?(sessionId: string): AgentRefineState
 }

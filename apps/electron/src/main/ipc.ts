@@ -155,7 +155,8 @@ import type {
   BrowserNavigateInput,
   BrowserTabInput,
   BrowserCreateTabInput,
-} from '@proma/shared'
+  AgentRefineNowResult,
+  AgentRefineState, AgentAutonomousPassthrough } from '@proma/shared'
 import type { UserProfile, AppSettings } from '../types'
 import { getRuntimeStatus, getGitRepoStatus, reinitializeRuntime } from './lib/runtime-init'
 import { browserController } from './lib/browser-controller'
@@ -282,7 +283,7 @@ import {
   searchAgentSessionMessages,
   searchAgentSessionReferences,
 } from './lib/agent-session-manager'
-import { runAgent, stopAgent, generateAgentTitle, saveFilesToAgentSession, saveFilesToWorkspaceFiles, isAgentSessionActive, isAgentSessionBusy, reserveAgentSessionStart, queueAgentMessage, enqueueAgentQueuedMessage, cancelAgentQueuedMessage, moveAgentQueuedMessage, clearAgentQueuedMessages, updateAgentPermissionMode, rewindAgentSession, setVisibleAgentSession } from './lib/agent-service'
+import { runAgent, stopAgent, generateAgentTitle, saveFilesToAgentSession, saveFilesToWorkspaceFiles, isAgentSessionActive, isAgentSessionBusy, reserveAgentSessionStart, queueAgentMessage, enqueueAgentQueuedMessage, cancelAgentQueuedMessage, moveAgentQueuedMessage, clearAgentQueuedMessages, updateAgentPermissionMode, rewindAgentSession, setVisibleAgentSession , refineAgentSession, getAgentRefineState } from './lib/agent-service'
 import { permissionService } from './lib/agent-permission-service'
 import { askUserService } from './lib/agent-ask-user-service'
 import { exitPlanService } from './lib/agent-exit-plan-service'
@@ -2247,6 +2248,34 @@ export function registerIpcHandlers(): void {
     AGENT_IPC_CHANNELS.GENERATE_TITLE,
     async (_, input: AgentGenerateTitleInput): Promise<string | null> => {
       return generateAgentTitle(input)
+    }
+  )
+
+  // 研究模式：会话 autonomous 配置读取/更新（Track B #4）
+  ipcMain.handle(
+    AGENT_IPC_CHANNELS.GET_SESSION_AUTONOMOUS,
+    (_, sessionId: string): AgentAutonomousPassthrough | null => {
+      return getAgentSessionMeta(sessionId)?.autonomous ?? null
+    }
+  )
+  ipcMain.handle(
+    AGENT_IPC_CHANNELS.UPDATE_SESSION_AUTONOMOUS,
+    (_, sessionId: string, config: AgentAutonomousPassthrough | null): void => {
+      updateAgentSessionMeta(sessionId, { autonomous: config ?? undefined })
+    }
+  )
+
+  // Prime auto-refine（Track B）：手动提炼 + 状态读取
+  ipcMain.handle(
+    AGENT_IPC_CHANNELS.REFINE_SESSION,
+    async (_, sessionId: string): Promise<AgentRefineNowResult> => {
+      return refineAgentSession(sessionId)
+    }
+  )
+  ipcMain.handle(
+    AGENT_IPC_CHANNELS.GET_REFINE_STATE,
+    (_, sessionId: string): AgentRefineState => {
+      return getAgentRefineState(sessionId)
     }
   )
 
