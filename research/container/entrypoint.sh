@@ -1,5 +1,5 @@
 #!/bin/bash
-# 战役入口：起 pi print-mode autonomous 会话，三道 gate 只读挂载在 /gates。
+# 战役入口：起 pi print-mode autonomous 会话，四道 gate 只读挂载在 /gates。
 set -euo pipefail
 
 : "${DASHSCOPE_API_KEY:?需要 DASHSCOPE_API_KEY（run.sh 从 ClawUI/.env 注入）}"

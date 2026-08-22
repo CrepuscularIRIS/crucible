@@ -306,3 +306,39 @@ def test_recompute_implementations_agree(landed_run):
     (run_dir / "results" / pid / "raw" / "eval.log").write_text("mean=0.6465\n", encoding="utf-8")
     spec_re = {"kind": "regex", "file": "eval.log", "pattern": r"mean=([0-9.]+)", "group": 1}
     assert recompute_metric(spec_re, raw) == run_spec(spec_re, raw)
+
+
+def test_reconcile_allows_honest_enumeration_of_unprobed_claim(landed_run):
+    """如实列出还活着的竞争假设不该被拒——藏起来才是 ARFT 的 E.2/D.7。"""
+    run_dir, h1, h2, pid, metric = landed_run
+    from register import Register
+
+    R = Register(str(run_dir))
+    h3 = R.abduce("混合总体解释", "mechanism", predicts=["双峰性 > 0.3"],
+                  conflicts=f"与 {h2} 不同：它讲位置，本假设讲混合比例")
+    _write_report(run_dir, metric, h1, h2,
+                  verdicts=[(h1, "LIVE"), (h2, "REFUTED"), (h3, "LIVE")])
+    text = (run_dir / "report.md").read_text(encoding="utf-8")
+    (run_dir / "report.md").write_text(
+        text.replace("# 报告", f"# 报告\n\n## 假设\n\n- {h3}: 混合总体解释（尚未检验）\n"),
+        encoding="utf-8")
+    code, out = run_gate("reconcile", run_dir)
+    assert code == 0, out
+
+
+def test_reconcile_still_refuses_unbacked_claim_next_to_a_measurement(landed_run):
+    """但把未检验的假设摆在测量值旁边，就是在拿它当证据——必须拒。"""
+    run_dir, h1, h2, pid, metric = landed_run
+    from register import Register
+
+    R = Register(str(run_dir))
+    h3 = R.abduce("混合总体解释", "mechanism", predicts=["双峰性 > 0.3"],
+                  conflicts=f"与 {h2} 不同：它讲位置，本假设讲混合比例")
+    _write_report(run_dir, metric, h1, h2,
+                  verdicts=[(h1, "LIVE"), (h2, "REFUTED"), (h3, "LIVE")])
+    text = (run_dir / "report.md").read_text(encoding="utf-8")
+    (run_dir / "report.md").write_text(
+        text + f"\n{h3} 得到支持：实测均值 {metric:.6f} ({pid}) 与之一致。\n", encoding="utf-8")
+    code, out = run_gate("reconcile", run_dir)
+    assert code == 1, out
+    assert h3 in out

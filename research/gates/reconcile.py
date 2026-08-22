@@ -25,6 +25,7 @@ BAND_EXPR = re.compile(r"\[\s*-?\d+(?:\.\d+)?\s*[,，]\s*-?\d+(?:\.\d+)?\s*\]")
 # 逃生口。必须模型主动标记，因此可审计——比"括号里的数字大概不是结果"这种隐式
 # 启发式安全得多。
 CODE_SPAN = re.compile(r"`[^`\n]*`")
+HEADLINE_SECTION = re.compile(r"^##\s*核心结论\s*$(.*?)(?=^##\s|\Z)", re.MULTILINE | re.DOTALL)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -65,11 +66,28 @@ def main(run_dir: str) -> int:
     claims = reg.get("claims", {})
     probes = reg.get("probes", {})
 
-    # 1) 引用的 claim 必须存在且有 artifact（verdict 行除外，见 strip_verdict_lines）
+    # 1) 报告里出现的 claim 必须存在；**且只在证据性语境里**才要求它有 artifact。
+    #
+    # 证据性语境 = 与某个 (P#) 出处同行（把假设摆在测量值旁边，就是在声称该测量
+    # 与它有关）。单纯罗列存活假设不是证据性断言——恰恰相反，如实列出还活着的
+    # 竞争解释正是我们要的（藏起来才是 ARFT 里的 E.2 过度断言 / D.7 未处理的对抗）。
+    # 早先"报告里任何 H# 都必须有 artifact"会逼模型把 grill 刚生成的替代假设从
+    # 报告里删掉，方向正好反了。真正要挡的"拿未检验假设当结论"由 review 的
+    # headline 规则挡住，且 integrity 已保证终态可追溯。
+    evidential_hids: set[str] = set()
+    for line in text.splitlines():
+        if CITED.search(line):
+            evidential_hids.update(HID.findall(line))
+    headline = HEADLINE_SECTION.search(text)
+    if headline:
+        evidential_hids.update(HID.findall(headline.group(1)))
+
     for hid in sorted(set(HID.findall(strip_verdict_lines(text)))):
         c = claims.get(hid)
         if c is None:
             refusals.append(f"报告引用了不存在的 claim {hid}")
+            continue
+        if hid not in evidential_hids:
             continue
         has_artifact = any(
             p.get("claim") == hid and p.get("state") in ("LANDED", "TRIAGE")
