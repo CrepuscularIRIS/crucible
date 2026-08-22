@@ -58,6 +58,33 @@ Proma 有 `skill_activations` 字段，UI 也会显示。它的数据来自两�
 
 这条要记住：**它不是没实现，是实现了但不可达**——正是最难发现的那一类。
 
+### 重要更正：模型**能**自己发现并使用 skill，只是你看不见
+
+我一开始判断"模型自己选用 skill 这条路是断的"，**这是错的**，更正如下：
+
+Prime 的 `system-prompt.ts:85-89` 在自定义 prompt 分支下仍会注入
+`<available_skills>`，**条件是 active 工具里有 `ipython` 或 `bash`**。
+Proma 恰好把 Prime 自己的 `createBashToolDefinition` 注册成了 customTool
+（`pi-agent-adapter.ts:1311-1312`，工具名字面就是 `"bash"`）——**条件成立**。
+
+所以模型确实看得到一份 `<available_skills>` 清单（name/type/description/location），
+也能用 `bash cat` 自己打开任意一个。**这条路是活的（Linux/macOS 上）。**
+
+于是真正的状况是：**模型在用 skill，只是 UI 一次都没显示过。**
+"没有 chip"不等于"没用 skill"——这比我先前说的更糟，因为它让人以为 skill 没生效。
+
+三个附带缺陷：
+1. 注入的说明文字让模型"用 ipython 打开 skill 文件"（`skills.ts:459`），
+   而 ipython 在 Proma 里是关的——模型只能自己猜要用 `bash`。
+2. **Windows 上没有 Git Bash / WSL 时**，`bash` 注册不上，
+   `<available_skills>` **整块静默消失**，且没有任何提示。
+3. `#` 提及 skill 时会注入一个**不存在的工具名**
+   `proma-workspace-{slug}:{slug}`（`agent-orchestrator.ts:1040-1045`）。
+
+**另一处更正**：丢掉 Prime 自带 13 个 skill 的是 `noSkills: true`
+（`pi-resource-loader-overrides.ts:18` → `resource-loader.ts:437-439`），
+不是 `skillsOverride`——后者是重复的第二道防线。结果一样，机制不同。
+
 ---
 
 ## 3 · 目标形态：把路径 A 的确定性部分搬到 MCP
@@ -145,6 +172,29 @@ skill 展示给模型。
 **在 UI 里本来就会显示**，还经过了权限包装。代价是 Prime 侧的 MCP 特性
 （builtin MCP catalog、OAuth provider 注册）用不上——目前不影响。
 
+**但有一个必须先修的真 bug（直接影响你的 MCP 架构）**：
+`buildMcpServers` 给**每一个** server 硬写 `required: false`
+（`agent-orchestrator.ts:285`、`:293`，用户无法覆盖）。这会走到
+`listOptionalMcpTools`（`pi-mcp-tools.ts:487-488`），它把连接过程和
+**500 毫秒**赛跑（`OPTIONAL_MCP_BOOTSTRAP_TIMEOUT_MS`，`:24`），超时就返回空列表。
+
+`npx` 起的 stdio server **不可能**在 500ms 内连上。后果：
+**每个会话的第一条消息，模型看不到任何用户 MCP 工具，而且是静默的**
+（只有一行 `console.info`）。UI 里配的 30 秒 `startup_timeout_sec`
+在决定"工具出不出现"的这条路上被完全绕开了。
+
+后续轮次因为连接池已经热了才正常。**如果确定性操作要走 MCP，这条必须先修。**
+
+MCP 侧另外两处：
+- **"测试连接"是假的**（`mcp-validator.ts:35-104`）：stdio 只做 `existsSync`/`which`，
+  http/sse 只做 `new URL()` 就返回——**从不连接**。绿色的"连接正常"只证明 URL 能解析。
+- **`chrome-devtools` 内置 MCP 是死代码**：`injectChromeDevtoolsMcpServer`
+  （`builtin-mcp/chrome-devtools.ts:28-56`）**全仓零调用点**，却带着开关、
+  绿色"可用"徽章、详情页和 10 个根本不存在的工具。
+- 另外 43 个 `mcp__*` 工具（planning 25 / collaboration 10 / automation 6 /
+  nano_banana 1 / feishu 1）**根本不是 MCP**，是本地 TS 函数借用了前缀，
+  好让 plan 模式的权限正则统一处理。功能正常，但命名会误导。
+
 **结论：你要的"skill + MCP + TS gate"里，MCP 这条腿已经建好了。**
 研究用的确定性操作（register 状态迁移、probe 执行）搬成 MCP server 之后，
 会自动获得"调用可见、有权限、可拒绝"这三个属性——这正是路径 A 缺的。
@@ -175,7 +225,8 @@ Python 侧 `run(prompt, **kwargs)` 照单全收并透传，真正的契约在 TS
 
 | # | 做什么 | 规模 | 为什么排这个序 |
 |---|---|---|---|
-| 1 | **修 skill 可见性** | 小 | 你的头号诉求；现在是"实现了但不可达"的死代码。需要一个**真实的 skill 激活事件源**替代 `Read` 扫描——先查 Prime 有没有现成事件，没有就在 MCP/工具层面标记 |
+| 0 | **修 MCP 首轮空窗** | 极小 | `required:false` 硬编码 + 500ms → 每个会话第一条消息看不到任何 MCP 工具。你的架构以 MCP 为核心，这条最先修 |
+| 1 | **修 skill 可见性** | 小 | 你的头号诉求。注意：模型**已经在用** skill（`<available_skills>` 是活的），只是 UI 一次都没显示过——所以这不是"加个功能"，是"补上一个本该有的事件源"。`Read` 扫描那条路在 Prime 下永远不触发，要换成真实激活信号 |
 | 2 | **删 autonomous IPC 两个 handler** | 极小 | 零调用者、零校验、`shell:true` 落宿主 |
 | 3 | **决定 `PROMA_AGENT_RUNTIME` 默认值** | 小 | 默认 utility adapter 让驻留与 auto-refine 全部空转。要么改默认，要么把驻留/refine 标为"仅 in-process 可用"并从 UI 撤掉 |
 | 4 | **修 refine 徽章数据源** | 小 | 现在读的文件 Prime 在 local scope 从不写，永远显示"尚无经验记录" |
@@ -205,12 +256,26 @@ skill + MCP + gate；MCP 已经能提供确定性操作且可见可控。
 
 ## 5 · 待删除 / 旁路的重复逻辑（审计结论落地后确认）
 
-已确证可删：
+已确证可删（全部零调用者或永不可达）：
 
 - **autonomous IPC 两个 handler**（`ipc.ts:2261`）——零调用者、零校验，
   且 `gates` 最终以 `shell:true` 在宿主执行。先删，等有真实调用方再按白名单重做。
 - **`collectSuccessfulSkillReadActivations` 的 Read 分支**——在 Prime 下永不触发，
   要么换成真实的 skill 激活事件源，要么删掉，不要留着假装有覆盖。
+- **`chrome-devtools` 内置 MCP 整套**——`injectChromeDevtoolsMcpServer` 零调用点，
+  却对用户展示绿色"可用"与 10 个不存在的工具。要么接上，要么整套摘掉。
+- **`validateMcpServers`（复数版）**（`mcp-validator.ts:136`）零调用者；
+  **`buildPromaCloudTools`**（`pi-builtin-tools.ts:1079-1087`）直接 `return []`。
+- **`SkillMeta.icon`**——解析、定型、传输，最后 `SkillCard.tsx:42-43` 硬编码
+  `Sparkles` 从不渲染。端到端的装饰品。
+- **`skill_enabled`/`skill_disabled` toast**——生产者只会发 `enabled: true`
+  （`capabilities-diff.ts:57-58`），另一半永不可达。
+
+**"插件"这一项：Proma 没有面向用户的插件/扩展系统**（`noExtensions: true`，
+`pi-resource-loader-overrides.ts:17`）。Prime 那套 34 事件的 ExtensionAPI 只被
+4 个编译进程序的内部工厂用着（都是 provider/prompt 适配器，没有一个注册工具）。
+Chat 模式的自定义 HTTP 工具是**真的**用户扩展机制，但**完全没有接到 Agent**——
+只有 `chat-service.ts:31` 消费它。要不要打通是个产品决定。
 
 待审计确认：refine 徽章数据源、Track B 其余部分的去留。
 
