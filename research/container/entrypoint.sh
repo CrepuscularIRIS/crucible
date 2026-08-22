@@ -11,6 +11,12 @@ if [ ! -f "$GOAL_FILE" ]; then
 fi
 GOAL="$(cat "$GOAL_FILE")"
 
+# 以宿主 UID 运行（compose run --user）时，/root 不可写：把烘焙好的 prime 配置搬到可写 HOME
+if [ "$(id -u)" != "0" ] && [ ! -d "$HOME/.prime" ]; then
+  mkdir -p "$HOME"
+  cp -r /root/.prime "$HOME/.prime"
+fi
+export PYTHONPYCACHEPREFIX=/tmp/pycache
 mkdir -p /work/artifacts /work/worktrees
 cd /work
 

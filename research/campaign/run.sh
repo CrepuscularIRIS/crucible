@@ -31,10 +31,12 @@ set +e
 timeout "${RUN_TIMEOUT:-0}" true 2>/dev/null || true
 COMPOSE="docker compose -f $ROOT/container/compose.yaml"
 RUN_V=(-v "$CRUCIBLE_ART_DIR:/work/artifacts" -v "$CRUCIBLE_CASE_DIR:/work/case" -v "$GOAL_FILE:/work/goal.md:ro")
+# 以当前宿主用户身份运行容器：产物属主正确，宿主 gate/tar 不再需要 sudo
+RUN_USER=(-u "$(id -u):$(id -g)")
 if [ "${RUN_TIMEOUT:-0}" = "0" ]; then
-  $COMPOSE run --rm "${RUN_V[@]}" campaign 2>&1 | tee "$ART/container.log"
+  $COMPOSE run --rm "${RUN_USER[@]}" "${RUN_V[@]}" campaign 2>&1 | tee "$ART/container.log"
 else
-  timeout "${RUN_TIMEOUT}" $COMPOSE run --rm "${RUN_V[@]}" campaign 2>&1 | tee "$ART/container.log"
+  timeout "${RUN_TIMEOUT}" $COMPOSE run --rm "${RUN_USER[@]}" "${RUN_V[@]}" campaign 2>&1 | tee "$ART/container.log"
 fi
 CONTAINER_EXIT="${PIPESTATUS[0]}"
 set -e

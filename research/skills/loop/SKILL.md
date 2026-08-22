@@ -50,11 +50,16 @@ references 按需读（`LOAD WHEN:` 纪律保留）：
 `claim-ledger.md`（novelty 机器）· `six-question-screen.md`（候选筛选）·
 `phenomenon-catalogue.md`（找 case 时）· 其余按文件名。
 
-## 报告纪律（review/reconcile gate 的机械要求）
+## 报告纪律（review/reconcile gate 的机械要求——格式即门，逐字遵守）
 
 - 每个小数必须同行带 `(P#)` 出处，数值 = gate 从原始文件重算的结果。
-- `## 评审` 段：每个 claim 一行 `H#: <状态>`，与 register 一致。
-- `## 核心结论` 段：只允许 SUPPORTED / ARTIFACT 进 headline；CONTESTED/未决/被杀一律不得出现。
+  逐字样例：`实验测得均值 0.6465 (P2)，落在频段 [0.60, 0.70]。`
+  （小数后面**紧跟** `(P2)`；频段数字以外的每个小数都要这样标注）
+- `## 评审` 段：register 中每个 claim 恰好一行，逐字样例：
+  `- H1: SUPPORTED`
+  `- H2: REFUTED`
+  （状态词只能是 LIVE/DEMOTED/SCOPED/CONTESTED/REFUTED/ARTIFACT/SUPPORTED，与 register 完全一致）
+- `## 核心结论` 段：只允许状态为 SUPPORTED / ARTIFACT 的 claim 出现；其余一律不得进入。
 - 诚实边界写进报告：grill 子代理是 prompt-blinded 而非结构隔离；auto-refine 只存过程性经验。
 
 ## 失败处理
