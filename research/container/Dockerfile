@@ -28,10 +28,10 @@ RUN uv venv /opt/kernel-venv --python 3.11 \
        -e /opt/crucible-skills/grill \
        -e /opt/crucible-skills/figure
 
-# prime 配置：apiKey 只写环境变量名，值由运行时注入，密钥永不进镜像
-RUN mkdir -p /root/.prime/agent
-COPY prime-config/models.json /root/.prime/agent/models.json
-COPY prime-config/settings.json /root/.prime/agent/settings.json
+# prime 配置：apiKey 只写环境变量名，值由运行时注入，密钥永不进镜像。
+# 放在全局可读的 /opt/prime-config，由 entrypoint 拷进（可能是非 root 的）$HOME。
+COPY prime-config /opt/prime-config
+RUN chmod -R a+rX /opt/prime-config
 
 ENV PRIME_AGENT_KERNEL_PYTHON=/opt/kernel-venv/bin/python \
     CRUCIBLE_RUN_DIR=/work/artifacts \
@@ -39,6 +39,8 @@ ENV PRIME_AGENT_KERNEL_PYTHON=/opt/kernel-venv/bin/python \
     CRUCIBLE_WORKTREE_ROOT=/work/worktrees \
     PYTHONUNBUFFERED=1
 
+# /work 下的挂载点由 compose 注入；worktrees 是镜像层目录，非 root 运行需预建并放开
+RUN mkdir -p /work/worktrees /work/artifacts && chmod 777 /work /work/worktrees /work/artifacts
 WORKDIR /work
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

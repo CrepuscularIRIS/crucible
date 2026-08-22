@@ -11,10 +11,15 @@ if [ ! -f "$GOAL_FILE" ]; then
 fi
 GOAL="$(cat "$GOAL_FILE")"
 
-# 以宿主 UID 运行（compose run --user）时，/root 不可写：把烘焙好的 prime 配置搬到可写 HOME
-if [ "$(id -u)" != "0" ] && [ ! -d "$HOME/.prime" ]; then
+# 以宿主 UID 运行（compose run --user）时，docker 不会为任意 UID 设 HOME；
+# 显式钉一个可写 HOME，并把烘焙好的 prime 配置拷进去（否则 models.json 读不到）。
+if [ "$(id -u)" != "0" ]; then
+  export HOME="${PRIME_HOME:-/tmp/prime-home}"
   mkdir -p "$HOME"
-  cp -r /root/.prime "$HOME/.prime"
+  if [ ! -d "$HOME/.prime/agent" ]; then
+    mkdir -p "$HOME/.prime/agent"
+    cp /opt/prime-config/*.json "$HOME/.prime/agent/"
+  fi
 fi
 export PYTHONPYCACHEPREFIX=/tmp/pycache
 mkdir -p /work/artifacts /work/worktrees
