@@ -1,0 +1,36 @@
+{
+  "说明": "本项目依赖的 Claude Code 插件版本。升级前先看 docs/PLUGIN-ALIGNMENT.md；对不上就是环境漂了，MUST NOT 直接改这里对付过去。",
+  "plugins": {
+    "i-have-adhd@i-have-adhd": {
+      "version": "0.1.0",
+      "gitCommitSha": "16a42a01f7783e29db8557dfc46226baf8015618"
+    },
+    "ponytail@ponytail": {
+      "version": "4.9.0",
+      "gitCommitSha": "2ed6c52c9d7e5e56942508591085fd45dea277d3"
+    },
+    "nature-skills@nature-skills": {
+      "version": "1.0.0",
+      "gitCommitSha": "1562ab71e5aec0b313f5311130438ba04c7830c9"
+    },
+    "paper-forge@paper-forge": {
+      "version": "0.1.0",
+      "gitCommitSha": "fea8876a1653cda4f0891e94db26b2e284402711"
+    },
+    "grilling-science@grilling-science": {
+      "version": "0.1.0",
+      "gitCommitSha": "fea8876a1653cda4f0891e94db26b2e284402711"
+    },
+    "agent-browser@agent-browser": {
+      "version": "548b159b30ee",
+      "gitCommitSha": "548b159b30eef119ccf6846c8bc807d0eaa3f6f8"
+    }
+  },
+  "flags": {
+    "~/.claude/.i-have-adhd-always": "ADHD 常开（本项目要求）",
+    "~/.claude/.crucible-always": "科研纪律常开（本插件自带钩子）"
+  },
+  "cli": {
+    "skills": "npm i -g skills（vercel-labs/skills，find skills 用）"
+  }
+}

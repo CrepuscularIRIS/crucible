@@ -1,0 +1,19 @@
+Source: https://github.com/mattpocock/skills (MIT)
+Installed paths: skills/productivity/grill-me + grilling
+Only these two skills; not the full mattpocock plugin.
+
+LOCAL FORK — grilling/SKILL.md has diverged from upstream. Do NOT overwrite it
+by re-copying from mattpocock. Added locally (2026-08-12):
+
+  - Round 0: research the field's own elicitation protocol before asking anything
+    (regulators / professional bodies / standards / practitioner playbooks;
+    never a blog's "10 questions to ask").
+  - Fact vs decision split made explicit, with ChatGPT web (playwright-extension)
+    named as the channel for world facts — selectors and poll loop included.
+  - The two opposite directions of "I don't know": answered -> dig deeper;
+    couldn't answer -> fall back on industry standard and mark it.
+  - Provenance tags HUMAN_CONFIRMED / AUTHORITATIVE / INFERRED, and the rule that
+    nothing critical may still be INFERRED when the frontier is declared empty.
+
+Upstream's design-tree + frontier + round structure is kept verbatim.
+grill-me/SKILL.md is unchanged from upstream.
