@@ -11,7 +11,6 @@ export interface CapabilityChange {
     | 'skill_added'
     | 'skill_removed'
     | 'skill_enabled'
-    | 'skill_disabled'
   /** 变化对象名称 */
   name: string
 }
@@ -55,7 +54,12 @@ export function diffCapabilities(
     if (!prevSkill) {
       changes.push({ type: 'skill_added', name: skill.name })
     } else if (prevSkill.enabled !== skill.enabled) {
-      changes.push({ type: skill.enabled ? 'skill_enabled' : 'skill_disabled', name: skill.name })
+      // 实际禁用路径会把 skill 移入 skills-inactive/，在快照里表现为
+      // skill_removed；快照内的 true→false 翻转不会发生，也不再保留
+      // 专门的 skill_disabled 事件。
+      if (skill.enabled) {
+        changes.push({ type: 'skill_enabled', name: skill.name })
+      }
     }
   }
   for (const [slug] of prevSkillMap) {

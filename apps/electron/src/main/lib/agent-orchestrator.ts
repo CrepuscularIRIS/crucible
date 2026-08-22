@@ -282,7 +282,7 @@ export class AgentOrchestrator {
           command: entry.command,
           ...(entry.args && entry.args.length > 0 && { args: entry.args }),
           ...(Object.keys(mergedEnv).length > 0 && { env: mergedEnv }),
-          required: false,
+          required: entry.required === true,
           startup_timeout_sec: entry.timeout ?? 30,
         }
       } else if ((type === 'http' || type === 'sse') && entry.url) {
@@ -290,7 +290,8 @@ export class AgentOrchestrator {
           type,
           url: entry.url,
           ...(entry.headers && Object.keys(entry.headers).length > 0 && { headers: entry.headers }),
-          required: false,
+          required: entry.required === true,
+          ...(entry.timeout != null && { startup_timeout_sec: entry.timeout }),
         }
       } else {
         console.warn(`[Agent 编排] MCP 服务器 "${name}" 配置不完整，已跳过（type=${entry.type}, command=${entry.command ?? '无'}, url=${entry.url ?? '无'}）`)
@@ -1036,12 +1037,12 @@ export class AgentOrchestrator {
         console.log(`[Agent 编排] 注入 referenced_sessions: ${mentionedSessionIds?.length ?? 0} sessions`)
       }
       if (mentionedSkills?.length || mentionedMcpServers?.length) {
-        const toolLines: string[] = ['用户在消息中明确引用了以下工具，请在本次回复中主动调用：']
+        const toolLines: string[] = ['用户在消息中明确引用了以下工具，请在本次回复中主动使用：']
         for (const slug of mentionedSkills ?? []) {
-          const qualifiedName = workspaceSlug
-            ? `proma-workspace-${workspaceSlug}:${slug}`
-            : slug
-          toolLines.push(`- Skill: ${qualifiedName}（请立即调用此 Skill）`)
+          // skill 正文已由 skillMentions 展开进消息；这里不能伪造
+          // `proma-workspace-<slug>:<slug>` 这种不存在的工具名——
+          // Prime 运行时里没有这个名字的 tool，模型会试图调用然后失败。
+          toolLines.push(`- Skill: ${slug}（内容已展开在消息中，请按其指令执行）`)
         }
         for (const name of mentionedMcpServers ?? []) {
           toolLines.push(`- MCP 服务器: ${name}（请使用此 MCP 服务器的工具来完成任务）`)
@@ -1147,13 +1148,6 @@ export class AgentOrchestrator {
       const DEFERRED_OR_PROACTIVE_TOOLS = new Set([
         'REPL', 'Workflow', 'ScheduleWakeup', 'Monitor', 'PushNotification',
         'CronCreate', 'CronDelete', 'RemoteTrigger',
-      ])
-      const PLAN_MODE_READ_ONLY_CHROME_DEVTOOLS = new Set([
-        'mcp__chrome_devtools__list_pages',
-        'mcp__chrome_devtools__take_snapshot',
-        'mcp__chrome_devtools__take_screenshot',
-        'mcp__chrome_devtools__list_network_requests',
-        'mcp__chrome_devtools__performance_stop_trace',
       ])
       // Planning 是本地用户数据：计划模式只允许查询，严禁创建、更新、删除或确认/推迟提醒。
       const PLAN_MODE_READ_ONLY_PLANNING_TOOLS = new Set([
@@ -1321,13 +1315,6 @@ export class AgentOrchestrator {
               }
               return { behavior: 'deny' as const, message: '计划模式下不允许执行写操作，请在计划审批通过后再执行' }
             }
-            // Chrome DevTools MCP 同时包含只读观察和会改变页面状态的操作。
-            // 计划模式只允许快照、截图、网络列表等调研工具；点击、输入、脚本执行等需等计划通过。
-            if (toolName.startsWith('mcp__chrome_devtools__')) {
-              return PLAN_MODE_READ_ONLY_CHROME_DEVTOOLS.has(toolName)
-                ? { behavior: 'allow' as const, updatedInput: input }
-                : { behavior: 'deny' as const, message: '计划模式下不允许执行会改变浏览器页面状态的 Chrome DevTools 操作，请在计划审批通过后再执行' }
-            }
             if (toolName.startsWith('mcp__planning__')) {
               return PLAN_MODE_READ_ONLY_PLANNING_TOOLS.has(toolName)
                 ? { behavior: 'allow' as const, updatedInput: input }
@@ -1468,9 +1455,6 @@ export class AgentOrchestrator {
       const piCustomTools = [...piBuiltinTools, ...piMcpTools, ...(extensions.piCustomTools ?? [])]
       const queryOptions: PiAgentQueryOptions = {
         sessionId,
-        // 研究模式：会话 meta 里的 Prime autonomous 配置透传（Track B #4）
-        // 常规会话无该字段即不传，产品信任姿态不变。
-        ...(sessionMeta?.autonomous?.enabled ? { autonomous: sessionMeta.autonomous } : {}),
         prompt: finalPrompt,
         // 旧持久化模型 ID 可能带 `[1m]` 上下文后缀；Pi runtime 不支持该变体：
         // 智谱等端点不识别 glm-5.2[1m] 这类后缀，会返回 1211「模型不存在」。
@@ -2267,12 +2251,10 @@ export class AgentOrchestrator {
       enrichedText = `${referencedSessionsBlock}\n\n${enrichedText}`
     }
     if (mentionedSkills?.length || mentionedMcpServers?.length) {
-      const toolLines: string[] = ['用户在消息中明确引用了以下工具，请在本次回复中主动调用：']
+      const toolLines: string[] = ['用户在消息中明确引用了以下工具，请在本次回复中主动使用：']
       for (const slug of mentionedSkills ?? []) {
-        const qualifiedName = workspaceSlug
-          ? `proma-workspace-${workspaceSlug}:${slug}`
-          : slug
-        toolLines.push(`- Skill: ${qualifiedName}（请立即调用此 Skill）`)
+        // 同首条消息路径：不伪造不存在的工具名，skill 正文已由 skillMentions 展开
+        toolLines.push(`- Skill: ${slug}（内容已展开在消息中，请按其指令执行）`)
       }
       for (const name of mentionedMcpServers ?? []) {
         toolLines.push(`- MCP 服务器: ${name}（请使用此 MCP 服务器的工具来完成任务）`)

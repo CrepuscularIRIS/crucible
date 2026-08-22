@@ -51,8 +51,10 @@ import { AgentQueueCoordinator } from './agent-queue-coordinator'
 import type { AgentProviderAdapter } from '@proma/shared'
 
 const eventBus = new AgentEventBus()
-const useUtilityAgentRuntime = process.env.PROMA_AGENT_RUNTIME !== 'in-process'
-  && process.env.PROMA_AGENT_RUNTIME !== 'off'
+// P0.5：默认 in-process。RLM 需要常驻 kernel——utility 模式每条消息 fork 一个
+// 进程并在收尾 kill，kernel 与 auto-refine 的跨消息状态每条消息都会被清掉，
+// 驻留/refine 在默认配置下全部空转。需要进程隔离时显式设 PROMA_AGENT_RUNTIME=utility。
+const useUtilityAgentRuntime = process.env.PROMA_AGENT_RUNTIME === 'utility'
 const adapter = useUtilityAgentRuntime ? new PiUtilityAdapter() : new PiAgentAdapter()
 const orchestrator = new AgentOrchestrator(adapter, eventBus)
 

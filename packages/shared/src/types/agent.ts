@@ -777,8 +777,6 @@ export interface AgentSessionMeta {
   stoppedByUser?: boolean
   /** 该会话当前的权限模式（持久化到磁盘，重启后恢复）。未设置时新会话默认 auto */
   permissionMode?: PromaPermissionMode
-  /** 研究模式：Prime autonomous 配置透传（Track B #4） */
-  autonomous?: AgentAutonomousPassthrough
   /** 来源定时任务 ID（该会话由定时任务自动创建/复用时标记，用于侧栏显示钟表图标 + 跳转设置） */
   sourceAutomationId?: string
   /**
@@ -944,6 +942,11 @@ export interface McpServerEntry {
   headers?: Record<string, string>
   /** 启动超时（秒），仅 stdio 类型有效，默认 30 */
   timeout?: number
+  /**
+   * 是否为必需服务器（默认 false）：true 时连接失败会让会话启动报错，
+   * 而不是静默跳过该服务器的工具。适用于任务强依赖的 MCP。
+   */
+  required?: boolean
   /** 是否启用 */
   enabled: boolean
   /** 是否为内置 MCP（不可删除，仅可配置 env） */
@@ -1001,7 +1004,6 @@ export interface SkillMeta {
   description?: string
   /** UI 分组名，用于把 Proma 内嵌 Skills 收拢到同一组 */
   group?: string
-  icon?: string
   version?: string
   enabled: boolean
   /** 如果此 Skill 是从其他工作区导入的，则携带来源信息 */
@@ -1678,18 +1680,6 @@ export interface AgentRefineState {
   }
 }
 
-/** Prime autonomous 配置（研究模式会话透传给 createAgentSession；Track B #4） */
-export interface AgentAutonomousPassthrough {
-  /** 开关；关闭时不向 SDK 传 autonomous */
-  enabled: boolean
-  /** 宿主端门命令（如 python gates/*.py）；空数组=无门 */
-  gates: string[]
-  /** 连续注入上限（Prime 默认 3） */
-  maxContinuations?: number
-  /** 轮数上限（Prime 默认 12） */
-  maxTurns?: number
-}
-
 /** 手动"立即提炼"结果 */
 export interface AgentRefineNowResult {
   scheduled: boolean
@@ -1771,10 +1761,6 @@ export const AGENT_IPC_CHANNELS = {
   /** 重排工作区顺序 */
   REORDER_WORKSPACES: 'agent:reorder-workspaces',
 
-  // Prime auto-refine（Track B）
-  /** 读取/更新会话的 autonomous 透传配置（研究模式） */
-  GET_SESSION_AUTONOMOUS: 'agent:get-session-autonomous',
-  UPDATE_SESSION_AUTONOMOUS: 'agent:update-session-autonomous',
   /** 手动触发当前会话的 harness refine（session.refine()） */
   REFINE_SESSION: 'agent:refine-session',
   /** 读取会话 refine 状态（harness_state.json 摘要） */

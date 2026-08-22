@@ -85,11 +85,11 @@ describe('diffCapabilities', () => {
     expect(changes).toEqual([{ type: 'skill_enabled', name: 'Code Review' }])
   })
 
-  test('检测 Skill 禁用', () => {
-    const prev = makeCaps([], [{ slug: 'review', name: 'Code Review', enabled: true }])
-    const next = makeCaps([], [{ slug: 'review', name: 'Code Review', enabled: false }])
+  test('Skill 快照里 enabled 翻转不再产生 skill_disabled（真实禁用走 skill_removed）', () => {
+    const prev = makeCaps([], [{ slug: 'review', name: 'Code Review', enabled: false }])
+    const next = makeCaps([], [{ slug: 'review', name: 'Code Review', enabled: true }])
     const changes = diffCapabilities(prev, next)
-    expect(changes).toEqual([{ type: 'skill_disabled', name: 'Code Review' }])
+    expect(changes).toEqual([{ type: 'skill_enabled', name: 'Code Review' }])
   })
 
   // --- 混合场景 ---
@@ -108,8 +108,7 @@ describe('diffCapabilities', () => {
     expect(changes).toContainEqual({ type: 'mcp_disabled', name: 'github' })
     expect(changes).toContainEqual({ type: 'mcp_added', name: 'jira' })
     expect(changes).toContainEqual({ type: 'mcp_removed', name: 'slack' })
-    expect(changes).toContainEqual({ type: 'skill_disabled', name: 'Code Review' })
     expect(changes).toContainEqual({ type: 'skill_added', name: 'Test Runner' })
-    expect(changes).toHaveLength(5)
+    expect(changes).toHaveLength(4)
   })
 })

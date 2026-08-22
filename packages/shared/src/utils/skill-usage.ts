@@ -132,6 +132,30 @@ function getReadPath(input: Record<string, unknown>): string | null {
   return typeof path === 'string' ? path : null
 }
 
+/**
+ * 从 bash 命令或 ipython cell 文本中提取 skills/<slug>/SKILL.md 路径引用。
+ *
+ * Prime 没有 Read 工具：模型用 bash cat/less、ipython open/%%bash 打开 skill。
+ * 只认确定性的路径信号；python `import <module>` 不做反向映射——
+ * importName 存在 skill 元数据里，仅凭 slug 推不出来，猜了就是假信号。
+ */
+const SKILL_ENTRY_PATH_PATTERN = /[^\s'"`]*skills\/[^/\s'"`]+\/SKILL\.md/gi
+
+function collectSkillEntryPathsFromText(text: string): string[] {
+  return [...text.matchAll(SKILL_ENTRY_PATH_PATTERN)].map((match) => match[0])
+}
+
+function getToolTextInput(input: Record<string, unknown>): string | null {
+  const command = input.command
+  if (typeof command === 'string') return command
+  const code = input.code
+  if (typeof code === 'string') return code
+  return null
+}
+
+/** 工具名 → 该工具里可能引用 SKILL.md 的文本字段。Read 是旧会话遗留通道。 */
+const SKILL_EVIDENCE_TOOLS = new Set(['Read', 'Bash', 'ipython'])
+
 export interface SkillActivationCollectionOptions {
   workspaceSlug?: string
   workspaceSkillsRoot?: string
@@ -145,15 +169,30 @@ function isWorkspaceSkillEntryPath(path: string, options?: SkillActivationCollec
 }
 
 /**
- * Find successful Read -> tool_result pairs that loaded a Proma Skill entry file.
- * A bare tool_use is intentionally insufficient: failed reads must not become chips.
+ * 找出成功加载 Proma Skill 入口文件的工具调用对。
+ * Read（旧通道）按入参路径判定；Bash/ipython（Prime 实际通道）按命令或
+ * cell 文本中的 SKILL.md 路径引用判定。裸 tool_use 不算数：失败的读取
+ * 不能变成 chip。
  */
 export function collectSuccessfulSkillReadActivations(
   messages: SDKMessage[],
   options?: SkillActivationCollectionOptions,
 ): SkillActivation[] {
-  const pendingReads = new Map<string, SkillActivation>()
+  const pendingReads = new Map<string, SkillActivation[]>()
   const activations: SkillActivation[] = []
+
+  const recordActivation = (toolCallId: string, path: string): void => {
+    const activation = createSkillActivationFromPath(
+      path,
+      'read',
+      undefined,
+      isWorkspaceSkillEntryPath(path, options) ? options?.workspaceSlug : undefined,
+    )
+    if (!activation) return
+    const current = pendingReads.get(toolCallId)
+    if (current) current.push(activation)
+    else pendingReads.set(toolCallId, [activation])
+  }
 
   for (const message of messages) {
     if (message.type === 'assistant') {
@@ -162,16 +201,16 @@ export function collectSuccessfulSkillReadActivations(
       for (const block of blocks) {
         if (block.type !== 'tool_use') continue
         const tool = block as { id?: unknown; name?: unknown; input?: unknown }
-        if (tool.name !== 'Read' || typeof tool.id !== 'string' || !isRecord(tool.input)) continue
-        const path = getReadPath(tool.input)
-        if (!path) continue
-        const activation = createSkillActivationFromPath(
-          path,
-          'read',
-          undefined,
-          isWorkspaceSkillEntryPath(path, options) ? options?.workspaceSlug : undefined,
-        )
-        if (activation) pendingReads.set(tool.id, activation)
+        if (!SKILL_EVIDENCE_TOOLS.has(String(tool.name)) || typeof tool.id !== 'string' || !isRecord(tool.input)) continue
+        if (tool.name === 'Read') {
+          const path = getReadPath(tool.input)
+          if (path) recordActivation(tool.id, path)
+          continue
+        }
+        const text = getToolTextInput(tool.input)
+        if (text) {
+          for (const path of collectSkillEntryPathsFromText(text)) recordActivation(tool.id, path)
+        }
       }
       continue
     }
@@ -182,8 +221,8 @@ export function collectSuccessfulSkillReadActivations(
     for (const block of blocks) {
       if (block.type !== 'tool_result') continue
       const result = block as SDKToolResultBlock
-      const activation = pendingReads.get(result.tool_use_id)
-      if (activation && result.is_error !== true) activations.push(activation)
+      const pending = pendingReads.get(result.tool_use_id)
+      if (pending && result.is_error !== true) activations.push(...pending)
       pendingReads.delete(result.tool_use_id)
     }
   }

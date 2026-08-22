@@ -156,7 +156,7 @@ import type {
   BrowserTabInput,
   BrowserCreateTabInput,
   AgentRefineNowResult,
-  AgentRefineState, AgentAutonomousPassthrough, AgentRlmSupplyState } from '@proma/shared'
+  AgentRefineState, AgentRlmSupplyState } from '@proma/shared'
 import type { UserProfile, AppSettings } from '../types'
 import { getRuntimeStatus, getGitRepoStatus, reinitializeRuntime } from './lib/runtime-init'
 import { browserController } from './lib/browser-controller'
@@ -2251,20 +2251,6 @@ export function registerIpcHandlers(): void {
     }
   )
 
-  // 研究模式：会话 autonomous 配置读取/更新（Track B #4）
-  ipcMain.handle(
-    AGENT_IPC_CHANNELS.GET_SESSION_AUTONOMOUS,
-    (_, sessionId: string): AgentAutonomousPassthrough | null => {
-      return getAgentSessionMeta(sessionId)?.autonomous ?? null
-    }
-  )
-  ipcMain.handle(
-    AGENT_IPC_CHANNELS.UPDATE_SESSION_AUTONOMOUS,
-    (_, sessionId: string, config: AgentAutonomousPassthrough | null): void => {
-      updateAgentSessionMeta(sessionId, { autonomous: config ?? undefined })
-    }
-  )
-
   // Prime auto-refine（Track B）：手动提炼 + 状态读取
   ipcMain.handle(
     AGENT_IPC_CHANNELS.REFINE_SESSION,
@@ -2619,7 +2605,9 @@ export function registerIpcHandlers(): void {
       const result = await validateMcpServer(name, entry)
       return {
         success: result.valid,
-        message: result.valid ? '连接成功' : (result.reason || '连接失败'),
+        message: result.valid
+          ? (result.toolCount != null ? `连接成功（发现 ${result.toolCount} 个工具）` : '连接成功')
+          : (result.reason || '连接失败'),
       }
     }
   )

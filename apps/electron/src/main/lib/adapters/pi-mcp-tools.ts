@@ -21,7 +21,6 @@ import { sanitizeToolResultImageContent } from '../image-content-validation'
 
 const DEFAULT_MCP_REQUEST_TIMEOUT_MS = 60_000
 const DEFAULT_MCP_STARTUP_TIMEOUT_MS = 30_000
-const OPTIONAL_MCP_BOOTSTRAP_TIMEOUT_MS = 500
 const HTTP_SESSION_REJECTION_PATTERN = /missing session id|no valid session id provided|mcp-session-id header is required/i
 
 interface PiMcpServerConfig {
@@ -222,8 +221,11 @@ function convertMcpResult(result: McpCallToolResult): AgentToolResult<unknown> {
 }
 
 /**
- * Optional MCP 服务首次连接在后台继续；首轮消息最多为它等待短暂的 bootstrap 窗口。
- * 连接完成后，manager 会缓存 tools，后续回合直接复用，不会重复冷启动 stdio 进程。
+ * Optional MCP 服务首次连接在后台继续；首轮消息为它等待的时间与
+ * `startup_timeout_sec`（设置项，默认 30s）一致——这是设置界面承诺的
+ * 启动窗口，此前硬编码 500ms 让 npx 起的 stdio server 在每个会话的
+ * 第一条消息里必然超时，用户配置的 30s 被完全绕开。
+ * 连接完成后 manager 缓存 tools，后续回合直接复用。
  */
 async function listOptionalMcpTools(
   manager: PiMcpClientManager,
@@ -236,7 +238,10 @@ async function listOptionalMcpTools(
     return await Promise.race([
       toolsPromise,
       new Promise<undefined>((resolve) => {
-        timeout = setTimeout(() => resolve(undefined), OPTIONAL_MCP_BOOTSTRAP_TIMEOUT_MS)
+        timeout = setTimeout(() => {
+          console.info(`[Pi MCP] 可选 MCP 服务器 ${serverName} 在启动窗口（${getTimeoutMs(config)}ms）内未就绪，本回合跳过`)
+          resolve(undefined)
+        }, getTimeoutMs(config))
       }),
     ])
   } finally {

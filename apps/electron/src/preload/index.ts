@@ -546,10 +546,6 @@ export interface ElectronAPI {
 
   /** 删除 Agent 会话 */
   deleteAgentSession: (id: string) => Promise<void>
-  /** 读取会话研究模式 autonomous 配置（Track B #4） */
-  getSessionAutonomous: (sessionId: string) => Promise<import('@proma/shared').AgentAutonomousPassthrough | null>
-  /** 更新会话研究模式 autonomous 配置（Track B #4） */
-  updateSessionAutonomous: (sessionId: string, config: import('@proma/shared').AgentAutonomousPassthrough | null) => Promise<void>
   /** 手动触发会话 harness refine（Track B #3） */
   refineSession: (sessionId: string) => Promise<import('@proma/shared').AgentRefineNowResult>
   /** 读取会话 refine 状态摘要（Track B #2） */
@@ -1769,13 +1765,6 @@ const electronAPI: ElectronAPI = {
 
   setAgentSessionActiveWorktree: (input: SetAgentSessionActiveWorktreeInput) => {
     return ipcRenderer.invoke(AGENT_IPC_CHANNELS.SET_ACTIVE_WORKTREE, input)
-  },
-
-  getSessionAutonomous: (sessionId: string) => {
-    return ipcRenderer.invoke(AGENT_IPC_CHANNELS.GET_SESSION_AUTONOMOUS, sessionId)
-  },
-  updateSessionAutonomous: (sessionId: string, config: unknown) => {
-    return ipcRenderer.invoke(AGENT_IPC_CHANNELS.UPDATE_SESSION_AUTONOMOUS, sessionId, config)
   },
   refineSession: (sessionId: string) => {
     return ipcRenderer.invoke(AGENT_IPC_CHANNELS.REFINE_SESSION, sessionId)

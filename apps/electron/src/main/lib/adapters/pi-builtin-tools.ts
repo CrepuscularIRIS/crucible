@@ -1076,16 +1076,6 @@ function buildBrowserTools(sdk: PiSdk, ctx: PiBuiltinToolsContext): ToolDefiniti
   ] as ToolDefinition[]
 }
 
-function buildPromaCloudTools(sdk: PiSdk, _ctx: PiBuiltinToolsContext): ToolDefinition[] {
-  // proma-cloud MCP 工具（get_credentials / create_app_key）通常由 Proma 的
-  // 内置 MCP server 进程独立提供（非 SDK in-process），Pi adapter 在 orchestrator
-  // 构建 mcpServers 后通过 customTools 或 MCP stdio 通道访问。
-  // 如果 proma-cloud 是 SDK in-process MCP，需要在此桥接：
-  // 当前实现中 proma-cloud 走的是外部 MCP（不在 injectBuiltinMcpServers 内），
-  // 所以 Pi runtime 需要通过 MCP stdio transport 独立连接，不在这里注册。
-  return []
-}
-
 // ===== 统一入口 =====
 
 export interface PiBuiltinToolsResult {
@@ -1183,8 +1173,6 @@ export async function buildPiBuiltinTools(
     }
   }
 
-  const cloudTools = buildPromaCloudTools(sdk, ctx)
-  tools.push(...cloudTools)
 
   return { tools, collaborationAvailable }
 }

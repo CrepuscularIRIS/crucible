@@ -84,6 +84,7 @@ import {
   detectIpythonKernelSupply,
   type RlmIpythonWiring,
 } from './pi-ipython-rlm'
+import { summarizePrimeRefineArtifacts } from './pi-refine-state'
 import type { AgentRefineEntrySummary, AgentRefineNowResult, AgentRefineState } from '@proma/shared'
 import { PendingPromptSkillActivationTracker } from './pi-skill-activation-tracker'
 import { createPiRetryTerminalGate, mapPiNativeRetryEvent } from './pi-retry-control'
@@ -164,8 +165,6 @@ export interface PiAgentQueryOptions extends AgentQueryInput {
   channelName?: string
   maxTurns?: number
   permissionMode: PromaPermissionMode
-  /** 研究模式：Prime autonomous 配置（Track B #4，透传给 createAgentSession） */
-  autonomous?: import('@proma/shared').AgentAutonomousPassthrough
   canUseTool?: (
     toolName: string,
     input: Record<string, unknown>,
@@ -1340,7 +1339,7 @@ function appendWindowsBaseModeInstruction(systemPrompt: string, runtimeEnv: Agen
   return `${systemPrompt}
 
 <runtime_capabilities>
-当前 Windows 设备未配置 Git Bash 或 WSL，因此 Bash 工具不可用。你仍可使用 Read、Write、Edit、Grep、Find、Ls 及 Proma 提供的其他工具完成任务；不要声称已运行命令、测试或 Git 操作。若任务确实需要命令行，请默认调用 InstallWindowsShell 帮助用户安装 Git Bash；该工具会要求用户确认下载并打开官方安装程序。
+当前 Windows 设备未配置 Git Bash 或 WSL，因此 Bash 工具不可用。你仍可使用 Edit 工具（编辑文件）、ipython（如可用）及 Proma 提供的其他工具完成任务；不要声称已运行命令、测试或 Git 操作。若任务确实需要命令行，请默认调用 InstallWindowsShell 帮助用户安装 Git Bash；该工具会要求用户确认下载并打开官方安装程序。
 </runtime_capabilities>`
 }
 
@@ -1468,7 +1467,6 @@ export class PiAgentAdapter implements AgentProviderAdapter {
         systemPrompt: input.systemPrompt,
         additionalSkillPaths: input.additionalSkillPaths ?? [],
         projectInstructionFiles: (input.projectInstructionFiles ?? []).map((f) => `${f.path}#${f.content.length}`),
-        autonomous: input.autonomous ? `${input.autonomous.enabled}|${input.autonomous.gates.join('|')}|${input.autonomous.maxTurns ?? ''}|${input.autonomous.maxContinuations ?? ''}` : '',
         projectScope: input.projectInstructionScope
           ? `${input.projectInstructionScope.projectRoot}#${[...(input.projectInstructionScope.initialSources ?? [])].sort().join('|')}`
           : undefined,
@@ -1493,7 +1491,6 @@ export class PiAgentAdapter implements AgentProviderAdapter {
       resident.hooks.canUseTool = input.canUseTool
       const compactionRequestRef = resident.hooks.compactionRequestRef
       const { session, sessionManager, resourceLoader, model } = resident
-      this.#piSessionRoot = input.piSessionDir
       let pendingCompactionContinuation: string | undefined
       let automaticCompactionContinuations = 0
       let pendingTerminalResult: SDKMessage | undefined
@@ -2069,14 +2066,6 @@ export class PiAgentAdapter implements AgentProviderAdapter {
       thinkingLevel: input.thinkingLevel ?? 'off',
       noTools: 'builtin',
       customTools,
-      ...(input.autonomous?.enabled && {
-        autonomous: {
-          enabled: true,
-          ...(input.autonomous.gates.length > 0 && { gates: { commands: input.autonomous.gates } }),
-          ...(input.autonomous.maxContinuations != null && { maxContinuations: input.autonomous.maxContinuations }),
-          ...(input.autonomous.maxTurns != null && { maxTurns: input.autonomous.maxTurns }),
-        },
-      }),
     })
     if (rlmSupply.available) {
       // 回填委托目标：会话内置 ipython 定义携带完整 RLM 接线（provisioner、
@@ -2176,43 +2165,28 @@ export class PiAgentAdapter implements AgentProviderAdapter {
     return { scheduled: true }
   }
 
-  /** Track B #2：读取 harness_state.json / refinements.jsonl 摘要，供"经验已记录"提示。 */
+  /**
+   * P0.5：读取真实 refine 数据源，供"经验已记录"徽标。
+   *
+   * 旧实现读 local `refinements.jsonl`，而 Prime 只在 **global** scope 写该文件
+   * （Proma 调的是 local scope），徽标因此永远显示"尚无经验记录"。
+   * 解析逻辑见 pi-refine-state.ts（harness_state.json + 会话 JSONL）。
+   */
   getRefineState(sessionId: string): AgentRefineState {
     const resident = this.residentSessions.get(sessionId)?.session
     const state: AgentRefineState = {
       resident: resident != null,
       autoRefine: resident?.autoRefine ?? { enabled: true, turnInterval: 25 },
     }
-    const harnessDir = resident?.harnessDir
-      ?? (this.#piSessionRoot
-        ? join(dirname(this.#piSessionRoot), 'session-artifacts', sessionId, 'harness')
-        : '')
-    const refinements = join(harnessDir, 'refinements.jsonl')
-    if (!existsSync(refinements)) return state
-    const recent: AgentRefineEntrySummary[] = []
-    let count = 0
-    let lastTs: string | undefined
-    try {
-      const lines = readFileSync(refinements, 'utf-8').split('\n').filter(Boolean)
-      count = lines.length
-      for (const line of lines.slice(-5).reverse()) {
-        try {
-          const parsed = JSON.parse(line) as Record<string, unknown>
-          recent.push({
-            ts: typeof parsed.ts === 'string' ? parsed.ts : String(parsed.timestamp ?? ''),
-            kind: String(parsed.kind ?? parsed.type ?? 'unknown'),
-            summary: String(parsed.summary ?? parsed.instructions ?? parsed.content ?? '').slice(0, 120),
-          })
-          lastTs = recent[0]?.ts || lastTs
-        } catch { /* 跳过坏行 */ }
-      }
-    } catch { /* 读取失败按无记录处理 */ }
-    if (count > 0) state.harness = { entries: count, lastTs, recent }
+    if (!resident) return state
+
+    const sessionFile = resident.sessionManager.getSessionFile()
+    const { entries, lastTs, recent } = summarizePrimeRefineArtifacts(resident.harnessDir, sessionFile)
+    if (entries > 0 || recent.length > 0) {
+      state.harness = { entries, ...(lastTs ? { lastTs } : {}), recent }
+    }
     return state
   }
-
-  /** 最近一次 query 的 sessions 根目录，非驻留时用于拼 harness 兜底路径 */
-  #piSessionRoot = ''
 
   abort(sessionId: string): void {
     const active = this.activeSessions.get(sessionId)
