@@ -1,0 +1,13 @@
+services:
+  campaign:
+    build:
+      context: ./build
+      dockerfile: Dockerfile
+    image: crucible-research:latest
+    environment:
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:-}
+    volumes:
+      # gate 脚本只读挂载：模型不可改；真正的裁决在容器外的宿主重跑。
+      # 运行期卷（artifacts / case / goal）由 campaign/run.sh 通过
+      # docker compose run -v 注入：build 阶段不做任何运行期假设。
+      - ../gates:/gates:ro

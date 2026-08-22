@@ -1,0 +1,10 @@
+{
+  "telemetry": {
+    "noticeShown": true
+  },
+  "autoRefine": {
+    "enabled": true,
+    "turnInterval": 25,
+    "compact": true
+  }
+}

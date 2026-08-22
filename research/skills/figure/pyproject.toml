@@ -1,0 +1,17 @@
+# figure skill：Qwen-VL 读图 → 结构化证据条目（多模态故事的全部）。
+[project]
+name = "figure"
+version = "0.1.0"
+description = "Crucible 研究战役：figure.read——把结果图交给 Qwen-VL，产出必须经 register.attach 挂接的结构化证据"
+requires-python = ">=3.11"
+dependencies = ["register"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/figure"]
+
+[tool.pytest.ini_options]
+testpaths = ["test"]

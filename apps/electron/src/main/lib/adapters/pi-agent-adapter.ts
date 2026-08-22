@@ -77,6 +77,7 @@ import {
   restorePiInput,
 } from './pi-message-adapter'
 import { DEFAULT_CONTEXT_WINDOW, buildModel } from './pi-model-registry'
+import { computeResidencyKey, ResidentSessionRegistry } from './pi-session-residency'
 import { PendingPromptSkillActivationTracker } from './pi-skill-activation-tracker'
 import { createPiRetryTerminalGate, mapPiNativeRetryEvent } from './pi-retry-control'
 import {
@@ -87,6 +88,28 @@ import {
 } from './pi-request-proxy'
 
 type PiSdk = typeof import('@earendil-works/pi-coding-agent')
+
+/** 每 query 可变槽位：常驻会话上的一次性 hooks 经它读取当前轮的守卫/代理/权限。 */
+export interface PiResidentHookSlots {
+  runtimeGuard?: AgentRuntimeGuard
+  requestDispatcher?: Dispatcher
+  compactionRequestRef?: { value: boolean }
+  canUseTool?: PiAgentQueryOptions['canUseTool']
+}
+
+/** 常驻会话：同一会话跨 query 复用 AgentSession（Track B #1），空闲超时后释放。 */
+export interface PiResidentSession {
+  key: string
+  session: AgentSession
+  sessionManager: ReturnType<PiSdk['SessionManager']['open']>
+  resourceLoader: ResourceLoader
+  model: Awaited<ReturnType<typeof buildModel>>['model']
+  hooks: PiResidentHookSlots
+  dispose(): void
+}
+
+/** 空闲多久后释放常驻会话；auto-refine 的轮数计数在驻留期间持续累计。 */
+const PI_RESIDENT_SESSION_IDLE_MS = 10 * 60_000
 type BashOperations = import('@earendil-works/pi-coding-agent').BashOperations
 type BashToolOptions = import('@earendil-works/pi-coding-agent').BashToolOptions
 type SkillLoadResult = ReturnType<ResourceLoader['getSkills']>
@@ -1292,10 +1315,15 @@ function wrapCustomToolDefinitions(
     wrapToolWithPermission(tool as unknown as ToolDefinition<TSchema, unknown, unknown>, { canUseTool }) as ToolDefinition)
 }
 
-export function installRuntimeGuardHooks(session: AgentSession, guard: AgentRuntimeGuard): void {
+export function installRuntimeGuardHooks(
+  session: AgentSession,
+  getGuard: () => AgentRuntimeGuard | undefined,
+): void {
   const previousAfterToolCall = session.agent.afterToolCall
   session.agent.afterToolCall = async (context, signal) => {
     const previousResult = await previousAfterToolCall?.(context, signal)
+    const guard = getGuard()
+    if (!guard) return previousResult
     const resultAfterPreviousHooks = {
       content: previousResult?.content ?? context.result.content,
       details: previousResult?.details ?? context.result.details,
@@ -1327,7 +1355,7 @@ export function installRuntimeGuardHooks(session: AgentSession, guard: AgentRunt
   // 否则纯文本 turn 之后追加的队列消息会绕过 afterToolCall 继续进入下一轮。
   const previousShouldStopBeforeTurn = session.agent.shouldStopBeforeTurn
   session.agent.shouldStopBeforeTurn = () => {
-    if (guard.shouldStopBeforeNextTurn()) {
+    if (getGuard()?.shouldStopBeforeNextTurn()) {
       session.agent.clearAllQueues()
     }
     return previousShouldStopBeforeTurn?.() ?? false
@@ -1336,9 +1364,16 @@ export function installRuntimeGuardHooks(session: AgentSession, guard: AgentRunt
 
 export class PiAgentAdapter implements AgentProviderAdapter {
   private activeSessions = new Map<string, ActivePiSession>()
+  private residentSessions = new ResidentSessionRegistry<PiResidentSession>({
+    idleMs: PI_RESIDENT_SESSION_IDLE_MS,
+    onDispose: (key, reason) => console.log(`[Pi SDK] 常驻会话释放: ${key} (${reason})`),
+  })
 
   async *query(input: PiAgentQueryOptions): AsyncIterable<SDKMessage> {
     const active = createActivePiSession()
+    // 同会话的新请求先显式中断旧请求（旧语义靠旧 query 的 dispose 隐式完成）。
+    const previousActive = this.activeSessions.get(input.sessionId)
+    if (previousActive && !previousActive.disposed) this.abort(input.sessionId)
     this.activeSessions.set(input.sessionId, active)
     const queue = createAsyncQueue<SDKMessage>()
     const runtimeGuard = createAgentRuntimeGuard(input)
@@ -1358,7 +1393,8 @@ export class PiAgentAdapter implements AgentProviderAdapter {
           active.disposed = true
           rejectPendingInterruptPrompts(active, createAbortError())
           active.pendingSkillActivations.clear()
-          active.session?.dispose()
+          // 会话驻留：不 dispose，交还登记表排空闲计时（owner 校验防误清新占有者）
+          this.residentSessions.release(input.sessionId, active)
         }
         if (this.activeSessions.get(input.sessionId) === active) {
           this.activeSessions.delete(input.sessionId)
@@ -1382,181 +1418,49 @@ export class PiAgentAdapter implements AgentProviderAdapter {
         : undefined
       if (active.abortRequested) throw createAbortError()
 
-      if (!existsSync(input.piSessionDir)) mkdirSync(input.piSessionDir, { recursive: true })
-      const cwd = input.cwd ?? process.cwd()
-      const sessionFile = input.resumeSessionId ? findSessionFile(input.piSessionDir, input.resumeSessionId) : undefined
-      if (input.resumeSessionId && !sessionFile) {
-        throw new Error(`No conversation found with session ID ${input.resumeSessionId}`)
+      // ── 会话驻留（Track B #1）：同一会话复用 AgentSession，空闲超时再释放 ──
+      // 指纹任一分量变化（模型/思考级/系统提示/skill 路径/项目指令/工作目录）都重建，
+      // 保守优先于复用率；resume 指向别的会话时同样重建。
+      const residencyKey = computeResidencyKey({
+        provider: input.provider,
+        model: input.model ?? 'default',
+        thinkingLevel: input.thinkingLevel ?? 'off',
+        cwd: input.cwd ?? process.cwd(),
+        agentDir: input.piAgentDir,
+        sessionDir: input.piSessionDir,
+        systemPrompt: input.systemPrompt,
+        additionalSkillPaths: input.additionalSkillPaths ?? [],
+        projectInstructionFiles: (input.projectInstructionFiles ?? []).map((f) => `${f.path}#${f.content.length}`),
+        projectScope: input.projectInstructionScope
+          ? `${input.projectInstructionScope.projectRoot}#${[...(input.projectInstructionScope.initialSources ?? [])].sort().join('|')}`
+          : undefined,
+      })
+      const cachedEntry = this.residentSessions.acquire(input.sessionId, active)
+      let resident = cachedEntry?.session
+      if (resident && (
+        resident.key !== residencyKey
+        || (input.resumeSessionId != null && input.resumeSessionId !== resident.session.sessionId)
+      )) {
+        this.residentSessions.evict(input.sessionId)
+        resident = undefined
       }
-      const sessionManager = sessionFile
-        ? sdk.SessionManager.open(sessionFile, input.piSessionDir, cwd)
-        : sdk.SessionManager.create(cwd, input.piSessionDir)
-      const { modelRuntime, model } = await buildModel(sdk, input)
-      const autoCompactionReserveTokens = calculatePiAutoCompactionReserveTokens(
-        model.contextWindow ?? DEFAULT_CONTEXT_WINDOW,
-      )
-      let compactContextRequested = false
+      if (!resident) {
+        resident = await this.createResidentSession(input, sdk, piAi, residencyKey, active)
+      }
+      // 本轮槽位：常驻 hooks 由此读取当前 query 的守卫/请求代理/权限/压缩请求。
+      // 槽位以 active 为 owner，query 收尾 release，防止并发 query 误清新占有者。
+      resident.hooks.runtimeGuard = runtimeGuard
+      resident.hooks.requestDispatcher = requestProxyDispatcher
+      resident.hooks.compactionRequestRef = { value: false }
+      resident.hooks.canUseTool = input.canUseTool
+      const compactionRequestRef = resident.hooks.compactionRequestRef
+      const { session, sessionManager, resourceLoader, model } = resident
       let pendingCompactionContinuation: string | undefined
       let automaticCompactionContinuations = 0
       let pendingTerminalResult: SDKMessage | undefined
       /** 当前压缩是否紧随一个成功完成的主 Agent turn。 */
       let completedAgentTurnPendingCompaction = false
-      const customTools = [
-        buildCurrentSessionCompactionTool(
-          sdk,
-          () => { compactContextRequested = true },
-          input.canUseTool,
-        ),
-        ...buildBuiltinToolDefinitions(
-          sdk,
-          cwd,
-          input.canUseTool,
-          input.runtimeEnv,
-        ),
-        ...buildPromaProductToolDefinitions(sdk, input.canUseTool),
-        ...wrapCustomToolDefinitions(input.customTools, input.canUseTool),
-      ]
-
-      const settingsManager = sdk.SettingsManager.inMemory({
-        // 使用 Pi SDK 原生压缩策略：
-        // - 手动压缩由 session.compact() 触发；
-        // - 自动压缩在上下文达到模型窗口的约 80% 时触发；Pi 以 reserveTokens 表示预留空间。
-        compaction: { enabled: true, reserveTokens: autoCompactionReserveTokens },
-        // Pi 原生 retry 通过 agent.continue() 在同一 transcript 中恢复，能保留已完成的
-        // tool_result；不能用外层重投原始 prompt 替代，否则会重复执行副作用工具。
-        retry: {
-          enabled: true,
-          maxRetries: PI_NATIVE_MAX_RETRIES,
-          baseDelayMs: PI_NATIVE_RETRY_BASE_DELAY_MS,
-        },
-        ...buildPiRemoteConnectionSettings(input),
-      })
-      const openAIReasoningProfile = (input.provider === 'openai-codex' || input.provider === 'xai' || input.provider === 'openai-responses')
-        ? resolveReasoningProfile({
-          modelId: input.model,
-          transport: inferReasoningTransport(input.provider),
-        })
-        : undefined
-      const deepSeekReasoningProfile = input.provider === 'deepseek'
-        ? resolveReasoningProfile({
-          modelId: input.model,
-          transport: 'anthropic-messages',
-        })
-        : undefined
-      const projectInstructionScope = input.projectInstructionScope
-        ? new ProjectInstructionScopeController({
-            projectRoot: input.projectInstructionScope.projectRoot,
-            cwd,
-            initialSources: input.projectInstructionScope.initialSources,
-          })
-        : undefined
-      const extensionFactories = [
-        ...(projectInstructionScope ? [projectInstructionScope.createExtension()] : []),
-        ...(openAIReasoningProfile
-          ? [createOpenAIReasoningRequestExtension({
-              profile: openAIReasoningProfile,
-              thinkingLevel: input.openAIThinkingLevel,
-            })]
-          : []),
-        ...(deepSeekReasoningProfile?.encodings['anthropic-messages']?.kind === 'deepseek-output-effort'
-          ? [createDeepSeekReasoningRequestExtension({
-              profile: deepSeekReasoningProfile,
-              thinkingLevel: input.thinkingLevel,
-            })]
-          : []),
-        ...(input.provider === 'openai-codex' && input.codexFastMode
-          ? [createCodexFastModeExtension({ fastMode: true })]
-          : []),
-      ]
-      const resourceLoader = new sdk.DefaultResourceLoader({
-        cwd,
-        agentDir: input.piAgentDir,
-        settingsManager,
-        ...createPromaManagedResourceLoaderOptions(),
-        agentsFilesOverride: createPromaProjectInstructionFilesOverride(input.projectInstructionFiles ?? []),
-        additionalSkillPaths: input.additionalSkillPaths ?? [],
-        skillsOverride: createPromaSkillsOverride(input.additionalSkillPaths),
-        ...(extensionFactories.length > 0 && { extensionFactories }),
-        systemPromptOverride: () => appendWindowsBaseModeInstruction(input.systemPrompt, input.runtimeEnv),
-      })
-      await resourceLoader.reload()
       active.resourceLoader = resourceLoader
-
-      const skillDiagnostics = resourceLoader.getSkills().diagnostics
-      for (const diagnostic of skillDiagnostics) {
-        const level = diagnostic.type === 'error' ? 'error' : 'warn'
-        console[level](`[Pi SDK] Skill 加载诊断: ${diagnostic.path ?? '(unknown)'} ${diagnostic.message}`)
-      }
-
-      const { session } = await sdk.createAgentSession({
-        cwd,
-        agentDir: input.piAgentDir,
-        // Prime 把上游 modelRuntime 的职责拆成 authStorage（凭据）+ modelRegistry（目录）。
-        // per-request 的 API key 解析由 AgentSession 内部经 modelRegistry 完成。
-        authStorage: modelRuntime.authStorage,
-        modelRegistry: modelRuntime.registry,
-        settingsManager,
-        resourceLoader,
-        sessionManager,
-        model,
-        thinkingLevel: input.thinkingLevel ?? 'off',
-        noTools: 'builtin',
-        customTools,
-      })
-      session.agent.toolExecution = 'sequential'
-      // Pi session artifact 可以来自旧版本，不能假设其历史 tool_result 已通过当前校验。
-      // transformContext 在每个 provider 请求前执行，能隔离 resume 的坏图片而不篡改原 artifact。
-      const previousTransformContext = session.agent.transformContext
-      session.agent.transformContext = async (messages, signal) => sanitizePiMessageImageContent(
-        await previousTransformContext?.(messages, signal) ?? messages,
-      )
-      if (projectInstructionScope) {
-        // Prime 没有 prepareNextTurnWithContext（重写下一轮 context 的钩子）。
-        // 等价做法：在 getContinuationMessages（每次 continuation 前触发）里把待注入的
-        // 项目指令直接写进 agent.state.systemPrompt —— getSystemPrompt 每轮都会读取它。
-        // 注意 AgentSession 在某些路径会重置为 base prompt；pending 指令只注入一次，
-        // 与上游"下一轮生效"的语义一致。
-        const previousGetContinuationMessages = session.agent.getContinuationMessages
-        session.agent.getContinuationMessages = async (context, signal) => {
-          const messages = await previousGetContinuationMessages?.(context, signal) ?? []
-          const currentPrompt = session.agent.state.systemPrompt
-          const systemPrompt = projectInstructionScope.appendPendingInstructions(currentPrompt)
-          if (systemPrompt !== currentPrompt) {
-            session.agent.state.systemPrompt = systemPrompt
-          }
-          return messages
-        }
-      }
-      if (piAi && input.codexFastMode && input.provider === 'openai-codex' && isCodexFastModeSupportedModel(input.model)) {
-        // Pi 的通用 streamSimple 会丢弃 provider 专属 serviceTier；这里直接走
-        // provider stream，确保 request body 与 usage.cost 都使用 priority tier。
-        session.agent.streamFn = async (requestModel, context, options) => {
-          // Prime 的认证解析走 ModelRegistry.getApiKeyAndHeaders（含 OAuth 过期自动刷新）。
-          // 上游的 provider env 注入与 http/websocket 空闲超时设置在 Prime 中不存在，
-          // 超时统一由 retry.provider.timeoutMs 控制。
-          const auth = await modelRuntime.registry.getApiKeyAndHeaders(requestModel)
-          if (!auth.ok || !auth.apiKey) throw new Error('无法获取 ChatGPT (Codex) OAuth access token')
-
-          const retrySettings = settingsManager.getProviderRetrySettings()
-          return piAi.stream(requestModel, context, withCodexFastModeServiceTier({
-            ...options,
-            apiKey: auth.apiKey,
-            timeoutMs: options?.timeoutMs ?? retrySettings.timeoutMs,
-            maxRetries: options?.maxRetries ?? retrySettings.maxRetries,
-            maxRetryDelayMs: options?.maxRetryDelayMs ?? retrySettings.maxRetryDelayMs,
-            headers: { ...auth.headers, ...options?.headers },
-          }))
-        }
-      }
-      // 代理作用域必须只覆盖模型 provider stream：在整个 session.prompt() 链上设
-      // AsyncLocalStorage 会把 MCP/产品工具等同一 Agent loop 中的 fetch 也错误地送进 Codex 代理。
-      const providerStreamFn = session.agent.streamFn
-      session.agent.streamFn = (requestModel, context, options) => runWithPiRequestProxy(
-        requestProxyDispatcher,
-        () => providerStreamFn(requestModel, context, options),
-      )
-      installRuntimeGuardHooks(session, runtimeGuard)
-      installCurrentSessionCompactionHooks(session)
       active.session = session
       resolveActiveReady(active, session)
 
@@ -1716,7 +1620,7 @@ export class PiAgentAdapter implements AgentProviderAdapter {
               pendingTerminalResult = terminalResult
               completedAgentTurnPendingCompaction = shouldMarkCompactionAfterCompletedTurn(
                 terminalResult,
-                compactContextRequested,
+                compactionRequestRef?.value ?? false,
               )
               break
             case 'auto_retry_start':
@@ -1882,7 +1786,7 @@ export class PiAgentAdapter implements AgentProviderAdapter {
               currentInterrupt?.resolveAccepted()
               await session.prompt(shieldPrimeSessionCommands(prompt), { source: 'rpc' })
               persistPiEntryBindings()
-              if (compactContextRequested) {
+              if (compactionRequestRef?.value) {
                 try {
                   await compactCurrentSessionAfterTurn(session, (message) => queue.push(message))
                 } catch (error) {
@@ -1890,7 +1794,7 @@ export class PiAgentAdapter implements AgentProviderAdapter {
                   if (active.abortRequested) return
                   throw error
                 }
-                compactContextRequested = false
+                if (compactionRequestRef) compactionRequestRef.value = false
                 const continuation = planPiCompactionContinuation({
                   continuationCount: automaticCompactionContinuations,
                   abortRequested: active.abortRequested,
@@ -1970,6 +1874,214 @@ export class PiAgentAdapter implements AgentProviderAdapter {
     } finally {
       cleanupActiveSession()
     }
+  }
+
+  /**
+   * 构建常驻会话（每个会话只执行一次；复用路径不进这里）。
+   * 与 query 的全部耦合都走 PiResidentHookSlots：hooks 在每次 query 开始时装上、
+   * 结束时卸下，因此这里安装的 agent 钩子/工具包装永不叠层。
+   */
+  private async createResidentSession(
+    input: PiAgentQueryOptions,
+    sdk: PiSdk,
+    piAi: typeof import('@earendil-works/pi-ai') | undefined,
+    residencyKey: string,
+    owner: object,
+  ): Promise<PiResidentSession> {
+    const hooks: PiResidentHookSlots = {}
+    // 空闲期理论上不会有工具执行；防御性拒绝而不是放行。
+    const indirectCanUseTool: PiAgentQueryOptions['canUseTool'] = async (toolName, toolInput, options) => {
+      const current = hooks.canUseTool
+      if (!current) {
+        return { behavior: 'deny', message: '会话空闲中，权限回调缺失；请在 Agent 运行期间调用工具。' }
+      }
+      return current(toolName, toolInput, options)
+    }
+
+    if (!existsSync(input.piSessionDir)) mkdirSync(input.piSessionDir, { recursive: true })
+    const cwd = input.cwd ?? process.cwd()
+    const sessionFile = input.resumeSessionId ? findSessionFile(input.piSessionDir, input.resumeSessionId) : undefined
+    if (input.resumeSessionId && !sessionFile) {
+      throw new Error(`No conversation found with session ID ${input.resumeSessionId}`)
+    }
+    const sessionManager = sessionFile
+      ? sdk.SessionManager.open(sessionFile, input.piSessionDir, cwd)
+      : sdk.SessionManager.create(cwd, input.piSessionDir)
+    const { modelRuntime, model } = await buildModel(sdk, input)
+    const autoCompactionReserveTokens = calculatePiAutoCompactionReserveTokens(
+      model.contextWindow ?? DEFAULT_CONTEXT_WINDOW,
+    )
+    const customTools = [
+      buildCurrentSessionCompactionTool(
+        sdk,
+        () => { if (hooks.compactionRequestRef) hooks.compactionRequestRef.value = true },
+        indirectCanUseTool,
+      ),
+      ...buildBuiltinToolDefinitions(
+        sdk,
+        cwd,
+        indirectCanUseTool,
+        input.runtimeEnv,
+      ),
+      ...buildPromaProductToolDefinitions(sdk, indirectCanUseTool),
+      ...wrapCustomToolDefinitions(input.customTools, indirectCanUseTool),
+    ]
+
+    const settingsManager = sdk.SettingsManager.inMemory({
+      // 使用 Pi SDK 原生压缩策略：
+      // - 手动压缩由 session.compact() 触发；
+      // - 自动压缩在上下文达到模型窗口的约 80% 时触发；Pi 以 reserveTokens 表示预留空间。
+      compaction: { enabled: true, reserveTokens: autoCompactionReserveTokens },
+      // Pi 原生 retry 通过 agent.continue() 在同一 transcript 中恢复，能保留已完成的
+      // tool_result；不能用外层重投原始 prompt 替代，否则会重复执行副作用工具。
+      retry: {
+        enabled: true,
+        maxRetries: PI_NATIVE_MAX_RETRIES,
+        baseDelayMs: PI_NATIVE_RETRY_BASE_DELAY_MS,
+      },
+      ...buildPiRemoteConnectionSettings(input),
+    })
+    const openAIReasoningProfile = (input.provider === 'openai-codex' || input.provider === 'xai' || input.provider === 'openai-responses')
+      ? resolveReasoningProfile({
+        modelId: input.model,
+        transport: inferReasoningTransport(input.provider),
+      })
+      : undefined
+    const deepSeekReasoningProfile = input.provider === 'deepseek'
+      ? resolveReasoningProfile({
+        modelId: input.model,
+        transport: 'anthropic-messages',
+      })
+      : undefined
+    const projectInstructionScope = input.projectInstructionScope
+      ? new ProjectInstructionScopeController({
+        projectRoot: input.projectInstructionScope.projectRoot,
+        cwd,
+        initialSources: input.projectInstructionScope.initialSources,
+      })
+      : undefined
+    const extensionFactories = [
+      ...(projectInstructionScope ? [projectInstructionScope.createExtension()] : []),
+      ...(openAIReasoningProfile
+        ? [createOpenAIReasoningRequestExtension({
+          profile: openAIReasoningProfile,
+          thinkingLevel: input.openAIThinkingLevel,
+        })]
+        : []),
+      ...(deepSeekReasoningProfile?.encodings['anthropic-messages']?.kind === 'deepseek-output-effort'
+        ? [createDeepSeekReasoningRequestExtension({
+          profile: deepSeekReasoningProfile,
+          thinkingLevel: input.thinkingLevel,
+        })]
+        : []),
+      ...(input.provider === 'openai-codex' && input.codexFastMode
+        ? [createCodexFastModeExtension({ fastMode: true })]
+        : []),
+    ]
+    const resourceLoader = new sdk.DefaultResourceLoader({
+      cwd,
+      agentDir: input.piAgentDir,
+      settingsManager,
+      ...createPromaManagedResourceLoaderOptions(),
+      agentsFilesOverride: createPromaProjectInstructionFilesOverride(input.projectInstructionFiles ?? []),
+      additionalSkillPaths: input.additionalSkillPaths ?? [],
+      skillsOverride: createPromaSkillsOverride(input.additionalSkillPaths),
+      ...(extensionFactories.length > 0 && { extensionFactories }),
+      systemPromptOverride: () => appendWindowsBaseModeInstruction(input.systemPrompt, input.runtimeEnv),
+    })
+    await resourceLoader.reload()
+    const skillDiagnostics = resourceLoader.getSkills().diagnostics
+    for (const diagnostic of skillDiagnostics) {
+      const level = diagnostic.type === 'error' ? 'error' : 'warn'
+      console[level](`[Pi SDK] Skill 加载诊断: ${diagnostic.path ?? '(unknown)'} ${diagnostic.message}`)
+    }
+
+    const { session } = await sdk.createAgentSession({
+      cwd,
+      agentDir: input.piAgentDir,
+      // Prime 把上游 modelRuntime 的职责拆成 authStorage（凭据）+ modelRegistry（目录）。
+      // per-request 的 API key 解析由 AgentSession 内部经 modelRegistry 完成。
+      authStorage: modelRuntime.authStorage,
+      modelRegistry: modelRuntime.registry,
+      settingsManager,
+      resourceLoader,
+      sessionManager,
+      model,
+      thinkingLevel: input.thinkingLevel ?? 'off',
+      noTools: 'builtin',
+      customTools,
+    })
+    session.agent.toolExecution = 'sequential'
+    // Pi session artifact 可以来自旧版本，不能假设其历史 tool_result 已通过当前校验。
+    // transformContext 在每个 provider 请求前执行，能隔离 resume 的坏图片而不篡改原 artifact。
+    const previousTransformContext = session.agent.transformContext
+    session.agent.transformContext = async (messages, signal) => sanitizePiMessageImageContent(
+      await previousTransformContext?.(messages, signal) ?? messages,
+    )
+    if (projectInstructionScope) {
+      // Prime 没有 prepareNextTurnWithContext（重写下一轮 context 的钩子）。
+      // 等价做法：在 getContinuationMessages（每次 continuation 前触发）里把待注入的
+      // 项目指令直接写进 agent.state.systemPrompt —— getSystemPrompt 每轮都会读取它。
+      // 注意 AgentSession 在某些路径会重置为 base prompt；pending 指令只注入一次，
+      // 与上游"下一轮生效"的语义一致。
+      const previousGetContinuationMessages = session.agent.getContinuationMessages
+      session.agent.getContinuationMessages = async (context, signal) => {
+        const messages = await previousGetContinuationMessages?.(context, signal) ?? []
+        const currentPrompt = session.agent.state.systemPrompt
+        const systemPrompt = projectInstructionScope.appendPendingInstructions(currentPrompt)
+        if (systemPrompt !== currentPrompt) {
+          session.agent.state.systemPrompt = systemPrompt
+        }
+        return messages
+      }
+    }
+    if (piAi && input.codexFastMode && input.provider === 'openai-codex' && isCodexFastModeSupportedModel(input.model)) {
+      // Pi 的通用 streamSimple 会丢弃 provider 专属 serviceTier；这里直接走
+      // provider stream，确保 request body 与 usage.cost 都使用 priority tier。
+      session.agent.streamFn = async (requestModel, context, options) => {
+        // Prime 的认证解析走 ModelRegistry.getApiKeyAndHeaders（含 OAuth 过期自动刷新）。
+        // 上游的 provider env 注入与 http/websocket 空闲超时设置在 Prime 中不存在，
+        // 超时统一由 retry.provider.timeoutMs 控制。
+        const auth = await modelRuntime.registry.getApiKeyAndHeaders(requestModel)
+        if (!auth.ok || !auth.apiKey) throw new Error('无法获取 ChatGPT (Codex) OAuth access token')
+
+        const retrySettings = settingsManager.getProviderRetrySettings()
+        return piAi.stream(requestModel, context, withCodexFastModeServiceTier({
+          ...options,
+          apiKey: auth.apiKey,
+          timeoutMs: options?.timeoutMs ?? retrySettings.timeoutMs,
+          maxRetries: options?.maxRetries ?? retrySettings.maxRetries,
+          maxRetryDelayMs: options?.maxRetryDelayMs ?? retrySettings.maxRetryDelayMs,
+          headers: { ...auth.headers, ...options?.headers },
+        }))
+      }
+    }
+    // 代理作用域必须只覆盖模型 provider stream：在整个 session.prompt() 链上设
+    // AsyncLocalStorage 会把 MCP/产品工具等同一 Agent loop 中的 fetch 也错误地送进 Codex 代理。
+    // 常驻会话上经槽位取当前 query 的 dispatcher；空闲（无 dispatcher）时直连。
+    const providerStreamFn = session.agent.streamFn
+    session.agent.streamFn = (requestModel, context, options) => {
+      const dispatcher = hooks.requestDispatcher
+      if (!dispatcher) return providerStreamFn(requestModel, context, options)
+      return runWithPiRequestProxy(
+        dispatcher,
+        () => providerStreamFn(requestModel, context, options),
+      )
+    }
+    installRuntimeGuardHooks(session, () => hooks.runtimeGuard)
+    installCurrentSessionCompactionHooks(session)
+
+    const resident: PiResidentSession = {
+      key: residencyKey,
+      session,
+      sessionManager,
+      resourceLoader,
+      model,
+      hooks,
+      dispose: () => { session.dispose() },
+    }
+    this.residentSessions.install(input.sessionId, resident, owner)
+    return resident
   }
 
   abort(sessionId: string): void {
@@ -2073,5 +2185,6 @@ export class PiAgentAdapter implements AgentProviderAdapter {
       rejectActiveReady(active, createAbortError())
     }
     this.activeSessions.clear()
+    void this.residentSessions.disposeAll()
   }
 }
