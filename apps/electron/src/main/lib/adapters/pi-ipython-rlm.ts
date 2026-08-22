@@ -125,7 +125,7 @@ export function captureWiredIpythonDefinition(
  * 模板自带的裸 provisioner 不会启动 kernel（kernel 仅在 execute 时懒启动）。
  */
 export function createRlmIpythonToolDefinition(
-  sdk: PiSdk,
+  sdk: Pick<PiSdk, 'createIpythonToolDefinition'>,
   cwd: string,
   wiring: RlmIpythonWiring,
 ): ToolDefinition {

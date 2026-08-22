@@ -33,17 +33,42 @@ import {
 } from './pi-ipython-rlm'
 import { shieldPrimeSessionCommands } from './pi-agent-adapter'
 
-type PiSdk = typeof import('@earendil-works/pi-coding-agent')
+/**
+ * 按需拼装的 SDK 视图。不 import 包根 '@earendil-works/pi-coding-agent'：
+ * bun 的 mock.module 在收集期全局生效且无法解除（agent-session-manager.test.ts
+ * 以桩替换了整个包），深路径 file-URL 导入不受其影响，也不受 exports map 限制。
+ */
+interface PiSdkUnderTest {
+  createAgentSessionServices: typeof import('@earendil-works/pi-coding-agent')['createAgentSessionServices']
+  createAgentSessionFromServices: typeof import('@earendil-works/pi-coding-agent')['createAgentSessionFromServices']
+  SessionManager: typeof import('@earendil-works/pi-coding-agent')['SessionManager']
+  createIpythonToolDefinition: typeof import('@earendil-works/pi-coding-agent')['createIpythonToolDefinition']
+}
 
 const RLM_DOCTRINE_MARKER = 'general purpose agent that uses code to solve tasks'
 const RLM_CONTRACT_MARKER = 'A callable `rlm` is already in your global namespace'
 const SUBAGENT_GUIDANCE_MARKER = '# Delegating to sub-agents'
 
-let sdk: PiSdk
+let sdk: PiSdkUnderTest
 let rootDir: string
 
+async function loadSdkDeepModules(): Promise<PiSdkUnderTest> {
+  const packageRoot = new URL('.', import.meta.resolve('@earendil-works/pi-coding-agent'))
+  const [services, sessionManager, tools] = await Promise.all([
+    import(new URL('./core/agent-session-services.js', packageRoot).href),
+    import(new URL('./core/session-manager.js', packageRoot).href),
+    import(new URL('./core/tools/index.js', packageRoot).href),
+  ])
+  return {
+    createAgentSessionServices: services.createAgentSessionServices,
+    createAgentSessionFromServices: services.createAgentSessionFromServices,
+    SessionManager: sessionManager.SessionManager,
+    createIpythonToolDefinition: tools.createIpythonToolDefinition,
+  }
+}
+
 beforeAll(async () => {
-  sdk = await import('@earendil-works/pi-coding-agent')
+  sdk = await loadSdkDeepModules()
   rootDir = mkdtempSync(join(tmpdir(), 'proma-rlm-test-'))
 })
 
@@ -52,7 +77,7 @@ afterAll(() => {
 })
 
 interface BuiltSession {
-  session: Awaited<ReturnType<PiSdk['createAgentSessionFromServices']>>['session']
+  session: Awaited<ReturnType<PiSdkUnderTest['createAgentSessionFromServices']>>['session']
   wiring: RlmIpythonWiring
   delegator: ToolDefinition
 }

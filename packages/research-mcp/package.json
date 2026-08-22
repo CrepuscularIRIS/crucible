@@ -1,0 +1,21 @@
+{
+  "name": "@proma/research-mcp",
+  "version": "0.1.0",
+  "description": "Proma 研究层的确定性底座：信念状态 / 预登记 / 受认可执行 / 重算（stdio MCP server）",
+  "type": "module",
+  "private": true,
+  "main": "./src/server.ts",
+  "scripts": {
+    "start": "bun src/server.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.0.0"
+  }
+}
