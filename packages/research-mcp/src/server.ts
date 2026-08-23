@@ -153,7 +153,7 @@ export function buildServer(): McpServer {
         })
       if (redundant) {
         throw new ResearchStateError(
-          `${id} 的 predicts 是 LIVE 假设 ${redundant.id} 的子集，两者不可判别；先写出差异再登记`,
+          `${id} 的 predicts 是 LIVE 假设 ${redundant.id} 的子集，两者不可判别；先写出差异再登记 → research-abduce：重写 predicts 使两条假设有互斥落点`,
         )
       }
       appendEvent(root, 'claim.propose', { id, statement, predicts })
@@ -193,19 +193,19 @@ export function buildServer(): McpServer {
         }
         const probe = state.probes.find((p) => p.pid === byProbe)
         if (!probe || probe.status !== 'LANDED') {
-          throw new ResearchStateError(`终态迁移必须以已落地的探针为依据；${byProbe} 不是已落地探针`)
+          throw new ResearchStateError(`终态迁移必须以已落地的探针为依据；${byProbe} 不是已落地探针 → 先 prereg_write 再 probe_run，用它落地后才能迁移`)
         }
         const spec = readFrozenSpec(root, byProbe)
         if (!spec.branches.some((b) => b.target === id)) {
           throw new ResearchStateError(
-            `${byProbe} 的预登记分支从未提到 ${id}：终态结论必须能追溯到预登记时写下的分支`,
+            `${byProbe} 的预登记分支从未提到 ${id}：终态结论必须能追溯到预登记时写下的分支 → research-probe：为 ${id} 预登记一个点名它的新探针`,
           )
         }
         const metric = probe.metric
         if (metric === undefined) throw new ResearchStateError('探针没有重算指标')
         if (!spec.branches.some((b) => b.target === id && inBand(metric, b.band))) {
           throw new ResearchStateError(
-            `观测值 ${metric} 不落在任何针对 ${id} 的预登记分支频段内；不得事后解释`,
+            `观测值 ${metric} 不落在任何针对 ${id} 的预登记分支频段内；不得事后解释 → 预登记写窄了：回 research-probe 用新探针（含新频段）修正`,
           )
         }
       }
@@ -255,7 +255,7 @@ export function buildServer(): McpServer {
       const state = replay(root)
       const probe = state.probes.find((p) => p.pid === pid)
       if (!probe || probe.status !== 'PREREG') {
-        throw new ResearchStateError(`探针 ${pid} 不存在或状态不允许执行（当前: ${probe?.status ?? '不存在'}）`)
+        throw new ResearchStateError(`探针 ${pid} 不存在或状态不允许执行（当前: ${probe?.status ?? '不存在'}）→ 先 prereg_write 登记探针，再 probe_run`)
       }
       const spec = readFrozenSpec(root, pid)
       // 红线：模型写的命令只在沙箱执行；bwrap 缺失时结构性拒绝（fail closed）

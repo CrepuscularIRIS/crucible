@@ -95,12 +95,12 @@ export function runReconcileGate(runRoot: string, reportOverride?: ReconcileRepo
       }
       const recomputed = recomputeForProbe(runRoot, pid)
       if (!matchesWithinRoundingTolerance(cited, recomputed)) {
-        reasons.push(`第 ${lineNo} 行幻觉数字：报告称 ${cited}（${pid}），重算 ${recomputed}`)
+        reasons.push(`第 ${lineNo} 行幻觉数字：报告称 ${cited}（${pid}），重算 ${recomputed} → 用 metric_recompute 重取该数字，改报告后重新 declare`)
       }
     }
     if (!hasSourceOnLine && BARE_NUMBER.test(masked)) {
       const bare = masked.match(BARE_NUMBER)?.[0]
-      reasons.push(`第 ${lineNo} 行的数字 ${bare} 缺少 (P#) 出处（报告数字必须可对账）`)
+      reasons.push(`第 ${lineNo} 行的数字 ${bare} 缺少 (P#) 出处（报告数字必须可对账）→ 只引用 metric_recompute 的返回值并标注 (P#)`)
     }
   }
 

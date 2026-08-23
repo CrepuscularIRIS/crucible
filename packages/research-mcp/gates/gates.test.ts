@@ -86,6 +86,9 @@ async function buildHonestRun(): Promise<string> {
   })
   await callTool('probe_run', { run, pid: 'P1' })
   await callTool('claim_transition', { run, id: 'H2', to: 'REFUTED', byProbe: 'P1', note: '观测 0.83 落在 H1 频段' })
+  // P4.1 对抗义务：信念定格后对抗者看过一眼（H1 是 SUPPORTED 候补语义下的 LIVE，
+  // run 级规则要求最后一次终态迁移之后有攻击）
+  await callTool('attack_record', { run, target: 'H1', kind: 'constraint', text: '单探针样本，频段下界触线风险' })
   const runRoot = join(researchCwd, '.proma-research', run)
   writeFileSync(join(runRoot, 'REPORT.md'), HONEST_REPORT, 'utf-8')
   await callTool('report_declare', { run, path: 'REPORT.md' })
@@ -183,6 +186,74 @@ describe('P3.2 declare 即裁决', () => {
     writeFileSync(join(emptyRoot, 'REPORT.md'), '# 空报告', 'utf-8')
     await expect(callTool('report_declare', { run: 'empty-declare', path: 'REPORT.md' }))
       .rejects.toThrow(/空 run/)
+  })
+})
+
+describe('P4.1 对抗义务（破坏必须变红）', () => {
+  it('SUPPORTED 无攻击 → trace 红 + declare 拒绝', async () => {
+    const runRoot = await buildHonestRun()
+    const run = runRoot.split('/').pop()!
+    // 构造一个 SUPPORTED 且无攻击的场景：新 run，H1 支持落地后不跑 grill
+    await callTool('research_init', { run: 'no-attack' })
+    await callTool('claim_propose', { run: 'no-attack', id: 'H1', statement: 'A', predicts: ['x ≥ 0.8'] })
+    await callTool('claim_propose', { run: 'no-attack', id: 'H2', statement: 'B', predicts: ['x ≤ 0.6'] })
+    await callTool('prereg_write', {
+      run: 'no-attack',
+      spec: {
+        pid: 'P1',
+        question: 'A 还是 B？',
+        evalCommand: 'echo value=0.9',
+        metricKind: 'regex',
+        metricSpec: 'value=([0-9.]+)',
+        bands: { H1: [0.8, 1.0], H2: [0.0, 0.6] },
+        branches: [
+          { band: [0.8, 1.0], action: 'support', target: 'H1' },
+          { band: [0.8, 1.0], action: 'kill', target: 'H2' },
+        ],
+      },
+    })
+    await callTool('probe_run', { run: 'no-attack', pid: 'P1' })
+    await callTool('claim_transition', { run: 'no-attack', id: 'H1', to: 'SUPPORTED', byProbe: 'P1' })
+    const noAttackRoot = join(researchCwd, '.proma-research', 'no-attack')
+    const traceResult = runTraceGate(noAttackRoot)
+    expect(traceResult.passed).toBe(false)
+    expect(traceResult.failures.some((f) => /SUPPORTED 结论 H1/.test(f.reason))).toBe(true)
+    // declare 同样拒绝（内嵌同一 trace 函数）
+    writeFileSync(join(noAttackRoot, 'REPORT.md'), '# r\n\nvalue=0.9 (P1)\n\n- H1: SUPPORTED\n- H2: LIVE\n', 'utf-8')
+    await expect(callTool('report_declare', { run: 'no-attack', path: 'REPORT.md' }))
+      .rejects.toThrow(/对抗攻击/)
+    void runRoot
+    void run
+  })
+
+  it('攻击全部早于最后终态迁移 → 红（对抗者看的是草稿）', async () => {
+    const runRoot = await buildHonestRun()
+    const run = runRoot.split('/').pop()!
+    // 再做一次终态迁移使既有攻击全部"过时"：H3 被新探针杀死
+    await callTool('prereg_write', {
+      run,
+      spec: {
+        pid: 'P2',
+        question: 'H3 交互项为正？',
+        evalCommand: 'echo value=0.1',
+        metricKind: 'regex',
+        metricSpec: 'value=([0-9.]+)',
+        bands: { H1: [0.8, 1.0], H3: [0.0, 0.3] },
+        branches: [{ band: [0.0, 0.3], action: 'kill', target: 'H3' }],
+      },
+    })
+    await callTool('probe_run', { run, pid: 'P2' })
+    await callTool('claim_transition', { run, id: 'H3', to: 'REFUTED', byProbe: 'P2' })
+    const result = runTraceGate(runRoot)
+    expect(result.passed).toBe(false)
+    expect(result.failures.some((f) => /最后一次终态迁移之后没有任何对抗攻击/.test(f.reason))).toBe(true)
+  })
+
+  it('归档战役（不改 journal）在 P4.1 规则下复跑仍 3×PASS', () => {
+    const archiveRoot = join(import.meta.dir, '..', '..', '..', 'research', 'campaigns', '2026-08-23-first')
+    expect(runPreregGate(archiveRoot).passed).toBe(true)
+    expect(runReconcileGate(archiveRoot).passed).toBe(true)
+    expect(runTraceGate(archiveRoot).passed).toBe(true)
   })
 })
 

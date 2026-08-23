@@ -44,7 +44,7 @@ export function runTraceGate(runRoot: string): GateResult {
     const onDisk = readFileSync(registerFile, 'utf-8').trim()
     const derived = JSON.stringify(replayed, null, 2).trim()
     if (onDisk !== derived) {
-      reasons.push('register.json 与 journal 重放结果不一致（状态文件被手改，或缺少最后一次 server 写入）')
+      reasons.push('register.json 与 journal 重放结果不一致（状态文件被手改，或缺少最后一次 server 写入） → 手改 register 无效：journal 是唯一事实源，用 MCP 工具重做状态变更')
     }
   }
 
@@ -59,7 +59,55 @@ export function runTraceGate(runRoot: string): GateResult {
     }
   }
 
+  // P4.1 · 对抗义务（ARFT R3：路径必须被自己控制不了的检查质询过）。
+  // 时间戳取自 journal 事件而非 state（register 形状不变，归档产物免重生成）。
+  reasons.push(...checkAdversarialObligation(replayed, events))
+
   return reasons.length === 0 ? ok('trace') : fail('trace', reasons)
+}
+
+const TERMINAL_STATES = new Set(['SUPPORTED', 'REFUTED', 'SCOPED'])
+
+function checkAdversarialObligation(
+  replayed: ReturnType<typeof replay>,
+  events: JournalEvent[],
+): string[] {
+  const reasons: string[] = []
+  // "晚于"以只追加 journal 的条目序为准（同毫秒写入合法；时间戳只拒倒填）
+  const lastTerminalIndex = new Map<string, number>()
+  let runLastTerminalIndex = -1
+  events.forEach((event, index) => {
+    if (event.op !== 'claim.transition' || !TERMINAL_STATES.has(String(event.to))) return
+    const id = String(event.id)
+    lastTerminalIndex.set(id, Math.max(lastTerminalIndex.get(id) ?? -1, index))
+    runLastTerminalIndex = Math.max(runLastTerminalIndex, index)
+  })
+  const attackIndexes = (target?: string) => events
+    .map((event, index) => ({ event, index }))
+    .filter(({ event }) => event.op === 'attack.record'
+      && (target === undefined || String(event.target) === target))
+    .map(({ index }) => index)
+
+  // 规则 1：每个 SUPPORTED claim 至少一条攻击晚于它的最后一次终态迁移
+  for (const claim of replayed.claims) {
+    if (claim.state !== 'SUPPORTED') continue
+    const terminalIndex = lastTerminalIndex.get(claim.id) ?? -1
+    if (!attackIndexes(claim.id).some((index) => index > terminalIndex)) {
+      reasons.push(
+        `SUPPORTED 结论 ${claim.id} 没有任何晚于其终态迁移的对抗攻击（对抗者必须见过最终信念，不是草稿）`
+        + ' → 用 research-grill 拉对抗者并 attack_record 指向它',
+      )
+    }
+  }
+
+  // 规则 2（run 级）：信念定格后对抗者至少看过一眼（kill/scope 不逐条强制）
+  if (runLastTerminalIndex >= 0 && !attackIndexes().some((index) => index > runLastTerminalIndex)) {
+    reasons.push(
+      '最后一次终态迁移之后没有任何对抗攻击（graveyard 可见是约束 5，这是它的执行点）'
+      + ' → research-grill 至少跑一轮并 attack_record',
+    )
+  }
+  return reasons
 }
 
 if (import.meta.main) {

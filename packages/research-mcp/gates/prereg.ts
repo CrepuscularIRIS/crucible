@@ -40,7 +40,7 @@ export function runPreregGate(runRoot: string): GateResult {
   for (const [pid, startEvent] of startByPid) {
     const prereg = preregByPid.get(pid)
     if (!prereg) {
-      reasons.push(`${pid} 没有预登记就被执行`)
+      reasons.push(`${pid} 没有预登记就被执行 → 这种 run 无法补正：新探针必须先 prereg_write 再 probe_run`)
       continue
     }
     // 顺序由只追加 journal 保证（prereg.write 必须排在 probe.start 之前）；
@@ -68,7 +68,7 @@ export function runPreregGate(runRoot: string): GateResult {
     }
     const spec = loadSpec(runRoot, probe.pid)
     if (!hasDisjointBandPair(spec.bands)) {
-      reasons.push(`${probe.pid} 预登记缺少互斥频段对（装饰性探针）`)
+      reasons.push(`${probe.pid} 预登记缺少互斥频段对（装饰性探针） → research-probe：写出至少一对不重叠频段再 prereg_write`)
     }
     if (!spec.branches.some((b) => b.action === 'kill' || b.action === 'scope')) {
       reasons.push(`${probe.pid} 预登记缺少 kill/scope 分支`)
