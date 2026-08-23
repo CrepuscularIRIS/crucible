@@ -16,19 +16,20 @@ process.env.PRIME_AGENT_KERNEL_FORKSERVER = '0'
 
 const REPO = dirname(dirname(dirname(dirname(new URL(import.meta.url).pathname))))
 const RUN = 'routing-acceptance'
-const NEURONBENCH_ROOT = process.env.NEURONBENCH_ROOT ?? '/home/lingxufeng/oss/neuronbench'
 const {
-  authorizeResearchIpython,
   buildResearchMcpEnv,
+  createResearchIpythonAuthorizer,
   disposeAndArchiveResearchSession,
   requireEnvironmentSecret,
   researchIsolationExtension,
 } = await import('./research-script-lifecycle.ts')
 
 const DASHSCOPE_API_KEY = requireEnvironmentSecret(process.env, 'DASHSCOPE_API_KEY')
+const NEURONBENCH_ROOT = requireEnvironmentSecret(process.env, 'NEURONBENCH_ROOT')
 
 const campaignDir = join(process.env.HOME!, '.proma-campaign-runs', '2026-08-23-routing-acceptance')
 const cwd = join(campaignDir, 'project')
+const authorizeResearchIpython = createResearchIpythonAuthorizer(NEURONBENCH_ROOT, cwd)
 rmSync(campaignDir, { recursive: true, force: true })
 mkdirSync(cwd, { recursive: true })
 writeFileSync(join(cwd, 'eval.py'), `import json, random, sys

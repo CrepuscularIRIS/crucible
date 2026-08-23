@@ -81,9 +81,11 @@ import {
 import { DEFAULT_CONTEXT_WINDOW, buildModel } from './pi-model-registry'
 import { computeResidencyKey, ResidentSessionRegistry } from './pi-session-residency'
 import {
+  createRlmSessionActivationOptions,
   detectIpythonKernelSupply,
   installSessionIpythonPermission,
 } from './pi-ipython-rlm'
+import { mergePromaManagedSkillPaths, resolvePrimeNativeSkillPaths } from './pi-managed-skills'
 import { summarizePrimeRefineArtifacts } from './pi-refine-state'
 import type { AgentRefineEntrySummary, AgentRefineNowResult, AgentRefineState } from '@proma/shared'
 import { PendingPromptSkillActivationTracker } from './pi-skill-activation-tracker'
@@ -1288,7 +1290,7 @@ export function isPiBashToolAvailable(
  * 它们会在 prompt 解析阶段被 Prime 截走，绕过 Proma 的整套语义：
  *
  * - `/goal` 会强行激活 ipython 工具。P0.1 起 RLM 可用时 ipython 已作为
- *   customTools 注册并经过权限包装，强行激活拿到的也是受管控的定义，因此放行；
+ *   会话自有内置定义激活并经过权限 hook 管控，因此放行；
  *   RLM 供给缺失时 goal 无工具可用（Prime 直接抛错），仍需 shield。
  * - `/compact` 会被 Prime 吞掉且不发 agent_end，Proma 侧收不到终态，
  *   最后被判成「空回复」错误；Proma 自己有压缩入口，不该走这条。
@@ -1473,7 +1475,10 @@ export class PiAgentAdapter implements AgentProviderAdapter {
           ? `${input.projectInstructionScope.projectRoot}#${[...(input.projectInstructionScope.initialSources ?? [])].sort().join('|')}`
           : undefined,
         researchIsolation: input.researchIsolation
-          ? [...input.researchIsolation.denyRoots, input.researchIsolation.stateRoot].filter((path): path is string => Boolean(path))
+          ? {
+              denyRoots: input.researchIsolation.denyRoots,
+              stateRoots: input.researchIsolation.stateRoots,
+            }
           : undefined,
       })
       const cachedEntry = this.residentSessions.acquire(input.sessionId, active)
@@ -1961,6 +1966,10 @@ export class PiAgentAdapter implements AgentProviderAdapter {
     if (!rlmSupply.available) {
       console.warn(`[Pi SDK] RLM 未启用：${rlmSupply.detail}。安装 uv 或设置 PRIME_AGENT_KERNEL_PYTHON 后可用。`)
     }
+    const managedSkillPaths = mergePromaManagedSkillPaths(
+      input.additionalSkillPaths ?? [],
+      rlmSupply.available ? resolvePrimeNativeSkillPaths() : [],
+    )
     const customTools = [
       buildCurrentSessionCompactionTool(
         sdk,
@@ -2035,8 +2044,8 @@ export class PiAgentAdapter implements AgentProviderAdapter {
       settingsManager,
       ...createPromaManagedResourceLoaderOptions(),
       agentsFilesOverride: createPromaProjectInstructionFilesOverride(input.projectInstructionFiles ?? []),
-      additionalSkillPaths: input.additionalSkillPaths ?? [],
-      skillsOverride: createPromaSkillsOverride(input.additionalSkillPaths),
+      additionalSkillPaths: managedSkillPaths,
+      skillsOverride: createPromaSkillsOverride(managedSkillPaths),
       ...(extensionFactories.length > 0 && { extensionFactories }),
       // P0.2：不再整体替换系统提示。customPrompt（systemPromptOverride 的返回值）
       // 会让 buildSystemPrompt 走自定义分支，整段丢掉 buildRlmPrompt 与
@@ -2065,9 +2074,10 @@ export class PiAgentAdapter implements AgentProviderAdapter {
       model,
       thinkingLevel: input.thinkingLevel ?? 'off',
       noTools: 'builtin',
-      // RLM：激活会话自己的内置 ipython（供给缺失时不激活）。子代理经
-      // initialActiveToolNames 继承父的活跃集，拿到的是它自己的 kernel 接线。
-      ...(rlmSupply.available ? { initialActiveToolNames: ['ipython' as const] } : {}),
+      // RLM：供给可用时默认激活并预热会话自己的 ipython；同时开放
+      // goal / compact 的 kernel host bridge。子代理继承活跃工具名，但各自
+      // 构建独立 kernel，不共享父会话定义。
+      ...createRlmSessionActivationOptions(rlmSupply),
       customTools,
     })
     if (rlmSupply.available) {

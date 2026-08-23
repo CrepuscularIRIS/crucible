@@ -28,6 +28,26 @@ export interface IpythonKernelSupply {
   detail: string
 }
 
+export interface RlmSessionActivationOptions {
+  initialActiveToolNames?: string[]
+  includeGoals?: boolean
+  includeCompactSkill?: boolean
+  prewarmIpythonKernel?: boolean
+}
+
+/** RLM 供给可用时默认常开，并在首轮前异步预热 kernel。 */
+export function createRlmSessionActivationOptions(
+  supply: IpythonKernelSupply,
+): RlmSessionActivationOptions {
+  if (!supply.available) return {}
+  return {
+    initialActiveToolNames: ['ipython'],
+    includeGoals: true,
+    includeCompactSkill: true,
+    prewarmIpythonKernel: true,
+  }
+}
+
 export interface SessionIpythonPermissionRequest {
   toolCallId: string
   input: Record<string, unknown>

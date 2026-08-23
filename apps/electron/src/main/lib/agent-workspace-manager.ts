@@ -240,7 +240,7 @@ function copyDefaultSkills(workspaceSlug: string, options: { throwOnError?: bool
       const source = join(defaultDir, entry.name)
       const target = join(targetDir, entry.name)
       try {
-        cpSync(source, target, { recursive: true, filter: skillCopyFilter })
+        cpSync(source, target, { recursive: true, dereference: true, filter: skillCopyFilter })
       } catch (err) {
         console.warn(`[Agent 工作区] 复制默认 Skill 失败 (${workspaceSlug}/${entry.name}):`, err)
         if (options.throwOnError) throw err
@@ -472,6 +472,26 @@ export function ensureDefaultWorkspace(): AgentWorkspace {
 
 // ===== 默认 Skills 自动升级 =====
 
+/** existsSync 会把断开的 symlink 当作不存在；受管迁移必须识别并替换该目录项。 */
+export function managedSkillPathExists(path: string): boolean {
+  try {
+    lstatSync(path)
+    return true
+  } catch {
+    return false
+  }
+}
+
+/** legacy 仓库 symlink 不属于可移植安装，即使版本相同也要替换成实体副本。 */
+export function shouldReplaceManagedSkill(path: string, managedVersion: string): boolean {
+  try {
+    if (lstatSync(path).isSymbolicLink()) return true
+  } catch {
+    return true
+  }
+  return compareSemver(managedVersion, parseSkillVersion(path)) > 0
+}
+
 /** 从单个工作区的 active 与 inactive 目录清理已退役的内置 Skills。 */
 function removeRetiredDefaultSkillsFromWorkspace(workspace: AgentWorkspace): void {
   const skillDirs = [
@@ -482,7 +502,7 @@ function removeRetiredDefaultSkillsFromWorkspace(workspace: AgentWorkspace): voi
   for (const skillDir of skillDirs) {
     for (const slug of RETIRED_DEFAULT_SKILL_SLUGS) {
       const targetPath = join(skillDir.path, slug)
-      if (!existsSync(targetPath)) continue
+      if (!managedSkillPathExists(targetPath)) continue
 
       try {
         rmSyncWithRetry(targetPath, { recursive: true, force: true })
@@ -537,9 +557,9 @@ export function upgradeDefaultSkillsInWorkspaces(): void {
       const activePath = join(activeDir, slug)
       const inactivePath = join(inactiveDir, slug)
 
-      if (existsSync(activePath)) {
+      if (managedSkillPathExists(activePath)) {
         const currentVer = parseSkillVersion(activePath)
-        if (compareSemver(info.version, currentVer) > 0) {
+        if (shouldReplaceManagedSkill(activePath, info.version)) {
           if (safeReplaceSkillDir(info.sourcePath, activePath)) {
             console.log(
               `[Agent 工作区] 已升级默认 Skill: ${workspace.slug}/${slug} (active, ${currentVer} → ${info.version})`,
@@ -553,9 +573,9 @@ export function upgradeDefaultSkillsInWorkspaces(): void {
         continue
       }
 
-      if (existsSync(inactivePath)) {
+      if (managedSkillPathExists(inactivePath)) {
         const currentVer = parseSkillVersion(inactivePath)
-        if (compareSemver(info.version, currentVer) > 0) {
+        if (shouldReplaceManagedSkill(inactivePath, info.version)) {
           if (safeReplaceSkillDir(info.sourcePath, inactivePath)) {
             console.log(
               `[Agent 工作区] 已升级默认 Skill: ${workspace.slug}/${slug} (inactive, ${currentVer} → ${info.version})`,
@@ -571,7 +591,7 @@ export function upgradeDefaultSkillsInWorkspaces(): void {
 
       try {
         if (!existsSync(activeDir)) mkdirSync(activeDir, { recursive: true })
-        cpSync(info.sourcePath, activePath, { recursive: true, filter: skillCopyFilter })
+        cpSync(info.sourcePath, activePath, { recursive: true, dereference: true, filter: skillCopyFilter })
         console.log(`[Agent 工作区] 已注入新默认 Skill: ${workspace.slug}/${slug} → active`)
       } catch (err) {
         console.warn(`[Agent 工作区] 注入默认 Skill 失败 (${workspace.slug}/${slug}):`, err)
@@ -590,10 +610,10 @@ export function upgradeDefaultSkillsInWorkspaces(): void {
  *
  * @returns 成功返回 true；任何步骤失败返回 false（已记录日志，不抛出）
  */
-function safeReplaceSkillDir(sourcePath: string, targetPath: string): boolean {
+export function safeReplaceSkillDir(sourcePath: string, targetPath: string): boolean {
   try {
     rmSyncWithRetry(targetPath, { recursive: true, force: true })
-    cpSync(sourcePath, targetPath, { recursive: true, filter: skillCopyFilter })
+    cpSync(sourcePath, targetPath, { recursive: true, dereference: true, filter: skillCopyFilter })
     return true
   } catch (err) {
     console.warn(`[Agent 工作区] safeReplaceSkillDir 失败 (${targetPath}):`, err)

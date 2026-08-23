@@ -92,8 +92,6 @@ export function requireSandbox(): void {
   }
 }
 
-const DEFAULT_NEURONBENCH_ROOT = '/home/lingxufeng/oss/neuronbench'
-
 /**
  * 验证 world meter 的真值 deny 配置。
  *
@@ -108,7 +106,9 @@ export function resolveResearchDenyRoots(env: NodeJS.ProcessEnv = process.env): 
   const missing = roots.find((entry) => !existsSync(entry))
   if (missing) throw new Error(`PROMA_RESEARCH_DENY 包含不存在路径: ${missing}`)
 
-  const benchmarkRoot = resolve(env.NEURONBENCH_ROOT ?? DEFAULT_NEURONBENCH_ROOT)
+  const configuredBenchmarkRoot = env.NEURONBENCH_ROOT?.trim()
+  if (!configuredBenchmarkRoot) throw new Error('NEURONBENCH_ROOT 未配置')
+  const benchmarkRoot = resolve(configuredBenchmarkRoot)
   if (!existsSync(benchmarkRoot)) throw new Error('NEURONBENCH_ROOT 不存在')
   const coversBenchmark = roots.some((entry) => (
     entry === benchmarkRoot || benchmarkRoot.startsWith(`${entry}${sep}`)

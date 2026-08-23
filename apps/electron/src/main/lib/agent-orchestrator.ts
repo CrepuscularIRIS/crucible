@@ -995,7 +995,7 @@ export class AgentOrchestrator {
 
       // 10. 构建 MCP 服务器配置 + 记忆工具 + 生图工具 + 自定义工具
       const mcpServers = this.buildMcpServers(workspaceSlug)
-      const researchIsolation = resolveResearchIsolationConfig(mcpServers)
+      const researchIsolation = resolveResearchIsolationConfig(mcpServers, agentCwd)
       let piBuiltinTools: unknown[] = []
       let piMcpTools: unknown[] = []
       const piSdk = await import('@earendil-works/pi-coding-agent')

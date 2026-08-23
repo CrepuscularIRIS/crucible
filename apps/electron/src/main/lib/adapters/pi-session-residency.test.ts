@@ -107,7 +107,10 @@ describe('computeResidencyKey', () => {
     expect(computeResidencyKey(base)).not.toBe(computeResidencyKey({ ...base, thinkingLevel: 'high' }))
     expect(computeResidencyKey(base)).not.toBe(computeResidencyKey({
       ...base,
-      researchIsolation: ['/home/test/oss/neuronbench', '/home/test/project/.proma-research'],
+      researchIsolation: {
+        denyRoots: ['/home/test/oss/neuronbench'],
+        stateRoots: ['/home/test/project/.proma-research'],
+      },
     }))
   })
 
@@ -115,5 +118,15 @@ describe('computeResidencyKey', () => {
     expect(computeResidencyKey(base)).toBe(
       computeResidencyKey({ ...base, additionalSkillPaths: [...base.additionalSkillPaths].reverse() }),
     )
+  })
+
+  test('denyRoots 与 stateRoots 结构不同不会产生相同驻留指纹', () => {
+    expect(computeResidencyKey({
+      ...base,
+      researchIsolation: { denyRoots: ['/a'], stateRoots: ['/b'] },
+    })).not.toBe(computeResidencyKey({
+      ...base,
+      researchIsolation: { denyRoots: ['/a', '/b'], stateRoots: [] },
+    }))
   })
 })

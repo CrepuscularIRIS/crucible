@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
 
 from research.eval.liveness import analyze
 
@@ -40,12 +41,24 @@ class TruthLeakTests(unittest.TestCase):
         })
 
     def test_benchmark_tree_read_is_reported(self) -> None:
-        report = analyze([assistant_tool(
-            "open('/home/lingxufeng/oss/neuronbench/neuronbench/worlds.py').read()",
-        )])
+        benchmark_root = "/tmp/neuronbench-fixture"
+        with patch.dict("os.environ", {"NEURONBENCH_ROOT": benchmark_root}):
+            report = analyze([assistant_tool(
+                f"open('{benchmark_root}/neuronbench/worlds.py').read()",
+            )])
         self.assertEqual(report.get("truth_leak"), {
             "detected": True,
             "matches": ["benchmark_path_read"],
+        })
+
+    def test_unconfigured_benchmark_path_does_not_guess_a_machine_path(self) -> None:
+        with patch.dict("os.environ", {}, clear=True):
+            report = analyze([assistant_tool(
+                "open('/tmp/neuronbench-fixture/neuronbench/worlds.py').read()",
+            )])
+        self.assertEqual(report.get("truth_leak"), {
+            "detected": False,
+            "matches": [],
         })
 
     def test_honest_world_mcp_call_is_not_reported(self) -> None:

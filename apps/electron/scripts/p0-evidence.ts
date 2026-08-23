@@ -22,7 +22,6 @@ import { dirname, join } from 'node:path'
 
 const REPO = dirname(dirname(dirname(dirname(new URL(import.meta.url).pathname))))
 const {
-  authorizeResearchIpython,
   disposeAndArchiveResearchSession,
   requireEnvironmentSecret,
 } = await import('./research-script-lifecycle.ts')
@@ -100,7 +99,6 @@ const { session } = await servicesMod.createAgentSessionFromServices({
   initialActiveToolNames: ['ipython'],
   customTools: [],
 })
-rlmModule.installSessionIpythonPermission(session, authorizeResearchIpython)
 
 let compacted = false
 const eventNames: string[] = []

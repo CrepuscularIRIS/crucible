@@ -20,20 +20,21 @@ process.env.PRIME_AGENT_KERNEL_FORKSERVER = '0'
 
 const REPO = dirname(dirname(dirname(dirname(new URL(import.meta.url).pathname))))
 const RUN = 'p5-1-two-rounds'
-const NEURONBENCH_ROOT = process.env.NEURONBENCH_ROOT ?? '/home/lingxufeng/oss/neuronbench'
 const {
-  authorizeResearchIpython,
   buildResearchMcpEnv,
+  createResearchIpythonAuthorizer,
   disposeAndArchiveResearchSession,
   requireEnvironmentSecret,
   researchIsolationExtension,
 } = await import('./research-script-lifecycle.ts')
 
 const DASHSCOPE_API_KEY = requireEnvironmentSecret(process.env, 'DASHSCOPE_API_KEY')
+const NEURONBENCH_ROOT = requireEnvironmentSecret(process.env, 'NEURONBENCH_ROOT')
 
 // ── 战役工作区：$HOME 下（沙箱 tmpfs 遮蔽 /tmp 的教训），确定性评测 ──
 const campaignDir = join(process.env.HOME!, '.proma-campaign-runs', '2026-08-23-p5-1')
 const cwd = join(campaignDir, 'project')
+const authorizeResearchIpython = createResearchIpythonAuthorizer(NEURONBENCH_ROOT, cwd)
 mkdirSync(cwd, { recursive: true })
 writeFileSync(join(cwd, 'eval.py'), `import json, random, sys
 argv = sys.argv[1:]

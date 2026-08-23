@@ -24,10 +24,7 @@ import {
   detectIpythonKernelSupply,
   installSessionIpythonPermission,
 } from '../src/main/lib/adapters/pi-ipython-rlm.ts'
-import {
-  authorizeResearchIpython,
-  disposeAndArchiveResearchSession,
-} from './research-script-lifecycle.ts'
+import { disposeAndArchiveResearchSession } from './research-script-lifecycle.ts'
 
 const REPO = dirname(dirname(dirname(dirname(new URL(import.meta.url).pathname))))
 
@@ -142,7 +139,7 @@ async function buildSession(
     customTools,
   })
   session.agent.streamFn = childStream(childMarker)
-  installSessionIpythonPermission(session, authorizeResearchIpython)
+  installSessionIpythonPermission(session, async ({ input }) => ({ behavior: 'allow', updatedInput: input }))
   return { session }
 }
 

@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'bun:test'
@@ -22,6 +22,16 @@ interface LifecycleModule {
     | { behavior: 'deny'; message: string }
   >
   requireEnvironmentSecret(env: NodeJS.ProcessEnv, name: string): string
+  createResearchIpythonAuthorizer(neuronbenchRoot: string, cwd: string): (input: {
+    input: Record<string, unknown>
+  }) => Promise<
+    | { behavior: 'allow'; updatedInput: Record<string, unknown> }
+    | { behavior: 'deny'; message: string }
+  >
+  assertResearchArchiveLayout(
+    archiveDir: string,
+    entries: Array<{ source: string; target: string; required: boolean }>,
+  ): void
   researchIsolationExtension(neuronbenchRoot: string, cwd: string): (pi: {
     on(
       event: string,
@@ -151,6 +161,85 @@ describe('研究脚本生命周期', () => {
     await expect(lifecycle.authorizeResearchIpython({
       input: { code: 'result = 6 * 7' },
     })).resolves.toEqual({ behavior: 'allow', updatedInput: { code: 'result = 6 * 7' } })
+  })
+
+  it('无头 authorizer 使用真实 renamed denyRoot，而不是只靠 neuronbench 静态词形', async () => {
+    const lifecycle = await loadLifecycle()
+    expect(lifecycle).not.toBeNull()
+    if (!lifecycle) return
+    expect(typeof lifecycle.createResearchIpythonAuthorizer).toBe('function')
+    if (!lifecycle.createResearchIpythonAuthorizer) return
+
+    const authorize = lifecycle.createResearchIpythonAuthorizer('/bench/hidden-truth', '/campaign/project')
+    await expect(authorize({
+      input: { code: 'open("/bench/hidden-truth/worlds.py").read()' },
+    })).resolves.toMatchObject({ behavior: 'deny' })
+    await expect(authorize({ input: { code: 'result = 6 * 7' } })).resolves.toMatchObject({ behavior: 'allow' })
+  })
+
+  it.each([
+    ['archive 位于 source 内', 'source', 'source/archive'],
+    ['以双点开头的真实子目录仍位于 source 内', 'source', 'source/..archive'],
+    ['archive 等于 source', 'source', 'source'],
+    ['source 位于 archive 内', 'archive/source', 'archive'],
+  ] as const)('归档布局预检拒绝目录重叠：%s', async (_label, sourceRel, archiveRel) => {
+    const lifecycle = await loadLifecycle()
+    expect(lifecycle).not.toBeNull()
+    if (!lifecycle) return
+    expect(typeof lifecycle.assertResearchArchiveLayout).toBe('function')
+    if (!lifecycle.assertResearchArchiveLayout) return
+
+    const root = mkdtempSync(join(tmpdir(), 'proma-script-layout-'))
+    tempRoots.push(root)
+    expect(() => lifecycle.assertResearchArchiveLayout(join(root, archiveRel), [{
+      source: join(root, sourceRel),
+      target: 'runtime',
+      required: true,
+    }])).toThrow('重叠')
+  })
+
+  it('归档布局预检解引用 symlink 别名，拒绝真实路径落回 source', async () => {
+    const lifecycle = await loadLifecycle()
+    expect(lifecycle).not.toBeNull()
+    if (!lifecycle) return
+
+    const root = mkdtempSync(join(tmpdir(), 'proma-script-layout-link-'))
+    tempRoots.push(root)
+    const source = join(root, 'source')
+    const alias = join(root, 'source-alias')
+    mkdirSync(source)
+    symlinkSync(source, alias, 'dir')
+
+    expect(() => lifecycle.assertResearchArchiveLayout(join(alias, 'archive'), [{
+      source,
+      target: 'runtime',
+      required: true,
+    }])).toThrow('重叠')
+  })
+
+  it('归档解引用 symlink，删除 live target 后证据仍独立可读', async () => {
+    const lifecycle = await loadLifecycle()
+    expect(lifecycle).not.toBeNull()
+    if (!lifecycle) return
+
+    const root = mkdtempSync(join(tmpdir(), 'proma-script-symlink-'))
+    tempRoots.push(root)
+    const source = join(root, 'source')
+    const target = join(root, 'live-target.txt')
+    const archive = join(root, 'archive')
+    mkdirSync(source)
+    writeFileSync(target, 'portable evidence', 'utf-8')
+    symlinkSync(target, join(source, 'via-link.txt'))
+
+    await lifecycle.disposeAndArchiveResearchSession({
+      session: { async disposeAsync() {} },
+      archiveDir: archive,
+      entries: [{ source, target: 'runtime', required: true }],
+    })
+    rmSync(target)
+    const archived = join(archive, 'runtime', 'via-link.txt')
+    expect(lstatSync(archived).isSymbolicLink()).toBe(false)
+    expect(readFileSync(archived, 'utf-8')).toBe('portable evidence')
   })
 
   it('隔离扩展工厂带真实 denyRoots 注册 tool_call 守卫（父与 rlm 子会话共用）', async () => {

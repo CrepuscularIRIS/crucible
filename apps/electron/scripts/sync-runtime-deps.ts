@@ -44,9 +44,9 @@ export interface SyncRuntimeDepsResult {
 }
 
 export const EXTERNAL_RUNTIME_PACKAGES: readonly string[] = [
-  '@earendil-works/pi-coding-agent',
-  '@earendil-works/pi-agent-core',
   '@earendil-works/pi-ai',
+  '@earendil-works/pi-agent-core',
+  '@earendil-works/pi-coding-agent',
   'pdfjs-dist',
   'sharp',
 ]
@@ -54,6 +54,7 @@ export const EXTERNAL_RUNTIME_PACKAGES: readonly string[] = [
 const appDir = resolve(import.meta.dir, '..')
 const repoRoot = resolve(appDir, '../..')
 const repoNodeModules = join(repoRoot, 'node_modules')
+const bunStoreDir = join(repoNodeModules, '.bun')
 const bunVirtualNodeModules = join(repoNodeModules, '.bun', 'node_modules')
 const defaultSourceNodeModules = existsSync(bunVirtualNodeModules) ? bunVirtualNodeModules : repoNodeModules
 const defaultTargetNodeModules = join(appDir, 'node_modules')
@@ -73,6 +74,26 @@ function resolvePackageFromNodeModules(nodeModulesDir: string, packageName: stri
   const packageDir = getPackageDir(nodeModulesDir, packageName)
   if (existsSync(join(packageDir, 'package.json'))) {
     return realpathSync(packageDir)
+  }
+  return undefined
+}
+
+/** 兼容 Bun 1.3 isolated linker：包实体位于 .bun/<编码键>/node_modules/<包名>。 */
+export function resolvePackageFromBunStore(storeDir: string, packageName: string): string | undefined {
+  if (!existsSync(storeDir)) return undefined
+  const encodedName = packageName.replace('/', '+')
+  let entries: string[]
+  try {
+    entries = readdirSync(storeDir)
+      .filter((entry) => entry.startsWith(`${encodedName}@`))
+      .sort()
+  } catch {
+    return undefined
+  }
+
+  for (const entry of entries) {
+    const resolved = resolvePackageFromNodeModules(join(storeDir, entry, 'node_modules'), packageName)
+    if (resolved) return resolved
   }
   return undefined
 }
@@ -100,6 +121,9 @@ function resolvePackageSourceDir(ctx: SyncContext, packageName: string, resolveF
     const resolvedPackageDir = resolvePackageFromNodeModules(nodeModulesDir, packageName)
     if (resolvedPackageDir) return resolvedPackageDir
   }
+
+  const bunStoreResolvedDir = resolvePackageFromBunStore(bunStoreDir, packageName)
+  if (bunStoreResolvedDir) return bunStoreResolvedDir
 
   return undefined
 }

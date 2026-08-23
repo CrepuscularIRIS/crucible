@@ -18,20 +18,21 @@ process.env.PRIME_AGENT_KERNEL_FORKSERVER = '0'
 // import.meta.dir 是 bun 专属；node 下从 import.meta.url 推导
 const REPO = dirname(dirname(dirname(dirname(new URL(import.meta.url).pathname)))) // .../apps/electron/scripts/x.ts → crucible 根
 const RUN = 'first-campaign'
-const NEURONBENCH_ROOT = process.env.NEURONBENCH_ROOT ?? '/home/lingxufeng/oss/neuronbench'
 const {
-  authorizeResearchIpython,
   buildResearchMcpEnv,
+  createResearchIpythonAuthorizer,
   disposeAndArchiveResearchSession,
   requireEnvironmentSecret,
   researchIsolationExtension,
 } = await import('./research-script-lifecycle.ts')
 
 const DASHSCOPE_API_KEY = requireEnvironmentSecret(process.env, 'DASHSCOPE_API_KEY')
+const NEURONBENCH_ROOT = requireEnvironmentSecret(process.env, 'NEURONBENCH_ROOT')
 
 // ── 战役工作区：确定性评测（固定种子、离线、沙箱安全） ──────────────
 const campaignDir = mkdtempSync(join(tmpdir(), 'proma-campaign-'))
 const cwd = join(campaignDir, 'project')
+const authorizeResearchIpython = createResearchIpythonAuthorizer(NEURONBENCH_ROOT, cwd)
 mkdirSync(cwd, { recursive: true })
 writeFileSync(join(cwd, 'eval.py'), `import json, random, sys
 # 固定种子的合成评测：pca 特征有效（H1 真），none 基线较低（H2 假）

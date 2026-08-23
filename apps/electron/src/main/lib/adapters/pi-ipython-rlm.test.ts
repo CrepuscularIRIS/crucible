@@ -29,6 +29,7 @@ import { createPromaManagedResourceLoaderOptions } from './pi-resource-loader-ov
 import { createResearchIsolationExtension } from './pi-research-isolation-extension'
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent'
 import {
+  createRlmSessionActivationOptions,
   detectIpythonKernelSupply,
   installSessionIpythonPermission,
   resetIpythonKernelSupplyCacheForTest,
@@ -199,8 +200,9 @@ describe('P6.0/1.2 RLM ipython 接线结构与权限稳定性', () => {
 
   it('research execution-before 扩展由 RLM 子会话继承，父子 ipython 均不可直连 meter', async () => {
     const extension = createResearchIsolationExtension({
+      cwd: '/home/test/project',
       denyRoots: ['/home/test/oss/neuronbench'],
-      stateRoot: '/home/test/project/.proma-research',
+      stateRoots: ['/home/test/project/.proma-research'],
     })
     const { session } = await buildSessionWithRlmIpython(
       undefined,
@@ -291,6 +293,16 @@ describe('kernel 供给检测', () => {
     process.env.PRIME_AGENT_KERNEL_PYTHON = process.execPath
     resetIpythonKernelSupplyCacheForTest()
     expect(detectIpythonKernelSupply().available).toBe(true)
+  })
+
+  it('RLM 可用时默认激活并预热 kernel，同时开放 goal/compact host bridge', () => {
+    expect(createRlmSessionActivationOptions({ available: true, detail: 'test' })).toEqual({
+      initialActiveToolNames: ['ipython'],
+      includeGoals: true,
+      includeCompactSkill: true,
+      prewarmIpythonKernel: true,
+    })
+    expect(createRlmSessionActivationOptions({ available: false, detail: 'missing' })).toEqual({})
   })
 
   it('PRIME_AGENT_KERNEL_PYTHON 指向不存在路径 → 不可用（显式钉死优先，不回退 uv）', () => {

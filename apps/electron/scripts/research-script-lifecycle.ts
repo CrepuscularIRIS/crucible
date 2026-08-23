@@ -1,5 +1,5 @@
-import { cpSync, existsSync, mkdirSync, mkdtempSync, renameSync, rmSync } from 'node:fs'
-import { basename, dirname, isAbsolute, join, normalize } from 'node:path'
+import { cpSync, existsSync, mkdirSync, mkdtempSync, realpathSync, renameSync, rmSync } from 'node:fs'
+import { basename, dirname, isAbsolute, join, normalize, relative, resolve, sep } from 'node:path'
 import {
   buildResearchIsolationConfig,
   classifyResearchToolCall,
@@ -72,6 +72,19 @@ export async function authorizeResearchIpython(
   return { behavior: 'allow', updatedInput: request.input }
 }
 
+/** 为一场无头战役绑定真实 benchmark/cwd；父会话权限与 RLM 扩展使用同一边界。 */
+export function createResearchIpythonAuthorizer(
+  neuronbenchRoot: string,
+  cwd: string,
+): (request: ResearchIpythonPermissionInput) => Promise<ResearchIpythonPermissionResult> {
+  const config = buildResearchIsolationConfig([neuronbenchRoot], cwd)
+  return async (request) => {
+    const decision = classifyResearchToolCall('ipython', request.input, config)
+    if (decision) return { behavior: 'deny', message: decision.reason }
+    return { behavior: 'allow', updatedInput: request.input }
+  }
+}
+
 /**
  * 供 resourceLoaderOptions.extensionFactories 挂载：扩展经共享 ResourceLoader
  * 同时进入父会话与 rlm 子会话的 execution-before hook。只包父会话的
@@ -93,11 +106,44 @@ function archiveTarget(archiveDir: string, target: string): string {
   return join(archiveDir, normalized)
 }
 
+function pathsOverlap(a: string, b: string): boolean {
+  const rel = relative(a, b)
+  return rel === '' || (!!rel && rel !== '..' && !rel.startsWith(`..${sep}`) && !isAbsolute(rel))
+}
+
+function resolveGuardedRealPath(path: string): string {
+  const resolved = resolve(path)
+  let existing = resolved
+  while (!existsSync(existing)) {
+    const parent = dirname(existing)
+    if (parent === existing) return resolved
+    existing = parent
+  }
+  const realExisting = realpathSync(existing)
+  const tail = relative(existing, resolved)
+  return tail ? resolve(realExisting, tail) : realExisting
+}
+
+/** 归档与任一来源重叠会导致递归复制或替换时删除 live evidence，必须先拒绝。 */
+export function assertResearchArchiveLayout(
+  archiveDir: string,
+  entries: ResearchArchiveEntry[],
+): void {
+  const archive = resolveGuardedRealPath(archiveDir)
+  for (const entry of entries) {
+    const source = resolveGuardedRealPath(entry.source)
+    if (pathsOverlap(source, archive) || pathsOverlap(archive, source)) {
+      throw new Error(`归档目录与证据来源重叠: source=${source}, archive=${archive}`)
+    }
+  }
+}
+
 /** 等 Prime 排空 refine/kernel 后再归档；完整 staging 成功后才替换旧证据集。 */
 export async function disposeAndArchiveResearchSession(
   input: DisposeAndArchiveInput,
 ): Promise<void> {
   await input.session.disposeAsync()
+  assertResearchArchiveLayout(input.archiveDir, input.entries)
   for (const entry of input.entries) {
     archiveTarget(input.archiveDir, entry.target)
     if (entry.required && !existsSync(entry.source)) {
@@ -109,10 +155,11 @@ export async function disposeAndArchiveResearchSession(
   mkdirSync(parent, { recursive: true })
   const staging = mkdtempSync(join(parent, `.${name}-staging-`))
   let previous: string | undefined
+  let preserveStaging = false
   try {
     for (const entry of input.entries) {
       if (!existsSync(entry.source)) continue
-      cpSync(entry.source, archiveTarget(staging, entry.target), { recursive: true })
+      cpSync(entry.source, archiveTarget(staging, entry.target), { recursive: true, dereference: true })
     }
     if (existsSync(input.archiveDir)) {
       previous = join(parent, `.${name}-previous-${process.pid}-${Date.now()}`)
@@ -121,12 +168,22 @@ export async function disposeAndArchiveResearchSession(
     try {
       renameSync(staging, input.archiveDir)
     } catch (error) {
-      if (previous && existsSync(previous)) renameSync(previous, input.archiveDir)
+      if (previous && existsSync(previous)) {
+        try {
+          renameSync(previous, input.archiveDir)
+        } catch (restoreError) {
+          preserveStaging = true
+          throw new Error(
+            `归档切换和旧证据恢复均失败；新证据保留在 ${staging}，旧证据保留在 ${previous}`,
+            { cause: restoreError },
+          )
+        }
+      }
       throw error
     }
     if (previous) rmSync(previous, { recursive: true, force: true })
   } catch (error) {
-    if (existsSync(staging)) rmSync(staging, { recursive: true, force: true })
+    if (!preserveStaging && existsSync(staging)) rmSync(staging, { recursive: true, force: true })
     throw error
   }
 }

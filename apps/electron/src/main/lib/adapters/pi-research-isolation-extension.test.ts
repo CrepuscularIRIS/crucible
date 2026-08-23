@@ -16,8 +16,9 @@ describe('Pi research 隔离扩展', () => {
     } as unknown as ExtensionAPI
 
     createResearchIsolationExtension({
+      cwd: '/home/test/project',
       denyRoots: ['/home/test/oss/neuronbench'],
-      stateRoot: '/home/test/project/.proma-research',
+      stateRoots: ['/home/test/project/.proma-research'],
     })(pi)
 
     expect(handler).toBeDefined()

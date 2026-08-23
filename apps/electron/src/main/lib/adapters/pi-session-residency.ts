@@ -134,7 +134,7 @@ export function computeResidencyKey(parts: {
   additionalSkillPaths: string[]
   projectInstructionFiles: string[]
   projectScope?: string
-  researchIsolation?: string[]
+  researchIsolation?: { denyRoots: string[]; stateRoots: string[] }
 }): string {
   return [
     parts.provider,
@@ -147,7 +147,12 @@ export function computeResidencyKey(parts: {
     [...parts.additionalSkillPaths].sort().join('|'),
     [...parts.projectInstructionFiles].sort().join('|'),
     parts.projectScope ?? '',
-    [...(parts.researchIsolation ?? [])].sort().join('|'),
+    parts.researchIsolation
+      ? JSON.stringify({
+          denyRoots: [...parts.researchIsolation.denyRoots].sort(),
+          stateRoots: [...parts.researchIsolation.stateRoots].sort(),
+        })
+      : '',
   ].join('§')
 }
 

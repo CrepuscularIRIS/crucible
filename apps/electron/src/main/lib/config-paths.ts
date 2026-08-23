@@ -6,9 +6,13 @@
  */
 
 import { join, basename } from 'node:path'
-import { mkdirSync, existsSync, cpSync, rmSync, readdirSync, readFileSync } from 'node:fs'
+import { mkdirSync, existsSync, cpSync, rmSync, readdirSync, readFileSync, lstatSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { rmSyncWithRetry } from './fs-retry'
+import {
+  RESEARCH_DEFAULT_SKILL_SLUGS,
+  resolveResearchDefaultSkillsSource,
+} from './research-default-skills'
 
 /**
  * 获取配置目录名称
@@ -464,6 +468,7 @@ function compareSemver(a: string, b: string): number {
  */
 export const RETIRED_DEFAULT_SKILL_SLUGS: readonly string[] = [
   'brainstorming',
+  'research-writing-skills',
 ]
 
 const RETIRED_DEFAULT_SKILL_SLUG_SET = new Set(RETIRED_DEFAULT_SKILL_SLUGS)
@@ -476,7 +481,11 @@ export function isRetiredDefaultSkill(slug: string): boolean {
 export function removeRetiredDefaultSkills(dir = getDefaultSkillsDir()): void {
   for (const slug of RETIRED_DEFAULT_SKILL_SLUGS) {
     const target = join(dir, slug)
-    if (!existsSync(target)) continue
+    try {
+      lstatSync(target)
+    } catch {
+      continue
+    }
 
     try {
       rmSyncWithRetry(target, { recursive: true, force: true })
@@ -514,17 +523,13 @@ function defaultSkillCopyFilter(src: string): boolean {
  * - 已存在的 Skill：比较 SKILL.md 中的 version，bundled 更新时才覆盖
  *   （避免每次启动同步 4MB+ 文件阻塞主进程）
  */
-export function seedDefaultSkills(): void {
-  const { app } = require('electron')
-  const bundledDir = app.isPackaged
-    ? join(process.resourcesPath, 'default-skills')
-    : join(__dirname, '../default-skills')
-  const userDir = getDefaultSkillsDir()
-
-  removeRetiredDefaultSkills(userDir)
-
+export function seedDefaultSkillsFromDirectory(
+  bundledDir: string,
+  userDir: string,
+  allowedSlugs?: ReadonlySet<string>,
+): void {
   if (!existsSync(bundledDir)) {
-    console.log('[配置] 未找到内置 default-skills 目录，跳过')
+    console.log(`[配置] 未找到内置 Skills 目录，跳过: ${bundledDir}`)
     return
   }
 
@@ -532,14 +537,26 @@ export function seedDefaultSkills(): void {
     const entries = readdirSync(bundledDir, { withFileTypes: true })
 
     for (const entry of entries) {
-      if (!entry.isDirectory()) continue
+      if (!entry.isDirectory() || (allowedSlugs && !allowedSlugs.has(entry.name))) continue
 
       const source = join(bundledDir, entry.name)
       const target = join(userDir, entry.name)
 
       try {
+        let targetIsSymlink = false
+        try {
+          targetIsSymlink = lstatSync(target).isSymbolicLink()
+        } catch {
+          // 目录项不存在，走首次复制。
+        }
+        if (targetIsSymlink) {
+          rmSync(target, { recursive: true, force: true })
+          cpSync(source, target, { recursive: true, dereference: true, filter: defaultSkillCopyFilter })
+          console.log(`[配置] 已迁移 legacy symlink Skill: ${entry.name}`)
+          continue
+        }
         if (!existsSync(target)) {
-          cpSync(source, target, { recursive: true, filter: defaultSkillCopyFilter })
+          cpSync(source, target, { recursive: true, dereference: true, filter: defaultSkillCopyFilter })
           console.log(`[配置] 已同步默认 Skill: ${entry.name}`)
           continue
         }
@@ -552,7 +569,7 @@ export function seedDefaultSkills(): void {
           // 0444 文件用 cpSync({ force: true }) 无法覆盖会 EACCES，但
           // rmSync({ force: true }) 只需父目录可写就能 unlink）。
           rmSync(target, { recursive: true, force: true })
-          cpSync(source, target, { recursive: true, filter: defaultSkillCopyFilter })
+          cpSync(source, target, { recursive: true, dereference: true, filter: defaultSkillCopyFilter })
           console.log(`[配置] 已升级默认 Skill: ${entry.name} (${existingVer} → ${bundledVer})`)
         }
       } catch (err) {
@@ -562,8 +579,28 @@ export function seedDefaultSkills(): void {
       }
     }
   } catch (err) {
-    console.warn('[配置] 同步默认 Skills 失败:', err)
+    console.warn(`[配置] 同步默认 Skills 失败 (${bundledDir}):`, err)
   }
+}
+
+export function seedDefaultSkills(): void {
+  const { app } = require('electron')
+  const bundledDir = app.isPackaged
+    ? join(process.resourcesPath, 'default-skills')
+    : join(__dirname, '../default-skills')
+  const userDir = getDefaultSkillsDir()
+
+  removeRetiredDefaultSkills(userDir)
+  seedDefaultSkillsFromDirectory(bundledDir, userDir)
+  seedDefaultSkillsFromDirectory(
+    resolveResearchDefaultSkillsSource({
+      isPackaged: app.isPackaged,
+      appPath: app.getAppPath(),
+      resourcesPath: process.resourcesPath,
+    }),
+    userDir,
+    new Set(RESEARCH_DEFAULT_SKILL_SLUGS),
+  )
 }
 
 /**

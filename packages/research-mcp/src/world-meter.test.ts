@@ -20,8 +20,8 @@ import { buildServer } from './server'
 import { detectSandboxSupply, resetSandboxSupplyCacheForTest, runSandboxedEval } from './sandbox'
 
 const METER = fileURLToPath(new URL('../../../research/eval/world-meter.py', import.meta.url))
-const NB_ROOT = process.env.NEURONBENCH_ROOT ?? '/home/lingxufeng/oss/neuronbench'
-const meterAvailable = existsSync(METER) && existsSync(join(NB_ROOT, 'neuronbench', '__init__.py'))
+const NB_ROOT = process.env.NEURONBENCH_ROOT?.trim() ?? ''
+const meterAvailable = NB_ROOT !== '' && existsSync(METER) && existsSync(join(NB_ROOT, 'neuronbench', '__init__.py'))
 
 let client: Client
 let researchCwd: string
@@ -32,7 +32,7 @@ beforeAll(async () => {
   researchCwd = mkdtempSync(join(process.env.HOME ?? tmpdir(), 'proma-research-meter-'))
   process.env.PROMA_RESEARCH_CWD = researchCwd
   process.env.PROMA_EVAL_BUDGET = '1'
-  process.env.PROMA_RESEARCH_DENY = NB_ROOT
+  if (NB_ROOT) process.env.PROMA_RESEARCH_DENY = NB_ROOT
   client = new Client({ name: 'meter-test', version: '1.0.0' })
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair()
   await Promise.all([client.connect(clientTransport), buildServer().connect(serverTransport)])
@@ -62,6 +62,14 @@ function meter(ledger: string, budget: number, args: string[]) {
 }
 
 describe('计量接口（EVAL-PLAN §1.3）', () => {
+  it('meter 缺少 NEURONBENCH_ROOT 时 fail closed，不使用开发机路径回退', () => {
+    const env = { ...process.env }
+    delete env.NEURONBENCH_ROOT
+    const result = spawnSync('python3', [METER, '--help'], { encoding: 'utf-8', env })
+    expect(result.status).not.toBe(0)
+    expect(result.stderr).toContain('NEURONBENCH_ROOT 未配置')
+  })
+
   it('DENY 未配置时 world 工具不注册，普通 research 工具仍可用', async () => {
     const configuredDeny = process.env.PROMA_RESEARCH_DENY
     delete process.env.PROMA_RESEARCH_DENY

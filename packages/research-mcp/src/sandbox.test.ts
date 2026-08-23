@@ -146,6 +146,12 @@ describe('world 工具 deny 配置 fail closed', () => {
     })).toThrow(/不存在路径/)
   })
 
+  it('缺失 benchmark 根配置时拒绝，不使用开发机路径回退', () => {
+    expect(() => resolveResearchDenyRoots({
+      PROMA_RESEARCH_DENY: researchCwd,
+    })).toThrow(/NEURONBENCH_ROOT 未配置/)
+  })
+
   it('deny 未覆盖 benchmark 根时拒绝；覆盖父目录时通过', () => {
     const denyRoot = join(researchCwd, 'deny-root')
     const benchmarkRoot = join(researchCwd, 'benchmark-root')

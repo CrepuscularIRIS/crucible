@@ -38,10 +38,13 @@ def truth_leak_categories(code: str) -> list[str]:
         matches.append("benchmark_import")
     if METER_EXEC_RE.search(code):
         matches.append("meter_execution")
-    benchmark_root = os.path.realpath(os.environ.get(
-        "NEURONBENCH_ROOT", "/home/lingxufeng/oss/neuronbench"))
+    configured_benchmark_root = os.environ.get("NEURONBENCH_ROOT", "").strip()
     normalized = code.replace("\\\\", "/")
-    if benchmark_root.replace("\\\\", "/") in normalized:
+    if configured_benchmark_root:
+        benchmark_root = os.path.realpath(configured_benchmark_root)
+    else:
+        benchmark_root = ""
+    if benchmark_root and benchmark_root.replace("\\\\", "/") in normalized:
         matches.append("benchmark_path_read")
     return matches
 

@@ -25,7 +25,9 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-_NB_ROOT = os.environ.get("NEURONBENCH_ROOT", "/home/lingxufeng/oss/neuronbench")
+_NB_ROOT = os.environ.get("NEURONBENCH_ROOT", "").strip()
+if not _NB_ROOT:
+    raise SystemExit("NEURONBENCH_ROOT 未配置")
 if _NB_ROOT not in sys.path:
     sys.path.insert(0, _NB_ROOT)
 
