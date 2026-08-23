@@ -88,9 +88,8 @@ export function runSandboxedEval(
   if (!supply.available) {
     return Promise.reject(new Error(`probe 沙箱不可用：${supply.detail}`))
   }
-  const bwrap = supply.detail.startsWith('PROMA_RESEARCH_BWRAP')
-    ? (process.env.PROMA_RESEARCH_BWRAP as string)
-    : 'bwrap'
+  // 显式路径供给时必须真的用它执行——PATH 上可能根本没有 bwrap
+  const bwrap = process.env.PROMA_RESEARCH_BWRAP ?? 'bwrap'
   return new Promise((resolve) => {
     let text = ''
     let timedOut = false

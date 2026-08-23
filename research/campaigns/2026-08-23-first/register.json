@@ -25,38 +25,33 @@
   "probes": [
     {
       "pid": "P1",
-      "status": "LANDED",
+      "status": "FAILED",
       "preregSha256": "71866eaf37f63381c79645435180a97ae09f616721c6cb69a2db170ea72c3e5b",
-      "exitCode": 2,
-      "metric": 0
+      "exitCode": 2
     },
     {
       "pid": "P2",
-      "status": "LANDED",
+      "status": "FAILED",
       "preregSha256": "c479bc09c7b38e2f1ad73105ae6e4194ad849c75632c1aff2352e9c6af18cf2f",
-      "exitCode": 2,
-      "metric": 0
+      "exitCode": 2
     },
     {
       "pid": "P3",
-      "status": "LANDED",
+      "status": "FAILED",
       "preregSha256": "5b133595c9d240f9b537925e7885c6bb96d37436658824fa912d5f30dd59c5da",
-      "exitCode": 2,
-      "metric": 0
+      "exitCode": 2
     },
     {
       "pid": "P4",
-      "status": "LANDED",
+      "status": "FAILED",
       "preregSha256": "988da682d7d5090b557674de60abfdd0cc93522443894f473308525980701b96",
-      "exitCode": 2,
-      "metric": 0
+      "exitCode": 2
     },
     {
       "pid": "P5",
-      "status": "LANDED",
+      "status": "FAILED",
       "preregSha256": "04518b6fb4176b668f6042c29e42c0f83b0e415a7c97bf4e6a126ad31b35d42c",
-      "exitCode": 2,
-      "metric": 0
+      "exitCode": 2
     },
     {
       "pid": "P6",

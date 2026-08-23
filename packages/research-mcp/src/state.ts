@@ -81,7 +81,7 @@ export interface ClaimRecord {
 
 export interface ProbeRecord {
   pid: string
-  status: 'PREREG' | 'RUNNING' | 'LANDED'
+  status: 'PREREG' | 'RUNNING' | 'LANDED' | 'FAILED'
   preregSha256?: string
   exitCode?: number
   metric?: number
@@ -264,9 +264,16 @@ export function replay(root: string): ResearchState {
         if (!probe || probe.status !== 'RUNNING') {
           throw new ResearchStateError(`journal 损坏：${String(event.pid)} 在非运行状态被落地`)
         }
-        probe.status = 'LANDED'
-        probe.exitCode = Number(event.exit_code ?? -1)
-        probe.metric = Number(event.metric)
+        // 非零退出的 probe.land 是失败归因留痕，不是落地：崩溃探针绝不能
+        // 变成终态迁移的 LANDED 依据（metric null 也绝不能被读成 0）
+        const exitCode = Number(event.exit_code ?? -1)
+        probe.exitCode = exitCode
+        if (exitCode === 0) {
+          probe.status = 'LANDED'
+          probe.metric = Number(event.metric)
+        } else {
+          probe.status = 'FAILED'
+        }
         break
       }
       case 'claim.transition': {

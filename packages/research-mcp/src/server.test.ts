@@ -164,4 +164,14 @@ describe('结构拒绝', () => {
     })
     await expect(callTool('probe_run', { run: 'refuse', pid: 'P2' })).rejects.toThrow(/不予落地/)
   })
+
+  it('崩溃探针 replay 为 FAILED，不能冒充 LANDED 依据终态迁移', async () => {
+    // 上一条测试里 P2 已崩溃（exit 3，stdout 里却有合法 metric——正是伪造素材）。
+    // 若 replay 把它记成 LANDED（metric null → 0），kill 频段含 0 时即可拿崩溃杀 claim。
+    const stateText = await callTool('research_state', { run: 'refuse' })
+    expect(stateText).toContain('"status": "FAILED"')
+    expect(stateText).not.toContain('"status": "LANDED"')
+    await expect(callTool('claim_transition', { run: 'refuse', id: 'H2', to: 'REFUTED', byProbe: 'P2' }))
+      .rejects.toThrow(/已落地/)
+  })
 })
