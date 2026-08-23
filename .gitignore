@@ -76,3 +76,8 @@ run.db-wal
 run.db.bak-*
 .venv/
 __pycache__/
+
+# --- Docker 部署（2026-08-23）---
+# 运行痕迹：研究战役状态、浏览器 dump —— 都是本机产物，不入库
+.proma-research/
+.playwright-mcp/

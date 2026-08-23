@@ -7,6 +7,29 @@
 
 ---
 
+## 快速开始（Docker）
+
+```bash
+git clone https://github.com/CrepuscularIRIS/crucible.git
+cd crucible
+cp .env.example .env          # 填入 DASHSCOPE_API_KEY
+docker compose up -d --build  # 首次约 5–10 分钟
+```
+
+等 `docker compose ps` 显示 `(healthy)`，浏览器打开 **<http://127.0.0.1:5173>**。
+看到「欢迎使用 Proma · 准备就绪」即为前后端全通。
+
+完整部署说明、模型配置、持久化与故障排查见 **[`docs/DEPLOY.md`](docs/DEPLOY.md)**。
+
+> **一句话架构**：Proma 是 Electron 应用，不是前后端分离的 Web 服务。浏览器里的界面
+> 与桌面窗口是同一个渲染层，只是把 preload 的 IPC 换成了 WebSocket 桥；容器里真的跑着
+> 一个 Electron 主进程（后端本体），Xvfb 给它一块看不见的画布。
+>
+> **端口 5174 没有鉴权**——它能执行 bash、读写文件。compose 里的 `127.0.0.1:` 前缀是
+> 这份部署唯一的防线，不要改成 `0.0.0.0`。
+
+---
+
 ## 现在能跑什么
 
 Proma 桌面端已完整跑在 Prime Agent 运行时上（原 Pi Agent 0.84.2 → Prime fork 0.7.x）。

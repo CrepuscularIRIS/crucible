@@ -1,0 +1,60 @@
+# Proma + Prime Agent —— 本机完整产品栈。
+#
+#   cp .env.example .env   # 填 DASHSCOPE_API_KEY
+#   docker compose up -d --build
+#   浏览器打开 http://127.0.0.1:5173
+#
+# 端口刻意写成 `127.0.0.1:` 前缀，不是随手写的：5174 是主进程的 IPC 通道，
+# 能执行 bash、读写文件，**没有鉴权**。发布到 0.0.0.0 等于把这台机器交给局域网。
+# 除非你先给这个通道加上鉴权，否则不要动这两行的前缀。
+
+services:
+  proma:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: crucible/proma:latest
+    container_name: proma
+
+    ports:
+      - "127.0.0.1:5173:5173"   # Web UI（渲染层静态服务）
+      - "127.0.0.1:5174:5174"   # web-bridge（主进程 IPC，无鉴权，务必只发布到回环）
+
+    env_file:
+      - .env
+
+    environment:
+      # 容器内必须绑 0.0.0.0：Docker 端口转发连的是容器网卡，不是容器回环。
+      PROMA_WEB_BRIDGE_HOST: "0.0.0.0"
+      PROMA_WEB_HOST: "0.0.0.0"
+      # Electron 未打包运行 → 配置目录为 ~/.proma-dev（见 config-paths.ts）。
+      HOME: "/root"
+
+    volumes:
+      # 会话、工作区、凭据、设置：这是"重建容器不丢东西"的那一份。
+      - proma-config:/root/.proma-dev
+      # Electron userData（窗口状态、Chromium profile）。
+      - proma-userdata:/root/.config
+      # Agent 真正干活的目录。挂成命名卷而不是绑宿主目录：agent 会在这里
+      # 执行模型生成的代码，绑宿主目录等于把宿主文件交给它。
+      - proma-workspace:/workspace
+
+    # Chromium 默认 /dev/shm 只有 64MB，渲染进程会随机崩。
+    # entrypoint 里另加了 --disable-dev-shm-usage 兜底。
+    shm_size: "1gb"
+
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:5173/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      # Electron 首启要装 kernel venv，给足冷启动时间再开始判定健康。
+      start_period: 180s
+
+    restart: unless-stopped
+    stop_grace_period: 30s
+
+volumes:
+  proma-config:
+  proma-userdata:
+  proma-workspace:

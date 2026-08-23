@@ -1,0 +1,41 @@
+# 构建上下文瘦身。镜像里要的是源码，不是宿主的运行痕迹。
+node_modules
+**/node_modules
+.git
+.worktrees
+
+# 构建产物：容器内重新构建，拷进去只会和镜像里的版本打架
+dist
+out
+**/dist
+apps/electron/resources/bin
+apps/electron/resources/agent-island
+apps/electron/resources/eventkit
+
+# 凭据：绝不进镜像层（.env 经 env_file 在运行期注入）
+.env
+.env.*
+!.env.example
+dash.md
+.owui_token
+*.pem
+*.key
+
+# 运行痕迹与历史战役产物（1.4MB 会话转录 + 浏览器 dump，与部署无关）
+.proma-research
+**/.proma-research
+.playwright-mcp
+research/campaigns
+logs
+open-webui-data
+*.db
+*.sqlite
+coverage
+.venv
+__pycache__
+
+# 编辑器/系统
+.DS_Store
+.idea
+.cache
+*.tsbuildinfo

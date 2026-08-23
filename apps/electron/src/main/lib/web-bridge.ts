@@ -10,8 +10,14 @@
  * 3. 打一次 WebContents.prototype.send 的补丁，把主进程所有推送
  *    （53 处 webContents.send，分散在多个窗口对象上）镜像给浏览器。
  *
- * 安全：只绑 127.0.0.1。这个通道能执行 bash、读写文件，等价于本机 shell，
- * 绝不能监听 0.0.0.0 —— 那是把机器交出去。
+ * 安全：默认只绑 127.0.0.1。这个通道能执行 bash、读写文件，等价于本机 shell，
+ * 在裸机上绝不能监听 0.0.0.0 —— 那是把机器交出去。
+ *
+ * `PROMA_WEB_BRIDGE_HOST` 只为容器而设：容器内没有宿主回环，Docker 的端口转发
+ * 连的是容器网卡地址，绑 127.0.0.1 时端口发布根本不通。容器里设 0.0.0.0 的前提是
+ * **compose 只把端口发布到宿主 127.0.0.1**（见 docker/docker-compose.yml），
+ * 于是"仅本机可达"这条性质由发布侧保持不变。改这个变量前先想清楚谁能连上它：
+ * 没有鉴权，能连上就等于拿到 shell。
  */
 
 import { ipcMain, type BrowserWindow, type IpcMainInvokeEvent, type WebContents } from 'electron'
@@ -20,6 +26,8 @@ import { ipcMain, type BrowserWindow, type IpcMainInvokeEvent, type WebContents 
 // 所以默认导入拿不到服务端构造器（doubao-asr-service.ts 只当客户端用，才没踩到）。
 // @types/ws 是 `export = WebSocket`，具名导入过不了类型检查，故此处按命名空间导入取值。
 import * as ws from 'ws'
+import { parseWebBridgeMessage } from '../../web/web-bridge-codec'
+import { resolveWebBridgeHost } from './web-bridge-host'
 
 /** ws 连接的最小形状。运行时 send 接受字符串，@types/ws 的重载在此配置下过窄。 */
 interface WsSocket {
@@ -49,6 +57,12 @@ function resolveServerCtor(): WsServerCtor {
 
 /** 与 vite dev server(5173) 相邻，避免和常见端口撞车。 */
 export const WEB_BRIDGE_PORT = Number(process.env.PROMA_WEB_BRIDGE_PORT ?? 5174)
+
+/**
+ * 监听地址。默认回环——裸机行为与改动前逐字一致。
+ * 只有容器镜像会显式设成 0.0.0.0，且端口只发布到宿主回环。
+ */
+export const WEB_BRIDGE_HOST = resolveWebBridgeHost()
 
 type InvokeHandler = (event: IpcMainInvokeEvent, ...args: unknown[]) => unknown
 type SendHandler = (event: unknown, ...args: unknown[]) => void
@@ -142,7 +156,7 @@ export function startWebBridge(getMainWindow: () => BrowserWindow | null): void 
   const win = getMainWindow()
   if (win && !win.isDestroyed()) patchWebContentsSend(win.webContents)
 
-  server = new (resolveServerCtor())({ host: '127.0.0.1', port: WEB_BRIDGE_PORT })
+  server = new (resolveServerCtor())({ host: WEB_BRIDGE_HOST, port: WEB_BRIDGE_PORT })
 
   server.on('connection', (socket: WsSocket) => {
     clients.add(socket)
@@ -151,7 +165,12 @@ export function startWebBridge(getMainWindow: () => BrowserWindow | null): void 
     socket.on('message', (raw: unknown) => {
       let msg: { type?: string; id?: number; channel?: string; args?: unknown[] }
       try {
-        msg = JSON.parse(String(raw))
+        msg = parseWebBridgeMessage(String(raw)) as {
+          type?: string
+          id?: number
+          channel?: string
+          args?: unknown[]
+        }
       } catch {
         return
       }
@@ -196,7 +215,10 @@ export function startWebBridge(getMainWindow: () => BrowserWindow | null): void 
     console.error('[web-bridge] 服务启动失败:', error)
   })
 
-  console.log(`[web-bridge] 已监听 ws://127.0.0.1:${WEB_BRIDGE_PORT}（仅回环）`)
+  console.log(
+    `[web-bridge] 已监听 ws://${WEB_BRIDGE_HOST}:${WEB_BRIDGE_PORT}`
+    + `${WEB_BRIDGE_HOST === '127.0.0.1' ? '（仅回环）' : '（非回环：仅当端口只发布到宿主回环时才安全）'}`,
+  )
 }
 
 export function stopWebBridge(): void {
