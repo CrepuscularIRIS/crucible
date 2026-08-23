@@ -87,7 +87,8 @@ EXPOSE 5173 5174
 ENV PROMA_WEB_BRIDGE_HOST=0.0.0.0 \
     PROMA_WEB_HOST=0.0.0.0 \
     PROMA_WEB_PORT=5173 \
-    PROMA_WEB_ROOT=/crucible/apps/electron/dist/renderer
+    PROMA_WEB_ROOT=/crucible/apps/electron/dist/renderer \
+    PROMA_RESEARCH_MCP_ENTRY=/crucible/packages/research-mcp/src/server.ts
 
 # tini 收养 Xvfb/Electron 留下的孤儿进程，否则 PID 1 会攒僵尸。
 ENTRYPOINT ["/usr/bin/tini", "--", "/crucible/docker/entrypoint.sh"]

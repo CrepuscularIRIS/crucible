@@ -206,16 +206,39 @@ docker compose build --no-cache
 
 `probe_run` 在 bubblewrap 沙箱里跑冻结命令，而容器默认不给嵌套 user namespace。
 这是**结构性拒绝，不是回落到宿主执行**——安全行为正确，只是该功能不可用。
-需要它就给容器放权（会削弱容器自身隔离，自行权衡）：
+普通部署不要为此修改主 compose。只有准备 NeuronBench 评测时，使用仓库提供的
+`docker-compose.eval.yml` 覆盖层：
 
-```yaml
-services:
-  proma:
-    security_opt:
-      - seccomp:unconfined
-    cap_add:
-      - SYS_ADMIN
+```bash
+# .env 中设置宿主机 benchmark 的绝对路径
+NEURONBENCH_HOST_ROOT=/absolute/path/to/neuronbench
+# 同一次评测固定一个唯一 run；父 Agent 与 RLM 子会话会共同继承
+PROMA_RESEARCH_RUN=eval-20260823-01
+
+docker compose \
+  -f docker-compose.yml \
+  -f docker-compose.eval.yml \
+  up -d --build
 ```
+
+覆盖层会把 benchmark 只读挂到 `/bench/neuronbench`，同时注入
+`NEURONBENCH_ROOT`、`PROMA_RESEARCH_DENY` 与钉死的 `PROMA_RESEARCH_RUN`，并仅在该模式下增加
+`SYS_ADMIN`、`NET_ADMIN`、`seccomp:unconfined` 和 `apparmor:unconfined`。前两项分别允许
+bwrap 建立 mount/network namespace，后两项解除 Docker 默认策略对这些操作的拦截。
+这些权限会削弱容器自身隔离，评测结束后应回到
+普通 `docker compose up -d`。
+
+容器健康后可运行仓库内的重复验收脚本。它不会执行 eval，只检查 canonical 配置已落到
+容器、benchmark 确实只读、受管 Research MCP 能握手，以及 bubblewrap 会隐藏真值树：
+
+```bash
+PROMA_VERIFY_CONTAINER=proma bun docker/verify-eval-prereqs.ts
+```
+
+镜像已经受管注册 Research MCP；每个 Agent 会话会自动把自己的 cwd 注入
+`PROMA_RESEARCH_CWD`。七个 Research Skills 仍由工作区初始化器安装，因此新工作区
+不需要手写本机绝对路径或编辑 `mcp.json`。是否真正调用模型与执行 eval 由评测流程决定；
+上述命令只负责提供前置运行环境。
 
 ### 想进容器里看看
 

@@ -7,7 +7,11 @@
 
 import { describe, expect, it } from 'bun:test'
 import { join } from 'node:path'
-import { buildPiMcpTools, disposePiMcpConnections } from './pi-mcp-tools'
+import {
+  buildPiMcpTools,
+  disposePiMcpConnections,
+  disposePiMcpScope,
+} from './pi-mcp-tools'
 
 const fixture = join(import.meta.dir, '__fixtures__', 'slow-mcp-server.ts')
 
@@ -40,4 +44,29 @@ describe('P3.4 证据 5：MCP 首轮可用', () => {
     expect(tools.map((t) => t.name)).not.toContain('mcp__slow_miss__slow_tool')
     await disposePiMcpConnections()
   }, 60_000)
+
+  it('必需 MCP 启动失败时阻止 Agent 继续启动', async () => {
+    await expect(buildPiMcpTools({
+      required_missing: {
+        type: 'stdio',
+        command: '/definitely/missing/proma-mcp-command',
+        required: true,
+        startup_timeout_sec: 1,
+      },
+    }, 'required-failure')).rejects.toThrow('required_missing')
+    await disposePiMcpScope('required-failure')
+  })
+
+  it('可选 MCP 启动失败时保持降级运行', async () => {
+    const tools = await buildPiMcpTools({
+      optional_missing: {
+        type: 'stdio',
+        command: '/definitely/missing/proma-mcp-command',
+        required: false,
+        startup_timeout_sec: 1,
+      },
+    }, 'optional-failure')
+    expect(tools).toEqual([])
+    await disposePiMcpScope('optional-failure')
+  })
 })

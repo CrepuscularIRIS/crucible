@@ -64,12 +64,13 @@ import type { PermissionResult, CanUseToolOptions } from './agent-permission-ser
 import { resolvePlanningDeletionPermission } from './planning-permission-policy'
 import { isResearchMutatingTool } from './research-permission-policy'
 import { resolveResearchIsolationConfig } from './research-isolation-guard'
+import { mergeManagedResearchMcpServer } from './managed-research-mcp'
 import { askUserService } from './agent-ask-user-service'
 import { exitPlanService, type ExitPlanPermissionResult } from './agent-exit-plan-service'
 import { validateToolInput } from './agent-tool-input-validator'
 import { estimateTokenCount, WRITE_CONTENT_TOKEN_THRESHOLD } from './agent-tool-token-estimator'
 import { buildPiBuiltinTools } from './adapters/pi-builtin-tools'
-import { buildPiMcpTools } from './adapters/pi-mcp-tools'
+import { buildPiMcpTools, disposePiMcpScope } from './adapters/pi-mcp-tools'
 import { buildAgentRuntimeEnv, type AgentRuntimeEnv } from './agent-runtime-env'
 import { isVisibleRunMessage } from './agent-run-message-visibility'
 import { resolvePiThinkingLevel } from './agent-thinking-level'
@@ -265,40 +266,45 @@ export class AgentOrchestrator {
   /**
    * 构建工作区 MCP 服务器配置
    */
-  private buildMcpServers(workspaceSlug: string | undefined): Record<string, Record<string, unknown>> {
+  private buildMcpServers(
+    workspaceSlug: string | undefined,
+    agentCwd: string,
+  ): Record<string, Record<string, unknown>> {
     const mcpServers: Record<string, Record<string, unknown>> = {}
-    if (!workspaceSlug) return mcpServers
+    if (workspaceSlug) {
+      const mcpConfig = getWorkspaceMcpConfig(workspaceSlug)
+      for (const [name, entry] of Object.entries(mcpConfig.servers ?? {})) {
+        if (!entry.enabled) continue
+        const type = normalizeMcpTransportType((entry as { type?: unknown }).type)
 
-    const mcpConfig = getWorkspaceMcpConfig(workspaceSlug)
-    for (const [name, entry] of Object.entries(mcpConfig.servers ?? {})) {
-      if (!entry.enabled) continue
-      const type = normalizeMcpTransportType((entry as { type?: unknown }).type)
-
-      if (type === 'stdio' && entry.command) {
-        const mergedEnv: Record<string, string> = {
-          ...(process.env.PATH && { PATH: process.env.PATH }),
-          ...entry.env,
+        if (type === 'stdio' && entry.command) {
+          const mergedEnv: Record<string, string> = {
+            ...(process.env.PATH && { PATH: process.env.PATH }),
+            ...entry.env,
+          }
+          mcpServers[name] = {
+            type: 'stdio',
+            command: entry.command,
+            ...(entry.args && entry.args.length > 0 && { args: entry.args }),
+            ...(Object.keys(mergedEnv).length > 0 && { env: mergedEnv }),
+            required: entry.required === true,
+            startup_timeout_sec: entry.timeout ?? 30,
+          }
+        } else if ((type === 'http' || type === 'sse') && entry.url) {
+          mcpServers[name] = {
+            type,
+            url: entry.url,
+            ...(entry.headers && Object.keys(entry.headers).length > 0 && { headers: entry.headers }),
+            required: entry.required === true,
+            ...(entry.timeout != null && { startup_timeout_sec: entry.timeout }),
+          }
+        } else {
+          console.warn(`[Agent 编排] MCP 服务器 "${name}" 配置不完整，已跳过（type=${entry.type}, command=${entry.command ?? '无'}, url=${entry.url ?? '无'}）`)
         }
-        mcpServers[name] = {
-          type: 'stdio',
-          command: entry.command,
-          ...(entry.args && entry.args.length > 0 && { args: entry.args }),
-          ...(Object.keys(mergedEnv).length > 0 && { env: mergedEnv }),
-          required: entry.required === true,
-          startup_timeout_sec: entry.timeout ?? 30,
-        }
-      } else if ((type === 'http' || type === 'sse') && entry.url) {
-        mcpServers[name] = {
-          type,
-          url: entry.url,
-          ...(entry.headers && Object.keys(entry.headers).length > 0 && { headers: entry.headers }),
-          required: entry.required === true,
-          ...(entry.timeout != null && { startup_timeout_sec: entry.timeout }),
-        }
-      } else {
-        console.warn(`[Agent 编排] MCP 服务器 "${name}" 配置不完整，已跳过（type=${entry.type}, command=${entry.command ?? '无'}, url=${entry.url ?? '无'}）`)
       }
     }
+
+    mergeManagedResearchMcpServer(mcpServers, agentCwd)
 
     if (Object.keys(mcpServers).length > 0) {
       console.log(`[Agent 编排] 已加载 ${Object.keys(mcpServers).length} 个 MCP 服务器`)
@@ -994,7 +1000,7 @@ export class AgentOrchestrator {
       }
 
       // 10. 构建 MCP 服务器配置 + 记忆工具 + 生图工具 + 自定义工具
-      const mcpServers = this.buildMcpServers(workspaceSlug)
+      const mcpServers = this.buildMcpServers(workspaceSlug, agentCwd)
       const researchIsolation = resolveResearchIsolationConfig(mcpServers, agentCwd)
       let piBuiltinTools: unknown[] = []
       let piMcpTools: unknown[] = []
@@ -1018,11 +1024,7 @@ export class AgentOrchestrator {
 
       // Proma 主进程连接用户 MCP server，并转换为 Pi custom tools。
       if (Object.keys(mcpServers).length > 0) {
-        try {
-          piMcpTools = await buildPiMcpTools(mcpServers)
-        } catch (error) {
-          console.warn('[Agent 编排] Pi MCP 工具桥接失败，已跳过用户 MCP:', error)
-        }
+        piMcpTools = await buildPiMcpTools(mcpServers, sessionId)
       }
 
       // 11. 构建动态上下文和最终 prompt
@@ -2079,6 +2081,7 @@ export class AgentOrchestrator {
       failRun(recoveryFailure, getAgentSessionMessages(sessionId), { startedAt: streamStartedAt })
 
     } finally {
+      await disposePiMcpScope(sessionId)
       // 只在 generation 匹配时才清理，防止旧流的 finally 误删新流的注册
       releaseActiveRun()
       permissionService.clearSessionPending(sessionId)

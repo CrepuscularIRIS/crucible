@@ -1,0 +1,24 @@
+# NeuronBench 评测专用覆盖层。默认 docker-compose.yml 不扩权；只有显式叠加本文件时，
+# 才把 benchmark 真值树只读挂入容器并开放 bubblewrap 所需能力。
+#
+#   NEURONBENCH_HOST_ROOT=/abs/path/to/neuronbench \
+#     docker compose -f docker-compose.yml -f docker-compose.eval.yml up -d --build
+
+services:
+  proma:
+    environment:
+      NEURONBENCH_ROOT: "/bench/neuronbench"
+      PROMA_RESEARCH_DENY: "/bench/neuronbench"
+      # 父 Agent 与 RLM 子会话必须共享同一个钉死 run，禁止另开旁路战役。
+      PROMA_RESEARCH_RUN: "${PROMA_RESEARCH_RUN:?请设置本次评测唯一运行名}"
+
+    volumes:
+      - "${NEURONBENCH_HOST_ROOT:?请设置宿主机 NeuronBench 绝对路径}:/bench/neuronbench:ro"
+
+    security_opt:
+      - seccomp:unconfined
+      - apparmor:unconfined
+    cap_add:
+      - SYS_ADMIN
+      # bwrap --unshare-net 需要在新网络 namespace 内配置 loopback。
+      - NET_ADMIN

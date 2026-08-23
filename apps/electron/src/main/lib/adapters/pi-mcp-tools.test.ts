@@ -5,7 +5,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js'
 import type { ToolDefinition } from '@earendil-works/pi-coding-agent'
-import { buildPiMcpTools, disposePiMcpConnections } from './pi-mcp-tools'
+import { buildPiMcpTools, disposePiMcpConnections, disposePiMcpScope } from './pi-mcp-tools'
 
 interface SessionServerStats {
   sessionsCreated: number
@@ -183,6 +183,39 @@ afterEach(async () => {
 })
 
 describe('Pi MCP Streamable HTTP Session 恢复', () => {
+  test('按 Agent 运行 scope 复用并回收连接', async () => {
+    const server = await startSessionTestServer({ expiredStatus: 404, expireAfterFirstTool: false })
+    await buildPiMcpTools({ scoped: { type: 'http', url: server.url, required: true } }, 'run-a')
+    await buildPiMcpTools({ scoped: { type: 'http', url: server.url, required: true } }, 'run-b')
+    expect(server.stats.sessionsCreated).toBe(1)
+
+    await disposePiMcpScope('run-a')
+    expect(server.stats.sessionsCreated).toBe(1)
+    await disposePiMcpScope('run-b')
+
+    await buildPiMcpTools({ scoped: { type: 'http', url: server.url, required: true } }, 'run-c')
+    expect(server.stats.sessionsCreated).toBe(2)
+    await disposePiMcpScope('run-c')
+  })
+
+  test('父 turn 释放 scope 后，后台 RLM 子会话调用旧工具不会重新常驻连接', async () => {
+    const server = await startSessionTestServer({ expiredStatus: 404, expireAfterFirstTool: false })
+    const tools = await buildPiMcpTools({
+      child_after_parent: { type: 'http', url: server.url, required: true },
+    }, 'parent-run')
+    const ping = tools.find((tool) => tool.name === 'mcp__child_after_parent__ping')
+    if (!ping) throw new Error('未找到后台子会话测试工具')
+
+    await disposePiMcpScope('parent-run')
+    await callPing(ping, 'rlm-child-after-parent')
+
+    await buildPiMcpTools({
+      child_after_parent: { type: 'http', url: server.url, required: true },
+    }, 'next-parent-run')
+    expect(server.stats.sessionsCreated).toBe(3)
+    await disposePiMcpScope('next-parent-run')
+  })
+
   test.each([400, 404] as const)('已建立的 Session 收到 HTTP %i 后重新握手并重试一次', async (expiredStatus) => {
     const server = await startSessionTestServer({ expiredStatus })
     const ping = await buildPingTool(`session_${expiredStatus}`, server.url)

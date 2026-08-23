@@ -52,6 +52,7 @@ interface McpConnection {
 interface McpConnectionEntry {
   promise: Promise<McpConnection>
   activeLeases: number
+  scopeOwners: Set<string>
   stale: boolean
   closed: boolean
 }
@@ -68,6 +69,7 @@ interface McpToolBinding {
   tool: McpToolInfo
   manager: PiMcpClientManager
   managerConfig: PiMcpServerConfig
+  scopeId?: string
 }
 
 function stableStringify(value: unknown): string {
@@ -231,8 +233,9 @@ async function listOptionalMcpTools(
   manager: PiMcpClientManager,
   serverName: string,
   config: PiMcpServerConfig,
+  scopeId?: string,
 ): Promise<McpToolInfo[] | undefined> {
-  const toolsPromise = manager.listTools(serverName, config)
+  const toolsPromise = manager.listTools(serverName, config, scopeId)
   let timeout: ReturnType<typeof setTimeout> | undefined
   try {
     return await Promise.race([
@@ -251,6 +254,7 @@ async function listOptionalMcpTools(
 
 class PiMcpClientManager {
   private readonly connections = new Map<string, McpConnectionEntry>()
+  private readonly activeScopes = new Set<string>()
   private lifecycleGeneration = 0
 
   /**
@@ -259,6 +263,7 @@ class PiMcpClientManager {
    */
   async dispose(): Promise<void> {
     this.lifecycleGeneration += 1
+    this.activeScopes.clear()
     const entries = [...this.connections.values()]
     this.connections.clear()
     await Promise.allSettled(
@@ -273,8 +278,12 @@ class PiMcpClientManager {
     )
   }
 
-  async listTools(serverName: string, config: PiMcpServerConfig): Promise<McpToolInfo[]> {
-    return this.executeWithSessionRecovery(serverName, config, undefined, async (connection) => {
+  activateScope(scopeId: string): void {
+    this.activeScopes.add(scopeId)
+  }
+
+  async listTools(serverName: string, config: PiMcpServerConfig, scopeId?: string): Promise<McpToolInfo[]> {
+    return this.executeWithSessionRecovery(serverName, config, undefined, scopeId, async (connection) => {
       if (connection.tools) return connection.tools
       if (!connection.toolsPromise) {
         connection.toolsPromise = connection.client.listTools(undefined, { timeout: DEFAULT_MCP_REQUEST_TIMEOUT_MS })
@@ -291,8 +300,15 @@ class PiMcpClientManager {
     })
   }
 
-  async callTool(serverName: string, config: PiMcpServerConfig, toolName: string, args: Record<string, unknown>, signal?: AbortSignal): Promise<McpCallToolResult> {
-    return this.executeWithSessionRecovery(serverName, config, signal, (connection) =>
+  async callTool(
+    serverName: string,
+    config: PiMcpServerConfig,
+    toolName: string,
+    args: Record<string, unknown>,
+    signal?: AbortSignal,
+    scopeId?: string,
+  ): Promise<McpCallToolResult> {
+    return this.executeWithSessionRecovery(serverName, config, signal, scopeId, (connection) =>
       connection.client.callTool(
         { name: toolName, arguments: args },
         undefined,
@@ -304,10 +320,11 @@ class PiMcpClientManager {
     serverName: string,
     config: PiMcpServerConfig,
     signal: AbortSignal | undefined,
+    scopeId: string | undefined,
     operation: (connection: McpConnection) => Promise<T>,
   ): Promise<T> {
     const lifecycleGeneration = this.lifecycleGeneration
-    const lease = await this.acquireConnection(serverName, config)
+    const lease = await this.acquireConnection(serverName, config, scopeId)
     let leaseReleased = false
     try {
       try {
@@ -324,7 +341,7 @@ class PiMcpClientManager {
 
         console.info(`[Pi MCP] MCP 服务器 ${serverName} Session 已失效，正在重新握手`)
 
-        const replacement = await this.acquireConnection(serverName, config)
+        const replacement = await this.acquireConnection(serverName, config, scopeId)
         try {
           try {
             return await operation(replacement.connection)
@@ -353,7 +370,11 @@ class PiMcpClientManager {
     return error.code === 400 && HTTP_SESSION_REJECTION_PATTERN.test(error.message)
   }
 
-  private async acquireConnection(serverName: string, config: PiMcpServerConfig): Promise<McpConnectionLease> {
+  private async acquireConnection(
+    serverName: string,
+    config: PiMcpServerConfig,
+    scopeId?: string,
+  ): Promise<McpConnectionLease> {
     const key = `${serverName}:${configHash(config)}`
     let entry = this.connections.get(key)
 
@@ -375,6 +396,7 @@ class PiMcpClientManager {
       createdEntry = {
         promise,
         activeLeases: 0,
+        scopeOwners: new Set<string>(),
         stale: false,
         closed: false,
       }
@@ -383,6 +405,14 @@ class PiMcpClientManager {
     }
 
     entry.activeLeases += 1
+    if (scopeId && this.activeScopes.has(scopeId)) {
+      entry.scopeOwners.add(scopeId)
+    } else if (scopeId && entry.scopeOwners.size === 0) {
+      // 父 turn 已结束后，后台 RLM 子会话仍可能持有旧 ToolDefinition。
+      // 这类调用允许完成，但连接不得重新进入常驻缓存。
+      entry.stale = true
+      if (this.connections.get(key) === entry) this.connections.delete(key)
+    }
     try {
       return {
         key,
@@ -405,11 +435,38 @@ class PiMcpClientManager {
   private async releaseConnection(lease: McpConnectionLease): Promise<void> {
     lease.entry.activeLeases -= 1
     if (!lease.entry.stale || lease.entry.closed || lease.entry.activeLeases > 0) return
+    lease.entry.closed = true
     try {
       await lease.connection.close()
     } catch {
       // Session 已由服务端终止，关闭旧 transport 失败不影响重新握手。
     }
+  }
+
+  /**
+   * 释放一次 Agent 运行持有的连接。相同配置若仍被其他并发运行持有，连接继续复用；
+   * 最后一个 owner 退出后立即淘汰，避免不同 cwd 的 Research stdio 子进程常驻。
+   */
+  async disposeScope(scopeId: string): Promise<void> {
+    this.activeScopes.delete(scopeId)
+    const entriesToClose: McpConnectionEntry[] = []
+    for (const [key, entry] of this.connections) {
+      if (!entry.scopeOwners.delete(scopeId) || entry.scopeOwners.size > 0) continue
+      entry.stale = true
+      if (this.connections.get(key) === entry) this.connections.delete(key)
+      if (entry.activeLeases === 0 && !entry.closed) {
+        entry.closed = true
+        entriesToClose.push(entry)
+      }
+    }
+    await Promise.allSettled(entriesToClose.map(async (entry) => {
+      try {
+        const connection = await entry.promise
+        await connection.close()
+      } catch {
+        // 连接启动本身失败时没有需要回收的资源。
+      }
+    }))
   }
 
   private async createConnection(
@@ -464,7 +521,14 @@ function createPiMcpToolDefinition(binding: McpToolBinding): ToolDefinition {
     parameters: toTypeBoxSchema(binding.tool.inputSchema),
     async execute(_toolCallId, params, signal) {
       const args = isObjectSchema(params) ? params as Record<string, unknown> : {}
-      const result = await binding.manager.callTool(binding.serverName, binding.managerConfig, binding.originalToolName, args, signal)
+      const result = await binding.manager.callTool(
+        binding.serverName,
+        binding.managerConfig,
+        binding.originalToolName,
+        args,
+        signal,
+        binding.scopeId,
+      )
       return convertMcpResult(result)
     },
   } as ToolDefinition
@@ -476,9 +540,10 @@ function createPiMcpToolDefinition(binding: McpToolBinding): ToolDefinition {
  * 注意：本函数仅供 Pi runtime 使用；Claude runtime 仍直接把 mcpServers 交给
  * Claude Agent SDK，不经过这里。
  */
-export async function buildPiMcpTools(mcpServers: PiMcpServers): Promise<ToolDefinition[]> {
+export async function buildPiMcpTools(mcpServers: PiMcpServers, scopeId?: string): Promise<ToolDefinition[]> {
   const tools: ToolDefinition[] = []
   const seenToolNames = new Set<string>()
+  if (scopeId) manager.activateScope(scopeId)
 
   // 并行连接所有 MCP 服务器，避免串行等待导致启动慢
   const entries = Object.entries(mcpServers).filter(([, rawConfig]) => {
@@ -490,8 +555,8 @@ export async function buildPiMcpTools(mcpServers: PiMcpServers): Promise<ToolDef
     entries.map(async ([serverName, rawConfig]) => {
       const config = rawConfig as PiMcpServerConfig
       const mcpTools = config.required === false
-        ? await listOptionalMcpTools(manager, serverName, config)
-        : await manager.listTools(serverName, config)
+        ? await listOptionalMcpTools(manager, serverName, config, scopeId)
+        : await manager.listTools(serverName, config, scopeId)
       if (!mcpTools) {
         console.info(`[Pi MCP] 可选 MCP 服务器 ${serverName} 尚在后台启动，本回合跳过`)
         return { serverName, config, mcpTools: [] }
@@ -500,9 +565,18 @@ export async function buildPiMcpTools(mcpServers: PiMcpServers): Promise<ToolDef
     }),
   )
 
-  for (const result of results) {
+  const requiredFailures: string[] = []
+  for (const [index, result] of results.entries()) {
     if (result.status === 'rejected') {
-      console.warn('[Pi MCP] 连接或列出 MCP 服务器工具失败，已跳过:', result.reason)
+      const entry = entries[index]
+      if (!entry) continue
+      const [serverName, rawConfig] = entry
+      if ((rawConfig as PiMcpServerConfig).required !== false) {
+        const detail = result.reason instanceof Error ? result.reason.message : String(result.reason)
+        requiredFailures.push(`${serverName}: ${detail}`)
+      } else {
+        console.warn(`[Pi MCP] 可选 MCP 服务器 ${serverName} 连接失败，已跳过:`, result.reason)
+      }
       continue
     }
     const { serverName, config, mcpTools } = result.value
@@ -519,8 +593,13 @@ export async function buildPiMcpTools(mcpServers: PiMcpServers): Promise<ToolDef
         tool,
         manager,
         managerConfig: config,
+        scopeId,
       }))
     }
+  }
+
+  if (requiredFailures.length > 0) {
+    throw new Error(`必需 MCP 服务器启动失败：${requiredFailures.join('; ')}`)
   }
 
   if (tools.length > 0) {
@@ -535,4 +614,9 @@ export async function buildPiMcpTools(mcpServers: PiMcpServers): Promise<ToolDef
  */
 export async function disposePiMcpConnections(): Promise<void> {
   await manager.dispose()
+}
+
+/** 关闭某次 Agent 运行独占、且不再被其他运行引用的 MCP 连接。 */
+export async function disposePiMcpScope(scopeId: string): Promise<void> {
+  await manager.disposeScope(scopeId)
 }

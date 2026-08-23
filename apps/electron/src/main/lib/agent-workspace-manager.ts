@@ -28,6 +28,7 @@ import {
 } from './config-paths'
 import { findAllGitRoots, normalizeGitRoot } from './git-diff-service'
 import { listBuiltinMcpServers } from './builtin-mcp/catalog'
+import { listManagedResearchMcpCapability } from './managed-research-mcp'
 import { RESERVED_BUILTIN_KEYS } from './builtin-mcp/baseline'
 import { inferMcpTransportType, normalizeMcpTransportType } from '@proma/shared'
 import type { AgentWorkspace, CreateAgentWorkspaceInput, LocalProjectRootStatus, WorkspaceMcpConfig, SkillMeta, SkillImportSource, OtherWorkspaceSkillsGroup, WorkspaceCapabilities, SkillFileNode, SkillFileContent, WorkspaceMemorySummary, BulkImportSkillItemResult, BulkImportSkillsResult, BulkImportWorkspaceSelection } from '@proma/shared'
@@ -792,6 +793,12 @@ export function getWorkspaceCapabilities(workspaceSlug: string): WorkspaceCapabi
     enabled: entry.enabled,
     type: entry.type,
   }))
+  const managedResearch = listManagedResearchMcpCapability()
+  if (managedResearch) {
+    const existingIndex = mcpServers.findIndex((server) => server.name === managedResearch.name)
+    if (existingIndex >= 0) mcpServers.splice(existingIndex, 1, managedResearch)
+    else mcpServers.push(managedResearch)
+  }
 
   return { mcpServers, builtinMcpServers, skills, memory }
 }
