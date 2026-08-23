@@ -54,7 +54,7 @@ bun <crucible>/packages/research-mcp/gates/trace.ts     .proma-research/<run>
 |---|---|
 | 信念状态读写 | `research_init` · `research_state`（含 graveyard）· `claim_propose` · `claim_transition` |
 | 预登记落盘 | `prereg_write`（时间戳 + sha256 冻结） |
-| 受认可执行 | `probe_run`（只跑冻结命令；非零退出不落地） |
+| 受认可执行 | `probe_run`（bwrap 沙箱内只跑冻结命令：只读 FS、断网、清环境；非零退出/超时不落地） |
 | 从 raw 重算 | `metric_recompute`（json 点路径 / 正则；永不执行模型代码） |
 
 对抗证据：`attack_record`（typed：new_h / constraint / no_change）；
@@ -62,11 +62,30 @@ bun <crucible>/packages/research-mcp/gates/trace.ts     .proma-research/<run>
 
 ## 三道 gate
 
+**declare 即裁决（P3.2）**：`report_declare` 在 server 内当庭跑三道 gate——任何一道红，
+声明被拒绝且不产生任何 journal 事件；全绿才写入 `report.declare` + `gate.verdict`。
+独立 CLI 是用户/CI 的复核通道（与内嵌裁决同一份实现）。
+
 | gate | 检查 | 旧教训来源 |
 |---|---|---|
 | `prereg` | 每个被执行探针先有预登记（journal 顺序 + 时间戳 + sha256 一致）；频段互斥 + kill/scope 分支；空 run 不通过 | 先登记后执行 |
 | `reconcile` | 报告每个数字带 (P#) 出处且与重算值一致（舍入容差按引用值小数位，上限 1%）；结论行与 register 一致；裸 `H\d+` 引用必须存在 | 幻觉数字 / F1 死锁 / F7-F9 |
 | `trace` | journal 重放结果与 register.json 逐字一致（手改即红）；终态可追溯到落地探针；时间戳单调；空 run 不通过 | **四道 gate 曾对捏造战役全绿** |
+
+## 沙箱注意事项
+
+- 探针在 bwrap 内以只读根运行：项目文件天然可见；但**工作区若位于 /tmp 下**，
+  会被沙箱的 tmpfs `/tmp` 遮蔽（首场战役 P1–P5 因此失败，模型用 heredoc 内联
+  绕过）。真实项目目录不受影响。
+- 沙箱内无网络、无宿主环境变量（只有 PATH/HOME/LANG）、超时（默认 10 分钟）
+  按非零退出处理。
+
+## 防篡改与它的天花板（P3.3）
+
+server 在内存记住 journal 的 sha256 基线，每个工具调用先校验；会话外改动会被
+全部工具拒绝并落 `tamper.detected` 事件，该 run 在本 server 生命周期内永久污染。
+**天花板**：server 重启后基线重置（届时靠 trace 的逐字重放兜底）；与 agent 同权限
+的进程终究能伪造一切——真正的墙是把 agent 本身关进沙箱，本阶段明确不做。
 
 `gates/gates.test.ts` 是全绿集成测试：一份诚实产物（含未检验 LIVE 假设）
 三道同时通过，四种蓄意破坏分别变红。**改任何 gate 前先跑它。**
@@ -98,7 +117,8 @@ bun <crucible>/packages/research-mcp/gates/trace.ts     .proma-research/<run>
 
 - 阶段编排在 skill 里，用自然语言表达；改流程 = 改 markdown。
 - 对抗子代理走 kernel 的 `rlm()`（见 `research-grill`）——不另造 agent 注册表。
-- `ipython` 工具在 Proma 里经权限包装（P0.1）；`probe_run` 执行的命令在
-  预登记时冻结、调用时可见，双重可见性。
+- `ipython` 工具在 Proma 里经权限包装（P0.1）；`probe_run` 在 bwrap 沙箱内
+  执行预登记时冻结的命令（只读 FS / 断网 / 清环境变量 / 超时即弃），缺失
+  bwrap 时结构性拒绝，绝不回落宿主执行（P3.1 红线）。
 - 本层不依赖 Electron 内部 API：MCP server 是普通 stdio 进程，技能是纯
   markdown，gate 是普通脚本——换个宿主（Claude Code / Codex）照样能跑。

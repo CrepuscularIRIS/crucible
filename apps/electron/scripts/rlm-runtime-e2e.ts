@@ -32,7 +32,9 @@ console.log(`[1] kernel 供给: ${supply.available ? 'OK' : 'MISSING'} (${supply
 if (!supply.available) process.exit(1)
 
 const rootDir = mkdtempSync(join(tmpdir(), 'proma-rlm-e2e-'))
+import { mkdirSync } from 'node:fs'
 const cwd = join(rootDir, 'case')
+mkdirSync(cwd, { recursive: true })
 const wiring: rlmModule.RlmIpythonWiring = {}
 const delegator = createRlmIpythonToolDefinition(
   { createIpythonToolDefinition: toolsMod.createIpythonToolDefinition },

@@ -113,26 +113,24 @@ describe('反向验证：四种蓄意破坏必须变红', () => {
     expect(result.failures.some((f) => /不一致/.test(f.reason))).toBe(true)
   })
 
-  it('报告幻觉数字（0.97 冒充 0.83）→ reconcile 红', async () => {
+  it('报告幻觉数字（0.97 冒充 0.83）→ declare 拒绝 + 独立 gate 红', async () => {
     const runRoot = await buildHonestRun()
+    const run = runRoot.split('/').pop()!
     const report = join(runRoot, 'REPORT.md')
-    const tampered = HONEST_REPORT.replace('0.83', '0.97')
-    writeFileSync(report, tampered, 'utf-8')
-    // 重新声明后再裁决（否则先被 sha256 检查抓住——那也算红，但测的是对账本身）
-    await callTool('report_declare', { run: runRoot.split('/').pop()!, path: 'REPORT.md' })
+    writeFileSync(report, HONEST_REPORT.replace('0.83', '0.97'), 'utf-8')
+    // P3.2 后重新声明会当庭被拒（对账本身变红）
+    await expect(callTool('report_declare', { run, path: 'REPORT.md' })).rejects.toThrow(/幻觉数字/)
+    // 已声明文件被改：独立复跑 gate 因 sha256 不符变红
     const result = runReconcileGate(runRoot)
     expect(result.passed).toBe(false)
-    expect(result.failures.some((f) => /幻觉数字/.test(f.reason))).toBe(true)
+    expect(result.failures.some((f) => /sha256 不符/.test(f.reason))).toBe(true)
   })
 
-  it('结论行与 register 矛盾（LIVE 写成 SUPPORTED）→ reconcile 红', async () => {
+  it('结论行与 register 矛盾（LIVE 写成 SUPPORTED）→ declare 拒绝', async () => {
     const runRoot = await buildHonestRun()
-    const report = join(runRoot, 'REPORT.md')
-    writeFileSync(report, HONEST_REPORT.replace('- H1: LIVE', '- H1: SUPPORTED'), 'utf-8')
-    await callTool('report_declare', { run: runRoot.split('/').pop()!, path: 'REPORT.md' })
-    const result = runReconcileGate(runRoot)
-    expect(result.passed).toBe(false)
-    expect(result.failures.some((f) => /与 register 实际状态/.test(f.reason))).toBe(true)
+    const run = runRoot.split('/').pop()!
+    writeFileSync(join(runRoot, 'REPORT.md'), HONEST_REPORT.replace('- H1: LIVE', '- H1: SUPPORTED'), 'utf-8')
+    await expect(callTool('report_declare', { run, path: 'REPORT.md' })).rejects.toThrow(/与 register 实际状态/)
   })
 
   it('删除预登记文件（执行失去先登记依据）→ prereg 红', async () => {
@@ -149,6 +147,42 @@ describe('反向验证：四种蓄意破坏必须变红', () => {
     await callTool('research_init', { run: 'empty' })
     expect(runPreregGate(emptyRoot).passed).toBe(false)
     expect(runTraceGate(emptyRoot).passed).toBe(false)
+  })
+})
+
+describe('P3.2 declare 即裁决', () => {
+  it('诚实产物 declare 成功，gate.verdict 入 journal', async () => {
+    const runRoot = await buildHonestRun()
+    // buildHonestRun 已 declare 过一次；再次 declare 幂等走同一裁决路径
+    const text = await callTool('report_declare', { run: runRoot.split('/').pop()!, path: 'REPORT.md' })
+    expect(text).toContain('三道 gate 全绿')
+    const stateText = await callTool('research_state', { run: runRoot.split('/').pop()! })
+    expect(stateText).toContain('gateVerdicts')
+  })
+
+  it('幻觉数字的报告 declare 被拒绝，且 journal 里不出现对它的声明', async () => {
+    const runRoot = await buildHonestRun()
+    const run = runRoot.split('/').pop()!
+    writeFileSync(join(runRoot, 'BAD.md'), HONEST_REPORT.replace('0.83', '0.97'), 'utf-8')
+    await expect(callTool('report_declare', { run, path: 'BAD.md' })).rejects.toThrow(/幻觉数字/)
+    const stateText = await callTool('research_state', { run })
+    expect(stateText).not.toContain('"path": "BAD.md"')
+  })
+
+  it('结论行造假的报告 declare 被拒绝', async () => {
+    const runRoot = await buildHonestRun()
+    const run = runRoot.split('/').pop()!
+    writeFileSync(join(runRoot, 'LIE.md'), HONEST_REPORT.replace('- H1: LIVE', '- H1: SUPPORTED'), 'utf-8')
+    await expect(callTool('report_declare', { run, path: 'LIE.md' })).rejects.toThrow(/与 register 实际状态/)
+  })
+
+  it('空 run 的报告 declare 被拒绝（prereg/trace 先红）', async () => {
+    mkdirSync(join(researchCwd, '.proma-research', 'empty-declare'), { recursive: true })
+    await callTool('research_init', { run: 'empty-declare' })
+    const emptyRoot = join(researchCwd, '.proma-research', 'empty-declare')
+    writeFileSync(join(emptyRoot, 'REPORT.md'), '# 空报告', 'utf-8')
+    await expect(callTool('report_declare', { run: 'empty-declare', path: 'REPORT.md' }))
+      .rejects.toThrow(/空 run/)
   })
 })
 

@@ -245,7 +245,7 @@ CLI 的每个非 daemon 模式都经由 daemon（`main.ts:224-227`），所以�
 
 ---
 
-## P3 · 封边与实证（**当前阶段**）
+## P3 · 封边与实证（**进行中** · P3.1–P3.5 已完成，P3.6 战役演练见 research/campaigns/）
 
 **现状**：P0/P1/P2 已实现（990ac95 · a272a68 · fb9bba6 · 99bc832）。
 2026-08-22 复审确认：架构与目标一致，旧编排引擎无残留，五个 skill 引用的
@@ -351,12 +351,25 @@ Qwen 跑一场小而真的战役，全程不碰命令行（gate 人工复跑除�
 
 ### P3 完成条件
 
-- [ ] 红线恢复：模型写的命令只在沙箱执行，且缺 bwrap 时 fail closed
-- [ ] declare 即裁决：不过 gate 的报告无法 declare
-- [ ] journal 会话内篡改会被工具拒绝
-- [ ] 五项 P0 证据全绿（正反向都有）
-- [ ] collaboration/rlm 二选一有结论
-- [ ] 首场真实战役全流程走通并留档
+- [x] 红线恢复：模型写的命令只在沙箱执行，且缺 bwrap 时 fail closed
+  （sandbox.test.ts 6 passed：哨兵密钥不可见/写工作区拒绝/断网拒绝/bwrap 缺失结构性拒绝/诚实探针照常落地）
+- [x] declare 即裁决：不过 gate 的报告无法 declare
+  （gates.test.ts：诚实产物 declare 成功且 gate.verdict 入 journal；幻觉数字/结论行造假/空 run 的 declare 被拒）
+- [x] journal 会话内篡改会被工具拒绝（server.test.ts：手改 journal → 只读/写入工具全拒 + tamper 事件落盘）
+- [x] 五项 P0 证据全绿（正反向都有）：
+  1 权限 pi-ipython-permission.test.ts；2 跨压缩 & 3 rlm 拉起 & 4 auto-refine —— node scripts/p0-evidence.ts
+  P0_EVIDENCE_PASS（E3 排障记录：探针 cwd 未 mkdir 导致子代理 kernel spawn ENOENT，脚本已修）；
+  5 MCP 首轮 pi-mcp-first-round.test.ts（1.5s 冷启动首轮即列出，窗口不足时按可选项跳过）
+- [x] collaboration/rlm 二选一有结论：collaboration 仅被 Pi 桥接（Agent 会话）消费、Chat 不用——
+  已撤出 Agent 会话（注入块/目录条目/详情文案），文件与事件总线保留供历史 delegation 会话；
+  子代理分发归 rlm()（决策注释在 pi-builtin-tools.ts）
+- [x] 首场真实战役全流程走通并留档（FIRST_CAMPAIGN_PASS，node scripts/first-campaign.ts）：
+  真模型 × research skills × 真实 stdio MCP 子进程 × bwrap 沙箱探针——
+  2 假设登记 → 7 探针预登记执行落地（P1-P5 被沙箱如实拒绝，P6 落地）→
+  2 终态迁移 → rlm 对抗者 7 条 typed 攻击 → report_declare 内嵌三道 gate 全绿 →
+  独立 CLI 复跑 3×PASS。产物留档 research/campaigns/2026-08-23-first/
+  （含模型对 P1-P5 失败的诚实归因与对抗者识破评测语义局限的 G2/G4）。
+  UI 版待用户在 Proma 里按 research/README.md 三步接线复现。
 
 ### P3 之后
 

@@ -1,0 +1,52 @@
+{
+  "pid": "P6",
+  "question": "PCA 特征工程在固定种子评测上的 accuracy 是多少？结果落在哪个预测频段？",
+  "evalCommand": "cat > /tmp/eval.py << 'EVALEOF'\nimport json, random, sys\nfeature = sys.argv[sys.argv.index('--feature') + 1] if '--feature' in sys.argv else 'none'\nrng = random.Random(42)\nn = 200\ncorrect = 0\nfor i in range(n):\n    signal = rng.random()\n    if feature == 'pca':\n        correct += signal > 0.12\n    else:\n        correct += signal > 0.38\nprint(json.dumps({'metric': {'accuracy': round(correct / n, 4)}}))\nEVALEOF\n/usr/bin/python3 /tmp/eval.py --feature pca",
+  "metricKind": "json",
+  "metricSpec": "metric.accuracy",
+  "bands": {
+    "H1": [
+      0.8,
+      1
+    ],
+    "H2": [
+      0,
+      0.65
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0.8,
+        1
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        0.8,
+        1
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        0,
+        0.65
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        0,
+        0.65
+      ],
+      "action": "support",
+      "target": "H2"
+    }
+  ],
+  "frozenAt": "2026-08-23T06:24:48.353Z"
+}

@@ -1,0 +1,8 @@
+{
+  "pid": "P3",
+  "command": "/home/lingxufeng/miniconda3/bin/python3 /tmp/proma-campaign-I77smR/project/eval.py --feature pca",
+  "exitCode": 2,
+  "startedAt": "2026-08-23T06:22:24.151Z",
+  "endedAt": "2026-08-23T06:22:24.177Z",
+  "landed": false
+}

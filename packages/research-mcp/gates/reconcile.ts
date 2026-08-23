@@ -30,11 +30,17 @@ const NUMBER_WITH_SOURCE = /-?\d+(?:\.\d+)?\s*\(P(\d+)\)/g
 /** 裸数字（同一行没有 (P#) 出处）。 */
 const BARE_NUMBER = /-?\d+\.\d+/
 
-export function runReconcileGate(runRoot: string): GateResult {
+/** declare 内嵌裁决时报告尚未入 journal，用 override 直接校验目标文件。 */
+export interface ReconcileReportOverride {
+  path: string
+  sha256: string
+}
+
+export function runReconcileGate(runRoot: string, reportOverride?: ReconcileReportOverride): GateResult {
   const reasons: string[] = []
   const state = loadRun(runRoot)
 
-  const declared = state.reports[state.reports.length - 1]
+  const declared = reportOverride ?? state.reports[state.reports.length - 1]
   if (!declared) {
     return fail('reconcile', ['没有任何已声明的报告（report_declare）'])
   }

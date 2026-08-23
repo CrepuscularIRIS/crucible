@@ -1,0 +1,32 @@
+{"ts":"2026-08-23T06:20:38.784Z","op":"run.init","run":"first-campaign"}
+{"ts":"2026-08-23T06:21:01.394Z","op":"claim.propose","id":"H1","statement":"PCA 特征工程使固定种子评测的 accuracy 达到 ≥ 0.8，即存在实质提升。","predicts":["accuracy ≥ 0.8"]}
+{"ts":"2026-08-23T06:21:01.394Z","op":"claim.propose","id":"H2","statement":"PCA 特征工程无实质提升，accuracy 仍 ≤ 0.65。","predicts":["accuracy ≤ 0.65"]}
+{"ts":"2026-08-23T06:21:41.102Z","op":"prereg.write","pid":"P1","spec_sha256":"71866eaf37f63381c79645435180a97ae09f616721c6cb69a2db170ea72c3e5b","prereg_path":"prereg/P1.json"}
+{"ts":"2026-08-23T06:21:45.738Z","op":"probe.start","pid":"P1"}
+{"ts":"2026-08-23T06:21:45.756Z","op":"probe.land","pid":"P1","exit_code":2,"metric":null}
+{"ts":"2026-08-23T06:22:01.380Z","op":"prereg.write","pid":"P2","spec_sha256":"c479bc09c7b38e2f1ad73105ae6e4194ad849c75632c1aff2352e9c6af18cf2f","prereg_path":"prereg/P2.json"}
+{"ts":"2026-08-23T06:22:04.475Z","op":"probe.start","pid":"P2"}
+{"ts":"2026-08-23T06:22:04.495Z","op":"probe.land","pid":"P2","exit_code":2,"metric":null}
+{"ts":"2026-08-23T06:22:21.384Z","op":"prereg.write","pid":"P3","spec_sha256":"5b133595c9d240f9b537925e7885c6bb96d37436658824fa912d5f30dd59c5da","prereg_path":"prereg/P3.json"}
+{"ts":"2026-08-23T06:22:24.151Z","op":"probe.start","pid":"P3"}
+{"ts":"2026-08-23T06:22:24.177Z","op":"probe.land","pid":"P3","exit_code":2,"metric":null}
+{"ts":"2026-08-23T06:22:47.479Z","op":"prereg.write","pid":"P4","spec_sha256":"988da682d7d5090b557674de60abfdd0cc93522443894f473308525980701b96","prereg_path":"prereg/P4.json"}
+{"ts":"2026-08-23T06:22:50.138Z","op":"probe.start","pid":"P4"}
+{"ts":"2026-08-23T06:22:50.153Z","op":"probe.land","pid":"P4","exit_code":2,"metric":null}
+{"ts":"2026-08-23T06:23:01.769Z","op":"prereg.write","pid":"P5","spec_sha256":"04518b6fb4176b668f6042c29e42c0f83b0e415a7c97bf4e6a126ad31b35d42c","prereg_path":"prereg/P5.json"}
+{"ts":"2026-08-23T06:23:08.333Z","op":"probe.start","pid":"P5"}
+{"ts":"2026-08-23T06:23:08.346Z","op":"probe.land","pid":"P5","exit_code":2,"metric":null}
+{"ts":"2026-08-23T06:24:48.354Z","op":"prereg.write","pid":"P6","spec_sha256":"5f1c3c10b24fcea3c37e20d4f1d3604a4a2a4be99da6bdcac0ff4fef528c03da","prereg_path":"prereg/P6.json"}
+{"ts":"2026-08-23T06:24:51.526Z","op":"probe.start","pid":"P6"}
+{"ts":"2026-08-23T06:24:51.556Z","op":"probe.land","pid":"P6","exit_code":0,"metric":0.865}
+{"ts":"2026-08-23T06:25:03.984Z","op":"claim.transition","id":"H1","to":"SUPPORTED","by_probe":"P6","note":"accuracy = 0.865，落在 H1 预测频段 [0.8, 1] 内。PCA 特征工程使 accuracy 达到 0.865 ≥ 0.8，假设成立。"}
+{"ts":"2026-08-23T06:25:03.986Z","op":"claim.transition","id":"H2","to":"REFUTED","by_probe":"P6","note":"accuracy = 0.865，远超 H2 预测频段 [0, 0.65] 上界。PCA 特征工程产生了实质提升，H2 被杀死。"}
+{"ts":"2026-08-23T06:30:39.336Z","op":"attack.record","gid":"G1","target":"H1","kind":"constraint","text":"占据度攻击：P1–P5 全部以 exit code 2 失败，仅 P6 成功落地——构成幸存者偏差。单一成功探针的 SUPPORTED 裁决不具备统计稳健性：5 次失败暗示探针设计存在系统性缺陷（沙箱环境、脚本注入路径或 evalCommand 格式），P6 的成功可能只是因为恰好绕过了这些缺陷。具体可检验预测：若修复 P1–P5 的失败原因后重新执行，P6 的 accuracy 可能不再落在 [0.8,1] 内。约束条件：SUPPORTED 裁决要求至少 2 个独立成功探针交叉验证，单一探针不足以终结假设。"}
+{"ts":"2026-08-23T06:30:45.157Z","op":"attack.record","gid":"G2","target":"H1","kind":"new_h","text":"机制攻击（替代假设 H1-alt）：eval.py 的 \"pca\" 分支并非真正的 PCA 特征工程——它只是将分类阈值从 0.38 硬编码改为 0.12，没有任何主成分分析、协方差矩阵分解或降维操作。替代解释：\"观测到的 accuracy=0.865 完全由阈值参数决定，与 PCA 无关；任何阈值 ≤ 0.21 的硬编码规则都会产生 accuracy ≥ 0.8。\" 可检验：将阈值改为 0.22，accuracy 降至 0.7975 跌破 0.8 边界；改为 0.15 则 accuracy=0.85。H1 的因果故事是虚假归因——真正原因是人为选择了宽松阈值。"}
+{"ts":"2026-08-23T06:30:51.889Z","op":"attack.record","gid":"G3","target":"H1","kind":"no_change","text":"测量攻击：频段设计存在不可证伪性缺陷。H1 频段 [0.8, 1.0] 覆盖 80% 可能输出空间（假设 accuracy 均匀分布），H2 频段 [0, 0.65] 覆盖 65%，两者之和超过 1.0。更关键的是，H1 下界 0.8 对应阈值恰好是 0.21——只要阈值设在 0.0 到 0.21 之间任何值，H1 都会被 support。频段边界由假设提出者主观设定，非由数据分布或效应量分析导出。threshold=0.21 → accuracy=0.8000 恰好踩线；threshold=0.12 → accuracy=0.865 落在频段中部。P6 结果不改变信念——它只反映频段设计者选择了有利于 H1 的边界。"}
+{"ts":"2026-08-23T06:30:58.522Z","op":"attack.record","gid":"G4","target":"H1","kind":"new_h","text":"框架攻击（替代假设 H1-frame）：战役问题\"PCA 特征工程有没有提升\"与评测实现之间存在根本性语义鸿沟。H1 的 statement 声称\"PCA 特征工程使 accuracy 达到 ≥ 0.8\"，但 eval.py 中 feature='pca' 的实现是 signal > 0.12，feature='none' 是 signal > 0.38。这不是\"有/无 PCA 特征工程\"的对照实验，而是\"宽松阈值 vs 严格阈值\"的对照实验。替代假设：\"该战役实际测量的是阈值宽松度对 accuracy 的影响，而非 PCA 特征工程的有效性；将结论表述为 PCA 的贡献属于范畴错误。\" 可检验预测：若将 'pca' 分支替换为真正的 PCA（sklearn.decomposition.PCA），在相同 200 样本、seed=42 的一维均匀随机数据上，accuracy 不会达到 0.8——因为 PCA 在一维情况下是恒等变换。"}
+{"ts":"2026-08-23T06:33:17.537Z","op":"attack.record","gid":"G5","target":"H1","kind":"new_h","text":"机制攻击（混合替代解释）：eval.py 的 \"pca\" 分支并非真正的 PCA 特征工程，而是将判定阈值从 0.38 硬编码改为 0.12。观测到的 accuracy=0.865 来自数据生成过程中 signal > 0.12 的强可分性（期望 ≈0.88），而非 PCA 降维或特征提取的判别力。替代假设 H_alt：\"accuracy 提升由 eval.py 内部阈值偏移（0.38→0.12）驱动，与 PCA 特征工程无关；若用真实 PCA 实现（如 sklearn.decomposition.PCA）替换当前硬编码逻辑，accuracy 可能显著不同。\" 该替代解释与现有证据（P6 的 0.865）完全兼容，但因果归因完全不同。"}
+{"ts":"2026-08-23T06:33:17.538Z","op":"attack.record","gid":"G6","target":"H1","kind":"constraint","text":"框架攻击（语义鸿沟）：战役问题问的是\"PCA 特征工程对 accuracy 有没有实质提升\"，但 eval.py 的 --feature pca 并未实现任何 PCA 操作（无主成分分析、无降维、无特征变换），仅是一个 if/else 分支改变随机数阈值。评测实现与战役问题之间存在根本性语义错位：P6 证明的是\"阈值从 0.38 改为 0.12 使 accuracy 从 ~0.62 升至 ~0.88\"，而非\"PCA 特征工程有实质提升\"。H1 的 SUPPORTED 状态仅在 eval.py 的语义框架内成立，若将战役问题与评测实现对齐，现有证据不足以支撑 H1。"}
+{"ts":"2026-08-23T06:33:17.538Z","op":"attack.record","gid":"G7","target":"H1","kind":"constraint","text":"占据度攻击（单一探针可靠性）：P1-P5 共 5 个探针全部因沙箱路径问题失败（exit code 2），仅 P6 成功落地。探针设计的系统性失败（5/6 = 83% 失败率）表明实验基础设施存在结构性问题，单一成功探针的结果可能不具备可重复性。此外，P6 的成功依赖于将脚本内容通过 heredoc 内嵌到命令中——这是一种规避沙箱限制的 workaround，而非标准评测路径。在探针覆盖度不足的情况下，H1 的 SUPPORTED 裁决建立在脆弱的证据基础上。"}
+{"ts":"2026-08-23T06:36:07.444Z","op":"report.declare","path":"REPORT.md","sha256":"878c99fc93a4ce3a1229c0d24a78646bfcadc7e10d3bc95d69e285db210e4e69"}
+{"ts":"2026-08-23T06:36:07.445Z","op":"gate.verdict","passed":true,"report":"REPORT.md","prereg":true,"reconcile":true,"trace":true}

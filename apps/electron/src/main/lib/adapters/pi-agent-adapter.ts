@@ -706,7 +706,7 @@ interface ToolWrapOptions {
   canUseTool?: PiAgentQueryOptions['canUseTool']
 }
 
-function wrapToolWithPermission<TParams extends TSchema, TDetails, TState>(
+export function wrapToolWithPermission<TParams extends TSchema, TDetails, TState>(
   definition: ToolDefinition<TParams, TDetails, TState>,
   options: ToolWrapOptions,
 ): ToolDefinition<TParams, TDetails, TState> {

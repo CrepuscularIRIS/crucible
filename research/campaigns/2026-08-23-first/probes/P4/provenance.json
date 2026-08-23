@@ -1,0 +1,8 @@
+{
+  "pid": "P4",
+  "command": "/usr/bin/python3 /tmp/proma-campaign-I77smR/project/eval.py --feature pca",
+  "exitCode": 2,
+  "startedAt": "2026-08-23T06:22:50.138Z",
+  "endedAt": "2026-08-23T06:22:50.153Z",
+  "landed": false
+}

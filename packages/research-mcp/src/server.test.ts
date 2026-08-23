@@ -3,7 +3,7 @@
  * 覆盖诚实路径的结构拒绝（约束 1/2/4/5）与重算一致性。
  */
 
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
@@ -121,6 +121,35 @@ describe('结构拒绝', () => {
   it('可判别性：predicts 是 LIVE 假设子集的新假设被拒绝', async () => {
     await expect(callTool('claim_propose', { run: 'refuse', id: 'H3', statement: 'A′', predicts: ['x 升'] }))
       .rejects.toThrow(/不可判别/)
+  })
+
+  it('P3.3：手改 journal 后，下一个工具调用拒绝且 run 被污染（只读也不放过）', async () => {
+    await callTool('research_init', { run: 'tamper' })
+    await callTool('claim_propose', { run: 'tamper', id: 'H1', statement: 'A', predicts: ['x'] })
+    // 会话外手改 journal（追加一行伪造的终态迁移）
+    const journal = join(researchCwd, '.proma-research', 'tamper', 'journal.jsonl')
+    const before = readFileSync(journal, 'utf-8')
+    writeFileSync(journal, `${before}${JSON.stringify({ ts: '2026-01-01T00:00:00.000Z', op: 'claim.transition', id: 'H1', to: 'SUPPORTED' })}\n`)
+    await expect(callTool('research_state', { run: 'tamper' })).rejects.toThrow(/污染/)
+    await expect(callTool('claim_propose', { run: 'tamper', id: 'H2', statement: 'B', predicts: ['y'] }))
+      .rejects.toThrow(/污染/)
+    // tamper 事件确实落在 journal 里（重启后 replay 可见）
+    const after = readFileSync(journal, 'utf-8')
+    expect(after).toContain('tamper.detected')
+  })
+
+  it('P3.5：graveyard 复活无 note 被拒绝；带证据来源的复活成功', async () => {
+    // honest run 里 H2 已被 P1 REFUTED 入 graveyard
+    await expect(callTool('claim_transition', { run: 'honest', id: 'H2', to: 'LIVE' }))
+      .rejects.toThrow(/复活必须带 note/)
+    await callTool('claim_transition', {
+      run: 'honest',
+      id: 'H2',
+      to: 'LIVE',
+      note: 'G1 指出 0.83 可能来自种子方差，需 P2 换种子复测后再判',
+    })
+    const stateText = await callTool('research_state', { run: 'honest' })
+    expect(stateText).toContain('"id": "H2"')
   })
 
   it('非零退出的探针不予落地', async () => {

@@ -1,0 +1,52 @@
+{
+  "pid": "P2",
+  "question": "PCA 特征工程在固定种子评测上的 accuracy 是多少？结果落在哪个预测频段？",
+  "evalCommand": "python3 /tmp/proma-campaign-I77smR/project/eval.py --feature pca",
+  "metricKind": "json",
+  "metricSpec": "metric.accuracy",
+  "bands": {
+    "H1": [
+      0.8,
+      1
+    ],
+    "H2": [
+      0,
+      0.65
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0.8,
+        1
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        0.8,
+        1
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        0,
+        0.65
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        0,
+        0.65
+      ],
+      "action": "support",
+      "target": "H2"
+    }
+  ],
+  "frozenAt": "2026-08-23T06:22:01.380Z"
+}

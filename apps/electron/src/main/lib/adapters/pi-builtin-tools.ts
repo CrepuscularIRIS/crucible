@@ -33,7 +33,6 @@ import { isBuiltinMcpUserEnabled } from '../builtin-mcp/settings'
 import { downloadInstaller, launchInstaller } from '../installer-downloader'
 import { fetchInstallerManifest, findInstallerSource } from '../installer-manifest'
 import { shouldOfferWindowsShellInstaller } from './windows-shell-installer'
-import { buildPiCollaborationTools } from '../agent-collaboration-tools'
 import { buildPiNanoBananaTools } from '../chat-tools/nano-banana-mcp'
 import { getVisionRelayRouteLabel, inspectImageWithVisionRelay, isVisionRelayConfigured, isVisionRelayEligibleForModel } from '../vision-relay-service'
 import {
@@ -1118,26 +1117,10 @@ export async function buildPiBuiltinTools(
     console.error('[Pi 桥接] 注入任务/日程工具失败:', error)
   }
 
-  // collaboration 桥接
-  const collaborationAvailable = isBuiltinMcpUserEnabled('collaboration') &&
-    !!ctx.workspaceId &&
-    ctx.triggeredBy !== 'delegation'
-
-  if (collaborationAvailable) {
-    try {
-      const collaborationTools = buildPiCollaborationTools(sdk, {
-        sessionId: ctx.sessionId,
-        channelId: ctx.channelId,
-        modelId: ctx.modelId,
-        workspaceId: ctx.workspaceId,
-        permissionMode: ctx.permissionMode,
-        triggeredBy: ctx.triggeredBy,
-      })
-      tools.push(...collaborationTools as ToolDefinition[])
-    } catch (error) {
-      console.error('[Pi 桥接] 注入 collaboration 工具失败:', error)
-    }
-  }
+  // P3.5 决策（2026-08-22）：collaboration 工具撤出 Agent 会话。
+  // 调查确认它只被 Pi 桥接（Agent 会话）消费、Chat 不用；作为子代理分发机制
+  // 与 Prime kernel 的 rlm() 职责重叠，按最高原则保留 rlm()。文件与事件总线
+  // 保留：历史会话的 delegation 事件展示不受影响；rlm() 子代理走 kernel 原生链。
 
   // 未配置 Windows Shell 时，按需提供 Git Bash 安装工具；实际下载与拉起安装器仍经过 Agent 权限确认。
   try {
@@ -1174,5 +1157,6 @@ export async function buildPiBuiltinTools(
   }
 
 
-  return { tools, collaborationAvailable }
+  // collaboration 已撤出（见上方 P3.5 决策注释）；提示词链字段保留恒 false，避免联动改四处签名
+  return { tools, collaborationAvailable: false }
 }

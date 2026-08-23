@@ -16,15 +16,19 @@
  * 钉死在 <cwd>/.proma-research/<run>/ 内），不跨目录泄漏。
  */
 
-import { spawn } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod'
+import { requireSandbox, runSandboxedEval } from './sandbox.js'
+import { runPreregGate } from '../gates/prereg.js'
+import { runReconcileGate } from '../gates/reconcile.js'
+import { runTraceGate } from '../gates/trace.js'
 import {
   ResearchStateError,
   appendEvent,
+  assertJournalIntact,
   confined,
   recomputeMetric,
   replay,
@@ -55,6 +59,8 @@ function requireInit(root: string): void {
   if (!existsSync(join(root, 'journal.jsonl'))) {
     throw new ResearchStateError('run 尚未初始化，先调用 research_init')
   }
+  // P3.3：每个工具调用先校验 journal 完整性（含只读工具）
+  assertJournalIntact(root)
 }
 
 /** 读回预登记并校验 sha256 与 journal 记录一致（文件被改过即拒绝）。 */
@@ -172,6 +178,15 @@ export function buildServer(): McpServer {
       const state = replay(root)
       const claim = state.claims.find((c) => c.id === id)
       if (!claim) throw new ResearchStateError(`未知 claim: ${id}`)
+      // P3.5：graveyard 复活必须点名新证据来源——没有新证据的复活是对死人的鞭尸
+      const TERMINAL = ['SUPPORTED', 'REFUTED', 'SCOPED'] as const
+      if (to === 'LIVE' && (TERMINAL as readonly string[]).includes(claim.state)) {
+        if (!note || note.trim() === '') {
+          throw new ResearchStateError(
+            `${id} 已是终态（${claim.state}），复活必须带 note 点名新证据来源（哪个探针/哪条攻击推翻了原结论）`,
+          )
+        }
+      }
       if (to === 'SUPPORTED' || to === 'REFUTED' || to === 'SCOPED') {
         if (!byProbe) {
           throw new ResearchStateError('终态迁移必须点名依据探针（byProbe）')
@@ -232,7 +247,7 @@ export function buildServer(): McpServer {
 
   server.tool(
     'probe_run',
-    '执行探针：只运行预登记时冻结的命令字符串（不接受新命令），记录 provenance 与 raw 输出，并从 raw 重算指标后落地。非零退出不予落地',
+    '在 bwrap 沙箱内执行探针：只运行预登记时冻结的命令（不接受新命令）。沙箱契约：只读文件系统（中间文件写 /tmp）、无网络、环境变量只有 PATH/HOME/LANG、结果走 stdout。非零退出或超时不予落地',
     { run: z.string(), pid: z.string() },
     async ({ run, pid }) => {
       const root = resolveRun(run)
@@ -243,22 +258,15 @@ export function buildServer(): McpServer {
         throw new ResearchStateError(`探针 ${pid} 不存在或状态不允许执行（当前: ${probe?.status ?? '不存在'}）`)
       }
       const spec = readFrozenSpec(root, pid)
+      // 红线：模型写的命令只在沙箱执行；bwrap 缺失时结构性拒绝（fail closed）
+      requireSandbox()
       appendEvent(root, 'probe.start', { pid })
       const probeDir = confined(root, join('probes', pid))
       const rawDir = join(probeDir, 'raw')
       mkdirSync(rawDir, { recursive: true })
       const startedAt = new Date().toISOString()
-      const stdout = await new Promise<{ text: string; exitCode: number }>((resolveRunResult) => {
-        let text = ''
-        const child = spawn('/bin/sh', ['-c', spec.evalCommand], {
-          cwd: serverCwd(),
-          env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
-        })
-        child.stdout.on('data', (chunk: Buffer) => { text += chunk.toString() })
-        child.stderr.on('data', (chunk: Buffer) => { text += chunk.toString() })
-        child.on('error', (error) => { text += `\n${String(error)}`; resolveRunResult({ text, exitCode: -1 }) })
-        child.on('close', (code) => resolveRunResult({ text, exitCode: code ?? -1 }))
-      })
+      const stdout = await runSandboxedEval(spec.evalCommand)
+      // raw 由 server 在沙箱外捕获落盘：沙箱内零可写挂载（除 tmpfs /tmp）
       writeFileSync(join(rawDir, 'output.txt'), stdout.text, 'utf-8')
       const endedAt = new Date().toISOString()
       if (stdout.exitCode !== 0) {
@@ -267,7 +275,7 @@ export function buildServer(): McpServer {
         }, null, 2)}\n`, 'utf-8')
         appendEvent(root, 'probe.land', { pid, exit_code: stdout.exitCode, metric: null })
         freshRegister(root)
-        throw new ResearchStateError(`探针 ${pid} 以退出码 ${stdout.exitCode} 结束，不予落地（崩溃与干净结果不可区分，一概拒绝）`)
+        throw new ResearchStateError(`探针 ${pid} 以退出码 ${stdout.exitCode}${stdout.timedOut ? '（超时）' : ''} 结束，不予落地（崩溃、超时与干净结果不可区分，一概拒绝）`)
       }
       const metric = recomputeMetric(stdout.text, spec.metricKind, spec.metricSpec)
       writeFileSync(join(probeDir, 'provenance.json'), `${JSON.stringify({
@@ -329,17 +337,34 @@ export function buildServer(): McpServer {
 
   server.tool(
     'report_declare',
-    '声明报告文件（相对 run 目录的路径），gate 会按此 sha256 校验并对账其中引用的数字',
+    '声明报告并当庭过三道 gate（P3.2：declare 即裁决）：prereg/reconcile/trace 全绿才写入声明与 gate.verdict；任何一道红则拒绝声明并逐条给出理由',
     { run: z.string(), path: z.string() },
     async ({ run, path }) => {
       const root = resolveRun(run)
       requireInit(root)
-      const reportPath = confined(root, path)
+      const normalizedPath = path.replace(/\\/g, '/')
+      const reportPath = confined(root, normalizedPath)
       if (!existsSync(reportPath)) throw new ResearchStateError(`报告不存在: ${path}`)
       const digest = sha256(readFileSync(reportPath, 'utf-8'))
-      appendEvent(root, 'report.declare', { path: path.replace(/\\/g, '/'), sha256: digest })
+
+      // 先裁决后落笔：红报告不产生任何 journal 事件（声明失败 ≠ 声明了一个坏报告）
+      const verdicts = [
+        runPreregGate(root),
+        runReconcileGate(root, { path: normalizedPath, sha256: digest }),
+        runTraceGate(root),
+      ]
+      const failures = verdicts.flatMap((v) => v.failures)
+      if (failures.length > 0) {
+        const lines = failures.map((f) => `✗ [${f.gate}] ${f.reason}`)
+        throw new ResearchStateError(`报告未通过 gate，拒绝声明：\n${lines.join('\n')}`)
+      }
+
+      appendEvent(root, 'report.declare', { path: normalizedPath, sha256: digest })
+      appendEvent(root, 'gate.verdict', { passed: true, report: normalizedPath, prereg: true, reconcile: true, trace: true })
       freshRegister(root)
-      return { content: [{ type: 'text', text: `报告已声明（sha256 ${digest.slice(0, 12)}…）` }] }
+      return {
+        content: [{ type: 'text', text: `报告已声明（sha256 ${digest.slice(0, 12)}…）；三道 gate 全绿：prereg ✓ reconcile ✓ trace ✓` }],
+      }
     },
   )
 

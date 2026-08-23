@@ -62,6 +62,8 @@ export interface JournalEvent {
     | 'claim.transition'
     | 'attack.record'
     | 'report.declare'
+    | 'gate.verdict'
+    | 'tamper.detected'
   [key: string]: unknown
 }
 
@@ -91,6 +93,10 @@ export interface ResearchState {
   probes: ProbeRecord[]
   attacks: Array<{ gid: string; target: string; kind: string; text: string; ts: string }>
   reports: Array<{ path: string; sha256: string; ts: string }>
+  /** declare 时三道 gate 的内嵌裁决记录（P3.2） */
+  gateVerdicts: Array<{ ts: string; passed: boolean; report: string }>
+  /** server 侦测到的 journal 篡改（P3.3；重启后基线重置，见 README 天花板） */
+  tampers: Array<{ ts: string; expected: string; actual: string }>
   /** 已进入终态（REFUTED/SCOPED/SUPPORTED）的 claim —— grill 对抗者必须看得到 */
   graveyard: ClaimRecord[]
 }
@@ -146,11 +152,57 @@ export function readJournal(root: string): JournalEvent[] {
     .map((line) => JSON.parse(line) as JournalEvent)
 }
 
+/** 会话内 journal 基线（root → sha256）。server 重启即重置——天花板见 README。 */
+const journalBaselines = new Map<string, string>()
+/** 一旦侦测到篡改即永久污染该 run（本 server 生命周期内），不因 tamper 事件自身改基线而"洗白"。 */
+const poisonedRoots = new Set<string>()
+
+function rememberJournalBaseline(root: string): void {
+  const file = journalPath(root)
+  journalBaselines.set(root, existsSync(file) ? sha256(readFileSync(file, 'utf-8')) : '')
+}
+
 export function appendEvent(root: string, op: JournalEvent['op'], payload: Record<string, unknown>): JournalEvent {
+  assertJournalIntact(root)
   const event: JournalEvent = { ts: new Date().toISOString(), op, ...payload }
   mkdirSync(root, { recursive: true })
   appendFileSync(journalPath(root), `${JSON.stringify(event)}\n`, 'utf-8')
+  rememberJournalBaseline(root)
   return event
+}
+
+/**
+ * P3.3 防篡改：journal 与 server 记住的基线不符时，记 tamper 事件并污染该 run
+ * ——此后所有工具调用（含只读）一律拒绝，直到 server 重启。首次见到某个 run
+ * 时以当前文件为基线（重启后的重置语义，天花板见 README）。
+ */
+export function assertJournalIntact(root: string): void {
+  if (poisonedRoots.has(root)) {
+    throw new ResearchStateError('journal 已被污染（此前侦测到会话外改动）：本 run 的全部工具在本 server 生命周期内拒绝服务。')
+  }
+  const file = journalPath(root)
+  if (!existsSync(file)) return
+  if (!journalBaselines.has(root)) {
+    rememberJournalBaseline(root)
+    return
+  }
+  const expected = journalBaselines.get(root) ?? ''
+  const actual = sha256(readFileSync(file, 'utf-8'))
+  if (expected === actual) return
+  // 篡改现场先留痕（这条追加是 server 侧诚实记录），再污染并拒绝当次操作
+  const event: JournalEvent = {
+    ts: new Date().toISOString(),
+    op: 'tamper.detected',
+    expected: expected.slice(0, 16),
+    actual: actual.slice(0, 16),
+  }
+  appendFileSync(file, `${JSON.stringify(event)}\n`, 'utf-8')
+  journalBaselines.set(root, sha256(readFileSync(file, 'utf-8')))
+  poisonedRoots.add(root)
+  throw new ResearchStateError(
+    `journal 在会话外被改动（期望 sha256 ${expected.slice(0, 12)}…，实际 ${actual.slice(0, 12)}…）；`
+    + '已记录 tamper 事件并污染本 run。若确为人工修复，请重启 server 后以当前文件为新基线。',
+  )
 }
 
 const TERMINAL_STATES: ReadonlySet<ClaimState> = new Set(['SUPPORTED', 'REFUTED', 'SCOPED'])
@@ -164,6 +216,8 @@ export function replay(root: string): ResearchState {
     probes: [],
     attacks: [],
     reports: [],
+    gateVerdicts: [],
+    tampers: [],
     graveyard: [],
   }
   for (const event of events) {
@@ -246,6 +300,20 @@ export function replay(root: string): ResearchState {
           path: String(event.path ?? ''),
           sha256: String(event.sha256 ?? ''),
           ts: event.ts,
+        })
+        break
+      case 'gate.verdict':
+        state.gateVerdicts.push({
+          ts: event.ts,
+          passed: event.passed === true,
+          report: String(event.report ?? ''),
+        })
+        break
+      case 'tamper.detected':
+        state.tampers.push({
+          ts: event.ts,
+          expected: String(event.expected ?? ''),
+          actual: String(event.actual ?? ''),
         })
         break
     }
