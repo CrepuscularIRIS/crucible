@@ -75,3 +75,4 @@ run.db-shm
 run.db-wal
 run.db.bak-*
 .venv/
+__pycache__/

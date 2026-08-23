@@ -435,28 +435,36 @@ Proma 无插件系统（`noExtensions:true`），能力目标也不需要它。
 4. gates.test.ts 诚实产物加攻击事件后全绿——**全绿集成测试仍是
    impossible-instructions 的检测器**，新规则并入后不许出现无解产物。
 
-### P4.2 · skills 措辞吸收 GRILL 语汇（纯散文，~1 天）
+### P4.2 · skills 的 Prime 原生重写（**已实现** · 见 research/DESIGN.md）
 
-从 HYPOTHESIS-REGISTER.md 吸收的是**问法**，不是状态机——server 的
-4 态模型不动（CONTESTED 用"LIVE + constraint 攻击在案"表达）：
+用户 2026-08-23 把范围从"纯散文"扩为"Prime 原生化"：先做能力利用审计
+（三路并行勘察：~/oss/prime-agent 源码 · ~/workspace/.claude GRILL 原版 ·
+~/cli/Arbor 实现），再按审计重写。完整审计与裁定在 `research/DESIGN.md`。
 
-- **research-grill**：静默假设清账模式（其 P7–P19）——对抗者对每个
-  SUPPORTED claim 列"这个结论静默依赖了什么"，每条落成
-  `attack_record kind=constraint` 并**带上能了结它的 falsifier 写法**；
-  "只有带 artifact 的测量才能杀"已是结构，skill 里点明即可。
-- **research-probe**：对照臂即必需臂（energy-matched sham 的教训）——
-  prereg 的 question 写法要求点名"什么对照能否证这个读数"；
-  falsifier 先行："这个探针的哪个读数会杀掉哪个假设"先于"怎么跑"。
-- **research-report**：**收窄结论而不是检验不可检验的**（其 P7/P16 的
-  解法）——超出战役能力的断言降为 scope 声明模板，与已有 floor 诚实
-  声明并列。
-- **research-abduce**：claim 改写即 falsifier 作废——改写过的 claim
-  旧预登记分支失效，须重新 prereg（结构上 prereg 冻结已保证不了
-  "语义漂移"，这条只能靠散文，写明天花板）。
+落地内容：
 
-**验收**：五个 skill 引用的工具全部真实存在（skill-cli-contract 测试
-复跑绿）；每条新增措辞在首场 UI 战役（P4.3）里至少被观察命中一次或
-被裁掉——**不留从未触发的指令**（impossible-instructions 的姐妹病）。
+- **新增 `research-kit` Python-backed skill**（Prime 原生形态：kernel 内
+  按 import 名直接调用、出错即 raise、被所有 rlm 子代理继承）：
+  `anchor`（跨压缩信念锚，存 kernel 变量 LAST）· `claim_view`（对抗者
+  不对称上下文，无 transition notes）· `disjoint_pairs`（SELECT 判别表）·
+  `calibration`（预测频段 vs 观测账本）。**全部只读**——kernel 侧绝不
+  直连 research-mcp（第二个 server 实例会触发 P3.3 防篡改互咬）。
+- **claim_propose 加 `conflicts` 结构守卫**（Arbor 四行契约第 4 行）：
+  graveyard 非空时必填，换装重提死方向被 server 拒绝。
+- **五个 skill 重写**：loop 加锚仪式与压缩恢复（print(research_kit.LAST)）；
+  abduce 加 conflicts 纪律与"改写即作废"天花板；probe 加 SELECT（≥2 候选
+  比判别力）与落带外分诊台阶（伪影→bug→噪声→已知→真实）；grill 换
+  claim_view 不对称构造 + 攻击文件扇入（handle.session_dir/attacks.md）+
+  对抗者记忆回喂 + 静默假设清账（P7–P19 模式）；report 加校准账本段与
+  收窄声明模板。
+- **明确不用**（ponytail 裁定，写进 DESIGN.md）：goal/autonomous（UI 交互
+  战役用不到，无人值守时 `--autonomous-gate` 挂三道 gate CLI 是现成路）、
+  harness subagent 条目与 refine（等真实战役产生素材）、TS extensions。
+
+**验收**：13 处工具/函数引用逐一对实（MCP 8 工具 + research_kit 5 API 全部
+真实存在）；research-kit.test.ts 4 tests（含 claim_view 不含 note 的不对称
+断言）+ conflicts 正反向测试，research-mcp 全包 45 passed；
+"每条新增措辞在首场 UI 战役里至少命中一次或被裁掉"转入 P4.3 验收。
 
 ### P4.3 · UI 闭环战役（P3.6 的 UI 版，真正的总验收，~1 天）
 

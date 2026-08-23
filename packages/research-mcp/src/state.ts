@@ -77,6 +77,8 @@ export interface ClaimRecord {
   /** 进入当前状态的依据：probe id */
   byProbe?: string
   note?: string
+  /** 与 graveyard 的关系声明（Arbor 四行契约第 4 行）：graveyard 非空时登记必填 */
+  conflicts?: string
 }
 
 export interface ProbeRecord {
@@ -233,6 +235,7 @@ export function replay(root: string): ResearchState {
           statement: String(event.statement ?? ''),
           predicts: Array.isArray(event.predicts) ? event.predicts.map(String) : [],
           state: 'LIVE',
+          ...(event.conflicts ? { conflicts: String(event.conflicts) } : {}),
         })
         break
       }

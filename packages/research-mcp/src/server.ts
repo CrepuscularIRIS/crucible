@@ -131,14 +131,15 @@ export function buildServer(): McpServer {
 
   server.tool(
     'claim_propose',
-    '登记一条新假设（PROPOSED→LIVE）。predicts 必须与现有 LIVE 假设可判别：不能是任一 LIVE 假设 predicts 的子集',
+    '登记一条新假设（PROPOSED→LIVE）。predicts 必须与现有 LIVE 假设可判别：不能是任一 LIVE 假设 predicts 的子集。graveyard 非空时必须给 conflicts（"none — 攻击未探索的轴"或"graveyard 的 H# 死于 X；本假设以 Y 反驳/绕开"）',
     {
       run: z.string(),
       id: z.string().regex(/^H\d+$/, '假设 id 形如 H1、H2'),
       statement: z.string().min(1),
       predicts: z.array(z.string()).min(1),
+      conflicts: z.string().optional(),
     },
-    async ({ run, id, statement, predicts }) => {
+    async ({ run, id, statement, predicts, conflicts }) => {
       const root = resolveRun(run)
       requireInit(root)
       const state = replay(root)
@@ -156,7 +157,19 @@ export function buildServer(): McpServer {
           `${id} 的 predicts 是 LIVE 假设 ${redundant.id} 的子集，两者不可判别；先写出差异再登记 → research-abduce：重写 predicts 使两条假设有互斥落点`,
         )
       }
-      appendEvent(root, 'claim.propose', { id, statement, predicts })
+      // Arbor constraints-block 教训的结构化：坟场非空时，新假设必须声明与死者的关系
+      // ——换装重提共享同一隐藏假设的想法，正是长程 agent 的既证失败模式
+      if (state.graveyard.length > 0 && (!conflicts || conflicts.trim() === '')) {
+        const dead = state.graveyard.map((g) => `${g.id}(${g.state})`).join(' ')
+        throw new ResearchStateError(
+          `graveyard 非空（${dead}），登记新假设必须带 conflicts：写 "none — 攻击未探索的轴"，`
+          + '或点名死者与死因并说明本假设如何反驳/绕开它 → research-abduce：先读 graveyard 再写',
+        )
+      }
+      appendEvent(root, 'claim.propose', {
+        id, statement, predicts,
+        ...(conflicts ? { conflicts } : {}),
+      })
       freshRegister(root)
       return { content: [{ type: 'text', text: `${id} 已登记为 LIVE` }] }
     },

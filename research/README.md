@@ -35,9 +35,14 @@ packages/research-mcp/gates/* ← 三道硬 gate
 服务器在**当前工作目录**（即所选工作区的项目根）下维护
 `.proma-research/<run>/`。无状态、无凭据、无 LLM。
 
-**2. 安装 skills**：把 `research/skills/` 下的五个目录复制（或软链）到目标
+**2. 安装 skills**：把 `research/skills/` 下的六个目录复制（或软链）到目标
 工作区的 `skills/` 目录。模型经 `<available_skills>` 发现它们，bash/ipython
 打开 SKILL.md 时 UI 会显示 skill 使用标记。
+
+其中 `research-kit` 是 **Python-backed skill**（Prime 原生形态）：kernel 启动时
+安装进 kernel venv，模型在 kernel 里直接 `research_kit.anchor(run)` 调用，
+被所有 `rlm()` 子代理继承；改 Python 源码只需重启 kernel，改 `pyproject.toml`
+才触发重装。设计依据与能力利用审计见 `research/DESIGN.md`。
 
 **3. 跑 gate**（报告完成前）：
 

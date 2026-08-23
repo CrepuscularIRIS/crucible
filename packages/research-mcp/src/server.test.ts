@@ -152,6 +152,19 @@ describe('结构拒绝', () => {
     expect(stateText).toContain('"id": "H2"')
   })
 
+  it('P4.2：graveyard 非空时，登记新假设必须带 conflicts', async () => {
+    // honest run 的 graveyard 已有 H1/H2 的终态记录
+    await expect(callTool('claim_propose', {
+      run: 'honest', id: 'H3', statement: '提升来自数据泄漏', predicts: ['打乱标签后 accuracy 仍 ≥ 0.8'],
+    })).rejects.toThrow(/必须带 conflicts/)
+    await callTool('claim_propose', {
+      run: 'honest', id: 'H3', statement: '提升来自数据泄漏', predicts: ['打乱标签后 accuracy 仍 ≥ 0.8'],
+      conflicts: 'H1 死于 P1 支持——本假设主张 P1 的观测由泄漏产生，预测打乱标签后仍复现',
+    })
+    const stateText = await callTool('research_state', { run: 'honest' })
+    expect(stateText).toContain('"conflicts"')
+  })
+
   it('非零退出的探针不予落地', async () => {
     await callTool('prereg_write', {
       run: 'refuse',
