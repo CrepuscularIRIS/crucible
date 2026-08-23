@@ -245,7 +245,7 @@ CLI 的每个非 daemon 模式都经由 daemon（`main.ts:224-227`），所以�
 
 ---
 
-## P3 · 封边与实证（**进行中** · P3.1–P3.5 已完成，P3.6 战役演练见 research/campaigns/）
+## P3 · 封边与实证（**已实现** · bf4d474 + 复审修复 88cfa6a）
 
 **现状**：P0/P1/P2 已实现（990ac95 · a272a68 · fb9bba6 · 99bc832）。
 2026-08-22 复审确认：架构与目标一致，旧编排引擎无残留，五个 skill 引用的
@@ -369,13 +369,123 @@ Qwen 跑一场小而真的战役，全程不碰命令行（gate 人工复跑除�
   2 终态迁移 → rlm 对抗者 7 条 typed 攻击 → report_declare 内嵌三道 gate 全绿 →
   独立 CLI 复跑 3×PASS。产物留档 research/campaigns/2026-08-23-first/
   （含模型对 P1-P5 失败的诚实归因与对抗者识破评测语义局限的 G2/G4）。
-  UI 版待用户在 Proma 里按 research/README.md 三步接线复现。
+  UI 版移入 P4.3。
+- [x] **复审修复（88cfa6a，Grok no findings）**：replay 曾把非零退出的
+  probe.land 一律记 LANDED 且 `Number(null)`=0 —— kill 频段含 0 时崩溃探针
+  可冒充终态依据。改为按 exit_code 分支出 FAILED 态（无 metric），四处
+  `=== 'LANDED'` 消费点自动排除；战役 register 按不变 journal 重生成，
+  三道 gate 复跑 3×PASS。顺带修好 `PROMA_RESEARCH_BWRAP` 只参与检测
+  不参与 spawn 的失效逃生口。
 
 ### P3 之后
 
 只剩打磨循环：skill 措辞随战役复盘迭代、MCP 工具面按摩擦点微调、
 UI 证据面（gate 徽章、战役状态视图）按需增补。**没有 Plugins 一腿**：
 Proma 无插件系统（`noExtensions:true`），能力目标也不需要它。
+
+---
+
+## P4 · 打磨与闭环（**当前阶段**）
+
+**范围裁定（2026-08-23，与用户确认）**：下一阶段 = Skills/MCP 打磨 + 闭环
+测试，两者**交错进行**而非先后——UI 战役是打磨素材的最快来源。参照物两份：
+
+- `~/workspace/plan/HYPOTHESIS-REGISTER.md`——GRILL 循环的成熟 claim 语汇，
+  **只在 skills 层吸收措辞**，不加 server 状态；
+- `~/workspace/plan/TRIGGER-SPEC-2026-08-23.md`——为 Claude Code 设计的
+  事件触发层。**结论：它诊断的四类缺陷（位置触发/意图触发/自判守卫/
+  触发词住在没人读的文件里）在 crucible 里已被结构性解决**——MCP 工具
+  就是它要造的 chokepoint，journal 就是它要靠 diff 重建的事件流，预登记
+  频段已把 SURPRISE 变成减法（其 E5），sha256 冻结即其 E6。
+  **明确不移植**：gate.py 本体、快照机制、心跳/staleness 计时器（E8，
+  交互式产品无此需要）、Claude Code hooks（§9，Prime 的 chokepoint 就是
+  MCP 工具本身）、双账本。**移植两条**：外部审视义务（其 R3 支柱）→ P4.1；
+  "报错信息即路由"（其原则 4）→ P4.1 顺带。
+- **Arbor**：推迟到 P4.4，凭 P4.3 的实证摩擦点逐条评估，不预先实现。
+
+### P4.1 · 对抗义务收进 trace gate（唯一的结构性补丁，~半天）
+
+**问题**：目前没有任何结构要求对抗者跑过——零条 `attack.record` 的 run
+照样 declare 全绿。首场战役通过只因 grill 恰好跑了。这正是 ARFT 的 R3
+（完整性：路径从未被自己控制不了的检查质询过），TRIGGER-SPEC 移植清单上
+唯一缺失的结构件。
+
+**规则（校准过，防"噪声级门禁被弃用"）**——实测校准依据：首场战役 7 条
+攻击全部指向 H1（SUPPORTED）且晚于终态迁移，H2（REFUTED）零攻击；
+一刀切"每个终态都要攻击"会把诚实的首场战役判红：
+
+1. **每个 SUPPORTED claim** 必须有 ≥1 条 `attack.record` 指向它且
+   **晚于**它最后一次终态迁移（对抗者见过的是最终信念，不是草稿）；
+2. **run 级**：最后一次终态迁移之后必须存在 ≥1 条 `attack.record`
+   （kill/scope 不逐条强制，但"信念定格后对抗者看过一眼"必须成立——
+   graveyard 对对抗者可见是五条科学约束的第 5 条，这是它的执行点）。
+
+**落点**：**trace gate 内**（它的职责本来就是"终态可追溯"，扩展为
+"结论经过审视"），不加第四道 gate；declare 因 P3.2 在 server 内跑同一函数
+而自动继承。独立 CLI 复跑同样覆盖。
+
+**同批（报错信息即路由）**：server 的每条 ResearchStateError 与 gate 红
+理由，末尾点名下一步该用的工具/skill（如"先 prereg_write 再 probe_run"、
+"红在 reconcile：用 metric_recompute 重取该数字"）。
+
+**验收（破坏必须变红）**：
+1. SUPPORTED 无攻击 → trace 红 + declare 拒绝；
+2. 攻击全部早于最后终态迁移 → 红（对抗者看的是草稿）；
+3. 首场战役归档（不改 journal）复跑 → 仍 3×PASS；
+4. gates.test.ts 诚实产物加攻击事件后全绿——**全绿集成测试仍是
+   impossible-instructions 的检测器**，新规则并入后不许出现无解产物。
+
+### P4.2 · skills 措辞吸收 GRILL 语汇（纯散文，~1 天）
+
+从 HYPOTHESIS-REGISTER.md 吸收的是**问法**，不是状态机——server 的
+4 态模型不动（CONTESTED 用"LIVE + constraint 攻击在案"表达）：
+
+- **research-grill**：静默假设清账模式（其 P7–P19）——对抗者对每个
+  SUPPORTED claim 列"这个结论静默依赖了什么"，每条落成
+  `attack_record kind=constraint` 并**带上能了结它的 falsifier 写法**；
+  "只有带 artifact 的测量才能杀"已是结构，skill 里点明即可。
+- **research-probe**：对照臂即必需臂（energy-matched sham 的教训）——
+  prereg 的 question 写法要求点名"什么对照能否证这个读数"；
+  falsifier 先行："这个探针的哪个读数会杀掉哪个假设"先于"怎么跑"。
+- **research-report**：**收窄结论而不是检验不可检验的**（其 P7/P16 的
+  解法）——超出战役能力的断言降为 scope 声明模板，与已有 floor 诚实
+  声明并列。
+- **research-abduce**：claim 改写即 falsifier 作废——改写过的 claim
+  旧预登记分支失效，须重新 prereg（结构上 prereg 冻结已保证不了
+  "语义漂移"，这条只能靠散文，写明天花板）。
+
+**验收**：五个 skill 引用的工具全部真实存在（skill-cli-contract 测试
+复跑绿）；每条新增措辞在首场 UI 战役（P4.3）里至少被观察命中一次或
+被裁掉——**不留从未触发的指令**（impossible-instructions 的姐妹病）。
+
+### P4.3 · UI 闭环战役（P3.6 的 UI 版，真正的总验收，~1 天）
+
+P3.6 是**脚本驱动**的闭环；产品的闭环是**人在 Proma UI 里**驱动的。
+在 Proma 里用 Qwen 跑一场小而真的战役，全程不碰命令行（独立 gate
+复跑除外），验收即 P3.6 原四条：
+
+1. abduce ≥2 可判别假设 → prereg → 沙箱 probe 落地；
+2. grill 经 `rlm()` 拉起对抗者，typed 攻击落 journal（P4.1 规则下
+   declare 才能绿）；
+3. report：declare 内嵌 gate 全绿；用户独立复跑三道 gate 同绿；
+4. UI 全程可见：skill 使用标记、MCP 调用事件、ipython 权限询问。
+
+**产出物除战役归档外，还有一份摩擦清单**：每个卡顿点归类到
+skill 措辞（回 P4.2）/ MCP 工具面 / UI 证据面，作为后续打磨的唯一输入
+——不做清单之外的"顺手优化"。对照：`research/campaigns/2026-08-23-first/`。
+
+### P4.4 · Arbor 评估（凭实证，不预先实现）
+
+P4.3 完成后，由用户提供 Arbor 材料，逐条过 P2 的分工表
+（skill / MCP / gate / 什么都不做）：只有对着 P4.3 摩擦清单能说出
+"它修复哪个实测问题"的想法才进实现队列。**评估先于任何代码。**
+
+### P4 完成条件
+
+- [ ] trace gate 含对抗义务，四条验收全过，首场战役归档复跑仍绿
+- [ ] 五个 skill 完成语汇吸收，无从未触发的指令残留
+- [ ] UI 闭环战役全流程走通并留档，摩擦清单落盘
+- [ ] Arbor 评估结论写进本文（做/不做/做哪几条，各带理由）
 
 ---
 
@@ -420,9 +530,10 @@ Proma 无插件系统（`noExtensions:true`），能力目标也不需要它。
 
 ## 下一步
 
-**P3.1：probe_run 沙箱化。** 方案 A 已拍板，bwrap 已实测可用（见 P3 开头）。
-它是红线修复，先于其余所有 P3 项。
+**P4.1：对抗义务收进 trace gate。** 规则已校准（SUPPORTED 逐条 +
+run 级定格后审视），落点 trace gate，declare 自动继承。它是 P4 唯一的
+结构性补丁，先做——P4.3 的 UI 战役要在最终语义下跑。
 
-（历史：P0.1 之前悬置的 kernel 供给三选一已按"检测 uv / 钉
-`PRIME_AGENT_KERNEL_PYTHON`，缺失则不注册并由 UI 引导"落地——
-即当初的方案 (b)(c) 合体，990ac95 的 `pi-ipython-rlm.ts`。）
+（历史：P3.1 的执行边界三选一已按方案 A（bwrap 沙箱）落地于 bf4d474；
+P0.1 的 kernel 供给三选一已按"检测 uv / 钉 `PRIME_AGENT_KERNEL_PYTHON`，
+缺失则不注册并由 UI 引导"落地于 990ac95。）
