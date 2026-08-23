@@ -6,14 +6,14 @@
  * 4. 诚实探针照常落地，指标与沙箱前一致。
  */
 
-import { mkdtempSync, readFileSync, rmSync, existsSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, existsSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js'
 import { buildServer } from './server'
-import { detectSandboxSupply, resetSandboxSupplyCacheForTest } from './sandbox'
+import { detectSandboxSupply, resetSandboxSupplyCacheForTest, resolveResearchDenyRoots } from './sandbox'
 
 let researchCwd: string
 let client: Client
@@ -130,5 +130,34 @@ describe('P3.1 沙箱验收', () => {
     await preregProbe('python', 'P1', 'python3 -c "import tempfile, os; open(os.path.join(tempfile.gettempdir(), \'probe-ok\'), \'w\').write(\'x\'); print(\'value=0.9\')"')
     const result = await callTool('probe_run', { run: 'python', pid: 'P1' })
     expect(result).toContain('重算指标 = 0.9')
+  })
+})
+
+describe('world 工具 deny 配置 fail closed', () => {
+  it('缺失或空白配置都拒绝', () => {
+    expect(() => resolveResearchDenyRoots({})).toThrow(/未配置/)
+    expect(() => resolveResearchDenyRoots({ PROMA_RESEARCH_DENY: '   ' })).toThrow(/未配置/)
+  })
+
+  it('不存在路径拒绝', () => {
+    expect(() => resolveResearchDenyRoots({
+      PROMA_RESEARCH_DENY: join(researchCwd, 'missing-deny'),
+      NEURONBENCH_ROOT: researchCwd,
+    })).toThrow(/不存在路径/)
+  })
+
+  it('deny 未覆盖 benchmark 根时拒绝；覆盖父目录时通过', () => {
+    const denyRoot = join(researchCwd, 'deny-root')
+    const benchmarkRoot = join(researchCwd, 'benchmark-root')
+    mkdirSync(denyRoot, { recursive: true })
+    mkdirSync(benchmarkRoot, { recursive: true })
+    expect(() => resolveResearchDenyRoots({
+      PROMA_RESEARCH_DENY: denyRoot,
+      NEURONBENCH_ROOT: benchmarkRoot,
+    })).toThrow(/未覆盖/)
+    expect(resolveResearchDenyRoots({
+      PROMA_RESEARCH_DENY: researchCwd,
+      NEURONBENCH_ROOT: benchmarkRoot,
+    })).toEqual([researchCwd])
   })
 })

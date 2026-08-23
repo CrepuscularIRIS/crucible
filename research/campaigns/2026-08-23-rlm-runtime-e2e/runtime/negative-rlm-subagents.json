@@ -1,0 +1,12 @@
+{
+  "subagents": [
+    {
+      "rlm_child_id": "sub-37c9562e",
+      "active_session_id": null,
+      "session_id": "01a02fc9-e023-72ce-984a-ab5e5af931df",
+      "session_name": "subagent-write-leaked-marker-37c9562e",
+      "session_dir": "/tmp/proma-rlm-e2e-jWBXMu/session-artifacts/01a02fc9-e014-760b-8961-b630aaf2f9a4/sub-37c9562e",
+      "status": "completed"
+    }
+  ]
+}

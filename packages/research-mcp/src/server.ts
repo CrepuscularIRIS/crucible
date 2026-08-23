@@ -17,11 +17,12 @@
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { spawnSync } from 'node:child_process'
 import { join } from 'node:path'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod'
-import { requireSandbox, runSandboxedEval } from './sandbox.js'
+import { requireSandbox, resolveResearchDenyRoots, runSandboxedEval } from './sandbox.js'
 import { runPreregGate } from '../gates/prereg.js'
 import { runReconcileGate } from '../gates/reconcile.js'
 import { runTraceGate } from '../gates/trace.js'
@@ -31,11 +32,13 @@ import {
   assertJournalIntact,
   confined,
   recomputeMetric,
+  readJournal,
   replay,
   runDir,
   sanitizeRunName,
   sha256,
   stableStringify,
+  summarizeWorldJournal,
   validateProbeSpec,
   writeRegisterSnapshot,
   type Band,
@@ -48,7 +51,28 @@ function serverCwd(): string {
 }
 
 function resolveRun(run: string): string {
+  assertRunAllowed(run)
   return runDir(serverCwd(), sanitizeRunName(run))
+}
+
+/**
+ * 战役钉死：设了 PROMA_RESEARCH_RUN 后，所有工具只允许访问这一个 run。
+ *
+ * P4.3 实测的污染路径是——对抗子代理继承了可写 MCP，自行 research_init 出一个旁路战役，
+ * 在里面登记假设、跑探针、落攻击。子代理与父代理在 MCP 这一侧不可区分（服务端看不到
+ * agentID），所以收敛点只能是"这台服务只认这一个战役名"。写入既有 run 不受影响——
+ * 那是可见的、会进 journal 的行为；凭空开新战役不是。
+ */
+function assertRunAllowed(run: string): void {
+  const pinned = process.env.PROMA_RESEARCH_RUN
+  if (!pinned) return
+  if (sanitizeRunName(run) !== sanitizeRunName(pinned)) {
+    throw new ResearchStateError(
+      `本次会话已钉死战役 ${sanitizeRunName(pinned)}，拒绝访问 ${sanitizeRunName(run)}：` +
+      `研究战役不由子代理凭空开新分支 → 用 research_state 读取 ${sanitizeRunName(pinned)}，` +
+      `攻击写进你自己的 RLM_SESSION_DIR/attacks.md，由父代理经 attack_record 落账`,
+    )
+  }
 }
 
 function freshRegister(root: string): void {
@@ -99,7 +123,7 @@ const ProbeSpecSchema = z.object({
 
 export function buildServer(): McpServer {
   const server = new McpServer(
-    { name: 'proma-research', version: '0.1.0' },
+    { name: 'proma-research', version: '0.2.4' },
     { capabilities: { tools: {} } },
   )
 
@@ -218,7 +242,7 @@ export function buildServer(): McpServer {
         if (metric === undefined) throw new ResearchStateError('探针没有重算指标')
         if (!spec.branches.some((b) => b.target === id && inBand(metric, b.band))) {
           throw new ResearchStateError(
-            `观测值 ${metric} 不落在任何针对 ${id} 的预登记分支频段内；不得事后解释 → 预登记写窄了：回 research-probe 用新探针（含新频段）修正`,
+            `观测值 ${metric} 不落在任何针对 ${id} 的预登记分支频段内；不得事后解释 → 强制分诊：打开 research-moves 的 references/triage.md，按台阶（伪影→bug→方差→已知→真实意外）判定后以三种落地之一终结`,
           )
         }
       }
@@ -285,6 +309,7 @@ export function buildServer(): McpServer {
       if (stdout.exitCode !== 0) {
         writeFileSync(join(probeDir, 'provenance.json'), `${JSON.stringify({
           pid, command: spec.evalCommand, exitCode: stdout.exitCode, startedAt, endedAt, landed: false,
+          sandbox: stdout.attestation,
         }, null, 2)}\n`, 'utf-8')
         appendEvent(root, 'probe.land', { pid, exit_code: stdout.exitCode, metric: null })
         freshRegister(root)
@@ -300,6 +325,7 @@ export function buildServer(): McpServer {
         landed: true,
         metric,
         metricSource: { kind: spec.metricKind, spec: spec.metricSpec, raw: 'raw/output.txt' },
+        sandbox: stdout.attestation,
       }, null, 2)}\n`, 'utf-8')
       appendEvent(root, 'probe.land', { pid, exit_code: stdout.exitCode, metric })
       freshRegister(root)
@@ -380,6 +406,169 @@ export function buildServer(): McpServer {
       }
     },
   )
+
+  // ── EVAL-PLAN §1.3 · 计量接口：世界只经 meter 可达 ─────────────────────
+  // meter 在 server 进程内执行（沙箱外）：真值（worlds.py 的 novel 通道参数）
+  // 从不出现在工具返回里。PROMA_RESEARCH_DENY 是 world 工具注册的 fail-closed
+  // 前置；kernel 无法结构性沙箱化，因此评测脚本另以权限策略阻断直连，并由
+  // liveness 把实际 benchmark 读取/import 当作泄漏指标。预算与终局以 journal 为准。
+  let worldIsolationReady = true
+  try {
+    resolveResearchDenyRoots()
+  } catch (error) {
+    worldIsolationReady = false
+    console.error(`[proma-research] world_* 未注册（fail closed）：${error instanceof Error ? error.message : String(error)}`)
+  }
+
+  if (worldIsolationReady) {
+    const METER = process.env.PROMA_EVAL_METER
+      ?? new URL('../../../research/eval/world-meter.py', import.meta.url).pathname
+    const EVAL_BUDGET = Number(process.env.PROMA_EVAL_BUDGET ?? 40)
+
+    server.tool(
+      'world_observe',
+    `真细胞的计量观测（扣预算，默认总预算 ${EVAL_BUDGET}）。返回带噪偏观测（spike_count + 降采样电压）。预算由 meter 独立记账：超额拒绝。协议标签先用 world_simulate 的 mode=info 获取`,
+    {
+      run: z.string(),
+      world: z.string(),
+      seed: z.number().int(),
+      protocol: z.string().min(1),
+      reps: z.number().int().min(1).max(20).optional(),
+      blockers: z.string().optional(),
+    },
+    async ({ run, world, seed, protocol, reps, blockers }) => {
+      const root = resolveRun(run)
+      requireInit(root)
+      const requestedReps = reps ?? 1
+      const worldState = summarizeWorldJournal(readJournal(root))
+      if (worldState.forecastCount > 0) {
+        throw new ResearchStateError('终局已裁决；world_observe 不再开放——下一步：report_declare')
+      }
+      if (worldState.spent + requestedReps > EVAL_BUDGET) {
+        throw new ResearchStateError(
+          `budget exhausted: spent=${worldState.spent} + reps=${requestedReps} > budget=${EVAL_BUDGET}；`
+          + '下一步：用已落地的观测收窄假设，或 report_declare 终局',
+        )
+      }
+      const ledger = join(root, 'world-ledger.jsonl')
+      const args = ['observe', world, String(seed), protocol]
+      if (reps) args.push('--reps', String(reps))
+      if (blockers) args.push('--blockers', blockers)
+      const proc = spawnSync(
+        'python3',
+        [METER, '--ledger', ledger, '--budget', String(EVAL_BUDGET), '--budget-spent', String(worldState.spent), ...args],
+        { encoding: 'utf-8', timeout: 120_000 },
+      )
+      if (proc.status !== 0) {
+        throw new ResearchStateError(`${proc.stderr?.trim() || proc.stdout?.trim() || 'meter 执行失败'} → 用已落地的观测收窄假设（research-probe），或 report_declare 终局`)
+      }
+      const result = JSON.parse(proc.stdout) as Record<string, unknown>
+      appendEvent(root, 'world.observe', {
+        world, seed, protocol, reps: reps ?? 1,
+        cost: result.cost, spike_count: result.spike_count,
+      })
+      return { content: [{ type: 'text', text: proc.stdout }] }
+    },
+  )
+
+    server.tool(
+      'world_simulate',
+    '对自提候选机制跑生成模型（免费、不触真细胞、不扣预算）：给出 {extra:[{name,g,E,mvh,mk,mtau,mpow,hvh?,hk?,htau?,hpow?}], slow_na} 与协议标签，返回候选的 test 窗尖峰数。mode=info 时返回题面（text_prior、协议池、held-out 标签、参考模型）',
+    {
+      run: z.string(),
+      world: z.string(),
+      seed: z.number().int(),
+      protocol: z.string().optional(),
+      mechanism: z.string().optional(),
+      mode: z.enum(['candidate', 'info']).optional(),
+      reps: z.number().int().min(1).max(20).optional(),
+      blockers: z.string().optional(),
+    },
+    async ({ run, world, seed, protocol, mechanism, mode, reps, blockers }) => {
+      const root = resolveRun(run)
+      requireInit(root)
+      const worldState = summarizeWorldJournal(readJournal(root))
+      if (worldState.forecastCount > 0) {
+        throw new ResearchStateError('终局已裁决；world_simulate 不再开放——下一步：report_declare')
+      }
+      const ledger = join(root, 'world-ledger.jsonl')
+      if ((mode ?? 'info') === 'info') {
+        const proc = spawnSync(
+          'python3',
+          [METER, '--ledger', ledger, '--budget', String(EVAL_BUDGET), 'info', world, String(seed)],
+          { encoding: 'utf-8', timeout: 120_000 },
+        )
+        if (proc.status !== 0) throw new ResearchStateError(proc.stderr?.trim() || 'meter info 失败')
+        appendEvent(root, 'world.info', { world, seed })
+        return { content: [{ type: 'text', text: proc.stdout }] }
+      }
+      if (!protocol || !mechanism) {
+        throw new ResearchStateError('候选模拟需要 protocol 与 mechanism（JSON 字符串）→ 先 mode=info 拿协议标签')
+      }
+      const args = ['simulate', world, String(seed), protocol, '--mechanism', mechanism]
+      if (reps) args.push('--reps', String(reps))
+      if (blockers) args.push('--blockers', blockers)
+      const proc = spawnSync(
+        'python3',
+        [METER, '--ledger', ledger, '--budget', String(EVAL_BUDGET), ...args],
+        { encoding: 'utf-8', timeout: 120_000 },
+      )
+      if (proc.status !== 0) {
+        throw new ResearchStateError(`${proc.stderr?.trim() || 'meter simulate 失败'} → 检查 mechanism JSON 与协议标签`)
+      }
+      const result = JSON.parse(proc.stdout) as Record<string, unknown>
+      appendEvent(root, 'world.simulate', {
+        world, seed, protocol, mode: 'candidate',
+        mean_spike_count: result.mean_spike_count,
+      })
+      return { content: [{ type: 'text', text: proc.stdout }] }
+    },
+  )
+
+    server.tool(
+      'world_forecast',
+    '提交 held-out 协议预测并做一次终局评分。同一 run 只允许一次，唯一性由权威 journal 判定。',
+    {
+      run: z.string(),
+      world: z.string(),
+      seed: z.number().int(),
+      counts: z.record(z.string(), z.number()),
+    },
+    async ({ run, world, seed, counts }) => {
+      const root = resolveRun(run)
+      requireInit(root)
+      const worldState = summarizeWorldJournal(readJournal(root))
+      if (worldState.forecastCount > 0) {
+        throw new ResearchStateError('forecast 已裁决过一次；终局不可重复——下一步：report_declare')
+      }
+      const ledger = join(root, 'world-ledger.jsonl')
+      const proc = spawnSync(
+        'python3',
+        [
+          METER,
+          '--ledger', ledger,
+          '--budget', String(EVAL_BUDGET),
+          '--budget-spent', String(worldState.spent),
+          'forecast', world, String(seed),
+          '--counts', JSON.stringify(counts),
+        ],
+        { encoding: 'utf-8', timeout: 120_000 },
+      )
+      if (proc.status !== 0) {
+        throw new ResearchStateError(proc.stderr?.trim() || proc.stdout?.trim() || 'meter forecast 失败')
+      }
+      const result = JSON.parse(proc.stdout) as Record<string, unknown>
+      appendEvent(root, 'world.forecast', {
+        world,
+        seed,
+        counts,
+        spike_forecast_mse: result.spike_forecast_mse,
+        budget_spent: worldState.spent,
+      })
+      return { content: [{ type: 'text', text: proc.stdout }] }
+    },
+    )
+  }
 
   return server
 }

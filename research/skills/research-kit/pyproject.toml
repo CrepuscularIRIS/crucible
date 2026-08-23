@@ -1,6 +1,6 @@
 [project]
 name = "research-kit"
-version = "0.1.0"
+version = "0.2.0"
 description = "Read-only kernel toolkit for the Proma research layer (anchor / claim_view / disjoint_pairs / calibration)"
 requires-python = ">=3.10"
 

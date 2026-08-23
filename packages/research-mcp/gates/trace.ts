@@ -62,8 +62,58 @@ export function runTraceGate(runRoot: string): GateResult {
   // P4.1 · 对抗义务（ARFT R3：路径必须被自己控制不了的检查质询过）。
   // 时间戳取自 journal 事件而非 state（register 形状不变，归档产物免重生成）。
   reasons.push(...checkAdversarialObligation(replayed, events))
+  reasons.push(...checkWorldTrace(events))
 
   return reasons.length === 0 ? ok('trace') : fail('trace', reasons)
+}
+
+const WORLD_OPS = new Set<JournalEvent['op']>([
+  'world.info',
+  'world.observe',
+  'world.simulate',
+  'world.forecast',
+])
+
+/**
+ * world 事件也是 gate 的事实输入：检查预算快照、终局唯一性和终局后不可再查询。
+ * 这不是把 meter 与 journal 伪装成两个独立记账者；这里只重放唯一事实源本身。
+ */
+function checkWorldTrace(events: JournalEvent[]): string[] {
+  const reasons: string[] = []
+  let spent = 0
+  let forecastCount = 0
+  let terminalIndex = -1
+
+  events.forEach((event, index) => {
+    if (!WORLD_OPS.has(event.op)) return
+    if (terminalIndex >= 0) {
+      reasons.push(`world 终局后仍出现 ${event.op}（journal 第 ${index + 1} 条）`)
+    }
+    if (event.op === 'world.info') return
+    if (event.op === 'world.observe') {
+      const cost = Number(event.cost)
+      if (!Number.isFinite(cost) || cost < 0) {
+        reasons.push(`world.observe cost 非法（journal 第 ${index + 1} 条）`)
+        return
+      }
+      spent += cost
+      return
+    }
+    if (event.op === 'world.simulate') {
+      if (event.mode !== 'candidate') {
+        reasons.push(`world.simulate 只能记录 candidate；info 必须记 world.info（journal 第 ${index + 1} 条）`)
+      }
+      return
+    }
+
+    forecastCount += 1
+    if (forecastCount > 1) reasons.push('world.forecast 在同一 run 中出现超过一次')
+    if (Number(event.budget_spent) !== spent) {
+      reasons.push(`world.forecast 的预算快照 ${String(event.budget_spent)} 与此前 world.observe 累计 ${spent} 不一致`)
+    }
+    terminalIndex = index
+  })
+  return reasons
 }
 
 const TERMINAL_STATES = new Set(['SUPPORTED', 'REFUTED', 'SCOPED'])

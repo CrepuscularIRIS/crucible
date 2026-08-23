@@ -62,6 +62,8 @@ import { buildReferencedPlanningPrompt } from './planning-reference-context'
 import { permissionService } from './agent-permission-service'
 import type { PermissionResult, CanUseToolOptions } from './agent-permission-service'
 import { resolvePlanningDeletionPermission } from './planning-permission-policy'
+import { isResearchMutatingTool } from './research-permission-policy'
+import { resolveResearchIsolationConfig } from './research-isolation-guard'
 import { askUserService } from './agent-ask-user-service'
 import { exitPlanService, type ExitPlanPermissionResult } from './agent-exit-plan-service'
 import { validateToolInput } from './agent-tool-input-validator'
@@ -993,6 +995,7 @@ export class AgentOrchestrator {
 
       // 10. 构建 MCP 服务器配置 + 记忆工具 + 生图工具 + 自定义工具
       const mcpServers = this.buildMcpServers(workspaceSlug)
+      const researchIsolation = resolveResearchIsolationConfig(mcpServers)
       let piBuiltinTools: unknown[] = []
       let piMcpTools: unknown[] = []
       const piSdk = await import('@earendil-works/pi-coding-agent')
@@ -1320,6 +1323,12 @@ export class AgentOrchestrator {
                 ? { behavior: 'allow' as const, updatedInput: input }
                 : { behavior: 'deny' as const, message: '计划模式下只能查询任务/日程，不能修改本地规划数据，请在计划审批通过后再执行' }
             }
+            // research MCP 不是调研查询面，是**写 + 执行**面：probe_run 会 spawn bwrap 子进程
+            // 执行冻结命令，其余工具向只追加 journal 落账。通用 mcp__ 放行规则写于"MCP 即调研
+            // 查询"的年代，会让计划模式在"只读规划"的名义下执行命令并改变信念状态。
+            if (isResearchMutatingTool(toolName)) {
+              return { behavior: 'deny' as const, message: '计划模式下不能执行探针或改写研究信念状态（journal 只追加，写下即成事实），请在计划审批通过后再执行' }
+            }
             // 其他 MCP 工具维持既有策略：计划模式下允许调研用 MCP。
             if (toolName.startsWith('mcp__')) {
               return { behavior: 'allow' as const, updatedInput: input }
@@ -1468,6 +1477,7 @@ export class AgentOrchestrator {
         channelName: channel.name,
         proxyUrl,
         runtimeEnv,
+        ...(researchIsolation && { researchIsolation }),
         ...(maxTurns != null && { maxTurns }),
         permissionMode: initialPermissionMode,
         canUseTool,

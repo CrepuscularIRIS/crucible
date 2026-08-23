@@ -9,6 +9,7 @@
 Prime 运行时（Proma 内，RLM 全开）
    ↓ 自然语言编排
 research/skills/*          ← 阶段纪律：abduce / probe / grill / report
+                             + moves 移动库（reframe/oracle/derive/triage）
    ↓ 调用即事件（UI 可见、可包权限、可拒绝）
 packages/research-mcp      ← 确定性底座：四类操作，不调 LLM
    ↓ 宿主判定，退出码说话
@@ -26,23 +27,54 @@ packages/research-mcp/gates/* ← 三道硬 gate
       "command": "bun",
       "args": ["<crucible 仓库>/packages/research-mcp/src/server.ts"],
       "required": false,
-      "timeout": 30
+      "timeout": 30,
+      "env": {
+        "PROMA_RESEARCH_CWD": "<项目根绝对路径>",
+        "PROMA_RESEARCH_RUN": "<本次战役名>"
+      }
     }
   }
 }
 ```
 
-服务器在**当前工作目录**（即所选工作区的项目根）下维护
+服务器在 `PROMA_RESEARCH_CWD`（缺省为 **MCP 进程的工作目录**）下维护
 `.proma-research/<run>/`。无状态、无凭据、无 LLM。
 
-**2. 安装 skills**：把 `research/skills/` 下的六个目录复制（或软链）到目标
-工作区的 `skills/` 目录。模型经 `<available_skills>` 发现它们，bash/ipython
-打开 SKILL.md 时 UI 会显示 skill 使用标记。
+**这两个 env 都建议显式设置**：
+
+- `PROMA_RESEARCH_CWD` —— 缺省值是 MCP 进程 cwd，不是你在 UI 里选的工作区。
+  P4.3 实测战役因此落在 `apps/electron/.proma-research/`。`research_init`
+  会回显绝对路径，**第一次调用后先看一眼落点对不对**。
+- `PROMA_RESEARCH_RUN` —— 钉死战役名后 `research_init` 只认这一个。
+  P4.3 实测对抗子代理继承了可写 MCP，自行开了一个旁路战役并在里面跑探针；
+  服务端看不到 agentID，分不出父子，钉死是唯一的收敛点。
+
+**2. 安装 skills**：把 `research/skills/` 下的目录复制（或软链）到目标
+工作区的 `skills/` 目录——战役工作区装七个（loop/abduce/probe/grill/report/
+kit/moves）；`research-writing-skills` 是开发期 skill（RED/GREEN 压力测试
+研究 skill 本身），不随战役工作区安装。模型经 `<available_skills>` 发现它们，
+bash/ipython 打开 SKILL.md 时 UI 会显示 skill 使用标记。`research-moves` 是
+生成性认知移动库（reframe/oracle/derive/triage），由信念锚的 ⚠ 计数器提示
+调度——底座守证据的诚实，移动库抬假设与实验的上限。
+
+skill 文本遵循统一骨架（铁律 → 程序 → 借口|现实 → 快速参考 → 交接），
+P4.3 的实测教训以借口表 + `test-pressure-*.md` 回归夹具双份存档；agent 的
+自主裁决落工作区 `RULINGS.md`（`Ruling: 决定 — 理由 — 押错的代价`），
+report_declare 前汇总进报告。
 
 其中 `research-kit` 是 **Python-backed skill**（Prime 原生形态）：kernel 启动时
-安装进 kernel venv，模型在 kernel 里直接 `research_kit.anchor(run)` 调用，
-被所有 `rlm()` 子代理继承；改 Python 源码只需重启 kernel，改 `pyproject.toml`
-才触发重装。设计依据与能力利用审计见 `research/DESIGN.md`。
+经 `uv pip install --editable` 装进 kernel venv，模型在 kernel 里直接
+`research_kit.anchor(run)` 调用，被所有 `rlm()` 子代理继承；改 Python 源码只需
+重启 kernel，改 `pyproject.toml` 才触发重装。设计依据与能力利用审计见
+`research/DESIGN.md`。
+
+> **装不上时先查这三条**（P4.3 实测 `import research_kit` 报 ModuleNotFoundError）：
+> ① `uv` 在 PATH 上，或 `PRIME_AGENT_KERNEL_PYTHON` 指向可用解释器；
+> ② skill 目录**是复制/软链过去的**，不是只在 crucible 仓库里；
+> ③ 加完 skill 后**重启会话**——kernel 在启动时装包，运行中的 kernel 不会补装。
+> 结构性前提（pyproject + `src/research_kit/__init__.py` + 打包路径）已由
+> `bun test packages/research-mcp` 锁住，破了会先红。
+> **不要用 `sys.path` 手工绕过**——那样子代理继承不到，等于放弃这个 skill 的全部理由。
 
 **3. 跑 gate**（报告完成前）：
 
@@ -65,6 +97,15 @@ bun <crucible>/packages/research-mcp/gates/trace.ts     .proma-research/<run>
 对抗证据：`attack_record`（typed：new_h / constraint / no_change）；
 报告声明：`report_declare`（sha256 冻结，gate 2 对账依据）。
 
+**评测专用（EVAL-PLAN §1.3）**：`world_simulate(mode=info)` 只透传 benchmark
+`problem()` 并记 `world.info`；`world_observe` 扣预算并记 `world.observe`；
+候选机制模拟记 `world.simulate`；`world_forecast` 记 `world.forecast`，同一 run
+只允许一次，裁决后世界接口关闭。预算与终局唯一性均由只追加 journal 掌权，
+`world-ledger.jsonl` 只是展示明细。`PROMA_RESEARCH_DENY` 未覆盖 benchmark 根时
+全部 `world_*` 工具 fail closed 不注册。kernel 不能被此沙箱结构性封死，因此
+评测脚本还会拒绝直连 benchmark/meter，并由 `liveness.py` 检出实际读取/import；
+这项泄漏是必须报告的指标，不再伪称 meter 与 journal 是两个独立记账者。
+
 ## 三道 gate
 
 **declare 即裁决（P3.2）**：`report_declare` 在 server 内当庭跑三道 gate——任何一道红，
@@ -75,7 +116,7 @@ bun <crucible>/packages/research-mcp/gates/trace.ts     .proma-research/<run>
 |---|---|---|
 | `prereg` | 每个被执行探针先有预登记（journal 顺序 + 时间戳 + sha256 一致）；频段互斥 + kill/scope 分支；空 run 不通过 | 先登记后执行 |
 | `reconcile` | 报告每个数字带 (P#) 出处且与重算值一致（舍入容差按引用值小数位，上限 1%）；结论行与 register 一致；裸 `H\d+` 引用必须存在 | 幻觉数字 / F1 死锁 / F7-F9 |
-| `trace` | journal 重放结果与 register.json 逐字一致（手改即红）；终态可追溯到落地探针；时间戳单调；空 run 不通过 | **四道 gate 曾对捏造战役全绿** |
+| `trace` | journal 重放结果与 register.json 逐字一致（手改即红）；终态可追溯到落地探针；时间戳单调；world 预算快照/一次终局/终局后关闭可重放；空 run 不通过 | **四道 gate 曾对捏造战役全绿** |
 
 ## 沙箱注意事项
 

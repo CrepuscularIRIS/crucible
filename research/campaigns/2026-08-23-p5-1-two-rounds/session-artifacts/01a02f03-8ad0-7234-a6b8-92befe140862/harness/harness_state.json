@@ -1,0 +1,65 @@
+{
+  "schema": 1,
+  "entries": {
+    "prompt": {},
+    "memory": {
+      "p5-1-run-state": {
+        "id": "p5-1-run-state",
+        "kind": "memory",
+        "title": "p5-1-two-rounds 战役状态：Round 1 完成，Round 2 设计中",
+        "content": "## 战役：p5-1-two-rounds\n研究问题：pca 特征工程对固定种子评测的 accuracy 有没有实质提升？提升是真实信号还是评测伪影？\n\n### 主张状态（Round 1 后）\n- **H1 SUPPORTED**（by P1）：pca-vs-none gap 是真实信号，依赖特征-标签关系而非评测伪影。predicts: (a) no-shuffle gap>0.30, (b) shuffle gap<0.10。P1 仅预注册并检验了 (b)；observed=0.055 落在 [0,0.09] 频段。\n- **H2 REFUTED**（by P1）：gap 是评测伪影。predicts shuffle gap>0.10 被否证。\n\n### 攻击登记（Grill Round 1）\n- **G1 constraint**：P1 频段归属判别力不足——频段间距 0.02 < SE=0.05，true_gap=0 与 0.10 落入 H1 频段概率差异仅 0.507。\n- **G2 new_h**：gap 是 oracle-vs-coin 恒真结果——\"pca\" 模式是标签生成函数的精确去噪版（oracle），\"none\" 是 coin flip；gap 反映实验者设计选择不反映 ML 洞察。\n- **G3 constraint**：H1 第一预测 (no-shuffle gap>0.30) 未经预注册探针检验；no-shuffle gap=0.445 来自 post-hoc 运行。\n- **G4 no_change**：H2 结构性批评（oracle 阈值 + 稻草人基线 = rigged setup）未消解，仅死于窄技术条件。\n\n### SCOPE-ONLY 收窄素材\n- H1 statement 中 \"pca 模式\" 不可推广到 PCA 技术——代码中是硬阈值 x>0.5，不是主成分分析。\n\n### 待办\n- [ ] 设计并执行 Round 2 探针 P2（见 p5-1-P2-design）\n- [ ] 若 P2 不足以消解 G2，考虑走 research-abduce 将 G2 正式登记为竞争假设 H3",
+        "path": "general",
+        "scope": "local",
+        "reference": {},
+        "arguments": {},
+        "metadata": {
+          "scope": "local",
+          "run": "p5-1-two-rounds",
+          "round": 1
+        },
+        "source": "refine",
+        "created_at": "2026-08-23T14:51:05.226Z",
+        "updated_at": "2026-08-23T14:51:05.226Z",
+        "version": 1
+      },
+      "p5-1-P2-design": {
+        "id": "p5-1-P2-design",
+        "kind": "memory",
+        "title": "P2 探针设计：Oracle 分解与 H1 预测 (a) 独立验证",
+        "content": "## 探针 P2 设计\n**追溯攻击**：G2（oracle-vs-coin 恒真替代解释）、G3（H1 预测 (a) 未经预注册检验）\n\n**设计目标**：\n1. 独立预注册并检验 H1 的预测 (a)：no-shuffle gap > 0.30\n2. 分解 gap 来源：oracle 优势 vs 基线弱点\n\n**方法**：\n- 运行 eval.py --feature pca（无 shuffle）→ oracle accuracy\n- 运行 eval.py --feature none（无 shuffle）→ coin-flip baseline accuracy\n- 计算 majority-class baseline accuracy（同一数据集）\n- 计算两个 gap：\n  - gap_oracle_vs_coin = oracle - coin（应 > 0.30，验证 H1 预测 a）\n  - gap_oracle_vs_majority = oracle - majority（测试 gap 是否主要由基线弱点造成）\n\n**频段设计**：\n- gap_oracle_vs_coin > 0.30 → 支持 H1 预测 (a)\n- gap_oracle_vs_majority > 0.30 → gap 主要来自 oracle 优势，非基线弱点 → 部分消解 G2\n- gap_oracle_vs_majority < 0.10 → gap 主要由基线弱点造成 → 支持 G2\n\n**预期结果**（基于 post-hoc 计算）：\n- oracle = 0.945, coin = 0.50, majority = 0.53\n- gap_oracle_vs_coin = 0.445 > 0.30 ✓\n- gap_oracle_vs_majority = 0.415 > 0.30 → gap 主要来自 oracle 优势\n\n**判别力评估**：\n- 对 G3：直接验证 H1 预测 (a)，完成独立预注册检验\n- 对 G2：显示 gap 在合理基线下仍显著，但未能完全消解 \"oracle 而非 PCA\" 的解读——若需进一步消解，需走 research-abduce 登记 H3\n\n**下一步**：\n- 若 P2 结果如预期（gap_oracle_vs_majority > 0.30），H1 的 SUPPORTED 状态在技术上加强，但 G2 的解读挑战（\"pca 模式\" ≠ PCA 技术）仍需 SCOPE-ONLY 收窄\n- 若需正式将 G2 登记为竞争假设，走 research-abduce 生成 H3",
+        "path": "general",
+        "scope": "local",
+        "reference": {},
+        "arguments": {},
+        "metadata": {
+          "scope": "local",
+          "run": "p5-1-two-rounds",
+          "probe": "P2",
+          "addresses": [
+            "G2",
+            "G3"
+          ]
+        },
+        "source": "refine",
+        "created_at": "2026-08-23T14:51:05.226Z",
+        "updated_at": "2026-08-23T14:51:05.226Z",
+        "version": 1
+      }
+    },
+    "skill": {},
+    "subagent": {}
+  },
+  "refinements": [
+    {
+      "id": "refine_20260823145025238",
+      "trigger": "Capture local state for p5-1-two-rounds research run: Round 1 complete with H1 SUPPORTED (constrained by G1-G4), H2 REFUTED, and Probe P2 design rationale for Round 2.",
+      "changes": [
+        "create memory:p5-1-run-state",
+        "create memory:p5-1-P2-design"
+      ],
+      "evidence": "The trajectory shows substantial progress in a multi-round adversarial research protocol. The session has completed Round 1 (P1 probe, H1/H2 verdicts, G1-G4 attacks recorded) and is designing Round 2. Without persisting this state, subsequent turns would need to re-derive the attack registry, probe design rationale, and pending actions from the conversation history. Local memory entries will preserve this coordination state.",
+      "outcome": "Future turns in this session can quickly recover: (1) current claim states and their constraints, (2) the specific attacks G1-G4 and their discriminative implications, (3) the P2 probe design rationale addressing G2 (oracle-vs-coin) and G3 (untested prediction). This reduces re-derivation overhead and maintains design coherence across turns.",
+      "created_at": "2026-08-23T14:51:05.226Z"
+    }
+  ]
+}

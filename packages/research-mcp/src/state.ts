@@ -64,6 +64,13 @@ export interface JournalEvent {
     | 'report.declare'
     | 'gate.verdict'
     | 'tamper.detected'
+    // EVAL-PLAN §1.3 计量接口：世界只经 MCP 可达，四类操作各自留痕。
+    // replay 不消费这些事件（它们不改变信念状态）；预算与终局约束由
+    // summarizeWorldJournal 从完整性校验后的 journal 独立重放。
+    | 'world.info'
+    | 'world.observe'
+    | 'world.simulate'
+    | 'world.forecast'
   [key: string]: unknown
 }
 
@@ -101,6 +108,11 @@ export interface ResearchState {
   tampers: Array<{ ts: string; expected: string; actual: string }>
   /** 已进入终态（REFUTED/SCOPED/SUPPORTED）的 claim —— grill 对抗者必须看得到 */
   graveyard: ClaimRecord[]
+}
+
+export interface WorldJournalSummary {
+  spent: number
+  forecastCount: number
 }
 
 export class ResearchStateError extends Error {
@@ -152,6 +164,21 @@ export function readJournal(root: string): JournalEvent[] {
   return readFileSync(file, 'utf-8').split('\n')
     .filter((line) => line.trim() !== '')
     .map((line) => JSON.parse(line) as JournalEvent)
+}
+
+/** 从权威 journal 计算世界预算与终局次数；展示 ledger 不参与准入。 */
+export function summarizeWorldJournal(events: JournalEvent[]): WorldJournalSummary {
+  return events.reduce<WorldJournalSummary>((summary, event) => {
+    if (event.op === 'world.observe') {
+      const cost = Number(event.cost)
+      if (!Number.isFinite(cost) || cost < 0) {
+        throw new ResearchStateError('journal 损坏：world.observe 的 cost 非法')
+      }
+      summary.spent += cost
+    }
+    if (event.op === 'world.forecast') summary.forecastCount += 1
+    return summary
+  }, { spent: 0, forecastCount: 0 })
 }
 
 /** 会话内 journal 基线（root → sha256）。server 重启即重置——天花板见 README。 */
@@ -371,6 +398,18 @@ export function validateProbeSpec(spec: ProbeSpec, state: ResearchState): void {
     const [lo, hi] = band
     if (!Number.isFinite(lo) || !Number.isFinite(hi) || lo > hi) {
       throw new ResearchStateError(`${claimId} 的频段非法: [${lo}, ${hi}]`)
+    }
+    // 退化频段（零宽点预测）是"答案已知"的结构性自白：离散未知量上没有人能把预测
+    // 收敛成一个点，除非他已经看过结果。这条挡不住蓄意造假，但挡住了最常见的那次——
+    // 先用 Bash 预览、再回来把频段写成观测值。模板 P14 的红线："不要根据结果反向补写
+    // 预期观测或停止条件"。
+    // ponytail: 类型检查器判不出"H2 是 H1 的取反"（那是语义），只判得出点预测与单假设探针；
+    // 语义层的竞争解释由 research-abduce 的措辞与 grill 兜底。
+    if (lo === hi) {
+      throw new ResearchStateError(
+        `${claimId} 的频段是零宽点预测 [${lo}, ${hi}]：没有容差的预测不是预测，是回忆。` +
+        `预登记必须留出容差区间 → research-probe：按你执行前真实的不确定性重写频段`,
+      )
     }
   }
   if (!hasDisjointBandPair(spec.bands)) {

@@ -39,11 +39,11 @@ describe('P3.4 证据 1：ipython 权限包装', () => {
     expect(result?.content).toBeDefined()
   })
 
-  it('反向：权限回调缺失（如空闲期）→ 默认拒绝而不是放行', async () => {
+  // 用例名必须与断言同向：旧名为"默认拒绝而不是放行"，断言却是 toHaveLength(1)（执行了）。
+  // 扫用例名的人读到 fail-closed，拿到的是 fail-open——2026-08-23 审计记为虚假信心项。
+  it('无权限回调时包装直通（与 bash/edit 同语义），拦截由外层间接回调兜底', async () => {
     const calls: string[] = []
     const wrapped = wrapToolWithPermission(fakeWiredDefinition(calls), { canUseTool: undefined })
-    // 无 canUseTool 时包装直通（与 bash/edit 同语义）——由外层间接回调兜底拒绝；
-    // 这里锁定该语义本身：直通仅在权限回调存在时才拦
     await wrapped.execute?.('call-nocallback', { code: '1' }, new AbortController().signal, undefined, {} as never)
     expect(calls).toHaveLength(1)
   })

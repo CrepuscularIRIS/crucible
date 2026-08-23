@@ -1,6 +1,6 @@
 {
   "name": "@proma/electron",
-  "version": "0.17.61",
+  "version": "0.17.63",
   "description": "Proma next gen ai software with general agents - Electron App",
   "main": "dist/main.cjs",
   "author": {
@@ -46,6 +46,7 @@
     "@earendil-works/pi-agent-core": "file:../../../oss/prime-agent/packages/agent",
     "@earendil-works/pi-ai": "file:../../../oss/prime-agent/packages/ai",
     "@earendil-works/pi-coding-agent": "file:../../../oss/prime-agent/packages/coding-agent",
+    "@earendil-works/pi-tui": "file:../../../oss/prime-agent/packages/tui",
     "@fontsource-variable/inter": "5.2.8",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@pierre/diffs": "^1.1.20",

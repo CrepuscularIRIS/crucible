@@ -264,4 +264,26 @@ describe('gate 间不矛盾（F1 回归锁）', () => {
     expect(result.failures.some((f) => /H3/.test(f.reason))).toBe(false)
     expect(result.passed).toBe(true)
   })
+
+  it('trace 会读取 world 事件：forecast 的预算快照与此前 observe 不符时变红', async () => {
+    const runRoot = await buildHonestRun()
+    const journalFile = join(runRoot, 'journal.jsonl')
+    const forgedWorldEvent = {
+      ts: new Date().toISOString(),
+      op: 'world.forecast',
+      world: 'h_sag',
+      seed: 0,
+      counts: {},
+      spike_forecast_mse: 1,
+      budget_spent: 99,
+    }
+    writeFileSync(
+      journalFile,
+      `${readFileSync(journalFile, 'utf-8')}${JSON.stringify(forgedWorldEvent)}\n`,
+      'utf-8',
+    )
+    const result = runTraceGate(runRoot)
+    expect(result.passed).toBe(false)
+    expect(result.failures.some((failure) => /world\.forecast.*预算快照/.test(failure.reason))).toBe(true)
+  })
 })

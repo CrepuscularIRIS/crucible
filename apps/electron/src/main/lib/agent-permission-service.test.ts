@@ -22,11 +22,15 @@ test('Given a destructive planning request When it is approved Then approval is 
   expect(service.respondToPermission(firstRequest!.requestId, 'allow', true)).toBe('session-1')
   expect((await firstResult).behavior).toBe('allow')
 
+  // 第二次同样的删除必须重新弹审批：alwaysAllow=true 也不得写进会话白名单。
+  // （原用例在这里走 createCanUseTool——那条路生产不可达，已随其删除改为走真实入口。）
   let secondRequest: { requestId: string } | undefined
-  const secondResult = service.createCanUseTool('session-1', (request) => { secondRequest = request })(
+  const secondResult = service.requestSingleApproval(
+    'session-1',
     'mcp__planning__delete_group',
     { id: 'group-2', scope: 'todo' },
     permissionOptions(controller.signal, 'tool-2'),
+    (request) => { secondRequest = request },
   )
 
   expect(secondRequest).toBeDefined()

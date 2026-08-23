@@ -2,19 +2,25 @@
  * RLM（Prime ipython kernel）供给检测与工具接线。
  *
  * Prime 的 RLM 全链路（rlm 子代理、goal.*、refine、kernel 快照）挂在 AgentSession
- * 私有构建的内置 ipython 定义里：provisioner 持有 hostHandlers，会话持有 provisioner。
- * Proma 以 customTools 同名注册的方式取得权限包装，但 execute 必须委托给会话内
- * 已接线的那个定义——自建 `createIpythonToolDefinition(cwd)` 会生成一个没有
- * hostHandlers 的裸 provisioner，RLM 整条链不可达。
+ * 私有构建的内置 ipython 定义里：provisioner 持有 hostHandlers，会话持有 provisioner，
+ * 且每个会话（含 rlm 子代理）各建各的 kernel——隔离是 Prime 自己的结构保证。
+ *
+ * Proma 的接线方式（P6.0/1.2，取代早期的同名 customTool 委托）：
+ * - 不注册 'ipython' customTool。customTools 会被 Prime 按引用拷进每个 rlm 子代理
+ *   （agent-session `_createRlmSubagentRuntimeOptions` 的 `customTools: [...this._customTools]`），
+ *   共享的委托对象会按同名覆盖子会话自己的接线——子代理因此在父 kernel 里执行，
+ *   对抗信息不对称与 RLM_MAX_DEPTH 同时失效（2026-08-23 审计实测）。
+ * - 用 `initialActiveToolNames: ['ipython']` 激活会话自己的内置定义；
+ * - 会话创建后 `installSessionIpythonPermission` 原地用权限包装替换 base 表中的
+ *   定义并刷新注册表——父会话受权限管辖，子会话不受（与 Prime CLI 对子代理的
+ *   语义一致：子代理是 agent 自己的延伸，不经过宿主逐次审批）。
  */
 
 import { spawnSync } from 'node:child_process'
 import { accessSync, constants } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
-import type { AgentSession, ToolDefinition } from '@earendil-works/pi-coding-agent'
-
-type PiSdk = typeof import('@earendil-works/pi-coding-agent')
+import type { AgentSession } from '@earendil-works/pi-coding-agent'
 
 export interface IpythonKernelSupply {
   available: boolean
@@ -22,20 +28,21 @@ export interface IpythonKernelSupply {
   detail: string
 }
 
-/** 委托目标：createAgentSession 返回后回填，首个工具调用前必须就位。 */
-export interface RlmIpythonWiring {
-  wiredDefinition?: ToolDefinition
+export interface SessionIpythonPermissionRequest {
+  toolCallId: string
+  input: Record<string, unknown>
+  signal: AbortSignal
+  displayName?: string
+  description?: string
 }
 
-/**
- * AgentSession 私有基座工具表的最小结构视图。
- *
- * 这是本文件唯一触碰 Prime 私有字段的地方：读取失败必须 fail loud（拒绝执行），
- * 绝不能退化成自建裸定义——那等于给用户一个没有 RLM 也不受控的空壳。
- */
-interface PrimeBaseToolDefinitionsHolder {
-  _baseToolDefinitions?: Map<string, ToolDefinition>
-}
+export type SessionIpythonPermissionResult =
+  | { behavior: 'allow'; updatedInput: Record<string, unknown> }
+  | { behavior: 'deny'; message: string }
+
+export type SessionIpythonPermission = (
+  request: SessionIpythonPermissionRequest,
+) => Promise<SessionIpythonPermissionResult>
 
 let cachedSupply: IpythonKernelSupply | undefined
 
@@ -99,56 +106,55 @@ export function resetIpythonKernelSupplyCacheForTest(): void {
 }
 
 /**
- * 从会话私有基座工具表捕获已接线的内置 ipython 定义。
+ * 在父会话 Agent 的执行 hook 上安装 ipython 权限。
  *
- * 找不到即抛错：Prime 内部结构变化时宁可让 RLM 注册失败，也不静默降级。
+ * 前提：会话以 `noTools:'builtin' + initialActiveToolNames:['ipython']` 创建，
+ * 且 customTools 中**没有** 'ipython' 条目（否则共享的 customTool 会重新覆盖
+ * 回来，子代理隔离随之失效——这正是本函数取代的旧机制）。
+ *
+ * hook 属于 session.agent，不会被 Prime `_buildRuntime()` 替换，因此 reload 与
+ * heartbeat controller 重建工具表后仍有效。RLM child 创建自己的 Agent，不会继承
+ * 父 hook；这保留了 Prime 的子会话隔离，也避免共享同名 customTool。
  */
-export function captureWiredIpythonDefinition(
+export function installSessionIpythonPermission(
   session: AgentSession,
-  wiring: RlmIpythonWiring,
+  authorize: SessionIpythonPermission,
 ): void {
-  const holder = session as unknown as PrimeBaseToolDefinitionsHolder
-  const wired = holder._baseToolDefinitions?.get('ipython')
-  if (!wired) {
+  const candidate = session as unknown as Partial<Pick<AgentSession, 'agent' | 'getToolDefinition'>>
+  const agent = candidate.agent
+  if (!agent || typeof candidate.getToolDefinition !== 'function') {
     throw new Error(
-      'Prime 会话未暴露已接线的 ipython 定义（内部结构可能已变化），RLM 注册中止；'
+      'Prime 会话未暴露 Agent 或已接线的 ipython 定义（内部结构可能已变化），RLM 注册中止；'
       + '需要按新版 Prime 重新适配 pi-ipython-rlm。',
     )
   }
-  wiring.wiredDefinition = wired
-}
-
-/**
- * 构建委托给会话内置定义的 ipython 工具（含权限包装前的原始形态）。
- *
- * 静态元数据（schema/描述/promptSnippet）取自 SDK 模板以跟随版本升级；
- * 模板自带的裸 provisioner 不会启动 kernel（kernel 仅在 execute 时懒启动）。
- */
-export function createRlmIpythonToolDefinition(
-  sdk: Pick<PiSdk, 'createIpythonToolDefinition'>,
-  cwd: string,
-  wiring: RlmIpythonWiring,
-): ToolDefinition {
-  const template = sdk.createIpythonToolDefinition(cwd)
-  // 泛型 ToolDefinition 与模板的具体参数类型在 renderCall 上逆变不兼容，
-  // 与 pi-agent-adapter 现有做法一致地经 unknown 归一。
-  const definition = {
-    ...template,
-    // kernel 单线程：与 Prime 自身约定一致，批次内不并行执行 cell。
-    executionMode: 'sequential',
-    async execute(toolCallId: string, params: unknown, signal?: AbortSignal, onUpdate?: unknown, ctx?: unknown) {
-      const wired = wiring.wiredDefinition
-      if (!wired) {
-        throw new Error('RLM ipython 尚未接线（会话构建未完成或 Prime 结构变化），本次调用被拒绝。')
-      }
-      return wired.execute(
-        toolCallId,
-        params as never,
-        signal,
-        onUpdate as never,
-        ctx as never,
-      )
-    },
+  const wired = candidate.getToolDefinition('ipython')
+  if (!wired) {
+    throw new Error(
+      'Prime 会话未暴露 Agent 或已接线的 ipython 定义（内部结构可能已变化），RLM 注册中止；'
+      + '需要按新版 Prime 重新适配 pi-ipython-rlm。',
+    )
   }
-  return definition as unknown as ToolDefinition
+  const previousBeforeToolCall = agent.beforeToolCall
+  agent.beforeToolCall = async (context, signal) => {
+    const previousResult = await previousBeforeToolCall?.(context, signal)
+    if (previousResult?.block || context.toolCall.name !== 'ipython') return previousResult
+    if (!context.args || typeof context.args !== 'object' || Array.isArray(context.args)) {
+      return { block: true, reason: 'ipython 参数不是对象，权限检查拒绝执行' }
+    }
+    const input = context.args as Record<string, unknown>
+    const decision = await authorize({
+      toolCallId: context.toolCall.id,
+      input,
+      signal: signal ?? new AbortController().signal,
+      displayName: wired.label,
+      description: wired.description,
+    })
+    if (decision.behavior === 'deny') {
+      return { block: true, reason: decision.message }
+    }
+    for (const key of Object.keys(input)) delete input[key]
+    Object.assign(input, decision.updatedInput)
+    return previousResult
+  }
 }

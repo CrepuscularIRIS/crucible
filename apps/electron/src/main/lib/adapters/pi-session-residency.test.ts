@@ -105,6 +105,10 @@ describe('computeResidencyKey', () => {
     expect(computeResidencyKey(base)).not.toBe(computeResidencyKey({ ...base, model: 'kimi-k3' }))
     expect(computeResidencyKey(base)).not.toBe(computeResidencyKey({ ...base, systemPrompt: 'p2' }))
     expect(computeResidencyKey(base)).not.toBe(computeResidencyKey({ ...base, thinkingLevel: 'high' }))
+    expect(computeResidencyKey(base)).not.toBe(computeResidencyKey({
+      ...base,
+      researchIsolation: ['/home/test/oss/neuronbench', '/home/test/project/.proma-research'],
+    }))
   })
 
   test('skill 路径顺序无关', () => {

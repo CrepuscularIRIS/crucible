@@ -10,6 +10,8 @@
  * 主进程仍是真正的后端，浏览器只是它的第二个视图。
  */
 
+import { serializeWebBridgeMessage } from './web-bridge-codec'
+
 type Listener = (event: unknown, ...args: unknown[]) => void
 
 const WS_PORT = Number(
@@ -33,7 +35,7 @@ function flush(): void {
 }
 
 function send(payload: unknown): void {
-  const text = JSON.stringify(payload)
+  const text = serializeWebBridgeMessage(payload)
   if (socket?.readyState === WebSocket.OPEN) socket.send(text)
   else queued.push(text)
 }
@@ -89,6 +91,7 @@ export function connectBridge(): Promise<void> {
 interface IpcRendererShim {
   invoke(channel: string, ...args: unknown[]): Promise<unknown>
   send(channel: string, ...args: unknown[]): void
+  sendSync(channel: string, ...args: unknown[]): unknown
   on(channel: string, listener: Listener): IpcRendererShim
   once(channel: string, listener: Listener): IpcRendererShim
   off(channel: string, listener: Listener): IpcRendererShim
@@ -107,6 +110,13 @@ export const ipcRenderer: IpcRendererShim = {
 
   send(channel: string, ...args: unknown[]): void {
     send({ type: 'send', channel, args })
+  },
+
+  sendSync(channel: string, ...args: unknown[]): unknown {
+    // 浏览器主线程无法同步等待 WebSocket 回包。beforeunload 的两个调用只需要
+    // 把同步 IPC 事件送到主进程；socket.send 会在页面卸载前同步入队。
+    send({ type: 'send', channel, args })
+    return true
   },
 
   on(channel: string, listener: Listener): IpcRendererShim {

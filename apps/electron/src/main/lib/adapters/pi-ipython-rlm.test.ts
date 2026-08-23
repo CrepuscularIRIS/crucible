@@ -1,9 +1,12 @@
 /**
- * P0.1/P0.2 集成测试：RLM（ipython kernel）注册与系统提示契约。
+ * P0.1/P6.0 集成测试：RLM（ipython kernel）注册与系统提示契约。
  *
  * 这些测试直接构建真实 AgentSession（经 createAgentSessionServices），锁住两件事：
- * 1. customTools 同名注册 'ipython' 后：会话基座里已接线的定义可被捕获、
- *    委托定义被激活且优先于基座定义；
+ * 1. 新接线（P6.0/1.2）：customTools 中不注册 'ipython'，经
+ *    `noTools:'builtin' + initialActiveToolNames:['ipython']` 激活会话自己的
+ *    内置定义；两个会话的定义必须互异（这是每会话独立 kernel 的结构前提，
+ *    真父子执行与 negative control 由 rlm-runtime-e2e.ts 验证）；权限 hook 在
+ *    runtime reload 后仍保留；
  * 2. 不再使用 systemPromptOverride 时：系统提示包含 Prime 的 RLM 学说与
  *    子代理指引，Proma 的 append 段落在其后。
  * Prime 升级若改变任一契约，这里必须变红。
@@ -22,14 +25,13 @@ mock.module('zeromq', () => ({
   Subscriber: class Subscriber {},
 }))
 
-import type { ToolDefinition } from '@earendil-works/pi-coding-agent'
 import { createPromaManagedResourceLoaderOptions } from './pi-resource-loader-overrides'
+import { createResearchIsolationExtension } from './pi-research-isolation-extension'
+import type { ExtensionAPI } from '@earendil-works/pi-coding-agent'
 import {
-  captureWiredIpythonDefinition,
-  createRlmIpythonToolDefinition,
   detectIpythonKernelSupply,
+  installSessionIpythonPermission,
   resetIpythonKernelSupplyCacheForTest,
-  type RlmIpythonWiring,
 } from './pi-ipython-rlm'
 import { shieldPrimeSessionCommands } from './pi-agent-adapter'
 
@@ -78,17 +80,17 @@ afterAll(() => {
 
 interface BuiltSession {
   session: Awaited<ReturnType<PiSdkUnderTest['createAgentSessionFromServices']>>['session']
-  wiring: RlmIpythonWiring
-  delegator: ToolDefinition
 }
 
-/** 复刻 createResidentSession 的注册方式：customTools 同名注册 + 权限由外层包装（测试直接用原始定义）。 */
-async function buildSessionWithRlmIpython(appendText?: string): Promise<BuiltSession> {
-  const cwd = join(rootDir, 'case')
+/** 复刻 createResidentSession 的接线方式（P6.0/1.2）：无 ipython customTool，内置定义经 initialActiveToolNames 激活。 */
+async function buildSessionWithRlmIpython(
+  appendText?: string,
+  caseName = 'case',
+  extensionFactories: Array<(pi: ExtensionAPI) => void> = [],
+): Promise<BuiltSession> {
+  const cwd = join(rootDir, caseName)
   const agentDir = join(rootDir, 'agent-dir')
-  const sessionDir = join(rootDir, 'sessions')
-  const wiring: RlmIpythonWiring = {}
-  const delegator = createRlmIpythonToolDefinition(sdk, cwd, wiring)
+  const sessionDir = join(rootDir, `sessions-${caseName}`)
   const services = await sdk.createAgentSessionServices({
     cwd,
     agentDir,
@@ -97,6 +99,7 @@ async function buildSessionWithRlmIpython(appendText?: string): Promise<BuiltSes
     resourceLoaderOptions: {
       ...createPromaManagedResourceLoaderOptions(),
       ...(appendText !== undefined && { appendSystemPromptOverride: () => [appendText] }),
+      ...(extensionFactories.length > 0 && { extensionFactories }),
     },
   })
   const sessionManager = sdk.SessionManager.create(cwd, sessionDir)
@@ -104,39 +107,154 @@ async function buildSessionWithRlmIpython(appendText?: string): Promise<BuiltSes
     services,
     sessionManager,
     noTools: 'builtin',
-    customTools: [delegator],
+    initialActiveToolNames: ['ipython'],
+    customTools: [],
   })
-  return { session, wiring, delegator }
+  return { session }
 }
 
-describe('P0.1 RLM ipython 注册', () => {
-  it('customTools 同名注册后：ipython 激活、注册表取到的是委托定义、基座接线可捕获', async () => {
-    const { session, wiring, delegator } = await buildSessionWithRlmIpython()
-
+describe('P6.0/1.2 RLM ipython 接线结构与权限稳定性', () => {
+  it('initialActiveToolNames 激活内置 ipython：激活集中含 ipython，且激活的不是任何 customTool', async () => {
+    const { session } = await buildSessionWithRlmIpython(undefined, 'case-activate')
     expect(session.getActiveToolNames()).toContain('ipython')
-    expect(session.getToolDefinition('ipython')).toBe(delegator)
-
-    captureWiredIpythonDefinition(session, wiring)
-    expect(wiring.wiredDefinition).toBeDefined()
-    // 委托目标必须是基座里另一个（已接线）定义，不能是委托自身
-    expect(wiring.wiredDefinition).not.toBe(delegator)
-    expect(typeof wiring.wiredDefinition?.execute).toBe('function')
-
+    // customTools 为空——激活的定义只能来自会话自己的基座接线
+    expect(session.getToolDefinition('ipython')).toBeDefined()
+    expect(typeof session.getToolDefinition('ipython')?.execute).toBe('function')
     session.dispose()
   })
 
-  it('反向验证：wiring 缺失时 execute 拒绝执行而不是静默空转', async () => {
-    const cwd = join(rootDir, 'case-refuse')
-    const unwired = createRlmIpythonToolDefinition(sdk, cwd, {})
-    await expect(
-      // ExtensionContext 仅由运行时注入，拒绝路径在触达它之前抛出
-      unwired.execute?.('call-1', { code: '1+1' }, new AbortController().signal, undefined, {} as never),
-    ).rejects.toThrow(/尚未接线/)
+  it('结构前提：两个父会话的 ipython 定义互异', async () => {
+    const a = await buildSessionWithRlmIpython(undefined, 'case-iso-a')
+    const b = await buildSessionWithRlmIpython(undefined, 'case-iso-b')
+    // rlm 子代理经 initialActiveToolNames 继承父的活跃集、经 customTools 继承
+    // 自定义工具——customTools 不含 'ipython' 时，每个会话（父或子）拿到的
+    // 都是自己的接线。这里不冒充父子隔离证明；真实父子 cell/snapshot 在
+    // apps/electron/scripts/rlm-runtime-e2e.ts 中验证。
+    expect(a.session.getToolDefinition('ipython')).not.toBe(b.session.getToolDefinition('ipython'))
+    a.session.dispose()
+    b.session.dispose()
   })
 
-  it('反向验证：Prime 结构变化导致基座不可读时，capture fail loud', () => {
-    const fakeSession = {} as Parameters<typeof captureWiredIpythonDefinition>[0]
-    expect(() => captureWiredIpythonDefinition(fakeSession, {})).toThrow(/重新适配/)
+  async function invokeBeforeIpython(
+    session: BuiltSession['session'],
+    args: Record<string, unknown>,
+    toolName = 'ipython',
+  ): Promise<{ block?: boolean; reason?: string } | undefined> {
+    const hook = session.agent.beforeToolCall
+    if (!hook) throw new Error('beforeToolCall hook 未安装')
+    const toolCall = {
+      type: 'toolCall' as const,
+      id: 'call-ipython-permission',
+      name: toolName,
+      arguments: args,
+    }
+    return hook({
+      assistantMessage: {
+        role: 'assistant',
+        content: [toolCall],
+        api: 'openai-completions',
+        provider: 'test',
+        model: 'test',
+        usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } },
+        stopReason: 'toolUse',
+        timestamp: Date.now(),
+      },
+      toolCall,
+      args,
+      context: { systemPrompt: '', messages: [], tools: [] },
+    })
+  }
+
+  it('installSessionIpythonPermission：拒绝在 runtime reload 前后都生效', async () => {
+    const { session } = await buildSessionWithRlmIpython(undefined, 'case-install')
+    installSessionIpythonPermission(session, async () => ({
+      behavior: 'deny',
+      message: '测试拒绝 ipython',
+    }))
+
+    expect(await invokeBeforeIpython(session, { code: '1+1' })).toEqual({
+      block: true,
+      reason: '测试拒绝 ipython',
+    })
+    await session.reload()
+    expect(await invokeBeforeIpython(session, { code: '2+2' })).toEqual({
+      block: true,
+      reason: '测试拒绝 ipython',
+    })
+    expect(session.getActiveToolNames()).toContain('ipython')
+    await session.disposeAsync()
+  })
+
+  it('installSessionIpythonPermission：批准时原地应用 updatedInput', async () => {
+    const { session } = await buildSessionWithRlmIpython(undefined, 'case-install-update')
+    const args: Record<string, unknown> = { code: 'old_code' }
+    installSessionIpythonPermission(session, async () => ({
+      behavior: 'allow',
+      updatedInput: { code: 'approved_code' },
+    }))
+    expect(await invokeBeforeIpython(session, args)).toBeUndefined()
+    expect(args).toEqual({ code: 'approved_code' })
+    await session.disposeAsync()
+  })
+
+  it('research execution-before 扩展由 RLM 子会话继承，父子 ipython 均不可直连 meter', async () => {
+    const extension = createResearchIsolationExtension({
+      denyRoots: ['/home/test/oss/neuronbench'],
+      stateRoot: '/home/test/project/.proma-research',
+    })
+    const { session } = await buildSessionWithRlmIpython(
+      undefined,
+      'case-research-isolation-parent-child',
+      [extension],
+    )
+    const forbidden = { code: '%run research/eval/world-meter.py' }
+    expect(await invokeBeforeIpython(session, forbidden)).toEqual({
+      block: true,
+      reason: expect.stringContaining('world_* MCP'),
+    })
+
+    const internal = session as unknown as {
+      _createInlineRlmSubagentRuntime(options: unknown): { session: BuiltSession['session'] }
+    }
+    const childRuntime = internal._createInlineRlmSubagentRuntime({
+      parentSession: session,
+      id: 'research-isolation-child',
+      prompt: '测试隔离继承',
+      sessionName: 'research-isolation-child',
+      sessionDir: join(rootDir, 'sessions-research-isolation-child'),
+      model: session.model,
+      thinkingLevel: session.thinkingLevel,
+      serviceTier: session.serviceTier,
+      scopedModels: [],
+      activeToolNames: session.getActiveToolNames(),
+      customTools: [],
+      includeGoals: true,
+      includeCompactSkill: true,
+      rlmDepth: 1,
+      rlmMaxDepth: 2,
+      rlmParentNodeId: 'research-isolation-child',
+    })
+    expect(await invokeBeforeIpython(childRuntime.session, forbidden)).toEqual({
+      block: true,
+      reason: expect.stringContaining('world_* MCP'),
+    })
+    expect(await invokeBeforeIpython(
+      childRuntime.session,
+      { command: 'kill 262267' },
+      'bash',
+    )).toEqual({
+      block: true,
+      reason: expect.stringContaining('world_* MCP'),
+    })
+    await childRuntime.session.disposeAsync()
+    await session.disposeAsync()
+  })
+
+  it('反向验证：Prime 结构变化导致 agent hook 不可读时 install fail loud', () => {
+    const fakeSession = {} as Parameters<typeof installSessionIpythonPermission>[0]
+    expect(() => installSessionIpythonPermission(fakeSession, async ({ input }) => ({
+      behavior: 'allow', updatedInput: input,
+    }))).toThrow(/重新适配/)
   })
 })
 

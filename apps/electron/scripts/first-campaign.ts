@@ -8,7 +8,7 @@
  */
 
 import { spawnSync } from 'node:child_process'
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, dirname } from 'node:path'
 
@@ -17,14 +17,17 @@ process.env.PRIME_AGENT_KERNEL_FORKSERVER = '0'
 
 // import.meta.dir 是 bun 专属；node 下从 import.meta.url 推导
 const REPO = dirname(dirname(dirname(dirname(new URL(import.meta.url).pathname)))) // .../apps/electron/scripts/x.ts → crucible 根
+const RUN = 'first-campaign'
+const NEURONBENCH_ROOT = process.env.NEURONBENCH_ROOT ?? '/home/lingxufeng/oss/neuronbench'
+const {
+  authorizeResearchIpython,
+  buildResearchMcpEnv,
+  disposeAndArchiveResearchSession,
+  requireEnvironmentSecret,
+  researchIsolationExtension,
+} = await import('./research-script-lifecycle.ts')
 
-function readDashScopeKey(): string {
-  for (const line of readFileSync('/home/lingxufeng/ClawUI/.env', 'utf-8').split('\n')) {
-    const match = /^Dash-Model\s*=\s*(\S+)/.exec(line.trim())
-    if (match) return match[1]
-  }
-  throw new Error('ClawUI/.env 中未找到 Dash-Model 密钥')
-}
+const DASHSCOPE_API_KEY = requireEnvironmentSecret(process.env, 'DASHSCOPE_API_KEY')
 
 // ── 战役工作区：确定性评测（固定种子、离线、沙箱安全） ──────────────
 const campaignDir = mkdtempSync(join(tmpdir(), 'proma-campaign-'))
@@ -48,10 +51,9 @@ writeFileSync(join(cwd, 'PROMPT.md'), '# 战役题目\n\n种子评测 eval.py �
 
 // ── 会话：skills + RLM 委托 + 真实 research MCP 子进程 ────────────────
 const packageRoot = new URL('.', import.meta.resolve('@earendil-works/pi-coding-agent'))
-const [servicesMod, sessionManagerMod, toolsMod] = await Promise.all([
+const [servicesMod, sessionManagerMod] = await Promise.all([
   import(new URL('./core/agent-session-services.js', packageRoot).href),
   import(new URL('./core/session-manager.js', packageRoot).href),
-  import(new URL('./core/tools/index.js', packageRoot).href),
 ])
 const rlmModule = await import('../src/main/lib/adapters/pi-ipython-rlm.ts')
 
@@ -81,7 +83,12 @@ const mcpClient = new Client({ name: 'campaign-bridge', version: '1.0.0' })
 const transport = new StdioClientTransport({
   command: 'bun',
   args: [join(REPO, 'packages', 'research-mcp', 'src', 'server.ts')],
-  env: { ...process.env, PROMA_RESEARCH_CWD: cwd },
+  env: buildResearchMcpEnv({
+    baseEnv: process.env,
+    cwd,
+    run: RUN,
+    neuronbenchRoot: NEURONBENCH_ROOT,
+  }),
   stderr: 'inherit',
 })
 await mcpClient.connect(transport)
@@ -101,12 +108,6 @@ const mcpTools = listed.tools.map((tool) => ({
 }))
 console.log(`[wire] research MCP 工具: ${mcpTools.map((t) => t.name).join(', ')}`)
 
-const wiring: rlmModule.RlmIpythonWiring = {}
-const delegator = rlmModule.createRlmIpythonToolDefinition(
-  { createIpythonToolDefinition: toolsMod.createIpythonToolDefinition },
-  cwd,
-  wiring,
-)
 
 const skillPaths = ['research-loop', 'research-abduce', 'research-probe', 'research-grill', 'research-report']
   .map((name) => join(REPO, 'research', 'skills', name))
@@ -115,16 +116,21 @@ const services = await servicesMod.createAgentSessionServices({
   agentDir: join(campaignDir, 'agent-dir'),
   noBuiltinHerdrReporter: true,
   telemetryDisabled: true,
-  resourceLoaderOptions: { additionalSkillPaths: skillPaths },
+  resourceLoaderOptions: {
+    additionalSkillPaths: skillPaths,
+    // 隔离扩展经共享 ResourceLoader 进入父与 rlm 子会话的 execution-before hook；
+    // installSessionIpythonPermission 只包父会话，覆盖不到子代理。
+    extensionFactories: [researchIsolationExtension(NEURONBENCH_ROOT, cwd)],
+  },
 })
 services.modelRegistry.registerProvider('dashscope', {
   name: 'dashscope',
   baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-  apiKey: readDashScopeKey(),
+  apiKey: DASHSCOPE_API_KEY,
   api: 'openai-completions',
   models: [{
     id: 'qwen3.7-plus', name: 'qwen3.7-plus', reasoning: false, input: ['text'],
-    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 131072, maxTokens: 8192,
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 131072, maxTokens: 32768,
   }],
 })
 const sessionManager = sessionManagerMod.SessionManager.create(cwd, join(campaignDir, 'sessions'))
@@ -133,12 +139,14 @@ const { session } = await servicesMod.createAgentSessionFromServices({
   sessionManager,
   model: services.modelRegistry.find('dashscope', 'qwen3.7-plus'),
   noTools: 'builtin',
-  customTools: [delegator, ...mcpTools],
+  // P6.0/1.2 接线：无 'ipython' customTool，激活会话自己的内置定义（子代理拿到自己的 kernel）
+  initialActiveToolNames: ['ipython'],
+  customTools: [...mcpTools],
 })
-rlmModule.captureWiredIpythonDefinition(session, wiring)
+rlmModule.installSessionIpythonPermission(session, authorizeResearchIpython)
 console.log(`[wire] ipython 激活: ${session.getActiveToolNames().includes('ipython')}`)
 
-const runRoot = join(cwd, '.proma-research', 'first-campaign')
+const runRoot = join(cwd, '.proma-research', RUN)
 function journalOps(): string[] {
   const file = join(runRoot, 'journal.jsonl')
   if (!existsSync(file)) return []
@@ -192,7 +200,7 @@ const s3 = await stage(
   420_000,
 )
 
-session.dispose()
+await session.disposeAsync()
 await mcpClient.close()
 
 // ── 独立复跑三道 gate CLI（与 declare 内嵌裁决同源，但由宿主进程执行） ──
@@ -206,8 +214,15 @@ for (const gate of gates) {
 
 // ── 留档到仓库 ──────────────────────────────────────────────────────
 const archiveDir = join(REPO, 'research', 'campaigns', '2026-08-23-first')
-mkdirSync(archiveDir, { recursive: true })
-cpSync(runRoot, archiveDir, { recursive: true })
+await disposeAndArchiveResearchSession({
+  session,
+  archiveDir,
+  entries: [
+    { source: cwd, target: 'project', required: true },
+    { source: join(campaignDir, 'sessions'), target: 'sessions', required: true },
+    { source: join(campaignDir, 'session-artifacts'), target: 'session-artifacts', required: false },
+  ],
+})
 console.log(`[archive] 战役产物已留档: ${archiveDir}`)
 
 rmSync(campaignDir, { recursive: true, force: true })

@@ -1,7 +1,7 @@
 ---
 name: research-grill
-description: 用 rlm() 拉起对抗子代理攻击自己的假设：claim_view 构造不对称上下文，攻击写文件扇入，typed 落盘，静默假设逐条清账。
-version: 0.2.0
+description: Use when LIVE 或 SUPPORTED 假设尚未挨过对抗攻击、或有新落地证据未被攻击检验时。
+version: 0.4.0
 ---
 
 # research-grill —— 对抗检验
@@ -9,61 +9,83 @@ version: 0.2.0
 ## 你在做什么
 
 给自己的假设请一个对抗者。它的工作不是复述风险，是**找到你错在哪**。
+对抗者 = `rlm()` 子代理；信息不对称是结构：它看得到主张与证据
+（`claim_view`），看不到你为主张辩护的推理——给了推理，对抗退化成复读。
 
-## 信息不对称（结构，不是纪律）
+## 铁律
 
-对抗者看得到**主张与证据**，看不到你**为主张辩护的推理**——给了推理，
-对抗就退化成复读。`research_kit.claim_view(run, "H1")` 替你构造这个上下文：
-claim + 证据探针（频段与观测）+ graveyard，不含 transition notes。
+```
+没进 journal 的攻击等于没发生；结论没挨过打不许进报告
+```
+
+**违反字面就是违反精神。** 留在对话里的攻击、被你"总结"过的攻击都不算数——
+逐条 `attack_record` 原话落账。SUPPORTED 无迁移后攻击、或最后一次终态迁移后
+没有任何 run 级攻击时，trace gate 直接红【结构】。
 
 ## 程序
 
-1. 对每个要攻击的 claim（LIVE 与 SUPPORTED 都在列），kernel 里构造并拉起：
+1. **先选落点，再拉起**（每个目标 claim 一个子代理）。落点必须在 `rlm()`
+   **之前**由父代理选定——rlm 返回即准入，之后没有任何通道再给子代理捎话
+   （Proma 无 daemon、无 agent 消息）：
 
    ```python
-   view = research_kit.claim_view(run, "H1")
-   handle = await rlm(
-       view + "\n\n你是对抗性评审。用四个镜头攻击上面的主张："
-       "占据度（现有证据真能区分它与竞争解释吗）、机制（因果故事漏了什么"
-       "混合/总体解释）、测量（指标与频段设计有没有偷换）、框架（问题本身"
-       "是不是问错了）。graveyard 必须逐条点名——装看不见即失职。"
-       "把每条攻击写进 Path(os.environ['RLM_SESSION_DIR']) / 'attacks.md'："
-       "一行一条，格式 `KIND | 目标claim | 具体可检验的表述`，"
-       "KIND ∈ new_h/constraint/no_change。",
-       name="grill-H1",
-   )
+   import pathlib
+   drop_dir = pathlib.Path.cwd() / ".grill-drops" / "H1"   # 项目根下，绝不在 .proma-research 内
+   drop_dir.mkdir(parents=True, exist_ok=True)
+   view = research_kit.claim_view(run, "H1")               # 不含 transition notes
+   prompt = 按 references/adversary-prompt.md 填占位符      # {DROP_PATH} = f"{drop_dir}/attacks.md"
+   handle = await rlm(prompt, name="grill-H1")
    ```
 
-   `rlm()` 在**准入**时返回句柄，不是完成时——立即去读文件必然为空。
-   **扇入走文件**：子代理 kernel 的 `RLM_SESSION_DIR` 就是它的会话目录
-   （等于父侧的 `handle.session_dir`），所以 prompt 里要写明这个落点；
-   父代理在**后续轮次**读 `handle.session_dir / "attacks.md"` 回收——
-   这是无 daemon 时唯一可靠的通道，不要等消息。
-2. **对抗者记忆**（防止越攻越软）：第二轮起，把上一轮的 attacks.md 原文
-   附进新对抗者的输入——它要知道哪些攻击已被消化、哪些被驳回，
-   才不会重复已和解的攻击。
-3. **静默假设清账**：对每个 SUPPORTED claim 额外追问对抗者——
-   "这个结论静默依赖了什么？"每条静默假设落成 `constraint` 攻击，
-   **必须带上能了结它的 falsifier 写法**（"若依赖不成立，观测 X 应为 Y"）。
-   不可检验的静默假设不是攻击，是收窄声明的素材——送去 research-report。
-4. 对每条站得住的攻击，父代理逐条调用 `attack_record` 落成 typed 证据：
-   - `new_h`：混合/总体替代解释（若是，回 `research-abduce` 登记成正式假设，
-     conflicts 里点名它攻击的主张）；
-   - `constraint`：被现有设计忽略的边界条件；
+   ✓ 成功条件：spawn 前 prompt 里已有字面绝对路径；没有任何"从环境变量找"
+   或"稍后告诉你"的指示。
+2. **回收（后续轮次）**：`rlm()` 在**准入**时返回句柄，不是完成时——立即读
+   必然为空。之后用 `research_kit.collect_attacks(str(drop_dir))`（一并扫
+   `sub-*`，去重；空列表 = 还没写完，不是错误）。这是无 daemon 时唯一可靠
+   通道，不要等消息。
+   ✓ 成功条件：拿到攻击行原文（跳过 `#` 开头的 SCOPE-ONLY 行——那是收窄
+   声明素材，送 research-report，不落 attack_record）。
+3. **逐条落账**：站得住的攻击逐条 `attack_record`：
+   - `new_h`：混合/总体替代解释 → 回 `research-abduce` 登记成正式假设，
+     conflicts 点名它攻击的主张；
+   - `constraint`：被设计忽略的边界条件 → 进下一个 prereg 的控制臂；
    - `no_change`：某个已落地结果其实不改变信念。
-5. 攻击产生了新假设 → 回 research-abduce；暴露了判别缺口 → 回 research-probe。
+   驳回的攻击写明白为什么驳回（对话里一行即可，别落假账）。
+   ✓ 成功条件：锚的攻击计数上涨；攻击债将在下一次 propose/prereg 清偿。
+4. **第二轮起**：上一轮 attacks.md 原文填进模板 `{PRIOR_ATTACKS}`——对抗者
+   要知道哪些已消化、哪些被驳回，才不会越攻越软或重复已和解的攻击。
+5. **落账权在父代理**：`PROMA_RESEARCH_RUN` 钉死的是**新战役名**——子代理
+   `research_init` 旁路战役会被 MCP 拒绝【结构】；但对本战役的写工具它同样
+   继承着，"它的产出只有那一个文件"靠的是产出契约 + 父代理独占落账，
+   这是纪律。发现子代理动了 MCP 写工具 → 那些事件照实留在 journal，
+   报告里说明来源。
 
-## 对抗者的产出标准
+## 借口 | 现实
 
-- 攻击必须**具体到可检验**。"样本可能不够" 不算；"n=30 时频段 [0.8,1.0] 与
-  [0.6,1.0] 在 95% 置信下无法区分" 算。
-- 对抗者不许和稀泥。它说"整体看起来合理"就是它失职——换一个镜头重问。
+| 借口 | 现实 |
+|---|---|
+| "让子代理读 RLM_SESSION_DIR 找落点" | P4.3 实测：Prime 只在有持久 artifact 目录时才设它，没有时**根本不存在**——子代理把 attacks.md 写去了 `/tmp`，父代理只能翻日志抄回来。落点由父代理写死在 prompt 里。 |
+| "拉起后马上读 attacks.md" | rlm() 准入即返回。立即读必然为空；空不是错误，是"还没写完"。后续轮次再收。 |
+| "把我的推理一起给对抗者，攻得更准" | 攻得更准的是复读机。信息不对称是这个仪器的全部原理——用 claim_view，别自己拼"完整状态"。 |
+| "对抗者说整体合理，通过" | 那是它失职，不是你过关。换一个镜头重问。 |
+| "我替它总结一下它想说什么" | 用它的原话（attacks.md 的行）。总结是你的辩护混进它的攻击。 |
+| "把 REFUTED 的也拉出来打一轮" | 死人不会复活，鞭尸不产信息——除非你带来新证据（那走 revive）。SUPPORTED 在 graveyard 数组里但**是**主要攻击对象。 |
 
-## 禁止
+## 快速参考
 
-- 不替对抗者总结"它其实想说"——用它自己的原话（attacks.md 里的行）。
-- 不把攻击留在对话里不落盘——没进 journal 的攻击等于没发生。
-- 不鞭尸已被否证的假设（REFUTED/SCOPED）——死人不会复活，除非你带来新证据。
-  注意 SUPPORTED 也记录在 graveyard 数组里（终态都入账），但它是**主要攻击
-  对象**，不在此禁令内——结论没挨过打就不许进报告。
-- 不把你的推理喂给对抗者——用 claim_view，别自己拼"完整状态"。
+| 步骤 | 动作 | 成功条件 | 执法 |
+|---|---|---|---|
+| 选落点+拉起 | drop_dir → claim_view + 模板 → rlm | spawn 前 prompt 含字面落点 | 不对称由 kit 视图省略 notes 保证（非 server 拒绝） |
+| 回收 | collect_attacks（后续轮次） | 攻击行原文到手 | 纪律 |
+| 落账 | attack_record 逐条 | 攻击计数上涨 | SUPPORTED 需迁移后攻击 + run 级冻结后攻击【结构：trace gate】 |
+| 路由 | new_h→abduce · constraint→probe | 债在下次 propose/prereg 清偿 | 锚计数提醒 |
+
+## 交接
+
+- `new_h` 攻击 → `research-abduce`
+- `constraint` 暴露判别缺口 → `research-probe`
+- 攻完、坟场已足以答题 → `research-report`
+
+## 参考索引
+
+- `references/adversary-prompt.md` —— 四镜头对抗 prompt 模板（原样用，只填占位符）

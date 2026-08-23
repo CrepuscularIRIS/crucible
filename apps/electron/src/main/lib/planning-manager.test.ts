@@ -1,13 +1,21 @@
 import { expect, test } from 'bun:test'
 import { spawnSync } from 'node:child_process'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
-import { dirname, join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 
 const managerModulePath = join(import.meta.dir, 'planning-manager.ts')
 const repoRoot = dirname(dirname(dirname(dirname(dirname(import.meta.dir)))))
-const electronBinary = createRequire(import.meta.url)('electron') as string
+const requireFromTest = createRequire(import.meta.url)
+const electronPackageDir = dirname(requireFromTest.resolve('electron'))
+// Bun 的 mock.module 会跨测试文件污染 require('electron') 返回值；直接按 Electron
+// 包自己的 path.txt 解析二进制，避免全仓并行测试把字符串替换成 mock 对象。
+const electronBinary = join(
+  electronPackageDir,
+  'dist',
+  basename(readFileSync(join(electronPackageDir, 'path.txt'), 'utf-8').trim()),
+)
 
 /**
  * planning-manager 的数据库连接是模块级单例，而 node:sqlite 仅由 Electron 的 Node 22 提供。

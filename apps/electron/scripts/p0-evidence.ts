@@ -6,7 +6,7 @@
  * 3. rlm() 真拉起子代理：句柄返回、子代理写文件可回收；
  * 4. auto-refine 真触发：turnInterval=2，两个 assistant 轮后 refinement 落盘。
  *
- * 密钥运行时读 /home/lingxufeng/ClawUI/.env 的 Dash-Model，绝不写入文件。
+ * 密钥只接受操作者显式注入的 DASHSCOPE_API_KEY，脚本不读取 .env。
  */
 
 // E3 根因：RLM 子会话的 kernel bootstrap 会重跑 uv sync，与 venv 的
@@ -18,21 +18,21 @@ process.env.PRIME_AGENT_KERNEL_FORKSERVER = '0'
 
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 
-function readDashScopeKey(): string {
-  for (const line of readFileSync('/home/lingxufeng/ClawUI/.env', 'utf-8').split('\n')) {
-    const match = /^Dash-Model\s*=\s*(\S+)/.exec(line.trim())
-    if (match) return match[1]
-  }
-  throw new Error('ClawUI/.env 中未找到 Dash-Model 密钥')
-}
+const REPO = dirname(dirname(dirname(dirname(new URL(import.meta.url).pathname))))
+const {
+  authorizeResearchIpython,
+  disposeAndArchiveResearchSession,
+  requireEnvironmentSecret,
+} = await import('./research-script-lifecycle.ts')
+
+const DASHSCOPE_API_KEY = requireEnvironmentSecret(process.env, 'DASHSCOPE_API_KEY')
 
 const packageRoot = new URL('.', import.meta.resolve('@earendil-works/pi-coding-agent'))
-const [servicesMod, sessionManagerMod, toolsMod, settingsMod] = await Promise.all([
+const [servicesMod, sessionManagerMod, settingsMod] = await Promise.all([
   import(new URL('./core/agent-session-services.js', packageRoot).href),
   import(new URL('./core/session-manager.js', packageRoot).href),
-  import(new URL('./core/tools/index.js', packageRoot).href),
   import(new URL('./core/settings-manager.js', packageRoot).href),
 ])
 const rlmModule = await import('../src/main/lib/adapters/pi-ipython-rlm.ts')
@@ -60,15 +60,6 @@ const rootDir = mkdtempSync(join(tmpdir(), 'proma-p0-evidence-'))
 import { mkdirSync } from 'node:fs'
 const cwd = join(rootDir, 'case')
 mkdirSync(cwd, { recursive: true })
-const wiring: rlmModule.RlmIpythonWiring = {}
-const delegator = createRlmIpythonToolDefinition()
-function createRlmIpythonToolDefinition() {
-  return rlmModule.createRlmIpythonToolDefinition(
-    { createIpythonToolDefinition: toolsMod.createIpythonToolDefinition },
-    cwd,
-    wiring,
-  )
-}
 
 // in-memory settings：autoRefine turnInterval=2 + 极小 compaction 余量（保证真实压缩发生）
 const settingsManager = settingsMod.SettingsManager.inMemory({
@@ -86,7 +77,7 @@ const services = await servicesMod.createAgentSessionServices({
 services.modelRegistry.registerProvider('dashscope', {
   name: 'dashscope',
   baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-  apiKey: readDashScopeKey(),
+  apiKey: DASHSCOPE_API_KEY,
   api: 'openai-completions',
   models: [{
     id: 'qwen3.7-plus',
@@ -94,8 +85,8 @@ services.modelRegistry.registerProvider('dashscope', {
     reasoning: false,
     input: ['text'],
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-    contextWindow: 131072,
-    maxTokens: 8192,
+        contextWindow: 131072,
+        maxTokens: 32768,
   }],
 })
 
@@ -105,9 +96,11 @@ const { session } = await servicesMod.createAgentSessionFromServices({
   sessionManager,
   model: services.modelRegistry.find('dashscope', 'qwen3.7-plus'),
   noTools: 'builtin',
-  customTools: [delegator],
+  // P6.0/1.2 接线：无 'ipython' customTool，激活会话自己的内置定义（子代理拿到自己的 kernel）
+  initialActiveToolNames: ['ipython'],
+  customTools: [],
 })
-rlmModule.captureWiredIpythonDefinition(session, wiring)
+rlmModule.installSessionIpythonPermission(session, authorizeResearchIpython)
 
 let compacted = false
 const eventNames: string[] = []
@@ -223,9 +216,17 @@ const refineEvents = eventNames.filter((n) => n.includes('refine')).slice(-6)
 console.log(`[E4] refine 相关事件（尾 6）: ${refineEvents.join(', ') || '（无）'}`)
 console.log(`[E4] auto-refine 落盘: refinement 条目 ${refinementEntries} 条，harness 摘要可读 entries=${summary.entries} recent=${summary.recent.length}`)
 
-session.dispose()
 clearInterval(venvWatcher)
 console.log(`[diag] venv python 消失窗口: ${venvGaps.length ? JSON.stringify(venvGaps) : '（全程存在，无消失——ENOENT 另有原因）'}`)
+await disposeAndArchiveResearchSession({
+  session,
+  archiveDir: join(REPO, 'research', 'campaigns', '2026-08-23-p0-evidence'),
+  entries: [
+    { source: cwd, target: 'project', required: true },
+    { source: join(rootDir, 'sessions'), target: 'sessions', required: true },
+    { source: join(rootDir, 'session-artifacts'), target: 'session-artifacts', required: false },
+  ],
+})
 rmSync(rootDir, { recursive: true, force: true })
 
 const pass = survived && childFileWritten && refinementEntries > 0

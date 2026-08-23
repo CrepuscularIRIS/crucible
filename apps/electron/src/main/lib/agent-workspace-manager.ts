@@ -679,11 +679,16 @@ export function getWorkspaceMcpConfig(workspaceSlug: string): WorkspaceMcpConfig
   }
 }
 
+/** 将已规范化的工作区 MCP 配置原子写入显式路径，便于隔离验证写入语义。 */
+export function saveWorkspaceMcpConfigAtPath(mcpPath: string, config: WorkspaceMcpConfig): void {
+  writeJsonFileAtomic(mcpPath, normalizeWorkspaceMcpConfig(config))
+}
+
 export function saveWorkspaceMcpConfig(workspaceSlug: string, config: WorkspaceMcpConfig): void {
   const mcpPath = getWorkspaceMcpPath(workspaceSlug)
 
   try {
-    writeFileSync(mcpPath, JSON.stringify(normalizeWorkspaceMcpConfig(config), null, 2), 'utf-8')
+    saveWorkspaceMcpConfigAtPath(mcpPath, config)
     console.log(`[Agent 工作区] 已保存 MCP 配置: ${workspaceSlug}`)
   } catch (error) {
     console.error('[Agent 工作区] 保存 MCP 配置失败:', error)

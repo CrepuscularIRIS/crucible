@@ -2,24 +2,28 @@
  * Agent 权限服务
  *
  * 核心职责：
- * - 实现 canUseTool 回调（供 SDK query 使用）
  * - 管理 pending 权限请求（Promise + Map 模式）
  * - 维护会话级白名单
  * - 工具/命令分类判断
+ *
+ * **权限模式口径（2026-08-23 定）**：生产只有 `bypassPermissions` 与 `plan` 两种模式，
+ * 逐次权限询问不是产品路径。因此本服务在生产中的唯一入口是 `requestSingleApproval`
+ * ——它服务于破坏性 planning 删除，是"即使全自动也要人点头"的最后边界。
+ *
+ * 曾经存在的 `createCanUseTool`（构造逐次询问 + 只读 classifier + 白名单短路）
+ * 只被它自己的测试引用过，生产不可达；留着它等于代码库持续宣称一道并不存在的控制，
+ * 已于 2026-08-23 审计后删除。若将来要恢复逐次询问，先加权限模式，再重建入口——
+ * 不要复活一个没有调用者的回调。
  *
  * 参考 Craft Agents OSS 的 Promise + Map 异步等待模式。
  */
 
 import { randomUUID } from 'node:crypto'
 import type {
-  PromaPermissionMode,
   PermissionRequest,
   DangerLevel,
-  AskUserRequest,
 } from '@proma/shared'
 import {
-  SAFE_TOOLS,
-  isSafeBashCommand,
   isDangerousCommand,
   hasDangerousStructure,
 } from '@proma/shared'
@@ -112,57 +116,6 @@ export class AgentPermissionService {
   private sessionWhitelists = new Map<string, SessionWhitelist>()
 
   /**
-   * 创建 canUseTool 回调（auto 模式及 escalation 场景使用）
-   *
-   * SDK 的 auto 模式内置 classifier 自动处理大多数权限决策，仅在 classifier 无法判断时
-   * 才调用此回调（escalation）。返回的函数签名匹配 SDK 的 CanUseTool 类型。
-   */
-  createCanUseTool(
-    sessionId: string,
-    sendToRenderer: (request: PermissionRequest) => void,
-    askUserHandler?: (sessionId: string, input: Record<string, unknown>, signal: AbortSignal, sendToRenderer: (request: AskUserRequest) => void) => Promise<PermissionResult>,
-    sendAskUserToRenderer?: (request: AskUserRequest) => void,
-  ): (toolName: string, input: Record<string, unknown>, options: CanUseToolOptions) => Promise<PermissionResult> {
-    return async (toolName, input, options) => {
-      // AskUserQuestion 拦截：委托给交互式问答服务
-      if (toolName === 'AskUserQuestion' && askUserHandler && sendAskUserToRenderer) {
-        return askUserHandler(sessionId, input, options.signal, sendAskUserToRenderer)
-      }
-
-      const allow = (): PermissionResult => ({ behavior: 'allow' as const, updatedInput: input })
-
-      // Worker（子代理）的工具调用自动批准，避免 UI 等待导致超时死锁
-      if (options.agentID) {
-        return allow()
-      }
-
-      // 会话白名单检查（用户之前选择了"始终允许"）
-      if (this.isWhitelisted(sessionId, toolName, input)) return allow()
-
-      // auto 模式本地 classifier：只读工具（Read/Glob/Grep/WebSearch/WebFetch 及只读 Bash 命令）自动放行
-      // 原因：CLI 的 --permission-prompt-tool stdio 会把每次 tool 调用都转发给 canUseTool，
-      // SDK 的 auto classifier 对只读操作未必真的放行，这里做本地兜底避免用户被无意义的审批打扰
-      if (this.isReadOnlyTool(toolName, input)) return allow()
-
-      // 需要询问用户：构建请求并发送到 UI
-      const request = this.buildPermissionRequest(sessionId, toolName, input, options)
-      sendToRenderer(request)
-
-      return new Promise<PermissionResult>((resolve) => {
-        this.pendingPermissions.set(request.requestId, { resolve, request })
-
-        // 如果 signal 被中止，自动拒绝
-        options.signal.addEventListener('abort', () => {
-          if (this.pendingPermissions.has(request.requestId)) {
-            this.pendingPermissions.delete(request.requestId)
-            resolve({ behavior: 'deny' as const, message: '操作已中止' })
-          }
-        }, { once: true })
-      })
-    }
-  }
-
-  /**
    * 为破坏性操作创建不可白名单化的单次确认请求。
    * 即使会话处于 bypassPermissions，调用方也可用此入口保留最后的用户确认边界。
    */
@@ -241,42 +194,6 @@ export class AgentPermissionService {
   }
 
   // ===== 工具分类判断 =====
-
-  /**
-   * 判断工具是否为只读操作（智能模式下自动允许）
-   */
-  private isReadOnlyTool(toolName: string, input: Record<string, unknown>): boolean {
-    // 安全工具白名单
-    if (SAFE_TOOLS.includes(toolName)) return true
-
-    // Bash 工具：检查命令是否匹配安全模式
-    if (toolName === 'Bash') {
-      const command = typeof input.command === 'string' ? input.command : ''
-      return isSafeBashCommand(command)
-    }
-
-    return false
-  }
-
-  /**
-   * 判断工具/命令是否在会话白名单中
-   */
-  private isWhitelisted(sessionId: string, toolName: string, input: Record<string, unknown>): boolean {
-    const whitelist = this.sessionWhitelists.get(sessionId)
-    if (!whitelist) return false
-
-    // 非 Bash 工具：检查工具名是否在白名单中
-    if (toolName !== 'Bash') {
-      return whitelist.allowedTools.has(toolName)
-    }
-
-    // Bash 工具：即使基础命令在白名单中，也要重新检查完整命令的安全性
-    const command = typeof input.command === 'string' ? input.command : ''
-    if (hasDangerousStructure(command)) return false
-    if (isDangerousCommand(command)) return false
-    const baseCommand = this.extractBaseCommand(command)
-    return whitelist.allowedBashCommands.has(baseCommand)
-  }
 
   /**
    * 将工具/命令加入会话白名单

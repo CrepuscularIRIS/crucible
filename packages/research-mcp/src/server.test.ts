@@ -178,6 +178,43 @@ describe('结构拒绝', () => {
     await expect(callTool('probe_run', { run: 'refuse', pid: 'P2' })).rejects.toThrow(/不予落地/)
   })
 
+  it('P4.3：零宽点预测频段被拒——预登记不得是观测值的回忆', async () => {
+    // P4.3 实测：父 Agent 先用 Bash 预览了结果，再把频段写成 [45, 45]。三道 gate 全绿，
+    // 因为违规发生在 journal 之外。零宽频段是这次违规唯一留在产物里的结构性痕迹。
+    await expect(callTool('prereg_write', {
+      run: 'refuse',
+      spec: { ...spec, pid: 'P9', bands: { H1: [45, 45], H2: [0, 44] } },
+    })).rejects.toThrow(/零宽点预测/)
+    // 标定：首场诚实战役的频段（含容差 + 留出意外区）必须仍然通过
+    await callTool('prereg_write', {
+      run: 'refuse',
+      spec: { ...spec, pid: 'P9', bands: { H1: [0.8, 1.0], H2: [0.0, 0.65] } },
+    })
+  })
+
+  it('P4.3：钉死战役后，子代理开不出旁路 run', async () => {
+    // P4.3 实测：grill 子代理继承了可写 MCP，自行 research_init 出一个旁路战役并在里面跑探针。
+    process.env.PROMA_RESEARCH_RUN = 'honest'
+    try {
+      await expect(callTool('research_init', { run: 'packages-research-mcp-tests' }))
+        .rejects.toThrow(/已钉死战役/)
+      await expect(callTool('research_state', { run: 'refuse' }))
+        .rejects.toThrow(/已钉死战役/)
+      await callTool('research_init', { run: 'honest' })
+    } finally {
+      delete process.env.PROMA_RESEARCH_RUN
+    }
+  })
+
+  it('P4.3：provenance 记录沙箱见证，审阅者读产物即可判断探针确实隔离执行', async () => {
+    const provenance = JSON.parse(
+      readFileSync(join(researchCwd, '.proma-research', 'honest', 'probes', 'P1', 'provenance.json'), 'utf-8'),
+    ) as { sandbox?: { engine: string; binary: string; isolation: string[] } }
+    expect(provenance.sandbox?.engine).toBe('bubblewrap')
+    expect(provenance.sandbox?.isolation).toContain('--unshare-net')
+    expect(provenance.sandbox?.isolation).toContain('--clearenv')
+  })
+
   it('崩溃探针 replay 为 FAILED，不能冒充 LANDED 依据终态迁移', async () => {
     // 上一条测试里 P2 已崩溃（exit 3，stdout 里却有合法 metric——正是伪造素材）。
     // 若 replay 把它记成 LANDED（metric null → 0），kill 频段含 0 时即可拿崩溃杀 claim。

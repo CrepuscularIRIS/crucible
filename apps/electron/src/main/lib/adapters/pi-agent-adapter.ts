@@ -63,6 +63,8 @@ import type { ProjectInstructionSource } from '../project-instruction-resolver'
 import { createCodexFastModeExtension, withCodexFastModeServiceTier } from './pi-codex-request-settings'
 import { createDeepSeekReasoningRequestExtension } from './pi-deepseek-reasoning-request-settings'
 import { createOpenAIReasoningRequestExtension } from './pi-openai-reasoning-request-settings'
+import { createResearchIsolationExtension } from './pi-research-isolation-extension'
+import type { ResearchIsolationConfig } from '../research-isolation-guard'
 import { mergeRuntimeEnv, type AgentRuntimeEnv } from '../agent-runtime-env'
 import { sanitizePiMessageImageContent, sanitizeToolResultImageContent } from '../image-content-validation'
 import {
@@ -79,10 +81,8 @@ import {
 import { DEFAULT_CONTEXT_WINDOW, buildModel } from './pi-model-registry'
 import { computeResidencyKey, ResidentSessionRegistry } from './pi-session-residency'
 import {
-  captureWiredIpythonDefinition,
-  createRlmIpythonToolDefinition,
   detectIpythonKernelSupply,
-  type RlmIpythonWiring,
+  installSessionIpythonPermission,
 } from './pi-ipython-rlm'
 import { summarizePrimeRefineArtifacts } from './pi-refine-state'
 import type { AgentRefineEntrySummary, AgentRefineNowResult, AgentRefineState } from '@proma/shared'
@@ -212,6 +212,8 @@ export interface PiAgentQueryOptions extends AgentQueryInput {
   /** WebSocket 建连超时，单位毫秒；0 表示交给 Pi SDK 禁用超时 */
   websocketConnectTimeoutMs?: number
   runtimeEnv?: AgentRuntimeEnv
+  /** workspace research MCP 显式启用的工具执行隔离边界。 */
+  researchIsolation?: ResearchIsolationConfig
   /** 手动压缩请求：走 pi 原生 session.compact()，而非把 /compact 当普通 prompt 发给模型 */
   compactRequest?: boolean
   /** ChatGPT Codex Fast Mode；仅 openai-codex 的受支持模型实际注入 priority service tier。 */
@@ -1470,6 +1472,9 @@ export class PiAgentAdapter implements AgentProviderAdapter {
         projectScope: input.projectInstructionScope
           ? `${input.projectInstructionScope.projectRoot}#${[...(input.projectInstructionScope.initialSources ?? [])].sort().join('|')}`
           : undefined,
+        researchIsolation: input.researchIsolation
+          ? [...input.researchIsolation.denyRoots, input.researchIsolation.stateRoot].filter((path): path is string => Boolean(path))
+          : undefined,
       })
       const cachedEntry = this.residentSessions.acquire(input.sessionId, active)
       let resident = cachedEntry?.session
@@ -1947,12 +1952,12 @@ export class PiAgentAdapter implements AgentProviderAdapter {
     const autoCompactionReserveTokens = calculatePiAutoCompactionReserveTokens(
       model.contextWindow ?? DEFAULT_CONTEXT_WINDOW,
     )
-    // RLM（P0.1）：仅在 kernel 供给就绪时注册 ipython。execute 委托给会话内
-    // 已接线的内置定义（hostHandlers/provisioner/快照全在它里面），权限走与
-    // bash/edit 相同的 wrapToolWithPermission 路径；供给缺失时保持不注册，
-    // 避免 Prime 在无 TTY 的主进程里走 readline 确认装 uv 而挂死。
+    // RLM（P0.1 · P6.0/1.2 重接线）：kernel 供给就绪时激活会话自己的内置
+    // ipython 定义，并在会话创建后原地做权限包装（installSessionIpythonPermission）。
+    // 不再注册 'ipython' customTool——customTools 会被 Prime 按引用拷进 rlm 子代理，
+    // 共享委托会把子代理的 ipython 落到父 kernel（信息不对称与深度守卫同时失效）。
+    // 供给缺失时保持不激活，避免 Prime 在无 TTY 的主进程里走 readline 确认装 uv 而挂死。
     const rlmSupply = detectIpythonKernelSupply()
-    const rlmWiring: RlmIpythonWiring = {}
     if (!rlmSupply.available) {
       console.warn(`[Pi SDK] RLM 未启用：${rlmSupply.detail}。安装 uv 或设置 PRIME_AGENT_KERNEL_PYTHON 后可用。`)
     }
@@ -1968,12 +1973,6 @@ export class PiAgentAdapter implements AgentProviderAdapter {
         indirectCanUseTool,
         input.runtimeEnv,
       ),
-      ...(rlmSupply.available
-        ? [wrapToolWithPermission(
-          createRlmIpythonToolDefinition(sdk, cwd, rlmWiring),
-          { canUseTool: indirectCanUseTool },
-        ) as ToolDefinition]
-        : []),
       ...buildPromaProductToolDefinitions(sdk, indirectCanUseTool),
       ...wrapCustomToolDefinitions(input.customTools, indirectCanUseTool),
     ]
@@ -2013,6 +2012,7 @@ export class PiAgentAdapter implements AgentProviderAdapter {
       : undefined
     const extensionFactories = [
       ...(projectInstructionScope ? [projectInstructionScope.createExtension()] : []),
+      ...(input.researchIsolation ? [createResearchIsolationExtension(input.researchIsolation)] : []),
       ...(openAIReasoningProfile
         ? [createOpenAIReasoningRequestExtension({
           profile: openAIReasoningProfile,
@@ -2065,13 +2065,34 @@ export class PiAgentAdapter implements AgentProviderAdapter {
       model,
       thinkingLevel: input.thinkingLevel ?? 'off',
       noTools: 'builtin',
+      // RLM：激活会话自己的内置 ipython（供给缺失时不激活）。子代理经
+      // initialActiveToolNames 继承父的活跃集，拿到的是它自己的 kernel 接线。
+      ...(rlmSupply.available ? { initialActiveToolNames: ['ipython' as const] } : {}),
       customTools,
     })
     if (rlmSupply.available) {
-      // 回填委托目标：会话内置 ipython 定义携带完整 RLM 接线（provisioner、
-      // hostHandlers、kernel 快照目录）。结构变化时 capture 会抛错并使本次
-      // 会话创建失败——绝不静默退化为无 RLM 的空壳。
-      captureWiredIpythonDefinition(session, rlmWiring)
+      // 父会话的 ipython 走 session-owned 执行 hook：Prime 重建工具表后仍有效，
+      // 且 RLM child 创建自己的 Agent，不会继承父 hook 或共享同名 customTool。
+      installSessionIpythonPermission(
+        session,
+        async ({ toolCallId, input: rawInput, signal, displayName: permissionDisplayName, description }) => {
+          const permission = await indirectCanUseTool(
+            displayToolName('ipython', rawInput),
+            normalizePermissionInput('ipython', rawInput),
+            {
+              signal,
+              toolUseID: toolCallId,
+              displayName: permissionDisplayName,
+              description,
+            },
+          )
+          if (permission.behavior === 'deny') return permission
+          return {
+            behavior: 'allow',
+            updatedInput: restorePiInput('ipython', rawInput, permission.updatedInput),
+          }
+        },
+      )
     }
     session.agent.toolExecution = 'sequential'
     // Pi session artifact 可以来自旧版本，不能假设其历史 tool_result 已通过当前校验。
