@@ -11,6 +11,21 @@ WEB_PORT="${PROMA_WEB_PORT:-5173}"
 
 log() { echo "[entrypoint] $*"; }
 
+# healthcheck 只能证明静态 Web 还活着；Prime 包或原生 RLM 依赖损坏时必须在启动前
+# fail closed，不能再出现“容器 healthy、第一次发消息才发现后端不存在”。
+PRIME_ENTRY="/crucible/apps/electron/node_modules/@earendil-works/pi-coding-agent/dist/index.js"
+ELECTRON_BIN="$(find /crucible/node_modules/.bun -type f -path '*/electron/dist/electron' | head -1)"
+if [ ! -s "${PRIME_ENTRY}" ] || [ ! -x "${ELECTRON_BIN}" ]; then
+  echo "[entrypoint] Prime/Electron 运行时产物不完整，拒绝启动" >&2
+  exit 1
+fi
+(
+  cd /crucible/apps/electron
+  ELECTRON_RUN_AS_NODE=1 "${ELECTRON_BIN}" -e \
+    'Promise.all([import("@earendil-works/pi-coding-agent"), import("@earendil-works/pi-ai")]).then(() => { require("/crucible/node_modules/.bun/node_modules/zeromq") }).catch((error) => { console.error(error); process.exit(1) })'
+)
+log "Prime + zeromq 运行时自检通过"
+
 # ── 1. Xvfb ──────────────────────────────────────────────────────────
 # Electron 主进程即使不给人看也要一块画布：主窗口是 web-bridge 的派发目标
 # （dispatchInvoke 在无窗口时直接抛错），所以无头也必须真的把窗口建出来。

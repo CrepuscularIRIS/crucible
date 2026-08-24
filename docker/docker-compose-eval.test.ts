@@ -8,6 +8,7 @@ const baseCompose = readFileSync(resolve(repoRoot, 'docker-compose.yml'), 'utf-8
 const evalCompose = readFileSync(resolve(repoRoot, 'docker-compose.eval.yml'), 'utf-8')
 const dockerfile = readFileSync(resolve(repoRoot, 'docker/Dockerfile'), 'utf-8')
 const dockerignore = readFileSync(resolve(repoRoot, '.dockerignore'), 'utf-8')
+const entrypoint = readFileSync(resolve(repoRoot, 'docker/entrypoint.sh'), 'utf-8')
 
 interface CanonicalComposeService {
   cap_add?: string[]
@@ -89,6 +90,24 @@ describe('Docker Research eval 覆盖层', () => {
       'PROMA_RESEARCH_MCP_ENTRY=/crucible/packages/research-mcp/src/server.ts',
     )
     expect(dockerfile).not.toContain('/home/lingxufeng')
+  })
+
+  it('Prime 使用 Node/npm 独立构建，并在 Bun 安装前带着 dist 进入最终镜像', () => {
+    expect(dockerfile).toContain('FROM node:22-bookworm-slim AS prime-builder')
+    expect(dockerfile).toContain('npm ci --ignore-scripts')
+    expect(dockerfile).toContain('npm run build')
+    expect(dockerfile).toContain('COPY --from=prime-builder /oss/prime-agent /oss/prime-agent')
+    expect(dockerfile.indexOf('COPY --from=prime-builder')).toBeLessThan(
+      dockerfile.indexOf('bun install --frozen-lockfile'),
+    )
+  })
+
+  it('镜像构建和每次启动都真实加载 Prime 与 zeromq，不再用 Web health 代替后端验收', () => {
+    expect(dockerfile).toContain('Prime runtime import smoke: ok')
+    expect(dockerfile).toContain('import("@earendil-works/pi-coding-agent")')
+    expect(dockerfile).toContain('node_modules/.bun/node_modules/zeromq')
+    expect(entrypoint).toContain('Prime + zeromq 运行时自检通过')
+    expect(entrypoint).toContain('Prime/Electron 运行时产物不完整，拒绝启动')
   })
 
   it('产品镜像不打包比赛原始材料，提交模板只留在宿主仓库', () => {

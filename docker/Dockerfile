@@ -10,11 +10,34 @@
 # `file:../../../oss/prime-agent/packages/*`，把仓库放在 /crucible、把它放在
 # /oss/prime-agent，这些路径就原样成立，一行 package.json 都不用改。
 
-FROM oven/bun:1.3.12-debian
+FROM node:22-bookworm-slim AS prime-builder
 
-# Prime Agent 上游钉死点。要升级就改这一行，重建即可。
+# Prime Agent 自己是 npm workspace（package-lock + Node >=22.8），必须用它原生的
+# 工具链构建。不要在 Bun runtime 阶段安装 Prime：那会生成不同的 workspace 布局，
+# 而且 `file:` 依赖会在 dist 生成前把不完整源码快照进 Bun store。
 ARG PRIME_AGENT_REPO=https://github.com/PrimeIntellect-ai/prime-agent.git
 ARG PRIME_AGENT_REF=71ca6cfd1a2f7205ca0ec1baa65d10d0ed88f6e8
+
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates git \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN git clone --filter=blob:none "${PRIME_AGENT_REPO}" /oss/prime-agent \
+    && cd /oss/prime-agent \
+    && git checkout --detach "${PRIME_AGENT_REF}" \
+    && rm -rf .git
+
+# builder 只产出 TypeScript dist；zeromq 的原生运行时由 Crucible 自己的 bun.lock
+# 安装并在最终 Electron runtime 中验收，所以这里禁用第三方 install scripts。
+RUN cd /oss/prime-agent \
+    && npm ci --ignore-scripts --no-audit --no-fund \
+    && npm run build \
+    && test -s packages/tui/dist/index.js \
+    && test -s packages/ai/dist/index.js \
+    && test -s packages/agent/dist/index.js \
+    && test -s packages/coding-agent/dist/index.js \
+    && rm -rf node_modules packages/*/node_modules
+
+FROM oven/bun:1.3.12-debian
 
 ENV DEBIAN_FRONTEND=noninteractive \
     NODE_ENV=production \
@@ -38,11 +61,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR=/usr/local/bin sh \
     && uv --version
 
-# ── Prime Agent（构建期克隆，不入库） ────────────────────────────────
-RUN git clone --filter=blob:none "${PRIME_AGENT_REPO}" /oss/prime-agent \
-    && cd /oss/prime-agent \
-    && git checkout --detach "${PRIME_AGENT_REF}" \
-    && rm -rf .git
+# ── Prime Agent（构建期克隆并编译，不入库） ──────────────────────────
+# file: 依赖拷贝的是此目录的快照，因此必须在 Crucible 的 bun install 前复制进来。
+COPY --from=prime-builder /oss/prime-agent /oss/prime-agent
 
 # ── Proma 工作区 ─────────────────────────────────────────────────────
 WORKDIR /crucible
@@ -70,6 +91,15 @@ RUN ELECTRON_DIR="$(find /crucible/node_modules/.bun -maxdepth 3 -type d -path '
     && bun install.js \
     && test -s path.txt \
     && echo "electron binary baked: $(cat path.txt)"
+
+# 构建期就用最终 Electron 的 Node runtime 加载 Prime 与 zeromq。仅检查文件存在不够：
+# ESM exports、Bun file 快照或 N-API 架构任一出错，都必须让镜像构建当场失败。
+RUN ELECTRON_BIN="$(find /crucible/node_modules/.bun -type f -path '*/electron/dist/electron' | head -1)" \
+    && test -x "${ELECTRON_BIN}" \
+    && test -s /crucible/apps/electron/node_modules/@earendil-works/pi-coding-agent/dist/index.js \
+    && cd /crucible/apps/electron \
+    && ELECTRON_RUN_AS_NODE=1 "${ELECTRON_BIN}" -e \
+      'Promise.all([import("@earendil-works/pi-coding-agent"), import("@earendil-works/pi-ai")]).then(() => { require("/crucible/node_modules/.bun/node_modules/zeromq"); console.log("Prime runtime import smoke: ok") }).catch((error) => { console.error(error); process.exit(1) })'
 
 COPY . .
 

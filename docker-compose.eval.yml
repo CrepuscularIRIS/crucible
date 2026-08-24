@@ -11,6 +11,8 @@ services:
       PROMA_RESEARCH_DENY: "/bench/neuronbench"
       # 父 Agent 与 RLM 子会话必须共享同一个钉死 run，禁止另开旁路战役。
       PROMA_RESEARCH_RUN: "${PROMA_RESEARCH_RUN:?请设置本次评测唯一运行名}"
+      # 与 NeuronBench 官方 pure-LLM baseline 的默认预算对齐（agent.py budget=8）。
+      PROMA_EVAL_BUDGET: "${PROMA_EVAL_BUDGET:-8}"
 
     volumes:
       - "${NEURONBENCH_HOST_ROOT:?请设置宿主机 NeuronBench 绝对路径}:/bench/neuronbench:ro"
