@@ -7,6 +7,7 @@ const repoRoot = resolve(import.meta.dir, '..')
 const baseCompose = readFileSync(resolve(repoRoot, 'docker-compose.yml'), 'utf-8')
 const evalCompose = readFileSync(resolve(repoRoot, 'docker-compose.eval.yml'), 'utf-8')
 const dockerfile = readFileSync(resolve(repoRoot, 'docker/Dockerfile'), 'utf-8')
+const dockerignore = readFileSync(resolve(repoRoot, '.dockerignore'), 'utf-8')
 
 interface CanonicalComposeService {
   cap_add?: string[]
@@ -88,6 +89,10 @@ describe('Docker Research eval 覆盖层', () => {
       'PROMA_RESEARCH_MCP_ENTRY=/crucible/packages/research-mcp/src/server.ts',
     )
     expect(dockerfile).not.toContain('/home/lingxufeng')
+  })
+
+  it('产品镜像不打包比赛原始材料，提交模板只留在宿主仓库', () => {
+    expect(dockerignore.split(/\r?\n/)).toContain('Race')
   })
 
   it.skipIf(!dockerComposeAvailable())('canonical config 保留只读挂载与完整 sandbox 能力', () => {
