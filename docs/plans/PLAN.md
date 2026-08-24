@@ -604,6 +604,29 @@ Prime 能力审计实证：
 活性仪器已就位：`research/eval/liveness.py`（只读，实测能区分 P5.1 与
 routing-acceptance 那对 RED/GREEN）。
 
+### P6.1 · Research 子会话分层编排（计划项，暂不实现）
+
+后续允许 Prime RLM child 与 Proma Collaboration child 在同一 Research 产品中
+分层共存，但两者都按需启动，不在创建主会话时自动拉起，也不强制主 Agent 调用
+`rlm()`：
+
+- 主 Agent 保持唯一编排者和 Research 状态写入者，负责 Goal、阶段路由、预算、
+  Research MCP 落账与最终裁决；
+- RLM child 用于短期、隔离、适合信息不对称或文件扇入的工作，spawn 后通过终态
+  预览或父代理预先指定的文件落点回收；
+- Proma Collaboration child 用于需要用户可见、可等待、可继续、可完整读取结果的
+  长周期 research/review 子任务；
+- 委派由任务独立性、预期耗时、信息隔离需求、可观察性和预算共同决定；不满足条件
+  时由主 Agent 直接完成；
+- child 只提交候选材料或审阅结果，不直接修改 `.proma-research` 信念状态，父 Agent
+  负责验证、合并并通过 Research MCP 落账；
+- 第一阶段只设计运行时编排、身份与回传契约，**不修改现有七个 Research Skills**，
+  也不在 Skill 文本中加入强制 RLM 调用。
+
+正式接线前以 RCB、NeuronBench、AutoResearchEval 的单主 Agent 基线和按需委派消融
+确定默认阈值、并发上限与成本预算；若委派没有带来质量或可审计性增益，维持主 Agent
+直接执行。
+
 ### P5 完成条件
 
 - [ ] 一场**两轮**战役跑完并归档，第二轮的调整可追溯到第一轮的具体结果
