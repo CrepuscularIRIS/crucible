@@ -636,6 +636,92 @@ routing-acceptance 那对 RED/GREEN）。
 
 ---
 
+## P7 · Benchmark 后的端到端论文与科研绘图交付（计划项）
+
+**顺序不变：先冻结并跑完 P6 benchmark，再接本阶段。** P7 是只读消费已归档
+evidence 的交付层，不进入首轮 RCB / NeuronBench / AutoResearchEval，不得改变模型、
+Research Skills、MCP、联网策略或任何评测分数。端到端的终点定义为
+**evidence-grounded manuscript draft**，不是未经人工复核即可投稿的论文。
+
+### P7.1 · 受管外部 Skills，而不是重写论文系统
+
+候选来源：
+
+- `Yuan1z0825/nature-skills`：只接入 `nature-writing`、`nature-figure`、
+  `nature-statistics`、`nature-citation`、`nature-ref-verifier` 及其依赖
+  `nature-shared`；不默认安装整套 19 个 Skills；
+- `Trae1ounG/paper-plot-skills`：只接入 `plot-from-data` 与
+  `plot-from-image`，作为 Matplotlib 风格库和参考图复刻入口。
+
+接入约束：
+
+1. 只从经过审阅的固定 commit 做受管复制或镜像构建，不在运行中自动 `pull`、
+   `npx skills update` 或动态安装；当前本地 checkout 有未提交改动，不能直接当作
+   可复现版本钉死；
+2. `nature-skills` 是 Apache-2.0，可在保留许可的前提下受管分发；
+   `paper-plot-skills` 当前 checkout 未见许可证，许可证澄清前只允许本地覆盖层或
+   明确挂载，**不得复制进公开仓库或公开 Docker 镜像**；
+3. `nature-writing` 在上游索引中仍标记为 Draft，必须先用固定 evidence case 做
+   正向与反向验收，不能一安装就成为默认终局；
+4. 运行时配置不得出现开发机绝对路径。Docker 只接受固定版本的镜像内资源或显式、
+   只读挂载；
+5. 所有论文/绘图 Skills 只读消费归档，不得写 `.proma-research`、journal、raw result
+   或 gate verdict。
+
+### P7.2 · DashScope 负责设计草图，确定性程序负责科学事实
+
+将现有 Gemini 专用 Nano Banana 路径抽象为独立 Image Provider 后，再接百炼原生
+Qwen-Image / Wan 图像接口；不通过改模型名或 base URL 假装协议兼容。图像模型只可
+用于图形摘要、机制示意图、布局和视觉语言候选：
+
+- 不让图像模型生成含真实实验数值的最终 panel；
+- 保存 provider、model、prompt、request id（若有）、输出文件 hash 与人工选择记录；
+- 模型草图必须经过概念、变量、箭头关系和文字审查；
+- 任何坐标、表格、误差条、置信区间和实验数字均由落地 artifact 重新计算。
+
+### P7.3 · 唯一允许的交付流水线
+
+```text
+通过 gates 的 evidence package
+  → claim / figure-slot contract（每张图服务哪个主张、读取哪些字段）
+  → 可选 DashScope 视觉草图（不得携带最终数值）
+  → paper-plot 风格选择或参考图复刻
+  → nature-figure + Matplotlib 从原始/重算数据生成 SVG/PDF + PNG 预览
+  → 图数值与 evidence 独立对账，生成 figure manifest 与 caption
+  → nature-writing 生成论文形态草稿
+  → nature-statistics / citation / ref-verifier 审计
+  → DOCX/LaTeX/PDF 排版并插图
+  → 人工复核后才可标记为 submission candidate
+```
+
+`paper-plot-skills` 当前默认只声明 300 dpi PNG；最终交付统一由
+`nature-figure`/Matplotlib 同源导出 PDF/SVG，PNG 只用于预览。所谓 paper slot 必须
+落成显式 `figure-slot contract`，至少包含 claim id、数据来源、panel 类型、统计口径、
+caption 和目标章节，不能只凭论文叙事临时挑图。
+
+### P7.4 · 验收与反向验证
+
+- **评测隔离**：接入前后对同一归档重新计算 benchmark，分数与 journal hash 不变；
+- **数值忠实**：故意让绘图输入与 evidence 不一致，figure QA 必须失败；
+- **写作边界**：删除关键结果或方法字段，论文必须出现缺失占位/阻塞项，不得补写；
+- **引用真实性**：注入错误 DOI 或错配标题，`nature-ref-verifier` 必须报红；
+- **统计边界**：缺失独立实验单位或样本量时，统计段不得猜测；
+- **出版输出**：同一绘图源码生成 PDF/SVG/PNG，矢量文本、字体、尺寸、颜色和 caption
+  在最终页面尺度通过视觉检查；
+- **Docker 可复现**：全新 clone + 固定版本外部 Skills 能生成同 hash 的 figure manifest
+  与同结构 manuscript，不依赖宿主机私人路径。
+
+### P7 完成条件
+
+- [ ] benchmark 基线及消融已冻结，P7 未进入任何评测臂
+- [ ] 外部 Skills 的版本、许可证、依赖与受管安装路径已审计
+- [ ] 一组真实 evidence 完成“数据 → PDF/SVG 图 → caption → 论文草稿”
+- [ ] DashScope 只参与非数值视觉草图，最终数值图可由脚本完全复现
+- [ ] 引用、统计、图数值与主张边界四类反向用例全部变红
+- [ ] 论文草稿明确标注失败、局限与人工复核状态，不冒充已投稿成果
+
+---
+
 ## 验证规则（贯穿全程）
 
 任何"已完成"的声明必须同时给出：
