@@ -1,7 +1,7 @@
 ---
 name: research-probe
 description: Use when 存在 ≥2 条 LIVE 假设有可判别差异、而没有覆盖这个差异的已落地探针时；或 triage 出口要求重新预登记一个探针时。
-version: 0.6.1
+version: 0.6.2
 ---
 
 # research-probe —— 判别性探针
@@ -35,16 +35,27 @@ FAILED 重登一个，代价远小于一条作废的证据链。（赛事模板 
    探针。候选通过后再写设计。
    各自填频段表后用 `research_kit.disjoint_pairs(bands)` 数互斥对，按
    **P(kill)/成本** 排序——最快能杀死东西的优先；同分选顺手产出可复用仪器的。
+   先问“能否用一个更便宜的诊断 probe 砍掉整条方向，再做完整实验？”claim 涉及
+   组件/模态归因、信息瓶颈、root-vs-shadow 或测量伪影时，必须打开
+   `references/experimental-tactics.md`，从 oracle rescue、amputation、swap、
+   dose-response、2×2 因子、matched-pair、sufficiency×necessity 或
+   limit-then-surpass 中选择能区分机制的结构。诊断 probe 同样先 prereg。
+
    设计来源不够：贡献上界/瓶颈裁决 → `research-moves` 的 `references/oracle.md`；
    频段宽度与形状承诺 → `research-moves` 的 `references/derive.md`；成本升级、
    长任务与停止 → `references/execution-framework.md`。
    选定设计后按 `references/coherence-dry-run.md` 用**虚构微型输入**做静态演算；
    不得运行 evalCommand、等价命令或读取真实结果。
-   ✓ 成功条件：落选设计也留了频段表（下场战役的现成候选）。
+   同时用 `research-loop` 的 `references/stage-questioning.md` 中 S2/S4 检查
+   自我矛盾和更便宜的上游前提。
+   ✓ 成功条件：落选设计也留了频段表；能说出便宜 probe 排除什么、full 新增什么。
 3. **预登记 `prereg_write`**，五样缺一不可：
-   - **question**：判别什么 + **点名对照**（什么对照能否证这个读数）+ 末尾
+   - **question**：判别什么 + **点名 load-bearing variable 与对照**（什么对照能否
+     证明这个读数）+ 末尾
      一句 severity："若被检验假设为假，这个测试大概率仍会通过吗？"——答"会"
-     就重新设计。（纪律：schema 只查 question 非空，这句话的存在与诚实由你负责）
+     就重新设计。机制型实验的 negative control 必须预测**下游 outcome metric**回到
+     baseline；“把 X 置零后 X=0”只检验定义，不检验机制。
+     （纪律：schema 只查 question 非空，这句话的存在与诚实由你负责）
    - **evalCommand**：一条确定性命令，指标进 stdout（json 或单行）；
    - **bands**：每条被检验假设的频段——**必须存在一对不重叠**【结构】；
      **必须有宽度**【结构】——宽度就是你执行前真实的不确定性，写窄是自欺，
@@ -90,6 +101,8 @@ bwrap 内执行：文件系统只读（中间文件只能写 `/tmp`，结果走 
 | "落带外了，解释一下就能算 H1 支持" | server 会拒绝迁移。事后解释塞回频段 = 把意外（系统唯一学习入口）焊死。走 triage。 |
 | "跑探针收集点数据再说" | 没有 kill/scope 分支的探针在 prereg 就被拒。每个探针都要能杀死点什么。 |
 | "换个 pid 把同一个探针再登一遍" | 同 question、同 bands = 旧探针换了身衣服。server 只拒重复 pid，这条只能靠你——重复探针不产信息，只稀释校准账本。 |
+| "oracle 大幅提升，所以融合模块就是瓶颈" | Oracle rescue 只给贡献上界并证明下游可利用理想信息。还要 wrong-answer/swap/移除/匹配噪声等臂，才能继续定位提取、传递还是格式效应。 |
+| "先跑完整实验，顺便把瓶颈也分析掉" | Full run 往往只给一个总分。先用便宜 intervention 定位可判别轴，完整实验才知道自己在确认什么。 |
 
 ## 快速参考
 
@@ -97,7 +110,7 @@ bwrap 内执行：文件系统只读（中间文件只能写 `/tmp`，结果走 
 |---|---|---|---|
 | 对象 | 锚 + 无聊对手自查 | 说得出判别哪对 | 纪律 |
 | SELECT | ≥2 设计比互斥对 | P(kill)/成本排序 | 纪律 |
-| 预登记 | prereg_write 四件套 | 返回 pid | 互斥/宽度/kill【结构】· severity 纪律 |
+| 预登记 | prereg_write 五件套 | 返回 pid | 互斥/宽度/kill【结构】· severity 纪律 |
 | 执行 | probe_run | LANDED 或 FAILED | 沙箱【结构】 |
 | 落账 | claim_transition | 答"杀死了什么" | 带外拒绝【结构】 |
 
@@ -114,3 +127,5 @@ bwrap 内执行：文件系统只读（中间文件只能写 `/tmp`，结果走 
 - `references/coherence-dry-run.md` —— 数据流、微型演算、退化输入、claim 映射、
   独立朴素基线
 - `references/execution-framework.md` —— P(kill)/成本、规模阶梯、长期任务与停止
+- `references/experimental-tactics.md` —— oracle/移除/错配/剂量/因子/匹配诊断等
+  高判别力实验结构与解读边界

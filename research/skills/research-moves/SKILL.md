@@ -1,7 +1,7 @@
 ---
 name: research-moves
 description: Use when 信念锚出现 ⚠、探针落带外被 server 拒、正要写频段却说不出宽度的推导、或打算投入改进某组件却不知它的贡献上界时。
-version: 0.2.1
+version: 0.2.2
 ---
 
 # research-moves —— 认知移动库
@@ -42,6 +42,7 @@ version: 0.2.1
 |---|---|
 | 所有 LIVE 假设共享一个没写下的前提 | `references/reframe.md` |
 | claim 形如"X 是瓶颈 / X 承载效应" | `references/oracle.md` |
+| claim 涉及多组件/多模态归因，单一总分无法定位 | `research-probe/references/experimental-tactics.md` |
 | 机制类 claim 要预登记，点值频段判别力弱 | `references/derive.md`（形状承诺） |
 | 问题类别不清、出现意外或需要切换 explore/exploit | `references/research-judgment.md` |
 | 机制 claim 把可读位置当成因果根 | `references/root-vs-shadow.md` |
@@ -54,6 +55,8 @@ version: 0.2.1
    derive 的推导不是证据；reframe 动到冻结预登记的语义 = 升级给人。
 3. **一场战役至少预算一次刻意的 reframe 尝试**——重述胜于求解便宜、高方差、
    几乎没人做；不必等 ⚠。
+4. **认知移动必须变成实验语法。** “可能是 X”至少落成 oracle/rescue、移除、
+   swap、剂量或交叉干预之一；只改解释不改可观测分叉，不算移动。
 
 ## 借口 | 现实
 
@@ -73,3 +76,6 @@ version: 0.2.1
 | `references/derive.md` | 最小参数模型→诚实频段宽度；机制类 claim 的形状承诺 | 已看过答案再倒推频段时 |
 | `references/research-judgment.md` | 问题类别、severity、解释选择、异常分诊、探索/利用与停止 | 当前只是机械执行既定 prereg 时 |
 | `references/root-vs-shadow.md` | 分离因果根、损伤位置、下游影子与修复杠杆 | 现象尚未建立或有更便宜直接 kill test 时 |
+
+跨 Skill 实验库：`research-probe/references/experimental-tactics.md`——把 oracle、
+root-vs-shadow 和混杂隔离组合成可预登记的高判别力实验。

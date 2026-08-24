@@ -1,7 +1,7 @@
 ---
 name: research-grill
-description: Use when LIVE 或 SUPPORTED 假设尚未挨过对抗攻击、或有新落地证据未被攻击检验时。
-version: 0.4.1
+description: Use when LIVE 或 SUPPORTED 假设尚未挨过对抗攻击、有新落地证据未被攻击检验、或候选要花高成本前需要独立 idea gauntlet 时。
+version: 0.4.2
 ---
 
 # research-grill —— 对抗检验
@@ -33,6 +33,10 @@ Collaboration child。信息不对称是结构：对抗者看得到主张与证�
 
    同一 job 不双开 RLM 与 Collaboration，也不把简单攻击机械委派。详细路由、
    模型继承和状态契约见 research-loop 的 `references/delegation.md`。
+   若目标是“尚未花大成本的完整候选”而非单条 claim，先冻结 proposition packet，
+   再打开 `references/idea-gauntlet.md` 分离 contribution、prior-art、methods 三个
+   互盲攻击面，最后才让独立 reformulator 看全量 finding。审查与修订不能在同一
+   上下文完成。
 2. **先选落点，再执行**。只要使用 child，落点必须在 spawn **之前**由父会话
    选定；完整 reviewer 角色契约、`claim_view`、对抗模板与字面绝对报告路径一起
    进入自包含 prompt。RLM 使用启动时受管的 `proma-research-reviewer` spec，
@@ -66,6 +70,8 @@ Collaboration child。信息不对称是结构：对抗者看得到主张与证�
    - `no_change`：某个已落地结果其实不改变信念。
    驳回的攻击写明白为什么驳回（对话里一行即可，别落假账）。
    ✓ 成功条件：锚的攻击计数上涨；攻击债将在下一次 propose/prereg 清偿。
+   同时按 `research-loop` 的 `references/stage-questioning.md` 中 S1/S2/S5 清理
+   隐藏前提、自我矛盾与最小失败边界。
 5. **第二轮起**：上一轮 attacks.md 原文填进模板 `{PRIOR_ATTACKS}`——对抗者
    要知道哪些已消化、哪些被驳回，才不会越攻越软或重复已和解的攻击。
 6. **落账权在父代理**：child 的系统角色契约禁止写 Research 状态；
@@ -84,6 +90,7 @@ Collaboration child。信息不对称是结构：对抗者看得到主张与证�
 | "对抗者说整体合理，通过" | 那是它失职，不是你过关。换一个镜头重问。 |
 | "我替它总结一下它想说什么" | 用它的原话（attacks.md 的行）。总结是你的辩护混进它的攻击。 |
 | "把 REFUTED 的也拉出来打一轮" | 死人不会复活，鞭尸不产信息——除非你带来新证据（那走 revive）。SUPPORTED 在 graveyard 数组里但**是**主要攻击对象。 |
+| "让同一个 reviewer 边挑错边给最终改稿，效率更高" | 它只会留下自己会修的 finding。冻结 proposition，攻击与 reformulate 分离，父会话最后裁决。 |
 
 ## 快速参考
 
@@ -104,3 +111,5 @@ Collaboration child。信息不对称是结构：对抗者看得到主张与证�
 ## 参考索引
 
 - `references/adversary-prompt.md` —— 四镜头对抗 prompt 模板（原样用，只填占位符）
+- `references/idea-gauntlet.md` —— 三个互盲攻击面、独立 reformulator、执行 finding
+  的 disposition 与清账规则

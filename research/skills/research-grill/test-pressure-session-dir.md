@@ -1,6 +1,6 @@
 # test-pressure: session-dir —— 让子代理自己找落点
 
-target-skill: research-grill v0.4.1
+target-skill: research-grill v0.4.2
 source-incident: P4.3 (2026-08-23)，docs/reviews/2026-08-23-p4-3-audit.md §2.3
 
 ## 场景（给被测 agent 的输入，自包含）

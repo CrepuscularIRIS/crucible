@@ -1,7 +1,7 @@
 ---
 name: research-loop
 description: 研究工作的第一动作。Use when 接到研究问题、想执行评测命令、开始或继续任何研究战役、会话刚启动、压缩刚发生、或不确定当前该做什么时。
-version: 0.5.2
+version: 0.5.3
 ---
 
 # research-loop —— 研究战役主路由
@@ -65,7 +65,12 @@ gate 是裁决不是续命。
    | 用户要结论，或坟场/SUPPORTED 已足以回答战役问题 | REPORT | `research-report` |
 
    一个阶段做完回到本文件重新推导；阶段可以来回（grill 产新假设 → probe）。
-5. **压缩发生后**：先 `print(research_kit.LAST)` 找回锚 + 读 `RULINGS.md` 尾部
+5. **阶段问题债**：进入或退出阶段时打开 `references/stage-questioning.md`，只执行
+   该阶段对应的 S1–S6 类型。每个问题必须清账为 MCP 状态、可撤销 ruling 或明确的
+   `no change, because`；没有决策分叉的问题不问。推理可以降级/收窄/重构 claim，
+   只有落地测量能终结 claim。
+   ✓ 成功条件：本阶段规定的问题类型无悬空项。
+6. **压缩发生后**：先 `print(research_kit.LAST)` 找回锚 + 读 `RULINGS.md` 尾部
    找回战役等级，再决定要不要重新 `anchor()`——不要凭对话记忆重建信念状态。
    **kernel 重启后**（`research_kit.LAST` 变量不在了）：重走开场仪式立锚。
 
@@ -93,7 +98,7 @@ Ruling: <决定> — <理由> — <押错的代价>
 
 裁错的代价是用户看得见、能撤销的返工；每个歧义都停下等回复，代价是整天
 空转。**死在工作区里的决定等于秘密决定**：report_declare 前，把 RULINGS.md
-汇总进报告（research-report 内容顺序第 8 项）。这是纪律——declare 不读
+汇总进报告（research-report 内容顺序第 9 项）。这是纪律——declare 不读
 这个文件，缺了 gate 照样可能绿，所以只能靠你。
 
 ## 借口 | 现实
@@ -108,6 +113,7 @@ Ruling: <决定> — <理由> — <押错的代价>
 | "战役问题好像问错了，换个 run 名重开" | 换战役是人的决定（`PROMA_RESEARCH_RUN` 钉死，子代理同样被拒）。判断问题问错 → 停下问用户。 |
 | "research_state 拿到状态了，不用 anchor" | COUNTERS 与 ⚠ 只在锚里。state 是权威，锚是调度信号——P5.1 实测只调 state 的会话，⚠ 层全程未激活（FRICTION F3）。 |
 | "先跑一遍各条件了解全景，不算观测" | 全景预览就是观测：P5.1 实测 14:26 预览 4 条件 → 14:29 写频段，两轮频段全是回忆（FRICTION F1，P14 违背）。读源码可以，执行评测不行——要动手就 init → prereg，FAILED 很便宜。 |
+| "问题都想过了，不必逐类清账" | 未落成 claim/prereg/attack/ruling 的思考无法影响下一阶段。问题债跨阶段滚动，最后只会变成报告期的昂贵补洞。 |
 
 ## 快速参考
 
@@ -131,3 +137,4 @@ Ruling: <决定> — <理由> — <押错的代价>
 
 - `references/delegation.md` —— 四角色边界、父会话/RLM/Collaboration 路由、
   brief/report 与状态回传契约
+- `references/stage-questioning.md` —— S1–S6 问题类型、逐阶段装配与清账条件

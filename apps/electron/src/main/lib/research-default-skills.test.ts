@@ -115,12 +115,17 @@ describe('受管 research 默认 Skills', () => {
   it('移植的深度方法只引用现有 Research MCP，不伪造 Claude campaign 工具', () => {
     const files = [
       'research-loop/references/delegation.md',
+      'research-loop/references/stage-questioning.md',
+      'research-abduce/references/discovery-methods.md',
       'research-probe/references/candidate-screen.md',
       'research-probe/references/coherence-dry-run.md',
       'research-probe/references/execution-framework.md',
+      'research-probe/references/experimental-tactics.md',
+      'research-grill/references/idea-gauntlet.md',
       'research-moves/references/research-judgment.md',
       'research-moves/references/root-vs-shadow.md',
       'research-report/references/claim-ledger.md',
+      'research-report/references/evidence-audit.md',
     ]
     const combined = files
       .map((file) => readFileSync(join(researchSkillsRoot, file), 'utf-8'))
@@ -128,21 +133,61 @@ describe('受管 research 默认 Skills', () => {
 
     expect(combined).toContain('Coherence dry-run')
     expect(combined).toContain('root-vs-shadow')
+    expect(combined).toContain('Oracle rescue')
+    expect(combined).toContain('方法谱系')
+    expect(combined).toContain('审查者与修订者保持分离')
     expect(combined).not.toContain('screen_submit')
     expect(combined).not.toContain('phase_set')
     expect(combined).not.toContain('measure_record')
     expect(combined).not.toContain('note_record')
   })
 
+  it('高阶方法从对应阶段入口可发现，并会随受管 seed 完整复制', () => {
+    const stageReferences = [
+      ['research-loop', 'references/stage-questioning.md'],
+      ['research-abduce', 'references/discovery-methods.md'],
+      ['research-probe', 'references/experimental-tactics.md'],
+      ['research-grill', 'references/idea-gauntlet.md'],
+      ['research-report', 'references/evidence-audit.md'],
+    ] as const
+
+    const target = mkdtempSync(join(tmpdir(), 'proma-research-method-chain-'))
+    tempRoots.push(target)
+    seedDefaultSkillsFromDirectory(
+      researchSkillsRoot,
+      target,
+      new Set(RESEARCH_DEFAULT_SKILL_SLUGS),
+    )
+
+    for (const [slug, reference] of stageReferences) {
+      const entry = readFileSync(join(researchSkillsRoot, slug, 'SKILL.md'), 'utf-8')
+      expect(entry).toContain(reference)
+      expect(existsSync(join(researchSkillsRoot, slug, reference))).toBe(true)
+      expect(existsSync(join(target, slug, reference))).toBe(true)
+    }
+  })
+
+  it('实验策略把多模态 oracle rescue 限定为上界，并要求语义与形状控制', () => {
+    const tactics = readFileSync(
+      join(researchSkillsRoot, 'research-probe/references/experimental-tactics.md'),
+      'utf-8',
+    )
+    expect(tactics).toContain('多模态例')
+    expect(tactics).toContain('wrong-answer')
+    expect(tactics).toContain('跨样本 swap')
+    expect(tactics).toContain('贡献上界')
+    expect(tactics).toContain('不要从 oracle 单臂直接写“融合模块是瓶颈”')
+  })
+
   it('所有改动过的默认 Research Skills 都递增了 patch 版本', () => {
     const expectedVersions: Record<string, string> = {
-      'research-loop': '0.5.2',
-      'research-abduce': '0.5.1',
-      'research-probe': '0.6.1',
-      'research-grill': '0.4.1',
-      'research-report': '0.4.1',
+      'research-loop': '0.5.3',
+      'research-abduce': '0.5.2',
+      'research-probe': '0.6.2',
+      'research-grill': '0.4.2',
+      'research-report': '0.4.2',
       'research-kit': '0.4.1',
-      'research-moves': '0.2.1',
+      'research-moves': '0.2.2',
     }
     for (const [slug, version] of Object.entries(expectedVersions)) {
       const skill = readFileSync(join(researchSkillsRoot, slug, 'SKILL.md'), 'utf-8')

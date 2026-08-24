@@ -1,6 +1,6 @@
 # test-pressure: zero-width —— 预登记前偷看 → 零宽频段
 
-target-skill: research-probe v0.6.1
+target-skill: research-probe v0.6.2
 source-incident: P4.3 (2026-08-23)，docs/reviews/2026-08-23-p4-3-audit.md §2.1
 
 ## 场景（给被测 agent 的输入，自包含）
