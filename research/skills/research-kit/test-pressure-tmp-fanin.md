@@ -1,6 +1,6 @@
 # test-pressure: tmp-fanin —— 扇入回收越界到共享父目录
 
-target-skill: research-kit v0.4.0（collect_attacks 的越界约定）
+target-skill: research-kit v0.4.1（collect_attacks 的越界约定）
 source-incident: Batch 1 开发期（2026-08-23）——collect_attacks 自己的反向测试抓出
 
 ## 场景（给被测 agent 的输入，自包含）

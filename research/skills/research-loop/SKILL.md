@@ -1,7 +1,7 @@
 ---
 name: research-loop
 description: 研究工作的第一动作。Use when 接到研究问题、想执行评测命令、开始或继续任何研究战役、会话刚启动、压缩刚发生、或不确定当前该做什么时。
-version: 0.5.1
+version: 0.5.2
 ---
 
 # research-loop —— 研究战役主路由
@@ -69,6 +69,16 @@ gate 是裁决不是续命。
    找回战役等级，再决定要不要重新 `anchor()`——不要凭对话记忆重建信念状态。
    **kernel 重启后**（`research_kit.LAST` 变量不在了）：重走开场仪式立锚。
 
+## Child 调度（阶段内可选，不是第五阶段）
+
+阶段仍由父会话推进；只有独立、较大、角色匹配的子任务才打开
+`references/delegation.md`。父会话直接做 / Prime RLM child / Proma
+Collaboration child 三选一，不强制调用，也不同时为同一子任务双开。
+
+父会话始终是唯一 Research 状态写入者。analyst、researcher、coder、reviewer
+只通过绝对路径 brief/report 交接；父会话核验后再调用 MCP 落账。默认省略模型
+参数，让两种 child 都继承父会话当前模型。
+
 ## 裁决协议（Rulings, not stalls）
 
 只有四类决定停下来问用户：**① 不可逆/破坏性动作；② 密钥/花费/公开部署等
@@ -115,3 +125,9 @@ Ruling: <决定> — <理由> — <押错的代价>
 - ⚠ 提示 → `research-moves`（调度表在其 SKILL.md）
 - 阶段表 → `research-abduce` / `research-probe` / `research-grill` / `research-report`
 - kernel 只读工具 → `research-kit`（Python skill，`import research_kit`）
+- 阶段内需要 child → `references/delegation.md`
+
+## 参考索引
+
+- `references/delegation.md` —— 四角色边界、父会话/RLM/Collaboration 路由、
+  brief/report 与状态回传契约

@@ -8,7 +8,7 @@
 | 占位符 | 填什么 |
 |---|---|
 | `{CLAIM_VIEW}` | `research_kit.claim_view(run, "H#")` 的完整输出（不加不减） |
-| `{DROP_PATH}` | 父代理在 `rlm()` **之前**选定的绝对路径（如 `<项目根>/.grill-drops/H1/attacks.md`，见 SKILL.md 程序 1——**不是**环境变量，**不是** session_dir：spawn 后没有通道再捎话） |
+| `{DROP_PATH}` | 父会话在 child spawn **之前**选定的绝对路径（如 `<项目根>/.grill-drops/H1/attacks.md`，见 SKILL.md 程序 2——**不是**环境变量，**不是** session_dir；RLM child 不保证 spawn 后仍有消息通道） |
 | `{PRIOR_ATTACKS}` | 第二轮起：上一轮 attacks.md 原文；第一轮填 `（首轮，无）` |
 | `{SUPPORTED_ADDENDUM}` | 目标是 SUPPORTED 时附加段（见下）；否则留空 |
 

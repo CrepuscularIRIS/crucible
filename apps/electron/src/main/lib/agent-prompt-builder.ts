@@ -3,7 +3,7 @@
  * 静态提示词只保留 Proma 独有、且未由运行时或工具 schema 强制的行为契约。
  */
 
-import type { PromaPermissionMode, SessionWorkbenchLayout } from '@proma/shared'
+import type { AgentDelegationRole, PromaPermissionMode, SessionWorkbenchLayout } from '@proma/shared'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { getUserProfile } from './user-profile-service'
@@ -14,6 +14,7 @@ import { getSettings } from './settings-service'
 import type { ProjectInstructionSource } from './project-instruction-resolver'
 import { buildLegacyProjectMigrationPrompt as buildLegacyProjectMigrationRequirement } from './project-instruction-migration'
 import type { BrowserUserContextSnapshot } from './browser-controller'
+import { buildResearchSubagentSystemPrompt } from './research-subagent-roles'
 
 const WORKFLOW_PROMPT = `## 工作流
 - 需要多个步骤、多个文件或并行/委派时，先用 TaskCreate 建立 3–7 个可见进度项；仅用 TaskUpdate 追加更新，完成后收束状态。
@@ -29,6 +30,8 @@ interface SystemPromptContext {
   sessionWorkbenchLayout?: SessionWorkbenchLayout
   permissionMode: PromaPermissionMode
   collaborationAvailable?: boolean
+  /** Collaboration child 的角色边界；父会话不提供。 */
+  delegationRole?: AgentDelegationRole
   currentModelId?: string
   legacyProjectInstructions?: ProjectInstructionSource[]
   /** Only explicit guided consent enables Agent-initiated AGENTS.md maintenance. */
@@ -102,6 +105,9 @@ export function buildSystemPrompt(ctx: SystemPromptContext): string {
 明确且用户认可的后续行动用 Todo；有明确开始时间的安排用日程；提醒必须有具体时点。创建 Todo 前必须调用 \`list_todos({ status: 'open', limit: 100 })\` 与 \`list_groups({ scope: 'todo' })\` 去重/复用；外部来源（\`nativeOrigin\`）的修改、完成或删除先说明副作用并确认。规划、承诺交付、询问近期安排或结束含行动项的对话时，按需读取 Todo/日程；已有事项只按事实更新或完成，取消不删除。持续或延迟的无人值守工作先读取 \`automation\` Skill；纯提醒不创建 Automation。具体参数和权限遵循工具说明。`,
     ctx.collaborationAvailable
       ? '## 协作\n独立并行探索或对抗审查才使用 \`collaboration\`；先建可见进度项，委派说明保持自包含，收敛结果后更新父任务。子会话不得继续委派。'
+      : undefined,
+    ctx.delegationRole
+      ? buildResearchSubagentSystemPrompt(ctx.delegationRole)
       : undefined,
     workspace
       ? `## 工作区与 Context

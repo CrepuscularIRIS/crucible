@@ -1,7 +1,7 @@
 ---
 name: research-report
 description: Use when 用户要结论，或坟场与 SUPPORTED 已足以回答战役问题、且每个进结论的主张都已挨过攻击时。
-version: 0.4.0
+version: 0.4.1
 ---
 
 # research-report —— 报告纪律
@@ -43,6 +43,10 @@ version: 0.4.0
 
 ## 内容顺序
 
+写正文前打开 `references/claim-ledger.md`，把已有 H# 投影为一个 thesis 与
+phenomenon / mechanism / intervention / generality 角色；这只是报告结构，不创建
+第二份状态账本，也不伪造 MCP 字段。
+
 1. 一句话结论（哪个假设被支持/被杀、以哪个探针为据）。
 2. 证据：每个关键数字 + 出处探针 + 落在哪个预登记频段。
 3. **校准账本**：`research_kit.calibration(run)` 摘要——预测总在带内说明频段
@@ -58,6 +62,11 @@ version: 0.4.0
 8. **裁决汇总**：项目根 `RULINGS.md` 的全部 `Ruling:` 行按文件顺序照抄
    （追加式文件，顺序即时序）——死在工作区里的决定等于秘密决定，这是
    它们唯一浮出水面的地方。（纪律：declare 不读此文件，只能靠你。）
+
+报告较长、claim→证据链复杂时，可按 research-loop 的
+`references/delegation.md` 让 `analyst` 做 AUDIT，或让 `reviewer` 对已写报告做
+只读审查。child 不改 REPORT、不调用 `report_declare`；父会话逐条采纳或驳回
+finding，修订后亲自声明。
 
 ## 借口 | 现实
 
@@ -84,3 +93,7 @@ version: 0.4.0
 
 - gate 红：按报错逐条修报告或回 `research-probe` 补实验
 - 声明全绿后：战役结案，锚显示"已结案"，⚠ 不再触发
+
+## 参考索引
+
+- `references/claim-ledger.md` —— thesis、primary claim 角色、falsifier 与观测充分性

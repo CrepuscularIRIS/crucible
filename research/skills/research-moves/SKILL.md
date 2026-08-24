@@ -1,7 +1,7 @@
 ---
 name: research-moves
 description: Use when 信念锚出现 ⚠、探针落带外被 server 拒、正要写频段却说不出宽度的推导、或打算投入改进某组件却不知它的贡献上界时。
-version: 0.2.0
+version: 0.2.1
 ---
 
 # research-moves —— 认知移动库
@@ -43,6 +43,8 @@ version: 0.2.0
 | 所有 LIVE 假设共享一个没写下的前提 | `references/reframe.md` |
 | claim 形如"X 是瓶颈 / X 承载效应" | `references/oracle.md` |
 | 机制类 claim 要预登记，点值频段判别力弱 | `references/derive.md`（形状承诺） |
+| 问题类别不清、出现意外或需要切换 explore/exploit | `references/research-judgment.md` |
+| 机制 claim 把可读位置当成因果根 | `references/root-vs-shadow.md` |
 
 ## 三条纪律
 
@@ -69,3 +71,5 @@ version: 0.2.0
 | `references/reframe.md` | 换框架/换抽象层级/换问题类别/重述问题；D-S-R 起手 | 本周期刚做过且 no change |
 | `references/oracle.md` | 特权干预三臂设计，测组件贡献上界 | 想要机制结论时 |
 | `references/derive.md` | 最小参数模型→诚实频段宽度；机制类 claim 的形状承诺 | 已看过答案再倒推频段时 |
+| `references/research-judgment.md` | 问题类别、severity、解释选择、异常分诊、探索/利用与停止 | 当前只是机械执行既定 prereg 时 |
+| `references/root-vs-shadow.md` | 分离因果根、损伤位置、下游影子与修复杠杆 | 现象尚未建立或有更便宜直接 kill test 时 |

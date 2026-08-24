@@ -1,7 +1,7 @@
 ---
 name: research-kit
 description: Use when 在 kernel 里需要读信念状态时——立锚/计数器、构造对抗者视图、比较探针判别力、出校准账本、回收子代理攻击。
-version: 0.4.0
+version: 0.4.1
 ---
 
 # research-kit —— kernel 侧只读工具箱
@@ -41,7 +41,7 @@ research_kit.collect_attacks(str(drop_dir))  # 回收子代理写下的攻击行
 
 `rlm()` 在**准入**时返回句柄——立即读必然空（空不是错误），后续轮次再读。
 落点由**父代理在 spawn 之前**选定绝对路径写进子代理 prompt（如
-`<项目根>/.grill-drops/H1/attacks.md`，见 research-grill 程序 1）；不要让
+`<项目根>/.grill-drops/H1/attacks.md`，见 research-grill 程序 2）；不要让
 子代理读 `os.environ['RLM_SESSION_DIR']`——Prime 只在有持久 artifact 目录时
 才设它，没有时该变量根本不存在（P4.3 实测子代理因此写到了 `/tmp`）。
 本函数扫给定目录及其 `sub-*`，**不向上找父目录**——`/tmp` 这类共享父目录

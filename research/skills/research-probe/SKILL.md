@@ -1,7 +1,7 @@
 ---
 name: research-probe
 description: Use when 存在 ≥2 条 LIVE 假设有可判别差异、而没有覆盖这个差异的已落地探针时；或 triage 出口要求重新预登记一个探针时。
-version: 0.6.0
+version: 0.6.1
 ---
 
 # research-probe —— 判别性探针
@@ -30,10 +30,16 @@ FAILED 重登一个，代价远小于一条作废的证据链。（赛事模板 
    **自查：LIVE 集里有伪影/混杂类无聊对手吗？** 没有 → 先回 research-abduce。
    ✓ 成功条件：能说出这个探针判别哪一对假设。
 2. **SELECT——先比再登**：写出 ≥2 个候选设计（遭遇战 2 个起步，会战更多），
+   第一次为某个研究方向花真实测量成本前，先做
+   `references/candidate-screen.md` 六问；失败的是候选问题，不是等待更多 GPU 的
+   探针。候选通过后再写设计。
    各自填频段表后用 `research_kit.disjoint_pairs(bands)` 数互斥对，按
    **P(kill)/成本** 排序——最快能杀死东西的优先；同分选顺手产出可复用仪器的。
    设计来源不够：贡献上界/瓶颈裁决 → `research-moves` 的 `references/oracle.md`；
-   频段宽度与形状承诺 → `research-moves` 的 `references/derive.md`。
+   频段宽度与形状承诺 → `research-moves` 的 `references/derive.md`；成本升级、
+   长任务与停止 → `references/execution-framework.md`。
+   选定设计后按 `references/coherence-dry-run.md` 用**虚构微型输入**做静态演算；
+   不得运行 evalCommand、等价命令或读取真实结果。
    ✓ 成功条件：落选设计也留了频段表（下场战役的现成候选）。
 3. **预登记 `prereg_write`**，五样缺一不可：
    - **question**：判别什么 + **点名对照**（什么对照能否证这个读数）+ 末尾
@@ -55,6 +61,16 @@ FAILED 重登一个，代价远小于一条作废的证据链。（赛事模板 
    `references/triage.md` 执行强制分诊**（伪影→bug→方差→已知→真实意外，
    以 journal 落地终结，没有第四个出口）。
    ✓ 成功条件：每个落地结果都能回答"它杀死了什么"。
+
+## 角色辅助（可选）
+
+- 机制分歧、falsifier、设计或 coherence AUDIT 较大 → `analyst`；
+- 资产、基线、数据或现有实现需要三种措辞检索并实际核验 → `researcher`；
+- 仪器 SPEC 已冻结且只差实现 → `coder`，只跑单元/合成数据验证，不偷看真实结果；
+- 设计或代码准备执行前需要独立静态 gate → `reviewer`，只读不修补。
+
+具体选择父会话、RLM 或 Collaboration，遵守 research-loop 的
+`references/delegation.md`。child 不写 prereg、不执行 probe、不迁移 claim。
 
 ## 命令纪律（沙箱契约，全部【结构】）
 
@@ -91,3 +107,10 @@ bwrap 内执行：文件系统只读（中间文件只能写 `/tmp`，结果走 
 - 设计来源 → `research-moves` 的 `references/oracle.md` 与 `references/derive.md`
 - 缺无聊对手 / 需要新假设 → `research-abduce`
 - 落地且信念已更新、假设未挨过打 → `research-grill`
+
+## 参考索引
+
+- `references/candidate-screen.md` —— 六问候选 gate 与贡献上限
+- `references/coherence-dry-run.md` —— 数据流、微型演算、退化输入、claim 映射、
+  独立朴素基线
+- `references/execution-framework.md` —— P(kill)/成本、规模阶梯、长期任务与停止

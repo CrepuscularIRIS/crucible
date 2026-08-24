@@ -29,6 +29,8 @@ import {
   runAutomationNow,
 } from '../automation-scheduler'
 import { getAgentSessionMeta } from '../agent-session-manager'
+import { buildPiCollaborationTools } from '../agent-collaboration-tools'
+import { shouldExposePiCollaborationTools } from '../agent-collaboration-utils'
 import { isBuiltinMcpUserEnabled } from '../builtin-mcp/settings'
 import { downloadInstaller, launchInstaller } from '../installer-downloader'
 import { fetchInstallerManifest, findInstallerSource } from '../installer-manifest'
@@ -1117,10 +1119,17 @@ export async function buildPiBuiltinTools(
     console.error('[Pi 桥接] 注入任务/日程工具失败:', error)
   }
 
-  // P3.5 决策（2026-08-22）：collaboration 工具撤出 Agent 会话。
-  // 调查确认它只被 Pi 桥接（Agent 会话）消费、Chat 不用；作为子代理分发机制
-  // 与 Prime kernel 的 rlm() 职责重叠，按最高原则保留 rlm()。文件与事件总线
-  // 保留：历史会话的 delegation 事件展示不受影响；rlm() 子代理走 kernel 原生链。
+  // Collaboration child 是可见、可等待的 Proma 会话；RLM child 是 Prime 内部的
+  // 短生命周期推理单元。二者用途不同，只向顶层工作区会话暴露前者。
+  let collaborationAvailable = false
+  if (shouldExposePiCollaborationTools(ctx)) {
+    try {
+      tools.push(...buildPiCollaborationTools(sdk, ctx))
+      collaborationAvailable = true
+    } catch (error) {
+      console.error('[Pi 桥接] 注入 Collaboration 工具失败:', error)
+    }
+  }
 
   // 未配置 Windows Shell 时，按需提供 Git Bash 安装工具；实际下载与拉起安装器仍经过 Agent 权限确认。
   try {
@@ -1155,8 +1164,5 @@ export async function buildPiBuiltinTools(
       console.error('[Pi 桥接] 注入 nano-banana 工具失败:', error)
     }
   }
-
-
-  // collaboration 已撤出（见上方 P3.5 决策注释）；提示词链字段保留恒 false，避免联动改四处签名
-  return { tools, collaborationAvailable: false }
+  return { tools, collaborationAvailable }
 }

@@ -804,8 +804,21 @@ export interface AgentSessionMeta {
   updatedAt: number
 }
 
-/** Agent 委派子会话的任务角色 */
-export type AgentDelegationRole = 'explore' | 'research' | 'implement' | 'review' | 'custom'
+/** Agent 委派子会话的任务角色。旧值只用于恢复历史会话。 */
+export type AgentDelegationRole =
+  | 'analyst'
+  | 'researcher'
+  | 'coder'
+  | 'reviewer'
+  | 'custom'
+  /** @deprecated 使用 analyst */
+  | 'explore'
+  /** @deprecated 使用 researcher */
+  | 'research'
+  /** @deprecated 使用 coder */
+  | 'implement'
+  /** @deprecated 使用 reviewer */
+  | 'review'
 
 /** Agent 委派子会话的运行状态（interrupted：应用退出时仍在运行，重启后无法续跑） */
 export type AgentDelegationStatus = 'running' | 'completed' | 'failed' | 'cancelled' | 'interrupted'

@@ -1403,6 +1403,7 @@ export class AgentOrchestrator {
         sessionWorkbenchLayout: getSessionWorkbenchLayout(sessionMeta),
         permissionMode: initialPermissionMode,
         collaborationAvailable,
+        delegationRole: sessionMeta?.delegationRole,
         currentModelId: selectedModelId,
         legacyProjectInstructions: projectInstructions?.sources,
         projectKnowledgeMaintenanceApproved,

@@ -23,6 +23,23 @@ export const DEFAULT_DELEGATION_WAIT_SECONDS = 60 * 60
 /** 显式指定 timeoutSeconds 时允许的最大等待时长。 */
 export const MAX_DELEGATION_WAIT_SECONDS = 2 * 60 * 60
 
+export function resolveDelegationModelId(
+  parentModelId: string | undefined,
+  requestedModelId: string | undefined,
+): string | undefined {
+  return requestedModelId?.trim() || parentModelId?.trim() || undefined
+}
+
+export function shouldExposePiCollaborationTools(input: {
+  channelId: string
+  workspaceId?: string
+  triggeredBy?: 'user' | 'automation' | 'delegation'
+}): boolean {
+  return input.triggeredBy !== 'delegation'
+    && input.channelId.trim().length > 0
+    && Boolean(input.workspaceId?.trim())
+}
+
 /**
  * 为具有副作用的工具调用提供进程内幂等保护。
  *
@@ -70,11 +87,14 @@ export interface RecoveredDelegationState {
 }
 
 export function resolveDelegationPermissionMode(
-  _parentMode: PromaPermissionMode | undefined,
-  _requestedMode: PromaPermissionMode | undefined,
+  parentMode: PromaPermissionMode | undefined,
+  requestedMode: PromaPermissionMode | undefined,
 ): PromaPermissionMode {
-  // Pi 子会话目前固定直接执行。
-  return 'bypassPermissions'
+  const effectiveParentMode = parentMode ?? PROMA_DEFAULT_PERMISSION_MODE
+  const effectiveRequestedMode = requestedMode ?? effectiveParentMode
+  return PERMISSION_RANK[effectiveRequestedMode] <= PERMISSION_RANK[effectiveParentMode]
+    ? effectiveRequestedMode
+    : effectiveParentMode
 }
 
 export function buildRecoveredDelegationState(input: {
@@ -112,18 +132,14 @@ export function buildDelegationPrompt(input: {
   expectedOutput?: string
 }): string {
   const expectedOutput = input.expectedOutput?.trim()
-  return `你是 Proma 协作子 Agent。你由父 Agent 会话 ${input.parentSessionId} 委派创建，委派 ID 为 ${input.delegationId}。
+  return `你由父 Agent 会话 ${input.parentSessionId} 委派创建，委派 ID 为 ${input.delegationId}。系统提示词已定义你的角色边界；本消息只提供任务 brief。
 
 ## 工作边界
 
 - 只处理下面的子任务，不要扩展到父任务的其他部分。
 - 不要创建新的协作子会话。
 - 如需修改文件，保持改动最小，并在最终回复说明文件路径和验证结果。
-- 如果信息不足，直接列出缺口，不要编造。
-
-## 子任务角色
-
-${input.role}
+- 如果信息不足，按系统提示词的状态契约返回，不要编造。
 
 ## 子任务
 

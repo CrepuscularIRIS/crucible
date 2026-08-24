@@ -88,6 +88,7 @@ patchIpcMainForWeb()
 import { createTray, destroyTray, getTray, setTrayFlash } from './tray'
 import { initializeRuntime } from './lib/runtime-init'
 import { seedDefaultSkills } from './lib/config-paths'
+import { seedManagedResearchSubagents } from './lib/managed-research-subagents'
 import { upgradeDefaultSkillsInWorkspaces } from './lib/agent-workspace-manager'
 import { hasActiveAgentSessions, stopAllAgents } from './lib/agent-service'
 import { disposePiMcpConnections } from './lib/adapters/pi-mcp-tools'
@@ -706,6 +707,15 @@ async function bootstrap(): Promise<void> {
 
   // 同步默认 Skills 模板到 ~/.proma/default-skills/
   safeRun('seedDefaultSkills', seedDefaultSkills)
+
+  // 为 Prime Continual Harness 安装受管 Research RLM 角色；用户编辑过的同名
+  // 条目不会被覆盖，未修改的受管条目会随应用升级。
+  safeRun('seedManagedResearchSubagents', () => {
+    const result = seedManagedResearchSubagents()
+    if (result.created > 0 || result.upgraded > 0 || result.preserved > 0) {
+      console.log('[Research] RLM 角色初始化:', result)
+    }
+  })
 
   // 升级所有工作区中版本过旧的默认 Skills
   safeRun('upgradeDefaultSkillsInWorkspaces', upgradeDefaultSkillsInWorkspaces)

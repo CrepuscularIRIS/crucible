@@ -6,6 +6,7 @@
  */
 
 import { randomUUID } from 'node:crypto'
+import type { ToolDefinition } from '@earendil-works/pi-coding-agent'
 import type {
   AgentDelegationRole,
   AgentDelegationStatus,
@@ -36,11 +37,12 @@ import {
   buildDelegationTaskWithSharedContext,
   buildDelegationPrompt,
   createToolCallIdempotencyCache,
+  resolveDelegationModelId,
   resolveDelegationPermissionMode,
 } from './agent-collaboration-utils'
 import { assertEnabledModelForChannel, listEnabledAgentModelsForChannel } from './agent-model-selection'
 
-interface CollaborationToolContext {
+export interface CollaborationToolContext {
   sessionId: string
   channelId: string
   modelId?: string
@@ -634,13 +636,14 @@ function startDelegation(
     parentPermissionMode,
     args.permissionMode,
   )
-  const effectiveModelId = args.modelId !== undefined
+  const inheritedOrRequestedModelId = resolveDelegationModelId(ctx.modelId, args.modelId)
+  const effectiveModelId = args.modelId !== undefined && inheritedOrRequestedModelId !== undefined
     ? assertEnabledModelForChannel({
         channelId: ctx.channelId,
-        modelId: args.modelId,
+        modelId: inheritedOrRequestedModelId,
         purpose: '创建协作子会话',
       })
-    : ctx.modelId?.trim() || undefined
+    : inheritedOrRequestedModelId
 
   const { completion, resolveCompletion } = createDelegationCompletion()
 
@@ -729,23 +732,23 @@ function startDelegation(
 export function buildPiCollaborationTools(
   sdk: typeof import('@earendil-works/pi-coding-agent'),
   ctx: CollaborationToolContext,
-): unknown[] {
+): ToolDefinition[] {
   const { Type } = require('typebox') as typeof import('typebox')
 
   const roleType = Type.Optional(Type.Union([
-    Type.Literal('explore'),
-    Type.Literal('research'),
-    Type.Literal('implement'),
-    Type.Literal('review'),
+    Type.Literal('analyst'),
+    Type.Literal('researcher'),
+    Type.Literal('coder'),
+    Type.Literal('reviewer'),
     Type.Literal('custom'),
-  ], { description: '子任务角色' }))
+  ], { description: '子任务角色；Research 工作流使用 analyst、researcher、coder 或 reviewer' }))
 
   const delegateItemType = Type.Object({
     title: Type.Optional(Type.String({ description: '子会话标题' })),
     role: roleType,
     task: Type.String({ description: '发送给子 Agent 的完整任务说明' }),
     expectedOutput: Type.Optional(Type.String({ description: '希望子 Agent 最终返回的格式或要点' })),
-    modelId: Type.Optional(Type.String({ description: '可选目标模型 ID' })),
+    modelId: Type.Optional(Type.String({ description: '可选目标模型 ID；省略时继承父会话当前模型' })),
   })
 
   function piJsonResult(payload: unknown): { content: Array<{ type: 'text'; text: string }>; details: unknown } {
@@ -774,7 +777,7 @@ export function buildPiCollaborationTools(
         role: roleType,
         task: Type.String({ description: '发送给子 Agent 的完整任务说明，必须自包含必要上下文' }),
         expectedOutput: Type.Optional(Type.String({ description: '希望子 Agent 最终返回的格式或要点' })),
-        modelId: Type.Optional(Type.String({ description: '可选目标模型 ID' })),
+        modelId: Type.Optional(Type.String({ description: '可选目标模型 ID；省略时继承父会话当前模型' })),
       }),
       async execute(toolCallId: string, params: unknown) {
         const args = params as DelegateAgentArgs

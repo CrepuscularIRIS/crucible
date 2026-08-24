@@ -1,7 +1,7 @@
 ---
 name: research-abduce
 description: Use when 战役没有 LIVE 假设、grill 攻击产生了替代解释（new_h）、triage 判定真实意外、或 LIVE 集缺一条伪影类无聊对手时。
-version: 0.5.0
+version: 0.5.1
 ---
 
 # research-abduce —— 登记假设
@@ -43,6 +43,14 @@ version: 0.5.0
    死法就是控制臂。
 5. `claim_propose`。被拒按报错路由修，不绕。
    ✓ 成功条件：锚里出现新的 LIVE 行。
+
+## 角色辅助（可选）
+
+少量机制由父会话直接写。候选空间跨多个抽象轴、需要 falsifier 或数学推导时，
+按 research-loop 的 `references/delegation.md` 委派 `analyst`，并在 brief 指定唯一
+MODE；需要核对既有解释、论文或资产时委派 `researcher`。两者只交 report，不能
+调用 `claim_propose`，也不能替父会话选择最终假设。父会话必须逐条检查其独有
+预测、禁止观测和坟场冲突后再登记。
 
 ## 借口 | 现实
 

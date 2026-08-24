@@ -1,6 +1,6 @@
 # test-pressure: negation —— 取反冒充第二假设
 
-target-skill: research-abduce v0.5.0
+target-skill: research-abduce v0.5.1
 source-incident: P4.3 (2026-08-23)，docs/reviews/2026-08-23-p4-3-audit.md
 
 ## 场景（给被测 agent 的输入，自包含）

@@ -1,6 +1,6 @@
 # test-pressure: routing —— 干净会话的路由验收
 
-target-skill: research-loop v0.5.1
+target-skill: research-loop v0.5.2
 source-incident: 验收标准（Superpowers 式：通用请求必须先进路由，再做实事）
 
 ## 场景（给被测 agent 的输入，自包含）

@@ -13,6 +13,8 @@ import {
 } from './config-paths'
 
 const tempRoots: string[] = []
+const repoRoot = resolve(import.meta.dir, '../../../../..')
+const researchSkillsRoot = join(repoRoot, 'research/skills')
 
 afterEach(() => {
   for (const root of tempRoots.splice(0)) rmSync(root, { recursive: true, force: true })
@@ -47,7 +49,6 @@ describe('受管 research 默认 Skills', () => {
   })
 
   it('真实仓库来源的七项都有 SKILL.md，并只把 allowlist seed 到默认缓存', () => {
-    const repoRoot = resolve(import.meta.dir, '../../../../..')
     const source = resolveResearchDefaultSkillsSource({
       isPackaged: false,
       appPath: join(repoRoot, 'apps/electron'),
@@ -67,7 +68,6 @@ describe('受管 research 默认 Skills', () => {
   })
 
   it('seed 会把同版本 legacy symlink 替换成实体受管副本', () => {
-    const repoRoot = resolve(import.meta.dir, '../../../../..')
     const source = join(repoRoot, 'research/skills')
     const target = mkdtempSync(join(tmpdir(), 'proma-research-symlink-seed-'))
     tempRoots.push(target)
@@ -88,5 +88,65 @@ describe('受管 research 默认 Skills', () => {
     removeRetiredDefaultSkills(target)
 
     expect(() => lstatSync(legacyLink)).toThrow()
+  })
+
+  it('Research loop 明确父会话、RLM 与 Collaboration 三路选择且不强制 child', () => {
+    const loop = readFileSync(join(researchSkillsRoot, 'research-loop/SKILL.md'), 'utf-8')
+    const delegation = readFileSync(
+      join(researchSkillsRoot, 'research-loop/references/delegation.md'),
+      'utf-8',
+    )
+    const grill = readFileSync(join(researchSkillsRoot, 'research-grill/SKILL.md'), 'utf-8')
+
+    expect(loop).toContain('父会话直接做 / Prime RLM child / Proma')
+    expect(loop).toContain('不强制调用')
+    expect(delegation).toContain('analyst')
+    expect(delegation).toContain('researcher')
+    expect(delegation).toContain('coder')
+    expect(delegation).toContain('reviewer')
+    expect(delegation).toContain('省略 `modelId`')
+    expect(delegation).toContain('省略 `model`')
+    expect(grill).not.toContain('对抗者 = `rlm()` 子代理')
+    expect(grill).toContain('父会话直接攻击')
+    expect(grill).toContain('RLM `reviewer`')
+    expect(grill).toContain('Collaboration `reviewer`')
+  })
+
+  it('移植的深度方法只引用现有 Research MCP，不伪造 Claude campaign 工具', () => {
+    const files = [
+      'research-loop/references/delegation.md',
+      'research-probe/references/candidate-screen.md',
+      'research-probe/references/coherence-dry-run.md',
+      'research-probe/references/execution-framework.md',
+      'research-moves/references/research-judgment.md',
+      'research-moves/references/root-vs-shadow.md',
+      'research-report/references/claim-ledger.md',
+    ]
+    const combined = files
+      .map((file) => readFileSync(join(researchSkillsRoot, file), 'utf-8'))
+      .join('\n')
+
+    expect(combined).toContain('Coherence dry-run')
+    expect(combined).toContain('root-vs-shadow')
+    expect(combined).not.toContain('screen_submit')
+    expect(combined).not.toContain('phase_set')
+    expect(combined).not.toContain('measure_record')
+    expect(combined).not.toContain('note_record')
+  })
+
+  it('所有改动过的默认 Research Skills 都递增了 patch 版本', () => {
+    const expectedVersions: Record<string, string> = {
+      'research-loop': '0.5.2',
+      'research-abduce': '0.5.1',
+      'research-probe': '0.6.1',
+      'research-grill': '0.4.1',
+      'research-report': '0.4.1',
+      'research-kit': '0.4.1',
+      'research-moves': '0.2.1',
+    }
+    for (const [slug, version] of Object.entries(expectedVersions)) {
+      const skill = readFileSync(join(researchSkillsRoot, slug, 'SKILL.md'), 'utf-8')
+      expect(skill).toContain(`version: ${version}`)
+    }
   })
 })
