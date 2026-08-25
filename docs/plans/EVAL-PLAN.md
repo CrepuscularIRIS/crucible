@@ -265,6 +265,23 @@ JSONL 需要一个小转换垫片（评测基建，允许）。
 - 红线不变:判官/分数不写 accepted;refine 条目要 evidence-backed(引 journal 事件)。
 - 这是对 kbs.md"harness 层持续学习"论点的第一个可发表实证。
 
+**RULINGS(2026-08-25,自动化 refine loop 实现时的两处有意偏离 audit 修订,记录在案)**
+
+1. 触发阈值采用 plan 原始默认(residual ≥2,compact ≥1,k=3,budget 3+1,
+   native turn interval 作采样时钟),而非 audit 修订 #1 的 1/1/1/turnInterval=1。
+   理由:激进默认把 refine 变成每轮开销,与"零 refine 是理想"的 anti-Goodhart
+   原则冲突;参数集中在 RESEARCH_REFINE_DEFAULTS,E-refine 中按臂数据调。
+2. 三个 Skill 的薄接线(audit 修订 #5)暂不做:loop 保持 Prime 自动补错
+   (reviewer 单路径),不做模型主动 dispatch。理由:违反 plan 约束 0.1.3 的
+   原始裁决;双路径是否值得,等 E-refine 证明 harness 沉淀可迁移后再决定。
+   无头 learning 臂经 RESEARCH_REFINE=learning 启用(见
+   research-script-lifecycle.ts createHeadlessResearchRefine)。
+3. 纪律性拒绝(budget exhausted/带外迁移/强制分诊/graveyard 冲突/forecast closed)不进
+   residual 流:学"如何避免这些拒绝"等于学规避纪律本身
+   (classifyMcpResidual 的 NON_LEARNABLE 清单,可扩展)。
+4. sequencing:learning 臂对比实验必须在 F1+F2 修复(2026-08-25 已落)之后跑,
+   否则测的是 harness 卡死,不是模型。
+
 ### 7.3 第二轮(E1 扩展):ca_rebound s0 × 3 模型
 
 novel world(非 textbook 召回型),首次检验系统在"机制不可召回"任务上的表现。

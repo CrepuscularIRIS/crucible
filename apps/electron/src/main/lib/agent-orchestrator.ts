@@ -2204,12 +2204,12 @@ export class AgentOrchestrator {
   }
 
   /** 中止所有活跃的 Agent 会话（应用退出时调用） */
-  stopAll(): void {
+  async stopAll(): Promise<void> {
     if (this.activeSessions.size > 0) {
       console.log(`[Agent 编排] 正在中止所有活跃会话 (${this.activeSessions.size} 个)...`)
     }
     // 即便 activeSessions 为空，也要调 dispose 清理可能残留的 pidMap / 子进程
-    this.adapter.dispose()
+    await this.adapter.dispose()
     this.activeSessions.clear()
     this.sessionPermissionModes.clear()
     this.stoppedBeforeRunSessions.clear()

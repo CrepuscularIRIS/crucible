@@ -73,6 +73,21 @@ describe('Research Refine Reviewer（C2）', () => {
     expect((await review({ reason: 'turn_interval' })).shouldRefine).toBe(false)
   })
 
+  it('lint_violation 类不作为 refine 触发源（无验证分母，触发即卡死，审计 F1）', async () => {
+    const { stream, review } = makeReviewer()
+    stream.append({ type: 'residual', classId: 'lint_violation§refine-content§refine', messageExcerpt: 'deny 词汇' })
+    stream.append({ type: 'residual', classId: 'lint_violation§refine-content§refine', messageExcerpt: 'deny 词汇' })
+    expect((await review({ reason: 'turn_interval' })).shouldRefine).toBe(false)
+  })
+
+  it('guard 类 residual 可触发（success 分母由 isolation observer 提供）', async () => {
+    const { stream, review } = makeReviewer()
+    stream.append({ type: 'residual', classId: 'guard§isolation-guard§bash', messageExcerpt: 'deny' })
+    stream.append({ type: 'residual', classId: 'guard§isolation-guard§bash', messageExcerpt: 'deny' })
+    const decision = await review({ reason: 'turn_interval' })
+    expect(decision.shouldRefine).toBe(true)
+  })
+
   it('被回滚的 class 复发时，digest 引用被否决的上次尝试', async () => {
     const { stream, review } = makeReviewer()
     stream.append({ type: 'residual', classId: CLASS, messageExcerpt: 'boom' })

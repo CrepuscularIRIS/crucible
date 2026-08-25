@@ -7,6 +7,11 @@ import {
 export interface ResearchIsolationObserver {
   /** 隔离 guard 拒绝时旁路通知（记录 residual）；不影响判定本身。 */
   onDenied(toolName: string, reason: string): void
+  /**
+   * guard 判定的 bash/ipython 调用通过时旁路通知（记录 success）。
+   * 没有 success 就没有验证分母，guard 类 refinement 会永远 PENDING（审计 F1）。
+   */
+  onAllowed?(toolName: string): void
 }
 
 /**
@@ -27,7 +32,12 @@ export function createResearchIsolationExtension(
         event.input as Record<string, unknown>,
         config,
       )
-      if (decision) observer?.onDenied(event.toolName, decision.reason)
+      if (decision) {
+        observer?.onDenied(event.toolName, decision.reason)
+      } else {
+        const tool = event.toolName.toLowerCase()
+        if (tool === 'bash' || tool === 'ipython') observer?.onAllowed?.(tool)
+      }
       return decision
     })
   }

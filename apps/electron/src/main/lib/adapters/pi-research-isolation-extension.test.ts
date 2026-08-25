@@ -30,4 +30,36 @@ describe('Pi research 隔离扩展', () => {
       reason: expect.stringContaining('world_* MCP'),
     })
   })
+
+  it('observer 旁路记录拒绝与 bash/ipython 的通过（审计 F1：通过 = 验证分母）', async () => {
+    let handler: ((event: { toolName: string; input: Record<string, unknown> }) => unknown) | undefined
+    const pi = {
+      on(_event: string, next: typeof handler) {
+        handler = next
+      },
+    } as unknown as ExtensionAPI
+    const denied: Array<{ tool: string; reason: string }> = []
+    const allowed: string[] = []
+
+    createResearchIsolationExtension({
+      cwd: '/home/test/project',
+      denyRoots: ['/home/test/oss/neuronbench'],
+      stateRoots: ['/home/test/project/.proma-research'],
+    }, {
+      onDenied: (toolName, reason) => denied.push({ tool: toolName, reason }),
+      onAllowed: (toolName) => allowed.push(toolName),
+    })(pi)
+
+    expect(await handler?.({
+      toolName: 'bash',
+      input: { command: 'cat /home/test/oss/neuronbench/worlds.py' },
+    })).toMatchObject({ block: true })
+    expect(await handler?.({ toolName: 'ipython', input: { code: 'result = 6 * 7' } })).toBeUndefined()
+    // 非 guard 管辖的工具通过不产生 success 噪音
+    expect(await handler?.({ toolName: 'read', input: { path: '/tmp/x' } })).toBeUndefined()
+
+    expect(denied).toHaveLength(1)
+    expect(denied[0]?.tool).toBe('bash')
+    expect(allowed).toEqual(['ipython'])
+  })
 })

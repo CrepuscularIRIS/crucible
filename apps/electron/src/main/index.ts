@@ -938,41 +938,49 @@ app.on('window-all-closed', () => {
   }
 })
 
-app.on('before-quit', () => {
+let quitCleanupPromise: Promise<void> | undefined
+app.on('before-quit', (event) => {
+  // 第二次 app.quit() 放行；第一次先等待 Agent promotion/dispose 完成。
+  if (quitCleanupPromise) return
+  event.preventDefault()
   // 标记正在退出，让 close 事件不再阻止关闭
   setQuitting()
 
-  // 中止所有活跃的 Agent 和 Chat 子进程
-  stopAllAgents()
-  browserController.dispose()
-  stopAllGenerations()
-  // 清理更新器定时器
-  cleanupUpdater()
-  // 停止工作区文件监听
-  stopWorkspaceWatcher()
-  // 停止 Chat 工具配置文件监听
-  stopChatToolsWatcher()
-  // 停止所有 Bridge
-  stopBridgeSelfHealing()
-  stopAllBridges()
-  // 停止定时任务调度器
-  stopScheduler()
-  stopPlanningReminderScheduler()
-  stopPlanningNativeSyncCoordinator()
-  // 释放飞书同步防休眠
-  stopFeishuSyncSleepBlocker()
-  // 注销全局快捷键
-  unregisterAllGlobalShortcuts()
-  // 销毁辅助窗口
-  destroyQuickTaskWindow()
-  destroyPlanningWindow()
-  destroyVoiceDictationWindow()
-  destroyAgentStatusHoverWindow()
-  // 销毁原生 macOS 灵动岛服务（其他平台从未创建 surface）
-  disposeMacAgentIslandNativeHost()
-  disposeAgentIslandService()
-  // 关闭 Pi MCP 桥接连接（释放 stdio 子进程）
-  disposePiMcpConnections().catch(() => {})
-  // Clean up system tray before quitting
-  destroyTray()
+  quitCleanupPromise = (async () => {
+    // 中止所有活跃的 Agent，并等待 research promotion 与会话落盘。
+    await stopAllAgents().catch((error) => {
+      console.error('[退出] Agent 会话释放失败:', error)
+    })
+    browserController.dispose()
+    stopAllGenerations()
+    // 清理更新器定时器
+    cleanupUpdater()
+    // 停止工作区文件监听
+    stopWorkspaceWatcher()
+    // 停止 Chat 工具配置文件监听
+    stopChatToolsWatcher()
+    // 停止所有 Bridge
+    stopBridgeSelfHealing()
+    stopAllBridges()
+    // 停止定时任务调度器
+    stopScheduler()
+    stopPlanningReminderScheduler()
+    stopPlanningNativeSyncCoordinator()
+    // 释放飞书同步防休眠
+    stopFeishuSyncSleepBlocker()
+    // 注销全局快捷键
+    unregisterAllGlobalShortcuts()
+    // 销毁辅助窗口
+    destroyQuickTaskWindow()
+    destroyPlanningWindow()
+    destroyVoiceDictationWindow()
+    destroyAgentStatusHoverWindow()
+    // 销毁原生 macOS 灵动岛服务（其他平台从未创建 surface）
+    disposeMacAgentIslandNativeHost()
+    disposeAgentIslandService()
+    // 关闭 Pi MCP 桥接连接（释放 stdio 子进程）
+    await disposePiMcpConnections().catch(() => {})
+    // Clean up system tray before quitting
+    destroyTray()
+  })().finally(() => app.quit())
 })

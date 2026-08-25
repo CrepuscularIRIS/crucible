@@ -79,13 +79,15 @@ export interface HandleRefineCompleteInput {
   appliedEdits: LintableRefineEdit[]
 }
 
-/** refine_complete 的结算：lint 通过 → refined(PENDING)；违规 → 回滚 + 残差。 */
+/** refine_complete 的结算：lint 通过、有归因且确有 edit → refined(PENDING)；
+ * 违规 → 回滚 + 残差。无归因（refineNow 等显式路径）或零 edit → lint 但
+ * 不入账，不产生无法验证或虚假成功的 PENDING。 */
 export async function handleRefineComplete(
   stream: ResearchEpisodeStream,
   session: RefineCapableSession,
   input: HandleRefineCompleteInput,
   extraDenyPatterns: RegExp[] = [],
-): Promise<{ status: 'pending' | 'rolled_back'; violations: string[] }> {
+): Promise<{ status: 'pending' | 'untracked' | 'rolled_back'; violations: string[] }> {
   const lint = lintAppliedEdits(input.appliedEdits, extraDenyPatterns)
   if (!lint.ok) {
     await session.refine({ rollbackId: input.refinementId })
@@ -97,11 +99,17 @@ export async function handleRefineComplete(
     stream.append({ type: 'rolled_back', refinementId: input.refinementId, reason: 'lint' })
     return { status: 'rolled_back', violations: lint.violations }
   }
+  const appliedEntryIds = input.appliedEdits
+    .filter((edit) => edit.applied === true && edit.id)
+    .map((edit) => edit.id as string)
+  if (input.attributedClassIds.length === 0 || appliedEntryIds.length === 0) {
+    return { status: 'untracked', violations: [] }
+  }
   stream.append({
     type: 'refined',
     refinementId: input.refinementId,
     attributedClassIds: input.attributedClassIds,
-    entryIds: input.appliedEdits.filter((edit) => edit.applied !== false && edit.id).map((edit) => edit.id as string),
+    entryIds: appliedEntryIds,
   })
   return { status: 'pending', violations: [] }
 }

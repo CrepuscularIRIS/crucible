@@ -83,6 +83,31 @@ describe('refine_complete 结算（C3）', () => {
     expect(state.classes.get('lint_violation§refine-content§refine')).toBeDefined()
   })
 
+  it('无归因 refine（refineNow 路径）→ lint 通过也不入 PENDING（审计 F3 untracked）', async () => {
+    const stream = makeStream()
+    const session = makeFakeSession()
+    const outcome = await handleRefineComplete(stream, session, {
+      refinementId: 'manual-1',
+      attributedClassIds: [],
+      appliedEdits: [{ id: 'e1', content: '先 init 再 probe', applied: true }],
+    })
+    expect(outcome.status).toBe('untracked')
+    expect(stream.state().refinements.size).toBe(0)
+    expect(session.calls).toEqual([])
+  })
+
+  it('无归因 + lint 违规 → 仍回滚并记 lint_violation（显式路径不免检）', async () => {
+    const stream = makeStream()
+    const session = makeFakeSession()
+    const outcome = await handleRefineComplete(stream, session, {
+      refinementId: 'manual-2',
+      attributedClassIds: [],
+      appliedEdits: [{ id: 'bad', content: 'seed 7 最优', applied: true }],
+    })
+    expect(outcome.status).toBe('rolled_back')
+    expect(session.calls[0]).toContain('"rollbackId":"manual-2"')
+  })
+
   it('lint 通过 → PENDING 入账，entryIds 记录', async () => {
     const stream = makeStream()
     const session = makeFakeSession()
@@ -93,6 +118,18 @@ describe('refine_complete 结算（C3）', () => {
     })
     expect(outcome.status).toBe('pending')
     expect(stream.state().refinements.get('r1')?.status).toBe('PENDING')
+  })
+
+  it('有归因但零实际 edit → 不产生虚假 PENDING', async () => {
+    const stream = makeStream()
+    const session = makeFakeSession()
+    const outcome = await handleRefineComplete(stream, session, {
+      refinementId: 'r-noop',
+      attributedClassIds: [CLASS_ID],
+      appliedEdits: [{ id: 'e1', content: '先 init 再 probe', applied: false }],
+    })
+    expect(outcome.status).toBe('untracked')
+    expect(stream.state().refinements.size).toBe(0)
   })
 })
 

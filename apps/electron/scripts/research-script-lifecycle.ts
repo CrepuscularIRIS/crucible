@@ -4,7 +4,16 @@ import {
   buildResearchIsolationConfig,
   classifyResearchToolCall,
 } from '../src/main/lib/research-isolation-guard'
-import { createResearchIsolationExtension } from '../src/main/lib/adapters/pi-research-isolation-extension'
+import {
+  createResearchIsolationExtension,
+  type ResearchIsolationObserver,
+} from '../src/main/lib/adapters/pi-research-isolation-extension'
+import {
+  createResearchRefineRuntime,
+  installResearchRefineToolTap,
+  researchRefineArtifactDir,
+} from '../src/main/lib/adapters/pi-research-refine-runtime'
+import type { ResearchRefineMode } from '../src/main/lib/adapters/pi-research-refine-types'
 
 export interface ResearchMcpEnvInput {
   baseEnv: NodeJS.ProcessEnv
@@ -96,8 +105,119 @@ export function createResearchIpythonAuthorizer(
 export function researchIsolationExtension(
   neuronbenchRoot: string,
   cwd: string,
+  observer?: ResearchIsolationObserver,
 ): ReturnType<typeof createResearchIsolationExtension> {
-  return createResearchIsolationExtension(buildResearchIsolationConfig([neuronbenchRoot], cwd))
+  return createResearchIsolationExtension(buildResearchIsolationConfig([neuronbenchRoot], cwd), observer)
+}
+
+export interface HeadlessResearchRefine {
+  readonly mode: ResearchRefineMode
+  /** learning 时传给 createAgentSessionFromServices 的 serializedRefine。 */
+  serializedRefine: boolean
+  /** ResourceLoader 创建前传给隔离扩展，保证父/RLM child 的 guard 结果进入 C1。 */
+  isolationObserver?: ResearchIsolationObserver
+  /** 会话创建后调用：装 reviewer（经私有字段，见注释）、tool tap、refine 事件订阅。 */
+  install(
+    session: {
+      sessionId: string
+      subscribe(listener: (event: { type: string; result?: { id: string; rollbackOf?: string; scope?: 'local' | 'global'; appliedEdits?: unknown[] } }) => void): unknown
+      agent: { afterToolCall?: unknown }
+      refine(options?: { instructions?: string; rollbackId?: string; global?: boolean }): Promise<unknown>
+    },
+  ): void
+  /** 传给 disposeAndArchiveResearchSession 的 beforeDispose（C5 promotion）。 */
+  beforeDispose?(): Promise<void>
+  /** 归档 entries 追加项（learning 时 refine 证据进 bundle）。 */
+  archiveEntries(): Array<{ source: string; target: string; required: boolean }>
+}
+
+/**
+ * 无头战役脚本的 research refine 装配（审计 F2：C5 此前零调用方）。
+ *
+ * 臂选择：环境变量 RESEARCH_REFINE（off/frozen/learning），缺省 off——历史
+ * evidence 脚本行为不变；E-refine runner 显式设 learning。
+ *
+ * ponytail: reviewer 经私有字段 `_autoRefineReviewer` 注入——
+ * createAgentSessionFromServices 未暴露该选项。升级路径：Prime 公开
+ * post-creation setter 后改走公开 API。frozen 臂的 global 快照由 harness
+ * 目录本身承载，不装 runtime。
+ */
+export function createHeadlessResearchRefine(input: {
+  mode?: ResearchRefineMode
+  run?: string
+  /** 战役目录（session-artifacts 的父目录）。 */
+  campaignDir: string
+}): HeadlessResearchRefine {
+  const requestedMode = input.mode ?? process.env.RESEARCH_REFINE ?? 'off'
+  if (requestedMode !== 'off' && requestedMode !== 'frozen' && requestedMode !== 'learning') {
+    throw new Error(`RESEARCH_REFINE 必须是 off/frozen/learning，收到: ${requestedMode}`)
+  }
+  const mode: ResearchRefineMode = requestedMode
+  if (mode !== 'learning') {
+    return { mode, serializedRefine: false, install: () => {}, archiveEntries: () => [] }
+  }
+  let sessionId: string | undefined
+  let refineTarget: Parameters<NonNullable<ReturnType<typeof createResearchRefineRuntime>['beforeDispose']>>[0] | undefined
+  const runtime = createResearchRefineRuntime({
+    mode: 'learning',
+    run: input.run,
+    artifactDir: () => {
+      if (!sessionId) throw new Error('research refine 会话尚未安装')
+      return researchRefineArtifactDir(join(input.campaignDir, 'session-artifacts'), sessionId)
+    },
+  })
+  const recordGuardOutcome = (
+    outcome: Parameters<NonNullable<typeof runtime.onToolOutcome>>[0],
+  ): void => {
+    if (!runtime.onToolOutcome || !refineTarget) {
+      console.error('[research-refine] guard outcome 早于会话安装，已拒绝静默丢弃')
+      return
+    }
+    void runtime.onToolOutcome(outcome, refineTarget)
+      .catch((error) => console.error('[research-refine] guard 结算失败:', error))
+  }
+  const isolationObserver: ResearchIsolationObserver = {
+    onDenied: (tool, reason) => recordGuardOutcome({
+      kind: 'residual', source: 'guard', tool, ruleId: 'isolation-guard', messageExcerpt: reason,
+    }),
+    onAllowed: (tool) => recordGuardOutcome({ kind: 'success', source: 'guard', tool }),
+  }
+  return {
+    mode,
+    serializedRefine: true,
+    isolationObserver,
+    install(session: Parameters<HeadlessResearchRefine['install']>[0]) {
+      sessionId = session.sessionId
+      refineTarget = session as never
+      // cast 注入 reviewer（见函数注释）
+      ;(session as unknown as Record<string, unknown>)._autoRefineReviewer = runtime.autoRefineReviewer
+      installResearchRefineToolTap(session.agent, runtime, session as never)
+      session.subscribe((event) => {
+        if (event.type === 'refine_failed') {
+          runtime.onRefineFailed?.()
+          console.warn('[research-refine] refine 失败事件')
+          return
+        }
+        if (!runtime.onRefineComplete || event.type !== 'refine_complete' || event.result?.rollbackOf) return
+        void runtime.onRefineComplete(
+          {
+            id: event.result?.id ?? '',
+            appliedEdits: (event.result?.appliedEdits ?? []) as Parameters<typeof runtime.onRefineComplete>[0]['appliedEdits'],
+            scope: event.result?.scope,
+          },
+          session as never,
+        ).catch((error) => console.error('[research-refine] 结算失败:', error))
+      })
+    },
+    async beforeDispose() {
+      if (runtime.beforeDispose && refineTarget) await runtime.beforeDispose(refineTarget)
+    },
+    archiveEntries() {
+      return sessionId && runtime.archiveSource
+        ? [{ source: runtime.archiveSource, target: 'research-refine', required: false }]
+        : []
+    },
+  }
 }
 
 function archiveTarget(archiveDir: string, target: string): string {

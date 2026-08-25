@@ -39,6 +39,24 @@ interface LifecycleModule {
       handler: (event: { toolName: string; input: Record<string, unknown> }) => unknown,
     ): void
   }) => void
+  createHeadlessResearchRefine(input: {
+    mode?: 'off' | 'frozen' | 'learning'
+    run?: string
+    campaignDir: string
+  }): {
+    isolationObserver?: {
+      onDenied(tool: string, reason: string): void
+      onAllowed?(tool: string): void
+    }
+    install(session: {
+      sessionId: string
+      subscribe(listener: (event: { type: string }) => void): void
+      agent: { afterToolCall?: unknown }
+      refine(): Promise<{ id: string; appliedEdits: [] }>
+    }): void
+    beforeDispose?(): Promise<void>
+    archiveEntries(): Array<{ source: string }>
+  }
 }
 
 const tempRoots: string[] = []
@@ -109,6 +127,39 @@ describe('研究脚本生命周期', () => {
       entries: [{ source: join(root, 'evidence.txt'), target: 'evidence.txt', required: true }],
     })
     expect(order).toEqual(['promote', 'dispose'])
+  })
+
+  it('无头 learning 臂在 ResourceLoader 创建前暴露 guard observer，并排空到事件流', async () => {
+    const lifecycle = await loadLifecycle()
+    expect(lifecycle).not.toBeNull()
+    if (!lifecycle) return
+
+    const root = mkdtempSync(join(tmpdir(), 'proma-script-refine-observer-'))
+    tempRoots.push(root)
+    const refine = lifecycle.createHeadlessResearchRefine({
+      mode: 'learning',
+      run: 'test-run',
+      campaignDir: root,
+    })
+    expect(refine.isolationObserver).toBeDefined()
+    refine.install({
+      sessionId: 'session-1',
+      subscribe() {},
+      agent: {},
+      async refine() { return { id: 'unused', appliedEdits: [] } },
+    })
+    refine.isolationObserver?.onDenied('bash', '隔离拒绝')
+    refine.isolationObserver?.onAllowed?.('bash')
+    await refine.beforeDispose?.()
+
+    const source = refine.archiveEntries()[0]?.source
+    expect(source).toBeDefined()
+    const lines = readFileSync(join(source!, 'events.jsonl'), 'utf8')
+      .trim()
+      .split('\n')
+      .map((line) => JSON.parse(line) as { type: string; source?: string })
+    expect(lines.map((event) => event.type)).toEqual(['residual', 'success'])
+    expect(lines[1]).toMatchObject({ source: 'guard' })
   })
 
   it('必需证据缺失时拒绝生成部分归档', async () => {

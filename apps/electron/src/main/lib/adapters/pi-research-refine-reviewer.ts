@@ -80,6 +80,10 @@ export function createResearchRefineReviewer(deps: ReviewerDeps) {
     }
     const threshold = request.reason === 'compact' ? t.compactResidualThreshold : t.residualThreshold
     const open = [...state.classes.values()]
+      // ruling（审计 F1）: lint_violation 类没有 success 发射器，永远凑不满验证
+      // 分母；让它触发 refine 只会把循环卡死在 PENDING。仍作为 residual 记录
+      // （审计轨迹），但不作为 refine 触发源。
+      .filter((cls) => !cls.classId.startsWith('lint_violation§'))
       .filter((cls) => cls.openResiduals.length >= threshold)
       .sort((a, b) => (a.openResiduals[0]?.seq ?? 0) - (b.openResiduals[0]?.seq ?? 0))
     const target = open[0]

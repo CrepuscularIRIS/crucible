@@ -128,7 +128,9 @@ export interface PiResidentSession {
   autoRefine: { enabled: boolean; turnInterval: number }
   /** research refine 循环（learning 臂）；off/frozen 时为 undefined。 */
   researchRefineRuntime?: ResearchRefineRuntime
-  dispose(): void
+  /** research refine 实验臂；refineNow 按 臂 放行/拒绝。 */
+  researchRefineMode?: ResearchRefineMode
+  dispose(): Promise<void>
 }
 
 /** 空闲多久后释放常驻会话；auto-refine 的轮数计数在驻留期间持续累计。 */
@@ -154,8 +156,10 @@ function readAutoRefineSettings(
  * Research 会话的 auto-refine 配置（RESEARCH-REFINE-PLAN §4）。
  *
  * `learning`：启用 native auto-refine 并安装确定性 reviewer（C2），
- * native 默认 turn interval 作采样时钟；`off`/`frozen` 关闭自动触发
- * （`refineNow` 显式路径仍可用，且始终过 C3 lint）。
+ * native 默认 turn interval 作采样时钟；`off`/`frozen` 关闭自动触发，
+ * 且 research 会话的 `refineNow` 在这两个臂被拒绝（手动 refine 会污染实验臂，
+ * 见 refineNow）。learning 臂的 refineNow 仍可用：过 C3 lint，但不归因、
+ * 不入 PENDING（untracked，见 handleRefineComplete）。
  * 非 research 会话不覆盖（undefined = 沿用 SettingsManager 默认）。
  */
 export function resolvePiAutoRefineOverride(
@@ -1517,7 +1521,7 @@ export class PiAgentAdapter implements AgentProviderAdapter {
         resident.key !== residencyKey
         || (input.resumeSessionId != null && input.resumeSessionId !== resident.session.sessionId)
       )) {
-        this.residentSessions.evict(input.sessionId)
+        await this.residentSessions.evict(input.sessionId)
         resident = undefined
       }
       if (!resident) {
@@ -1711,7 +1715,7 @@ export class PiAgentAdapter implements AgentProviderAdapter {
               const runtime = resident.researchRefineRuntime
               if (runtime?.onRefineComplete) {
                 void runtime.onRefineComplete(
-                  { id: event.result.id, appliedEdits: event.result.appliedEdits },
+                  { id: event.result.id, appliedEdits: event.result.appliedEdits, scope: event.result.scope },
                   resident.session,
                 ).catch((error) => console.error('[Pi SDK] research refine 结算失败:', error))
               }
@@ -1719,6 +1723,7 @@ export class PiAgentAdapter implements AgentProviderAdapter {
             }
             case 'refine_failed':
               if (resident.researchRefineRuntime) {
+                resident.researchRefineRuntime.onRefineFailed?.()
                 console.warn(`[Pi SDK] research refine 失败: ${event.error}`)
               }
               break
@@ -2096,7 +2101,14 @@ export class PiAgentAdapter implements AgentProviderAdapter {
                 void researchRefineRuntime.onToolOutcome?.(
                   { kind: 'residual', source: 'guard', tool: toolName, ruleId: 'isolation-guard', messageExcerpt: reason },
                   session as unknown as Parameters<typeof researchRefineRuntime.onToolOutcome>[1],
-                )
+                ).catch((error) => console.error('[Pi SDK] research guard 拒绝结算失败:', error))
+              },
+              onAllowed: (toolName) => {
+                // guard 通过 = guard 类 refinement 的验证分母（审计 F1）。
+                void researchRefineRuntime.onToolOutcome?.(
+                  { kind: 'success', source: 'guard', tool: toolName },
+                  session as unknown as Parameters<typeof researchRefineRuntime.onToolOutcome>[1],
+                ).catch((error) => console.error('[Pi SDK] research guard 成功结算失败:', error))
               },
             }
             : undefined,
@@ -2263,9 +2275,20 @@ export class PiAgentAdapter implements AgentProviderAdapter {
       // settingsManager 未显式配置时沿用 Prime 默认值（见 prime refinement.ts）
       autoRefine: readAutoRefineSettings(settingsManager as unknown as { getSettings?: () => unknown }),
       ...(researchRefineRuntime?.mode === 'learning' && { researchRefineRuntime }),
-      dispose: () => { session.dispose() },
+      ...(researchRefineMode && { researchRefineMode }),
+      // 审计 F2：learning 臂 dispose 前先排空 C5 promotion（VALIDATED → global），
+      // 再交 Prime 销毁会话；失败也要 dispose，promotion 结果以事件流为准。
+      dispose: async () => {
+        try {
+          await researchRefineRuntime?.beforeDispose?.(session)
+        } catch (error) {
+          console.error('[Pi SDK] research refine promotion 失败:', error)
+        } finally {
+          session.dispose()
+        }
+      },
     }
-    this.residentSessions.install(input.sessionId, resident, owner)
+    await this.residentSessions.install(input.sessionId, resident, owner)
     return resident
   }
 
@@ -2278,6 +2301,11 @@ export class PiAgentAdapter implements AgentProviderAdapter {
     }
     if (entry?.owner) {
       return { scheduled: false, reason: '会话正在执行任务，请等本轮结束再提炼' }
+    }
+    // 审计 F3：off/frozen 臂的 research 会话不允许手动 refine（会污染实验臂，
+    // 且这两臂没有 lint 接线）。
+    if (resident.researchRefineMode && resident.researchRefineMode !== 'learning') {
+      return { scheduled: false, reason: `research refine 实验臂为 ${resident.researchRefineMode}，手动提炼已被禁用` }
     }
     await resident.session.refine()
     return { scheduled: true }
@@ -2396,17 +2424,20 @@ export class PiAgentAdapter implements AgentProviderAdapter {
     // Proma 权限由工具包装层实时读取 sessionPermissionModes，自身无需同步给 Pi。
   }
 
-  dispose(): void {
+  async dispose(): Promise<void> {
+    const aborts: Promise<void>[] = []
     for (const active of this.activeSessions.values()) {
       if (!active.disposed) {
         active.disposed = true
+        active.abortRequested = true
         rejectPendingInterruptPrompts(active, createAbortError())
         active.pendingSkillActivations.clear()
-        active.session?.dispose()
+        if (active.session) aborts.push(active.session.abort().catch(() => {}))
       }
       rejectActiveReady(active, createAbortError())
     }
     this.activeSessions.clear()
-    void this.residentSessions.disposeAll()
+    await Promise.allSettled(aborts)
+    await this.residentSessions.disposeAll()
   }
 }

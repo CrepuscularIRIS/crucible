@@ -20,6 +20,7 @@ const REPO = dirname(dirname(dirname(dirname(new URL(import.meta.url).pathname))
 const RUN = 'first-campaign'
 const {
   buildResearchMcpEnv,
+  createHeadlessResearchRefine,
   createResearchIpythonAuthorizer,
   disposeAndArchiveResearchSession,
   requireEnvironmentSecret,
@@ -112,6 +113,8 @@ console.log(`[wire] research MCP 工具: ${mcpTools.map((t) => t.name).join(', '
 
 const skillPaths = ['research-loop', 'research-abduce', 'research-probe', 'research-grill', 'research-report']
   .map((name) => join(REPO, 'research', 'skills', name))
+// 必须先于 ResourceLoader 创建：learning 臂的 observer 才能随扩展进入父/RLM child。
+const researchRefine = createHeadlessResearchRefine({ run: RUN, campaignDir })
 const services = await servicesMod.createAgentSessionServices({
   cwd,
   agentDir: join(campaignDir, 'agent-dir'),
@@ -121,7 +124,7 @@ const services = await servicesMod.createAgentSessionServices({
     additionalSkillPaths: skillPaths,
     // 隔离扩展经共享 ResourceLoader 进入父与 rlm 子会话的 execution-before hook；
     // installSessionIpythonPermission 只包父会话，覆盖不到子代理。
-    extensionFactories: [researchIsolationExtension(NEURONBENCH_ROOT, cwd)],
+    extensionFactories: [researchIsolationExtension(NEURONBENCH_ROOT, cwd, researchRefine.isolationObserver)],
   },
 })
 services.modelRegistry.registerProvider('dashscope', {
@@ -142,8 +145,10 @@ const { session } = await servicesMod.createAgentSessionFromServices({
   noTools: 'builtin',
   // P6.0/1.2 接线：无 'ipython' customTool，激活会话自己的内置定义（子代理拿到自己的 kernel）
   initialActiveToolNames: ['ipython'],
+  ...(researchRefine.serializedRefine ? { serializedRefine: true } : {}),
   customTools: [...mcpTools],
 })
+researchRefine.install(session)
 rlmModule.installSessionIpythonPermission(session, authorizeResearchIpython)
 console.log(`[wire] ipython 激活: ${session.getActiveToolNames().includes('ipython')}`)
 
@@ -217,11 +222,13 @@ for (const gate of gates) {
 const archiveDir = join(REPO, 'research', 'campaigns', '2026-08-23-first')
 await disposeAndArchiveResearchSession({
   session,
+  beforeDispose: () => researchRefine.beforeDispose?.() ?? Promise.resolve(),
   archiveDir,
   entries: [
     { source: cwd, target: 'project', required: true },
     { source: join(campaignDir, 'sessions'), target: 'sessions', required: true },
     { source: join(campaignDir, 'session-artifacts'), target: 'session-artifacts', required: false },
+    ...researchRefine.archiveEntries(),
   ],
 })
 console.log(`[archive] 战役产物已留档: ${archiveDir}`)

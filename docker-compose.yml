@@ -16,6 +16,10 @@ services:
     image: crucible/proma:latest
     container_name: proma
 
+    # LiteLLM 网关在宿主 127.0.0.1 上,容器经 host.docker.internal 访问。
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
     ports:
       # 并行多实例时用 PROMA_WEB_PORT / PROMA_BRIDGE_PORT 错开宿主端口；
       # 回环前缀是唯一防线，任何覆盖文件都不得去掉。

@@ -22,6 +22,7 @@ import { dirname, join } from 'node:path'
 
 const REPO = dirname(dirname(dirname(dirname(new URL(import.meta.url).pathname))))
 const {
+  createHeadlessResearchRefine,
   disposeAndArchiveResearchSession,
   requireEnvironmentSecret,
 } = await import('./research-script-lifecycle.ts')
@@ -66,6 +67,8 @@ const settingsManager = settingsMod.SettingsManager.inMemory({
   compaction: { enabled: true, reserveTokens: 130000 },
 })
 
+// research refine 臂（RESEARCH_REFINE env，缺省 off——历史 evidence 脚本不变）
+const researchRefine = createHeadlessResearchRefine({ campaignDir: rootDir })
 const services = await servicesMod.createAgentSessionServices({
   cwd,
   agentDir: join(rootDir, 'agent-dir'),
@@ -97,8 +100,10 @@ const { session } = await servicesMod.createAgentSessionFromServices({
   noTools: 'builtin',
   // P6.0/1.2 接线：无 'ipython' customTool，激活会话自己的内置定义（子代理拿到自己的 kernel）
   initialActiveToolNames: ['ipython'],
+  ...(researchRefine.serializedRefine ? { serializedRefine: true } : {}),
   customTools: [],
 })
+researchRefine.install(session)
 
 let compacted = false
 const eventNames: string[] = []
@@ -218,11 +223,13 @@ clearInterval(venvWatcher)
 console.log(`[diag] venv python 消失窗口: ${venvGaps.length ? JSON.stringify(venvGaps) : '（全程存在，无消失——ENOENT 另有原因）'}`)
 await disposeAndArchiveResearchSession({
   session,
+  beforeDispose: () => researchRefine.beforeDispose?.() ?? Promise.resolve(),
   archiveDir: join(REPO, 'research', 'campaigns', '2026-08-23-p0-evidence'),
   entries: [
     { source: cwd, target: 'project', required: true },
     { source: join(rootDir, 'sessions'), target: 'sessions', required: true },
     { source: join(rootDir, 'session-artifacts'), target: 'session-artifacts', required: false },
+    ...researchRefine.archiveEntries(),
   ],
 })
 rmSync(rootDir, { recursive: true, force: true })
