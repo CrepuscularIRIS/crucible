@@ -212,14 +212,21 @@ function convertMcpResult(result: McpCallToolResult): AgentToolResult<unknown> {
     content.push({ type: 'text', text: stringifyForTool(result) })
   }
 
-  if ('isError' in result && result.isError) {
-    content.unshift({ type: 'text', text: 'MCP tool returned isError=true.' })
-  }
-
   return {
     content: sanitizeToolResultImageContent(content),
     details: result,
   } as AgentToolResult<unknown>
+}
+
+function mcpToolErrorMessage(result: McpCallToolResult): string | undefined {
+  if (!('isError' in result) || result.isError !== true) return undefined
+  const converted = convertMcpResult(result)
+  const text = converted.content
+    .filter((block): block is TextContent => block.type === 'text')
+    .map((block) => block.text.trim())
+    .filter(Boolean)
+    .join('\n')
+  return text || 'MCP 工具返回错误'
 }
 
 /**
@@ -529,6 +536,10 @@ function createPiMcpToolDefinition(binding: McpToolBinding): ToolDefinition {
         signal,
         binding.scopeId,
       )
+      const errorMessage = mcpToolErrorMessage(result)
+      // Prime AgentTool 契约要求失败必须 throw；把 isError 只塞进 details 会被
+      // agent-loop 固定标成成功，进而让模型与 continual-refine 都误判。
+      if (errorMessage) throw new Error(errorMessage)
       return convertMcpResult(result)
     },
   } as ToolDefinition

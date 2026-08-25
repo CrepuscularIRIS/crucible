@@ -59,6 +59,12 @@ import pkg from '../../../package.json' with { type: 'json' }
 
 /** 当前配置版本 */
 const CONFIG_VERSION = 5
+/** 单次磁盘读取失败时保留进程内最后一次有效配置，避免把 I/O 故障伪报成渠道被删除。 */
+let lastKnownGoodConfig: ChannelsConfig | undefined
+
+function cloneChannelsConfig(config: ChannelsConfig): ChannelsConfig {
+  return structuredClone(config)
+}
 /** 连接测试 / 模型拉取的统一超时时间 */
 const CHANNEL_TEST_TIMEOUT_MS = 15_000
 // ChatGPT backend 首次经代理 / Cloudflare 建连可能超过普通模型探测的 15 秒。
@@ -332,9 +338,14 @@ function readConfig(): ChannelsConfig {
       writeConfig(config)
       console.log('[渠道管理] 渠道配置已迁移并持久化')
     }
-    return config
+    lastKnownGoodConfig = cloneChannelsConfig(config)
+    return cloneChannelsConfig(config)
   } catch (error) {
     console.error('[渠道管理] 读取配置文件失败:', error)
+    if (lastKnownGoodConfig) {
+      console.warn('[渠道管理] 本次读取失败，沿用进程内最后一次有效渠道配置')
+      return cloneChannelsConfig(lastKnownGoodConfig)
+    }
     return { version: CONFIG_VERSION, channels: [] }
   }
 }
@@ -347,6 +358,7 @@ function writeConfig(config: ChannelsConfig): void {
 
   try {
     writeJsonFileAtomic(configPath, config)
+    lastKnownGoodConfig = cloneChannelsConfig(config)
   } catch (error) {
     console.error('[渠道管理] 写入配置文件失败:', error)
     throw new Error('写入渠道配置失败')

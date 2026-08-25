@@ -2546,7 +2546,7 @@ export function registerIpcHandlers(): void {
 
       for (const sessionId of affectedSessionIds) {
         if (isAgentSessionActive(sessionId)) {
-          stopAgent(sessionId)
+          await stopAgent(sessionId)
         }
         deleteAgentSession(sessionId)
       }
@@ -2900,7 +2900,7 @@ export function registerIpcHandlers(): void {
     AGENT_IPC_CHANNELS.STOP_AGENT,
     async (_, sessionId: string): Promise<void> => {
       feishuBridgeManager.stopSessionMirrorRun(sessionId)
-      stopAgent(sessionId)
+      await stopAgent(sessionId)
     }
   )
 

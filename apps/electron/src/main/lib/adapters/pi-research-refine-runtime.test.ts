@@ -45,7 +45,7 @@ describe('MCP residual 分类（审计 F4）', () => {
         content: [{ type: 'text', text: '探针 P12 不存在' }],
       }),
     }
-    installResearchRefineToolTap(agent, runtime, { async refine() { return { id: 'x', appliedEdits: [] } } })
+    installResearchRefineToolTap(agent, runtime)
     const hook = agent.afterToolCall as (context: {
       toolCall: { name: string }
       isError: boolean
@@ -67,19 +67,18 @@ describe('MCP residual 分类（审计 F4）', () => {
     const root = mkdtempSync(join(tmpdir(), 'rr-runtime-failed-'))
     tempRoots.push(root)
     const runtime = createResearchRefineRuntime({ mode: 'learning', artifactDir: root })
-    const session = { async refine() { return { id: 'unused', appliedEdits: [] } } }
     await runtime.onToolOutcome?.({
       kind: 'residual', source: 'mcp', tool: 'mcp__research__probe_run', ruleId: 'missing-init', messageExcerpt: '先 init',
-    }, session)
+    })
     await runtime.onToolOutcome?.({
       kind: 'residual', source: 'mcp', tool: 'mcp__research__probe_run', ruleId: 'missing-init', messageExcerpt: '先 init',
-    }, session)
+    })
     expect((await runtime.autoRefineReviewer?.({ reason: 'turn_interval' }))?.shouldRefine).toBe(true)
     runtime.onRefineFailed?.()
     await runtime.onRefineComplete?.({
       id: 'manual-after-failure',
       appliedEdits: [{ id: 'e1', content: '先初始化再执行工具', applied: true }],
-    }, session)
+    })
     expect(runtime.stream?.state().refinements.size).toBe(0)
   })
 
@@ -98,8 +97,38 @@ describe('MCP residual 分类（审计 F4）', () => {
       id: 'global-1',
       scope: 'global',
       appliedEdits: [{ id: 'bad', content: 'H9 band [0,1]', applied: true }],
-    }, session)
+    })
     expect(calls).toEqual([])
     expect(runtime.stream?.state().events).toEqual([])
+  })
+
+  it('复发只登记 rollback，静默边界才调用 Prime refine', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'rr-runtime-deferred-'))
+    tempRoots.push(root)
+    const runtime = createResearchRefineRuntime({ mode: 'learning', artifactDir: root })
+    const residual: ToolOutcome = {
+      kind: 'residual', source: 'mcp', tool: 'mcp__research__probe_run', ruleId: 'missing-init', messageExcerpt: '先 init',
+    }
+    await runtime.onToolOutcome?.(residual)
+    await runtime.onToolOutcome?.(residual)
+    expect((await runtime.autoRefineReviewer?.({ reason: 'turn_interval' }))?.shouldRefine).toBe(true)
+    await runtime.onRefineComplete?.({
+      id: 'r1',
+      appliedEdits: [{ id: 'e1', content: '先初始化再执行工具', applied: true }],
+    })
+
+    const calls: string[] = []
+    const session = {
+      async refine(options?: { rollbackId?: string }) {
+        calls.push(JSON.stringify(options ?? {}))
+        return { id: 'rollback', appliedEdits: [] }
+      },
+    }
+    await runtime.onToolOutcome?.(residual)
+    expect(calls).toEqual([])
+
+    await runtime.flushPendingRollbacks?.(session)
+    expect(calls).toEqual(['{"rollbackId":"r1"}'])
+    expect(runtime.stream?.state().refinements.get('r1')?.status).toBe('ROLLED_BACK')
   })
 })

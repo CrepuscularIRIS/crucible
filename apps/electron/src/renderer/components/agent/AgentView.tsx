@@ -445,6 +445,9 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
   // 点击停止后，底层 Pi query 仍需一个很短的收尾窗口。该窗口内不可发起/排队新消息，
   // 否则旧 run 与新 run 会交错，导致同一用户消息被重复展示或持久化。
   const [isStopping, setIsStopping] = React.useState(false)
+  // React streaming 状态要等下一次 render 才生效；此 ref 封住双击/Enter+按钮
+  // 在同一帧内重复启动两个主进程 run 的窗口。
+  const startingRunRef = React.useRef(false)
   const sendWithCmdEnter = useAtomValue(sendWithCmdEnterAtom)
   const longTextPasteAsAttachmentEnabled = useAtomValue(longTextPasteAsAttachmentEnabledAtom)
   const stoppedByUser = stoppedByUserSessions.has(sessionId)
@@ -2236,6 +2239,9 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
       return
     }
 
+    if (startingRunRef.current) return
+    startingRunRef.current = true
+
     // 清除当前会话的错误消息
     setAgentStreamErrors((prev) => {
       if (!prev.has(sessionId)) return prev
@@ -2256,7 +2262,10 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
     const attachmentContext = pendingFilesSnapshot.length > 0
       ? await preparePendingFilesForSend(pendingFilesSnapshot, additionalDirectoriesForRun)
       : null
-    if (pendingFilesSnapshot.length > 0 && !attachmentContext) return
+    if (pendingFilesSnapshot.length > 0 && !attachmentContext) {
+      startingRunRef.current = false
+      return
+    }
     let fileReferences = attachmentContext?.referenceBlock ?? ''
 
     // 构建引用选中文本：内联 XML 拼入 prompt，对话框不展示（parseAttachedFiles 剥离）
@@ -2338,16 +2347,18 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
       setInputHtmlContent('')
     }
 
-    window.electronAPI.sendAgentMessage(input).catch((error) => {
-      console.error('[AgentView] 发送消息失败:', error)
-      setStreamingStates((prev) => {
-        const current = prev.get(sessionId)
-        if (!current) return prev
-        const map = new Map(prev)
-        map.set(sessionId, { ...current, running: false })
-        return map
+    window.electronAPI.sendAgentMessage(input)
+      .catch((error) => {
+        console.error('[AgentView] 发送消息失败:', error)
+        setStreamingStates((prev) => {
+          const current = prev.get(sessionId)
+          if (!current) return prev
+          const map = new Map(prev)
+          map.set(sessionId, { ...current, running: false })
+          return map
+        })
       })
-    })
+      .finally(() => { startingRunRef.current = false })
   }, [createBaseAdditionalDirectories, preparePendingFilesForSend, restoreQueuedAttachmentsToPending, sessionId, agentChannelId, agentModelId, agentChannelProvider, currentWorkspaceId, streaming, backgroundWaiting, suggestion, hasAvailableModel, store, consumeQuotedSelection, setStreamingStates, setAgentStreamErrors, setPromptSuggestions, setInputContent, setLiveMessagesMap, permissionMode, messagesLoaded, setQueuedMessages, setQuotedSelectionMap, sendPlainTextAgentMessage, isLegacyTranscript, isStopping])
 
   /** 停止生成。异常流未发出终态时，允许再次下发幂等的 abort 请求。 */

@@ -68,8 +68,9 @@ export function observeToolOutcome(
 export function confirmRollback(
   stream: ResearchEpisodeStream,
   refinementId: string,
+  reason: 'refuted' | 'lint' = 'refuted',
 ): void {
-  stream.append({ type: 'rolled_back', refinementId, reason: 'refuted' })
+  stream.append({ type: 'rolled_back', refinementId, reason })
 }
 
 export interface HandleRefineCompleteInput {
@@ -84,20 +85,25 @@ export interface HandleRefineCompleteInput {
  * 不入账，不产生无法验证或虚假成功的 PENDING。 */
 export async function handleRefineComplete(
   stream: ResearchEpisodeStream,
-  session: RefineCapableSession,
   input: HandleRefineCompleteInput,
   extraDenyPatterns: RegExp[] = [],
-): Promise<{ status: 'pending' | 'untracked' | 'rolled_back'; violations: string[] }> {
+): Promise<{
+  status: 'pending' | 'untracked' | 'rollback_pending'
+  violations: string[]
+  rollback?: { refinementId: string; reason: 'lint' }
+}> {
   const lint = lintAppliedEdits(input.appliedEdits, extraDenyPatterns)
   if (!lint.ok) {
-    await session.refine({ rollbackId: input.refinementId })
     stream.append({
       type: 'residual',
       classId: failureClassId({ source: 'lint_violation', ruleId: 'refine-content', tool: 'refine' }),
       messageExcerpt: lint.violations.join('; ').slice(0, RESEARCH_REFINE_DEFAULTS.excerptMaxChars),
     })
-    stream.append({ type: 'rolled_back', refinementId: input.refinementId, reason: 'lint' })
-    return { status: 'rolled_back', violations: lint.violations }
+    return {
+      status: 'rollback_pending',
+      violations: lint.violations,
+      rollback: { refinementId: input.refinementId, reason: 'lint' },
+    }
   }
   const appliedEntryIds = input.appliedEdits
     .filter((edit) => edit.applied === true && edit.id)

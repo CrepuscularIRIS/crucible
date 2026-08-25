@@ -268,6 +268,9 @@ interface ActivePiSession {
   ready: Promise<AgentSession>
   resolveReady: (session: AgentSession) => void
   rejectReady: (error: unknown) => void
+  finished: Promise<void>
+  resolveFinished: () => void
+  finishedSettled: boolean
   abortRequested: boolean
   interrupting: boolean
   pendingInterruptPrompts: PendingInterruptPrompt[]
@@ -487,11 +490,16 @@ function createActivePiSession(): ActivePiSession {
     resolveReady = resolve
     rejectReady = reject
   })
+  let resolveFinished!: () => void
+  const finished = new Promise<void>((resolve) => { resolveFinished = resolve })
   ready.catch(() => {})
   return {
     ready,
     resolveReady,
     rejectReady,
+    finished,
+    resolveFinished,
+    finishedSettled: false,
     abortRequested: false,
     interrupting: false,
     pendingInterruptPrompts: [],
@@ -499,6 +507,12 @@ function createActivePiSession(): ActivePiSession {
     readySettled: false,
     disposed: false,
   }
+}
+
+function finishActiveSession(active: ActivePiSession): void {
+  if (active.finishedSettled) return
+  active.finishedSettled = true
+  active.resolveFinished()
 }
 
 function resolveActiveReady(active: ActivePiSession, session: AgentSession): void {
@@ -1441,9 +1455,13 @@ export class PiAgentAdapter implements AgentProviderAdapter {
 
   async *query(input: PiAgentQueryOptions): AsyncIterable<SDKMessage> {
     const active = createActivePiSession()
-    // 同会话的新请求先显式中断旧请求（旧语义靠旧 query 的 dispose 隐式完成）。
+    // 防御性代际屏障：正常入口由 orchestrator 拒绝并发；若外部调用绕过它，
+    // 也必须等旧 query 完整清理后才能复用 resident AgentSession。
     const previousActive = this.activeSessions.get(input.sessionId)
-    if (previousActive && !previousActive.disposed) this.abort(input.sessionId)
+    if (previousActive && !previousActive.disposed) {
+      this.abort(input.sessionId)
+      await previousActive.finished
+    }
     this.activeSessions.set(input.sessionId, active)
     const queue = createAsyncQueue<SDKMessage>()
     const runtimeGuard = createAgentRuntimeGuard(input)
@@ -1472,6 +1490,7 @@ export class PiAgentAdapter implements AgentProviderAdapter {
       } finally {
         void closePiRequestProxyDispatcher(requestProxyDispatcher)
         requestProxyDispatcher = undefined
+        finishActiveSession(active)
       }
     }
 
@@ -1515,6 +1534,10 @@ export class PiAgentAdapter implements AgentProviderAdapter {
           ? (input.researchRefine?.mode ?? 'learning')
           : undefined,
       })
+      const residentEntry = this.residentSessions.get(input.sessionId)
+      if (residentEntry?.owner && residentEntry.owner !== active) {
+        throw new Error('上一轮 Agent 仍在释放资源，请稍后重试')
+      }
       const cachedEntry = this.residentSessions.acquire(input.sessionId, active)
       let resident = cachedEntry?.session
       if (resident && (
@@ -1716,7 +1739,6 @@ export class PiAgentAdapter implements AgentProviderAdapter {
               if (runtime?.onRefineComplete) {
                 void runtime.onRefineComplete(
                   { id: event.result.id, appliedEdits: event.result.appliedEdits, scope: event.result.scope },
-                  resident.session,
                 ).catch((error) => console.error('[Pi SDK] research refine 结算失败:', error))
               }
               break
@@ -1885,6 +1907,12 @@ export class PiAgentAdapter implements AgentProviderAdapter {
               }
               currentInterrupt?.resolveAccepted()
               await session.prompt(shieldPrimeSessionCommands(prompt), { source: 'rpc' })
+              // Research outcome hook 只记账；native rollback 必须等 prompt 完整退出、
+              // Agent 已静默后再执行。禁止在 afterToolCall 内调用公开 refine()，否则
+              // refine.waitForIdle 与 toolResult 生成互相等待，整条会话会锁死。
+              if (!active.abortRequested) {
+                await resident.researchRefineRuntime?.flushPendingRollbacks?.(session)
+              }
               persistPiEntryBindings()
               if (compactionRequestRef?.value) {
                 try {
@@ -2100,14 +2128,12 @@ export class PiAgentAdapter implements AgentProviderAdapter {
                 // guard 拒绝不经 afterToolCall（工具未执行），从此处进 C1。
                 void researchRefineRuntime.onToolOutcome?.(
                   { kind: 'residual', source: 'guard', tool: toolName, ruleId: 'isolation-guard', messageExcerpt: reason },
-                  session as unknown as Parameters<typeof researchRefineRuntime.onToolOutcome>[1],
                 ).catch((error) => console.error('[Pi SDK] research guard 拒绝结算失败:', error))
               },
               onAllowed: (toolName) => {
                 // guard 通过 = guard 类 refinement 的验证分母（审计 F1）。
                 void researchRefineRuntime.onToolOutcome?.(
                   { kind: 'success', source: 'guard', tool: toolName },
-                  session as unknown as Parameters<typeof researchRefineRuntime.onToolOutcome>[1],
                 ).catch((error) => console.error('[Pi SDK] research guard 成功结算失败:', error))
               },
             }
@@ -2176,7 +2202,7 @@ export class PiAgentAdapter implements AgentProviderAdapter {
     })
     if (researchRefineRuntime) {
       artifactSessionIdHolder.value = session.sessionId
-      installResearchRefineToolTap(session.agent, researchRefineRuntime, session)
+      installResearchRefineToolTap(session.agent, researchRefineRuntime)
     }
     if (rlmSupply.available) {
       // 父会话的 ipython 走 session-owned 执行 hook：Prime 重建工具表后仍有效，
@@ -2426,7 +2452,8 @@ export class PiAgentAdapter implements AgentProviderAdapter {
 
   async dispose(): Promise<void> {
     const aborts: Promise<void>[] = []
-    for (const active of this.activeSessions.values()) {
+    const activeRuns = [...this.activeSessions.values()]
+    for (const active of activeRuns) {
       if (!active.disposed) {
         active.disposed = true
         active.abortRequested = true
@@ -2439,5 +2466,6 @@ export class PiAgentAdapter implements AgentProviderAdapter {
     this.activeSessions.clear()
     await Promise.allSettled(aborts)
     await this.residentSessions.disposeAll()
+    for (const active of activeRuns) finishActiveSession(active)
   }
 }

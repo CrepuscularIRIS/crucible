@@ -1277,7 +1277,7 @@ class FeishuBridge {
       return
     }
 
-    stopAgent(binding.sessionId)
+    await stopAgent(binding.sessionId)
     this.markStreamingInterrupted(binding.sessionId)
     await this.sendMessage(chatId, '已停止 Agent')
   }

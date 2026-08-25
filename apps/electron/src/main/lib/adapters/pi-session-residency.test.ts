@@ -52,6 +52,33 @@ describe('ResidentSessionRegistry', () => {
     await reg.disposeAll()
   })
 
+  test('活跃 owner 不会被新 query 覆盖', async () => {
+    const reg = new ResidentSessionRegistry<DisposableSession>({ idleMs: 0 })
+    const owner = {}
+    await reg.install('c1', makeSession(), owner)
+    expect(reg.acquire('c1', {})).toBeUndefined()
+    expect(reg.get('c1')?.owner).toBe(owner)
+    await reg.disposeAll()
+  })
+
+  test('同 key 新安装等待旧 dispose 完成', async () => {
+    let finishDispose: (() => void) | undefined
+    const oldSession: DisposableSession = {
+      dispose: () => new Promise<void>((resolve) => { finishDispose = resolve }),
+    }
+    const reg = new ResidentSessionRegistry<DisposableSession>({ idleMs: 0 })
+    await reg.install('c1', oldSession, {})
+    const evicting = reg.evict('c1')
+    let installed = false
+    const installing = reg.install('c1', makeSession(), {}).then(() => { installed = true })
+    await Promise.resolve()
+    expect(installed).toBe(false)
+    finishDispose?.()
+    await Promise.all([evicting, installing])
+    expect(installed).toBe(true)
+    await reg.disposeAll()
+  })
+
   test('install 替换会等待旧会话 dispose 后再安装', async () => {
     const disposed: string[] = []
     const reg = new ResidentSessionRegistry<DisposableSession>({

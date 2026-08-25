@@ -931,8 +931,22 @@ function TabStatePersistenceInitializer(): null {
       timer = setTimeout(save, 500)
     }
 
+    const saveActiveTabImmediately = (): void => {
+      if (!restoredRef.current) return
+      if (timer) {
+        clearTimeout(timer)
+        timer = null
+      }
+      const tabs = store.get(tabsAtom)
+      const activeTabId = store.get(activeTabIdAtom)
+      const tabState = getPersistableTabState(tabs, activeTabId)
+      // 切换会话是低频动作；同步落盘换取 Docker/进程被直接停止后仍恢复正确会话。
+      const ok = window.electronAPI.updateSettingsSync?.({ tabState }) ?? false
+      if (!ok) save()
+    }
+
     const unsub1 = store.sub(tabsAtom, debouncedSave)
-    const unsub2 = store.sub(activeTabIdAtom, debouncedSave)
+    const unsub2 = store.sub(activeTabIdAtom, saveActiveTabImmediately)
 
     // 窗口关闭前立即刷新，避免最后 500ms 内的变更丢失
     const handleBeforeUnload = (): void => {

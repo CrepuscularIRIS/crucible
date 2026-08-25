@@ -19,6 +19,7 @@ interface SessionServerOptions {
   expireReplacementOnInitialized?: boolean
   failToolAfterFirstWithStatus?: number
   onSessionRejected?: () => void
+  returnToolError?: boolean
 }
 
 interface SessionTestServer {
@@ -117,7 +118,9 @@ async function startSessionTestServer(options: SessionServerOptions): Promise<Se
         if ((options.expireAfterFirstTool ?? true) && stats.toolCalls === 1 && transport.sessionId) {
           transports.delete(transport.sessionId)
         }
-        return { content: [{ type: 'text' as const, text: 'pong' }] }
+        return options.returnToolError
+          ? { content: [{ type: 'text' as const, text: '研究工具拒绝了这次调用' }], isError: true }
+          : { content: [{ type: 'text' as const, text: 'pong' }] }
       })
 
       transport = new StreamableHTTPServerTransport({
@@ -183,6 +186,16 @@ afterEach(async () => {
 })
 
 describe('Pi MCP Streamable HTTP Session 恢复', () => {
+  test('MCP isError 按 Prime 契约抛出，不能伪装成成功 toolResult', async () => {
+    const server = await startSessionTestServer({
+      expiredStatus: 404,
+      expireAfterFirstTool: false,
+      returnToolError: true,
+    })
+    const ping = await buildPingTool('mcp_error', server.url)
+    await expect(callPing(ping, 'error-call')).rejects.toThrow('研究工具拒绝了这次调用')
+  })
+
   test('按 Agent 运行 scope 复用并回收连接', async () => {
     const server = await startSessionTestServer({ expiredStatus: 404, expireAfterFirstTool: false })
     await buildPiMcpTools({ scoped: { type: 'http', url: server.url, required: true } }, 'run-a')

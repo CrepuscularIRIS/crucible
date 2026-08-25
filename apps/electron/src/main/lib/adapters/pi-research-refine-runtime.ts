@@ -32,13 +32,15 @@ export interface ResearchRefineRuntime {
   autoRefineReviewer?: ReturnType<typeof createResearchRefineReviewer>
   serializedRefine: boolean
   /** 工具结果 seam 调用：记录 success/residual 并结算 PENDING refinement。 */
-  onToolOutcome?(outcome: ToolOutcome, session: RefineCapableSession): Promise<void>
+  onToolOutcome?(outcome: ToolOutcome): Promise<void>
   /** refine_complete 事件调用：lint、归因、必要时回滚。 */
   onRefineComplete?(result: {
     id: string
-    appliedEdits: Parameters<typeof handleRefineComplete>[2]['appliedEdits']
+    appliedEdits: Parameters<typeof handleRefineComplete>[1]['appliedEdits']
     scope?: 'local' | 'global'
-  }, session: RefineCapableSession): Promise<void>
+  }): Promise<void>
+  /** 只允许在 prompt 已结束的静默边界执行 native rollback。 */
+  flushPendingRollbacks?(session: RefineCapableSession): Promise<void>
   /** refine 规划/应用失败时清掉 reviewer 暂存归因，避免污染下一次显式 refine。 */
   onRefineFailed?(): void
   /** pre-dispose（C5）：promotion + 归档前排空。 */
@@ -67,6 +69,7 @@ export function createResearchRefineRuntime(config: ResearchRefineConfig): Resea
   // tool outcome/refine_complete 都可能从 fire-and-forget 事件回调进入。统一串行，
   // beforeDispose 才能真正排空结算后再做 promotion（审计 F7）。
   let settlementQueue: Promise<void> = Promise.resolve()
+  const pendingRollbacks = new Map<string, 'refuted' | 'lint'>()
   const enqueueSettlement = (task: () => Promise<void>): Promise<void> => {
     const next = settlementQueue.then(task)
     settlementQueue = next.catch(() => {})
@@ -81,6 +84,14 @@ export function createResearchRefineRuntime(config: ResearchRefineConfig): Resea
     thresholds: { ...RESEARCH_REFINE_DEFAULTS },
     onApprove: (classId) => { approvedClassId = classId },
   })
+  const flushPendingRollbacks = (session: RefineCapableSession): Promise<void> =>
+    enqueueSettlement(async () => {
+      for (const [refinementId, reason] of [...pendingRollbacks]) {
+        await session.refine({ rollbackId: refinementId })
+        pendingRollbacks.delete(refinementId)
+        confirmRollback(getStream(), refinementId, reason)
+      }
+    })
   return {
     mode: 'learning',
     get stream() { return getStream() },
@@ -88,32 +99,37 @@ export function createResearchRefineRuntime(config: ResearchRefineConfig): Resea
     autoRefineReviewer: reviewer,
     serializedRefine: true,
     get archiveSource() { return getArtifactDir() },
-    onToolOutcome(outcome, session) {
+    onToolOutcome(outcome) {
       return enqueueSettlement(async () => {
         const pending = observeToolOutcome(getStream(), outcome)
         for (const item of pending) {
-          await session.refine({ rollbackId: item.refinementId })
-          confirmRollback(getStream(), item.refinementId)
+          pendingRollbacks.set(item.refinementId, 'refuted')
         }
       })
     },
-    onRefineComplete(result, session) {
+    onRefineComplete(result) {
       // C5 的 global promotion 由 promoteValidated 自己做 manifest lint/结算；
       // 不得再经 local C3 旁路回滚，否则会与 promotion 并发形成双结算。
       if (result.scope === 'global') return Promise.resolve()
       const attributed = approvedClassId ? [approvedClassId] : []
       approvedClassId = undefined
-      return enqueueSettlement(() => handleRefineComplete(getStream(), session, {
-        refinementId: result.id,
-        attributedClassIds: attributed,
-        appliedEdits: result.appliedEdits,
-      }, extraDenyPatterns).then(() => {}))
+      return enqueueSettlement(async () => {
+        const handled = await handleRefineComplete(getStream(), {
+          refinementId: result.id,
+          attributedClassIds: attributed,
+          appliedEdits: result.appliedEdits,
+        }, extraDenyPatterns)
+        if (handled.rollback) {
+          pendingRollbacks.set(handled.rollback.refinementId, handled.rollback.reason)
+        }
+      })
     },
+    flushPendingRollbacks,
     onRefineFailed() {
       approvedClassId = undefined
     },
     async beforeDispose(session) {
-      await settlementQueue
+      await flushPendingRollbacks(session)
       await promoteValidated(getStream(), session, extraDenyPatterns)
       await settlementQueue
     },
@@ -181,7 +197,6 @@ interface AfterToolCallResult {
 export function installResearchRefineToolTap(
   agent: { afterToolCall?: unknown },
   runtime: ResearchRefineRuntime,
-  session: RefineCapableSession,
 ): void {
   const previous = agent.afterToolCall as ((context: AfterToolCallContext, signal?: AbortSignal) => Promise<AfterToolCallResult | undefined>) | undefined
   agent.afterToolCall = async (context: AfterToolCallContext, signal?: AbortSignal) => {
@@ -199,11 +214,10 @@ export function installResearchRefineToolTap(
         if (classified) {
           await runtime.onToolOutcome(
             { kind: 'residual', source: 'mcp', tool: context.toolCall.name, ruleId: classified.ruleId, messageExcerpt: excerpt || 'MCP tool error' },
-            session,
           )
         }
       } else {
-        await runtime.onToolOutcome({ kind: 'success', source: 'mcp', tool: context.toolCall.name }, session)
+        await runtime.onToolOutcome({ kind: 'success', source: 'mcp', tool: context.toolCall.name })
       }
     }
     return previousResult

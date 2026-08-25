@@ -471,8 +471,8 @@ export function getAgentRefineState(sessionId: string): AgentRefineState {
   return refineCapable.getRefineState(sessionId)
 }
 
-export function stopAgent(sessionId: string): void {
-  orchestrator.stop(sessionId, agentQueueCoordinator.isDispatching(sessionId))
+export async function stopAgent(sessionId: string): Promise<void> {
+  await orchestrator.stop(sessionId, agentQueueCoordinator.isDispatching(sessionId))
 }
 
 setHeadlessAgentRunner(runAgentHeadless)

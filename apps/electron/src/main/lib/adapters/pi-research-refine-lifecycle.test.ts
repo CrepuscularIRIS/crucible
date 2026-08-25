@@ -67,16 +67,15 @@ describe('验证与回滚（plan §5）', () => {
 })
 
 describe('refine_complete 结算（C3）', () => {
-  it('lint 违规 → native 回滚 + lint_violation residual', async () => {
+  it('lint 违规 → 登记待回滚 + lint_violation residual', async () => {
     const stream = makeStream()
-    const session = makeFakeSession()
-    const outcome = await handleRefineComplete(stream, session, {
+    const outcome = await handleRefineComplete(stream, {
       refinementId: 'r1',
       attributedClassIds: [CLASS_ID],
       appliedEdits: [{ id: 'bad', content: 'H5 为真且 band [0,1]', applied: true }],
     })
-    expect(outcome.status).toBe('rolled_back')
-    expect(session.calls[0]).toContain('"rollbackId":"r1"')
+    expect(outcome.status).toBe('rollback_pending')
+    expect(outcome.rollback).toEqual({ refinementId: 'r1', reason: 'lint' })
     const state = stream.state()
     // refined 从未入账（违规直接回滚），不存在 PENDING 残留
     expect(state.refinements.get('r1')).toBeUndefined()
@@ -85,33 +84,29 @@ describe('refine_complete 结算（C3）', () => {
 
   it('无归因 refine（refineNow 路径）→ lint 通过也不入 PENDING（审计 F3 untracked）', async () => {
     const stream = makeStream()
-    const session = makeFakeSession()
-    const outcome = await handleRefineComplete(stream, session, {
+    const outcome = await handleRefineComplete(stream, {
       refinementId: 'manual-1',
       attributedClassIds: [],
       appliedEdits: [{ id: 'e1', content: '先 init 再 probe', applied: true }],
     })
     expect(outcome.status).toBe('untracked')
     expect(stream.state().refinements.size).toBe(0)
-    expect(session.calls).toEqual([])
   })
 
   it('无归因 + lint 违规 → 仍回滚并记 lint_violation（显式路径不免检）', async () => {
     const stream = makeStream()
-    const session = makeFakeSession()
-    const outcome = await handleRefineComplete(stream, session, {
+    const outcome = await handleRefineComplete(stream, {
       refinementId: 'manual-2',
       attributedClassIds: [],
       appliedEdits: [{ id: 'bad', content: 'seed 7 最优', applied: true }],
     })
-    expect(outcome.status).toBe('rolled_back')
-    expect(session.calls[0]).toContain('"rollbackId":"manual-2"')
+    expect(outcome.status).toBe('rollback_pending')
+    expect(outcome.rollback?.refinementId).toBe('manual-2')
   })
 
   it('lint 通过 → PENDING 入账，entryIds 记录', async () => {
     const stream = makeStream()
-    const session = makeFakeSession()
-    const outcome = await handleRefineComplete(stream, session, {
+    const outcome = await handleRefineComplete(stream, {
       refinementId: 'r1',
       attributedClassIds: [CLASS_ID],
       appliedEdits: [{ id: 'e1', content: '先 init 再 probe', applied: true }],
@@ -122,8 +117,7 @@ describe('refine_complete 结算（C3）', () => {
 
   it('有归因但零实际 edit → 不产生虚假 PENDING', async () => {
     const stream = makeStream()
-    const session = makeFakeSession()
-    const outcome = await handleRefineComplete(stream, session, {
+    const outcome = await handleRefineComplete(stream, {
       refinementId: 'r-noop',
       attributedClassIds: [CLASS_ID],
       appliedEdits: [{ id: 'e1', content: '先 init 再 probe', applied: false }],

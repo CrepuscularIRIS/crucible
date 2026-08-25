@@ -231,6 +231,11 @@ export class AgentOrchestrator {
   private adapter: AgentProviderAdapter
   private eventBus: AgentEventBus
   private activeSessions = new Map<string, number>()
+  private runSettlements = new Map<string, {
+    generation: number
+    promise: Promise<void>
+    resolve: () => void
+  }>()
   private nextRunGeneration = 0
 
   /** 队列消息本地记录（sessionId → UUID 集合，用于防重） */
@@ -804,6 +809,7 @@ export class AgentOrchestrator {
         code: 'channel_not_found',
         title: '渠道不存在',
         message: '当前会话引用的渠道已被删除或不可用，请在设置中重新选择。',
+        details: [`sessionId: ${sessionId}`, `channelId: ${channelId}`],
         actions: [
           { key: 's', label: '打开渠道设置', action: 'open_channel_settings' },
         ],
@@ -877,6 +883,13 @@ export class AgentOrchestrator {
     }
     const runGeneration = ++this.nextRunGeneration
     this.activeSessions.set(sessionId, runGeneration)
+    let resolveRunSettlement: () => void = () => {}
+    const runSettlement = new Promise<void>((resolve) => { resolveRunSettlement = resolve })
+    this.runSettlements.set(sessionId, {
+      generation: runGeneration,
+      promise: runSettlement,
+      resolve: resolveRunSettlement,
+    })
     callbacks.onRunStarted?.({ startedAt: streamStartedAt })
 
     const releaseActiveRun = (): void => {
@@ -887,6 +900,11 @@ export class AgentOrchestrator {
         this.activeSessions.delete(sessionId)
         this.sessionPermissionModes.delete(sessionId)
         this.queuedMessageUuids.delete(sessionId)
+      }
+      const settlement = this.runSettlements.get(sessionId)
+      if (settlement?.generation === runGeneration) {
+        this.runSettlements.delete(sessionId)
+        settlement.resolve()
       }
     }
     const completeRun = (
@@ -1931,7 +1949,13 @@ export class AgentOrchestrator {
           return
 
         } catch (error) {
-          if (!this.activeSessions.has(sessionId)) {
+          const ownsActiveRun = this.activeSessions.get(sessionId) === runGeneration
+          if (!ownsActiveRun) {
+            // 旧代际绝不能向新 run 发送 error/complete；否则 renderer 会把新流误判为结束。
+            console.warn(`[Agent 编排] 忽略已失去所有权的旧代际错误: sessionId=${sessionId}, generation=${runGeneration}`)
+            return
+          }
+          if (this.stoppedBySessions.get(sessionId) === runGeneration) {
             const wasStoppedByUser = this.consumeStoppedByUser(sessionId, runGeneration)
             this.persistSDKMessages(sessionId, accumulatedMessages, Date.now() - queryStartedAt)
             try { updateAgentSessionMeta(sessionId, { stoppedByUser: wasStoppedByUser }) } catch { /* 会话可能已删除 */ }
@@ -2095,13 +2119,11 @@ export class AgentOrchestrator {
   /**
    * 中止指定会话的 Agent 执行
    *
-   * 先从 activeSessions 移除（供 sendMessage catch 块检测用户中止），
-   * 再调用 adapter.abort() 中止底层 SDK 进程。
+   * active slot 必须保留到旧 query 的 finally。提前删除会让下一条消息与尚在
+   * abort 的旧 run 复用同一个 resident AgentSession，造成消息被吞或会话锁死。
    */
-  stop(sessionId: string, stopBeforeRun = false): void {
+  async stop(sessionId: string, stopBeforeRun = false): Promise<void> {
     const runGeneration = this.activeSessions.get(sessionId)
-    this.activeSessions.delete(sessionId)
-    this.sessionPermissionModes.delete(sessionId)
     browserController.cancelSession(sessionId)
     if (runGeneration != null) {
       this.stoppedBySessions.set(sessionId, runGeneration)
@@ -2113,6 +2135,10 @@ export class AgentOrchestrator {
     this.queuedMessageUuids.delete(sessionId)
     this.adapter.abort(sessionId)
     console.log(`[Agent 编排] 已中止会话: ${sessionId}`)
+    const settlement = this.runSettlements.get(sessionId)
+    if (runGeneration != null && settlement?.generation === runGeneration) {
+      await settlement.promise
+    }
   }
 
   /** 检查指定会话是否正在处理中 */
@@ -2210,6 +2236,8 @@ export class AgentOrchestrator {
     }
     // 即便 activeSessions 为空，也要调 dispose 清理可能残留的 pidMap / 子进程
     await this.adapter.dispose()
+    for (const settlement of this.runSettlements.values()) settlement.resolve()
+    this.runSettlements.clear()
     this.activeSessions.clear()
     this.sessionPermissionModes.clear()
     this.stoppedBeforeRunSessions.clear()

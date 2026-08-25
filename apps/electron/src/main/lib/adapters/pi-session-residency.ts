@@ -31,6 +31,8 @@ export interface ResidencyOptions {
 
 export class ResidentSessionRegistry<T extends DisposableSession> {
   private entries = new Map<string, ResidentSessionEntry<T>>()
+  /** entry 已从可见表移除但 dispose 尚未完成；同 key 安装必须等待它。 */
+  private disposals = new Map<string, Promise<void>>()
   private shutDown = false
 
   constructor(private readonly options: ResidencyOptions) {}
@@ -41,9 +43,10 @@ export class ResidentSessionRegistry<T extends DisposableSession> {
 
   /** 命中并占用：清掉 idle timer，记 owner。未命中/已关闭返回 undefined。 */
   acquire(key: string, owner: object): ResidentSessionEntry<T> | undefined {
-    if (this.shutDown) return undefined
+    if (this.shutDown || this.disposals.has(key)) return undefined
     const entry = this.entries.get(key)
     if (!entry) return undefined
+    if (entry.owner && entry.owner !== owner) return undefined
     if (entry.idleTimer) {
       clearTimeout(entry.idleTimer)
       entry.idleTimer = undefined
@@ -54,6 +57,7 @@ export class ResidentSessionRegistry<T extends DisposableSession> {
 
   /** 新建或替换：先等待同 key 旧会话完整 dispose，再安装新会话。 */
   async install(key: string, session: T, owner: object): Promise<ResidentSessionEntry<T>> {
+    await this.disposals.get(key)
     const previous = this.entries.get(key)
     if (previous) {
       await this.disposeEntry(previous, 'replaced')
@@ -91,7 +95,7 @@ export class ResidentSessionRegistry<T extends DisposableSession> {
 
   async disposeAll(): Promise<void> {
     this.shutDown = true
-    const pending: Promise<void>[] = []
+    const pending: Promise<void>[] = [...this.disposals.values()]
     for (const entry of [...this.entries.values()]) {
       pending.push(this.disposeEntry(entry, 'shutdown'))
     }
@@ -103,6 +107,11 @@ export class ResidentSessionRegistry<T extends DisposableSession> {
   }
 
   private async disposeEntry(entry: ResidentSessionEntry<T>, reason: 'idle' | 'replaced' | 'shutdown'): Promise<void> {
+    const inFlight = this.disposals.get(entry.key)
+    if (inFlight) {
+      await inFlight
+      return
+    }
     if (entry.idleTimer) {
       clearTimeout(entry.idleTimer)
       entry.idleTimer = undefined
@@ -110,10 +119,15 @@ export class ResidentSessionRegistry<T extends DisposableSession> {
     if (this.entries.get(entry.key) === entry) {
       this.entries.delete(entry.key)
     }
+    const disposal = Promise.resolve()
+      .then(() => entry.session.dispose())
+      .then(() => undefined)
+      .finally(() => this.options.onDispose?.(entry.key, reason))
+    this.disposals.set(entry.key, disposal)
     try {
-      await entry.session.dispose()
+      await disposal
     } finally {
-      this.options.onDispose?.(entry.key, reason)
+      if (this.disposals.get(entry.key) === disposal) this.disposals.delete(entry.key)
     }
   }
 }

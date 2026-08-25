@@ -437,7 +437,7 @@ export class BridgeCommandHandler {
       await this.send(chatId, '当前没有绑定的会话。', contextData)
       return
     }
-    stopAgent(binding.sessionId)
+    await stopAgent(binding.sessionId)
     await this.send(chatId, '✅ 已停止 Agent', contextData)
   }
 
