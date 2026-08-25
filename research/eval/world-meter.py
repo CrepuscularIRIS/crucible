@@ -19,6 +19,7 @@
 from __future__ import annotations
 
 import argparse
+import fcntl
 import json
 import os
 import sys
@@ -56,6 +57,27 @@ def _append(path: str, entry: dict) -> None:
 
 def _spent(entries: list[dict]) -> int:
     return sum(int(e.get("cost", 0)) for e in entries if e.get("cmd") == "observe")
+
+
+class _LedgerLock:
+    """进程间互斥：预算判定必须是 load→check→append 的原子段。
+
+    并发 observe 曾把 8 的预算打到 12——每个进程各自读到过期 spent 再各自放行。
+    flock 串行化后，后到者必然看到先到者已落盘的 cost。锁文件放 ledger 同目录。
+    """
+
+    def __init__(self, ledger: str):
+        self._path = f"{ledger}.lock"
+
+    def __enter__(self):
+        import os
+        self._fh = open(self._path, "a", encoding="utf-8")
+        fcntl.flock(self._fh, fcntl.LOCK_EX)
+        return self
+
+    def __exit__(self, *exc):
+        fcntl.flock(self._fh, fcntl.LOCK_UN)
+        self._fh.close()
 
 
 def _chan_from_dict(raw: dict):
@@ -109,7 +131,9 @@ def main() -> None:
     args = ap.parse_args()
 
     entries = _load_ledger(args.ledger)
-    spent = args.budget_spent if args.budget_spent is not None else _spent(entries)
+    # 预算唯一真值是 ledger 自身累计；--budget-spent 只作对照（取两者较大值兜底），
+    # 不得覆盖——server 传入的过期计数曾让并发 observe 全部放行（12/8 事故）。
+    spent = max(_spent(entries), args.budget_spent or 0)
     base = {"ts": _now(), "cmd": args.cmd, "world": args.world, "seed": args.seed}
 
     if args.cmd == "info":
@@ -122,14 +146,20 @@ def main() -> None:
 
     if args.cmd == "observe":
         reps = max(1, args.reps)
-        if spent + reps > args.budget:
-            raise SystemExit(
-                f"budget exhausted: spent={spent} + reps={reps} > budget={args.budget}；"
-                "下一步：用已落地的观测收窄假设，或 report_declare 终局"
-            )
-        world = nb.load_world(args.world, seed=args.seed)
-        obs = world.run(_protocol(args.label), reps=reps, block=tuple(
-            b for b in args.blockers.split(",") if b))
+        with _LedgerLock(args.ledger):
+            # 锁内重读：先到者的 cost 已落盘，后到者据此判定。
+            spent = max(_spent(_load_ledger(args.ledger)), args.budget_spent or 0)
+            if spent + reps > args.budget:
+                raise SystemExit(
+                    f"budget exhausted: spent={spent} + reps={reps} > budget={args.budget}；"
+                    "下一步：用已落地的观测收窄假设，或 report_declare 终局"
+                )
+            world = nb.load_world(args.world, seed=args.seed)
+            obs = world.run(_protocol(args.label), reps=reps, block=tuple(
+                b for b in args.blockers.split(",") if b))
+            _append(args.ledger, base | {"protocol": args.label, "reps": reps, "cost": obs.cost,
+                                         "budget_before": spent, "budget_after": spent + obs.cost,
+                                         "spike_count": round(float(obs.spike_count), 4)})
         out = {
             "protocol_label": obs.protocol_label,
             "spike_count": round(float(obs.spike_count), 4),
@@ -138,9 +168,6 @@ def main() -> None:
             "voltage": _subsample(obs.voltage),
             "test_start_index": obs.test_start,
         }
-        _append(args.ledger, base | {"protocol": args.label, "reps": reps, "cost": obs.cost,
-                                     "budget_before": spent, "budget_after": spent + obs.cost,
-                                     "spike_count": out["spike_count"]})
         print(json.dumps(out, ensure_ascii=False))
         return
 

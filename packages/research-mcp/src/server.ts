@@ -104,14 +104,17 @@ function inBand(value: number, band: Band): boolean {
   return value >= band[0] && value <= band[1]
 }
 
-const BandSchema = z.tuple([z.number(), z.number()])
+// zod 仅供 MCP 参数解包；严格的语义校验在 validateProbeSpec（state.ts）。
+// 这里刻意避开 tuple-items / pattern / minLength 等 JSON Schema 关键字：
+// 智谱 Anthropic 端点对工具 schema 严格校验，这类写法会整包 400（1210）。
+const BandSchema = z.array(z.number())
 
 const ProbeSpecSchema = z.object({
-  pid: z.string().regex(/^P\d+$/, '探针 id 形如 P1、P2'),
-  question: z.string().min(1),
-  evalCommand: z.string().min(1),
+  pid: z.string(),
+  question: z.string(),
+  evalCommand: z.string(),
   metricKind: z.enum(['json', 'regex']),
-  metricSpec: z.string().min(1),
+  metricSpec: z.string(),
   bands: z.record(z.string(), BandSchema),
   branches: z.array(z.object({
     band: BandSchema,
@@ -262,7 +265,7 @@ export function buildServer(): McpServer {
       const root = resolveRun(run)
       requireInit(root)
       const state = replay(root)
-      validateProbeSpec(spec as ProbeSpec, state)
+      validateProbeSpec(spec as unknown as ProbeSpec, state)
       if (state.probes.some((p) => p.pid === spec.pid)) {
         throw new ResearchStateError(`探针 ${spec.pid} 已存在`)
       }

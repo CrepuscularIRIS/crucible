@@ -382,6 +382,15 @@ export function validateProbeSpec(spec: ProbeSpec, state: ResearchState): void {
   if (!spec.pid || !spec.question || !spec.evalCommand) {
     throw new ResearchStateError('prereg 缺少 pid / question / evalCommand')
   }
+  if (!/^P\d+$/.test(spec.pid)) {
+    throw new ResearchStateError(`探针 id 形如 P1、P2（收到: ${spec.pid}）`)
+  }
+  const allBands = [...Object.values(spec.bands ?? {}), ...(spec.branches ?? []).map((b) => b.band)]
+  for (const band of allBands) {
+    if (Array.isArray(band) && band.length !== 2) {
+      throw new ResearchStateError(`频段必须是 [lo, hi] 数值对（收到: ${JSON.stringify(band)}）`)
+    }
+  }
   if (spec.metricKind !== 'json' && spec.metricKind !== 'regex') {
     throw new ResearchStateError('metricKind 只允许 json 或 regex（宿主不执行模型代码）')
   }
