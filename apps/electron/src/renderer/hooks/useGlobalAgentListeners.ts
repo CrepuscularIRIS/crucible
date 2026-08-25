@@ -83,6 +83,7 @@ import { detectIsWindows } from '@/lib/platform'
 import { getSessionFileChangeKind, getOwnedSessionWatcherPaths, upsertSessionFileChange } from '@/lib/session-file-changes'
 import { removeQueuedMessage, createQueuedAgentStreamState } from '@/lib/agent-message-queue'
 import { createAgentStreamEventBatcher } from '@/lib/agent-stream-event-batcher'
+import { isValidAgentStreamEvent } from '@/lib/agent-stream-event-guard'
 
 /** 触发右侧文件浏览器自动定位的写入类工具集合 */
 const WRITE_TOOLS = new Set(['Write', 'Edit', 'MultiEdit', 'NotebookEdit', 'Update'])
@@ -1439,6 +1440,10 @@ export function useGlobalAgentListeners(): void {
     // partial 仅保留每个会话在一帧内最新的累计全文，非 partial（尤其 final）立即处理。
     const streamEventBatcher = createAgentStreamEventBatcher({ dispatch: handleStreamEvent })
     const cleanupEvent = window.electronAPI.onAgentStreamEvent((streamEvent) => {
+      if (!isValidAgentStreamEvent(streamEvent)) {
+        console.error('[GlobalAgentListeners] 忽略非法 Agent 流事件：缺少有效 sessionId 或 payload')
+        return
+      }
       streamEventBatcher.push(streamEvent)
     })
 

@@ -770,6 +770,8 @@ let lastIndicatorSignature = ''
 let lastIndicatorMap = new Map<string, SessionIndicatorStatus>()
 
 function getStableIndicatorMap(entries: Array<[string, SessionIndicatorStatus]>): Map<string, SessionIndicatorStatus> {
+  // IPC 运行时数据可能违反 TS 声明；无效 key 不能让 localeCompare 崩掉整个 renderer。
+  entries = entries.filter(([id]) => typeof id === 'string' && id.trim().length > 0)
   entries.sort(([a], [b]) => a.localeCompare(b))
   const signature = entries.map(([id, status]) => `${id}:${status}`).join('|')
   if (signature === lastIndicatorSignature) return lastIndicatorMap

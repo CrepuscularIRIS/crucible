@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { createStore } from 'jotai/vanilla'
 import {
   agentSessionInputStreamStateAtomFamily,
+  agentSessionIndicatorMapAtom,
   agentSessionStreamingStateAtomFamily,
   agentStreamingStatesAtom,
   applyAgentEvent,
@@ -21,6 +22,16 @@ function createStreamState(overrides: Partial<AgentStreamState> = {}): AgentStre
     ...overrides,
   }
 }
+
+describe('Agent 会话指示状态运行时防护', () => {
+  test('given 非法 undefined 会话 key when 计算指示点 then 忽略且不触发 localeCompare 崩溃', () => {
+    const store = createStore()
+    const malformed = new Map<unknown, AgentStreamState>([[undefined, createStreamState()]])
+    store.set(agentStreamingStatesAtom, malformed as unknown as Map<string, AgentStreamState>)
+
+    expect(store.get(agentSessionIndicatorMapAtom)).toEqual(new Map())
+  })
+})
 
 describe('Agent 上下文压缩状态', () => {
   test('given Pi 手动压缩提供预估 token when 压缩完成 then 显示预估值并清除旧明细', () => {

@@ -45,6 +45,7 @@ import { getHeadlessAgentRunTarget } from './agent-headless-run-target'
 import { sendAgentStreamComplete } from './agent-completion-payload'
 import { AgentStreamForwarder } from './agent-stream-forwarder'
 import { AgentQueueCoordinator } from './agent-queue-coordinator'
+import { parseAgentSendIpcArguments } from '../../common/agent-send-input'
 
 // ===== 实例创建 =====
 
@@ -229,6 +230,8 @@ export async function runAgent(
   input: AgentSendInput,
   webContents: WebContents,
 ): Promise<void> {
+  // automation / queue 等内部入口也必须服从同一运行时契约；校验发生在任何状态注册前。
+  parseAgentSendIpcArguments([input])
   // 更新 webContents 映射（允许覆盖 — 由 orchestrator.activeSessions 处理真正的并发保护）
   registerWebContents(input.sessionId, webContents)
   // deferred queue runs carry their queue id as an internal extension.
