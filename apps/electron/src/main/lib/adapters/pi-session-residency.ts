@@ -135,6 +135,8 @@ export function computeResidencyKey(parts: {
   projectInstructionFiles: string[]
   projectScope?: string
   researchIsolation?: { denyRoots: string[]; stateRoots: string[] }
+  /** research refine 实验臂（off/frozen/learning）；变化即重建会话。 */
+  researchRefineMode?: string
 }): string {
   return [
     parts.provider,
@@ -153,6 +155,7 @@ export function computeResidencyKey(parts: {
           stateRoots: [...parts.researchIsolation.stateRoots].sort(),
         })
       : '',
+    parts.researchRefineMode ?? '',
   ].join('§')
 }
 

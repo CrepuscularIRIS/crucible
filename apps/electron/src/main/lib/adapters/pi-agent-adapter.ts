@@ -64,6 +64,13 @@ import { createCodexFastModeExtension, withCodexFastModeServiceTier } from './pi
 import { createDeepSeekReasoningRequestExtension } from './pi-deepseek-reasoning-request-settings'
 import { createOpenAIReasoningRequestExtension } from './pi-openai-reasoning-request-settings'
 import { createResearchIsolationExtension } from './pi-research-isolation-extension'
+import {
+  createResearchRefineRuntime,
+  installResearchRefineToolTap,
+  researchRefineArtifactDir,
+  type ResearchRefineRuntime,
+} from './pi-research-refine-runtime'
+import type { ResearchRefineMode } from './pi-research-refine-types'
 import type { ResearchIsolationConfig } from '../research-isolation-guard'
 import { mergeRuntimeEnv, type AgentRuntimeEnv } from '../agent-runtime-env'
 import { sanitizePiMessageImageContent, sanitizeToolResultImageContent } from '../image-content-validation'
@@ -119,6 +126,8 @@ export interface PiResidentSession {
   harnessDir: string
   /** 会话内生效的 auto-refine 设置（只读摘要，供 UI 显示） */
   autoRefine: { enabled: boolean; turnInterval: number }
+  /** research refine 循环（learning 臂）；off/frozen 时为 undefined。 */
+  researchRefineRuntime?: ResearchRefineRuntime
   dispose(): void
 }
 
@@ -139,6 +148,21 @@ function readAutoRefineSettings(
   } catch {
     return { enabled: true, turnInterval: 25 }
   }
+}
+
+/**
+ * Research 会话的 auto-refine 配置（RESEARCH-REFINE-PLAN §4）。
+ *
+ * `learning`：启用 native auto-refine 并安装确定性 reviewer（C2），
+ * native 默认 turn interval 作采样时钟；`off`/`frozen` 关闭自动触发
+ * （`refineNow` 显式路径仍可用，且始终过 C3 lint）。
+ * 非 research 会话不覆盖（undefined = 沿用 SettingsManager 默认）。
+ */
+export function resolvePiAutoRefineOverride(
+  mode: ResearchRefineMode | undefined,
+): { enabled: boolean } | undefined {
+  if (!mode) return undefined
+  return { enabled: mode === 'learning' }
 }
 type BashOperations = import('@earendil-works/pi-coding-agent').BashOperations
 type BashToolOptions = import('@earendil-works/pi-coding-agent').BashToolOptions
@@ -216,6 +240,8 @@ export interface PiAgentQueryOptions extends AgentQueryInput {
   runtimeEnv?: AgentRuntimeEnv
   /** workspace research MCP 显式启用的工具执行隔离边界。 */
   researchIsolation?: ResearchIsolationConfig
+  /** research refine 实验臂（off/frozen/learning）；research 会话缺省 learning。 */
+  researchRefine?: { mode: ResearchRefineMode; run?: string }
   /** 手动压缩请求：走 pi 原生 session.compact()，而非把 /compact 当普通 prompt 发给模型 */
   compactRequest?: boolean
   /** ChatGPT Codex Fast Mode；仅 openai-codex 的受支持模型实际注入 priority service tier。 */
@@ -1480,6 +1506,10 @@ export class PiAgentAdapter implements AgentProviderAdapter {
               stateRoots: input.researchIsolation.stateRoots,
             }
           : undefined,
+        // refine 实验臂切换必须重建会话，否则复用旧臂的 reviewer/设置。
+        researchRefineMode: input.researchIsolation
+          ? (input.researchRefine?.mode ?? 'learning')
+          : undefined,
       })
       const cachedEntry = this.residentSessions.acquire(input.sessionId, active)
       let resident = cachedEntry?.session
@@ -1672,6 +1702,25 @@ export class PiAgentAdapter implements AgentProviderAdapter {
             case 'auto_retry_start':
             case 'auto_retry_end':
               for (const retry of mapPiNativeRetryEvent(event, { runStartedAt: retryRunStartedAt })) input.onRetry?.(retry)
+              break
+            case 'refine_complete': {
+              // 回滚自身的 refine_complete（rollbackOf 置位）不是新 refinement，
+              // 不能再进 C3 结算，否则回滚会触发伪造的 refined 入账。
+              if (event.result.rollbackOf) break
+              // C3 结算：lint 违规 → native 回滚 + lint_violation residual；否则 PENDING 入账。
+              const runtime = resident.researchRefineRuntime
+              if (runtime?.onRefineComplete) {
+                void runtime.onRefineComplete(
+                  { id: event.result.id, appliedEdits: event.result.appliedEdits },
+                  resident.session,
+                ).catch((error) => console.error('[Pi SDK] research refine 结算失败:', error))
+              }
+              break
+            }
+            case 'refine_failed':
+              if (resident.researchRefineRuntime) {
+                console.warn(`[Pi SDK] research refine 失败: ${event.error}`)
+              }
               break
             case 'tool_execution_update':
               queue.push({
@@ -1986,6 +2035,21 @@ export class PiAgentAdapter implements AgentProviderAdapter {
       ...wrapCustomToolDefinitions(input.customTools, indirectCanUseTool),
     ]
 
+    // Research refine 循环（RESEARCH-REFINE-PLAN）：reviewer 在会话创建前装配，
+    // artifactDir 里的 sessionId 待创建后解析（runtime 内部惰性取值）。
+    const sessionArtifactsRoot = join(dirname(input.piSessionDir), 'session-artifacts')
+    const artifactSessionIdHolder: { value: string } = { value: '' }
+    const researchRefineMode: ResearchRefineMode | undefined = input.researchIsolation
+      ? (input.researchRefine?.mode ?? 'learning')
+      : undefined
+    const researchRefineRuntime: ResearchRefineRuntime | undefined = researchRefineMode
+      ? createResearchRefineRuntime({
+        mode: researchRefineMode,
+        run: input.researchRefine?.run,
+        artifactDir: () => researchRefineArtifactDir(sessionArtifactsRoot, artifactSessionIdHolder.value),
+      })
+      : undefined
+    const autoRefineOverride = resolvePiAutoRefineOverride(researchRefineMode)
     const settingsManager = sdk.SettingsManager.inMemory({
       // 使用 Pi SDK 原生压缩策略：
       // - 手动压缩由 session.compact() 触发；
@@ -1998,6 +2062,7 @@ export class PiAgentAdapter implements AgentProviderAdapter {
         maxRetries: PI_NATIVE_MAX_RETRIES,
         baseDelayMs: PI_NATIVE_RETRY_BASE_DELAY_MS,
       },
+      ...(autoRefineOverride ? { autoRefine: autoRefineOverride } : {}),
       ...buildPiRemoteConnectionSettings(input),
     })
     const openAIReasoningProfile = (input.provider === 'openai-codex' || input.provider === 'xai' || input.provider === 'openai-responses')
@@ -2021,7 +2086,22 @@ export class PiAgentAdapter implements AgentProviderAdapter {
       : undefined
     const extensionFactories = [
       ...(projectInstructionScope ? [projectInstructionScope.createExtension()] : []),
-      ...(input.researchIsolation ? [createResearchIsolationExtension(input.researchIsolation)] : []),
+      ...(input.researchIsolation
+        ? [createResearchIsolationExtension(
+          input.researchIsolation,
+          researchRefineRuntime?.onToolOutcome
+            ? {
+              onDenied: (toolName, reason) => {
+                // guard 拒绝不经 afterToolCall（工具未执行），从此处进 C1。
+                void researchRefineRuntime.onToolOutcome?.(
+                  { kind: 'residual', source: 'guard', tool: toolName, ruleId: 'isolation-guard', messageExcerpt: reason },
+                  session as unknown as Parameters<typeof researchRefineRuntime.onToolOutcome>[1],
+                )
+              },
+            }
+            : undefined,
+        )]
+        : []),
       ...(openAIReasoningProfile
         ? [createOpenAIReasoningRequestExtension({
           profile: openAIReasoningProfile,
@@ -2078,8 +2158,14 @@ export class PiAgentAdapter implements AgentProviderAdapter {
       // goal / compact 的 kernel host bridge。子代理继承活跃工具名，但各自
       // 构建独立 kernel，不共享父会话定义。
       ...createRlmSessionActivationOptions(rlmSupply),
+      ...(researchRefineRuntime?.autoRefineReviewer && { autoRefineReviewer: researchRefineRuntime.autoRefineReviewer }),
+      ...(researchRefineRuntime && { serializedRefine: researchRefineRuntime.serializedRefine }),
       customTools,
     })
+    if (researchRefineRuntime) {
+      artifactSessionIdHolder.value = session.sessionId
+      installResearchRefineToolTap(session.agent, researchRefineRuntime, session)
+    }
     if (rlmSupply.available) {
       // 父会话的 ipython 走 session-owned 执行 hook：Prime 重建工具表后仍有效，
       // 且 RLM child 创建自己的 Agent，不会继承父 hook 或共享同名 customTool。
@@ -2176,6 +2262,7 @@ export class PiAgentAdapter implements AgentProviderAdapter {
       harnessDir,
       // settingsManager 未显式配置时沿用 Prime 默认值（见 prime refinement.ts）
       autoRefine: readAutoRefineSettings(settingsManager as unknown as { getSettings?: () => unknown }),
+      ...(researchRefineRuntime?.mode === 'learning' && { researchRefineRuntime }),
       dispose: () => { session.dispose() },
     }
     this.residentSessions.install(input.sessionId, resident, owner)

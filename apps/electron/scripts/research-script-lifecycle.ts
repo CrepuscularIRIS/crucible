@@ -26,6 +26,8 @@ export interface ResearchDisposableSession {
 
 export interface DisposeAndArchiveInput {
   session: ResearchDisposableSession
+  /** dispose 前的收尾钩子（research refine promotion 等 C5 checkpoint）。 */
+  beforeDispose?: () => Promise<void>
   archiveDir: string
   entries: ResearchArchiveEntry[]
 }
@@ -142,6 +144,9 @@ export function assertResearchArchiveLayout(
 export async function disposeAndArchiveResearchSession(
   input: DisposeAndArchiveInput,
 ): Promise<void> {
+  // C5 promotion 必须在 dispose 之前：dispose 后 local harness 已随会话销毁，
+  // 未 promote 的 refinement 由 dispose 本身隔离（plan §5 EXPIRED = 无代码检疫）。
+  await input.beforeDispose?.()
   await input.session.disposeAsync()
   assertResearchArchiveLayout(input.archiveDir, input.entries)
   for (const entry of input.entries) {

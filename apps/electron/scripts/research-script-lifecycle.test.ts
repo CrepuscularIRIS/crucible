@@ -12,6 +12,7 @@ interface LifecycleModule {
   }): NodeJS.ProcessEnv
   disposeAndArchiveResearchSession(input: {
     session: { disposeAsync(): Promise<void> }
+    beforeDispose?: () => Promise<void>
     archiveDir: string
     entries: Array<{ source: string; target: string; required: boolean }>
   }): Promise<void>
@@ -84,6 +85,30 @@ describe('研究脚本生命周期', () => {
     expect(disposed).toBe(true)
     expect(readFileSync(join(archive, 'snapshot.txt'), 'utf-8')).toBe('flushed')
     expect(existsSync(join(archive, 'session-artifacts'))).toBe(false)
+  })
+
+  it('beforeDispose 先于 disposeAsync 执行（C5 promotion 的 pre-dispose seam）', async () => {
+    const lifecycle = await loadLifecycle()
+    expect(lifecycle).not.toBeNull()
+    if (!lifecycle) return
+
+    const root = mkdtempSync(join(tmpdir(), 'proma-script-before-dispose-'))
+    tempRoots.push(root)
+    const order: string[] = []
+    await lifecycle.disposeAndArchiveResearchSession({
+      session: {
+        async disposeAsync() {
+          order.push('dispose')
+          writeFileSync(join(root, 'evidence.txt'), 'live', 'utf-8')
+        },
+      },
+      beforeDispose: async () => {
+        order.push('promote')
+      },
+      archiveDir: join(root, 'archive'),
+      entries: [{ source: join(root, 'evidence.txt'), target: 'evidence.txt', required: true }],
+    })
+    expect(order).toEqual(['promote', 'dispose'])
   })
 
   it('必需证据缺失时拒绝生成部分归档', async () => {

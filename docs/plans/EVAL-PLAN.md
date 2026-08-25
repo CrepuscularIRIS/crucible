@@ -231,3 +231,42 @@ JSONL 需要一个小转换垫片（评测基建，允许）。
 
 **升级条件**：E1 若显示活性全绿但质量不敌基线，那是**真发现**（我们的脚手架
 在这个任务类上无增益），照实写进 P19，不许靠加实验掩盖。
+
+---
+
+## 7 · E1 首轮结果与第二轮计划(2026-08-24 追记)
+
+**首轮(textbook_M s0 × 3 模型,同栈单变量)已完赛**,bundle 在
+`research/campaigns/e1-2026-08-24-textbookM-s0/`(SCORE.md 为权威):
+
+| 模型 | spike_forecast_mse | RLM 派出 | 终局 |
+|---|---:|---:|---|
+| qwen3.7-plus | 9.585 | 5 | ⚠ 缺 report/gate |
+| qwen3.7-max | 12.186 | **0**(attack.record 系自写,未派子代理——ARFT E.2 样本) | ✅ |
+| qwen3.8-max | **0.725** | 21 | ✅(含一次人工收尾) |
+
+活性三臂全绿(路由/anchor/F1);两条 gate 首次真实全绿。
+
+### 7.1 首轮暴露、二轮前应修的洞
+
+1. **预算 reps 边界**:t8max spent=9>8(`server.ts:447` 的 `reps` 判定漏洞)。
+2. **meter 源码可读**:denylist 未覆盖 `/crucible/research/eval/`(liveness 误报来源)。
+3. **plus 臂 report_declare 调用过但 journal 无事件**——终局链可静默断裂。
+4. max 臂"宣称派出但未派出"——attack_record 需要与 spawn_task 对账。
+
+### 7.2 E-refine · harness 沉淀对照实验〔新增,源自 Continual Harness 论文 2605.09998 与 speedrun 规范〕
+
+**假设**:t8max 的重模拟+对抗策略可经 `/refine` 沉淀为 skill/subagent spec;
+沉淀后的 harness 能把弱模型(3.7-plus)的 MSE 显著拉低。
+
+- 步骤:① 从 t8max session 提炼 refinement(prompt/skill/subagent 三类);
+  ② global 写入 harness_state;③ 3.7-plus 换新 run 名重跑同 world×seed;
+  ④ 对照首轮 9.585。活性上"压缩/refine 至今 0 次"这个 UNEXERCISED 行随之关闭。
+- 红线不变:判官/分数不写 accepted;refine 条目要 evidence-backed(引 journal 事件)。
+- 这是对 kbs.md"harness 层持续学习"论点的第一个可发表实证。
+
+### 7.3 第二轮(E1 扩展):ca_rebound s0 × 3 模型
+
+novel world(非 textbook 召回型),首次检验系统在"机制不可召回"任务上的表现。
+口径:同预算 8、同 goal 模板、t8max 不再注入收尾指令,改观察自然终局;
+若 90 分钟无 forecast 停损照旧(记干预)。

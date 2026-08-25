@@ -17,8 +17,10 @@ services:
     container_name: proma
 
     ports:
-      - "127.0.0.1:5173:5173"   # Web UI（渲染层静态服务）
-      - "127.0.0.1:5174:5174"   # web-bridge（主进程 IPC，无鉴权，务必只发布到回环）
+      # 并行多实例时用 PROMA_WEB_PORT / PROMA_BRIDGE_PORT 错开宿主端口；
+      # 回环前缀是唯一防线，任何覆盖文件都不得去掉。
+      - "127.0.0.1:${PROMA_WEB_PORT:-5173}:5173"   # Web UI（渲染层静态服务）
+      - "127.0.0.1:${PROMA_BRIDGE_PORT:-5174}:5174"   # web-bridge（主进程 IPC，无鉴权，务必只发布到回环）
 
     env_file:
       - .env

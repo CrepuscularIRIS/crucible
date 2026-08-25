@@ -1,0 +1,10 @@
+# 并行评测实例覆盖层：同一镜像多容器并跑时，为每个 compose project 覆盖
+# 容器名（默认钉死为 proma，多项目会冲突）。端口与 run 名由环境变量注入：
+#
+#   INSTANCE_NAME=proma-max PROMA_WEB_PORT=5175 PROMA_BRIDGE_PORT=5176 \
+#   PROMA_RESEARCH_RUN=e1-textbookM-s0-max \
+#   docker compose -p e1-max -f docker-compose.yml -f docker-compose.eval.yml \
+#     -f docker-compose.parallel.yml up -d
+services:
+  proma:
+    container_name: "${INSTANCE_NAME:?请设置并行实例容器名}"
