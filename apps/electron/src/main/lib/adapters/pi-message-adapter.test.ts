@@ -6,6 +6,7 @@ import {
   convertResultMessage,
   getPiAssistantErrorDetails,
   hasPiAssistantTextContent,
+  isRecoverablePiEmptyStop,
   stripPiAssistantError,
 } from './pi-message-adapter'
 
@@ -25,6 +26,32 @@ function writeToolCall(content: string): AssistantMessage {
 }
 
 describe('convertPiMessage', () => {
+  test('recognizes qwen thinking-only zero-output stop as recoverable', () => {
+    expect(isRecoverablePiEmptyStop({
+      role: 'assistant',
+      content: [{ type: 'thinking', thinking: '仍在推理', thinkingSignature: 'reasoning_content' }],
+      stopReason: 'stop',
+      usage: { output: 0 },
+    } as unknown as AssistantMessage)).toBe(true)
+  })
+
+  test('does not retry a stop that produced text, a tool call, or billed output', () => {
+    const base = { role: 'assistant', stopReason: 'stop', usage: { output: 0 } }
+    expect(isRecoverablePiEmptyStop({
+      ...base,
+      content: [{ type: 'text', text: '完成' }],
+    } as unknown as AssistantMessage)).toBe(false)
+    expect(isRecoverablePiEmptyStop({
+      ...base,
+      content: [{ type: 'toolCall', id: 'tool-1', name: 'read', arguments: {} }],
+    } as unknown as AssistantMessage)).toBe(false)
+    expect(isRecoverablePiEmptyStop({
+      ...base,
+      content: [{ type: 'thinking', thinking: '推理', thinkingSignature: 'reasoning_content' }],
+      usage: { output: 1 },
+    } as unknown as AssistantMessage)).toBe(false)
+  })
+
   test('keeps complete write input in the final tool-call frame', () => {
     const content = 'x'.repeat(10_240)
     const message = convertPiMessage(writeToolCall(content), 'session-1', undefined, {

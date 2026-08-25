@@ -159,6 +159,19 @@ export function isAssistantPiMessage(message: AgentMessage): message is Assistan
   return !!message && typeof message === 'object' && 'role' in message && message.role === 'assistant'
 }
 
+/**
+ * 某些 OpenAI-compatible 上游会以 stop 正常收尾，但只返回 reasoning/thinking，
+ * 没有任何用户可见文本或可执行 tool call，且 output token 记为 0。
+ * 对 Agent loop 来说这不是有效完成态，可以在同一 transcript 上安全 continue。
+ */
+export function isRecoverablePiEmptyStop(message: AgentMessage): message is AssistantMessage {
+  if (!isAssistantPiMessage(message) || message.stopReason !== 'stop' || message.usage?.output !== 0) return false
+  return !message.content.some((block) =>
+    block.type === 'toolCall'
+    || (block.type === 'text' && block.text.trim().length > 0),
+  )
+}
+
 /** Pi's terminal error and any generated assistant content are independent fields. */
 export function getPiAssistantErrorDetails(message: SDKAssistantMessage): {
   detailedMessage: string

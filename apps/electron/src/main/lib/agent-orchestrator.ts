@@ -44,7 +44,7 @@ import { friendlyErrorMessage, isPromptTooLongError, isThinkingSignatureError, m
 import { getActiveRunRejectionMessage, shouldPersistInitialUserMessage } from './agent-send-message-policy'
 import { isSessionNotFoundError } from './error-patterns'
 import { AgentEventBus } from './agent-event-bus'
-import { decryptApiKey, getChannelById, listChannels, persistCodexOAuthCredentials, persistXaiOAuthCredentials, resolveChannelRuntimeApiKey, resolveCodexOAuthCredentials, resolveXaiOAuthCredentials } from './channel-manager'
+import { decryptApiKey, getChannelById, listChannels, persistCodexOAuthCredentials, persistXaiOAuthCredentials, resolveChannelByIdWithDiskRetry, resolveChannelRuntimeApiKey, resolveCodexOAuthCredentials, resolveXaiOAuthCredentials } from './channel-manager'
 import { getAdapter, fetchTitle } from '@proma/core'
 import pkg from '../../../package.json' with { type: 'json' }
 import { getFetchFn } from './proxy-fetch'
@@ -803,7 +803,7 @@ export class AgentOrchestrator {
     // Pi adapter 会移除 Bash 工具并注入基础模式说明；文件工具、对话和本地 Proma 工具不受影响。
 
     // 1. 获取渠道信息并解密 API Key
-    const channel = getChannelById(channelId)
+    const channel = await resolveChannelByIdWithDiskRetry(channelId)
     if (!channel) {
       reportPreflightError({
         code: 'channel_not_found',

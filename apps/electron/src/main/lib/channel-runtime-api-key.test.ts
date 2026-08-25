@@ -67,6 +67,55 @@ afterAll(() => {
 })
 
 describe('渠道运行时认证解析', () => {
+  test('Given 外部正在写入新渠道 When 首次读盘退回旧快照 Then 短退避后从磁盘解析新渠道', async () => {
+    writeChannels([
+      {
+        id: 'existing-channel',
+        name: 'Existing',
+        provider: 'anthropic',
+        baseUrl: 'https://api.anthropic.com',
+        apiKey: 'existing-key',
+        models: [],
+        enabled: true,
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    ])
+    expect(channelManager.getChannelById('existing-channel')?.id).toBe('existing-channel')
+
+    const configDir = join(tempHome, '.proma')
+    writeFileSync(join(configDir, 'channels.json'), '{"version":5,"channels":[', 'utf-8')
+    setTimeout(() => {
+      writeChannels([
+        {
+          id: 'runtime-channel',
+          name: 'Runtime LiteLLM',
+          provider: 'openai',
+          baseUrl: 'http://litellm:4000/v1',
+          apiKey: 'runtime-key',
+          models: [],
+          enabled: true,
+          createdAt: 2,
+          updatedAt: 2,
+        },
+      ])
+    }, 10)
+
+    await expect(channelManager.resolveChannelByIdWithDiskRetry('runtime-channel', {
+      attempts: 4,
+      delayMs: 10,
+    })).resolves.toMatchObject({ id: 'runtime-channel', name: 'Runtime LiteLLM' })
+  })
+
+  test('Given 渠道确实不存在 When 强制重读耗尽 Then 返回 undefined', async () => {
+    writeChannels([])
+
+    await expect(channelManager.resolveChannelByIdWithDiskRetry('missing-channel', {
+      attempts: 2,
+      delayMs: 0,
+    })).resolves.toBeUndefined()
+  })
+
   test('Given ChatGPT OAuth 渠道 When 解析运行时 key Then 返回 access token 而不是凭据 JSON', async () => {
     writeChannels([
       {

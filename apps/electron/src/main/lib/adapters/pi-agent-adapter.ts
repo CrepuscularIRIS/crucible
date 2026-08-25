@@ -82,6 +82,7 @@ import {
   hasToolResult,
   isAbortedAssistantMessage,
   isAssistantPiMessage,
+  isRecoverablePiEmptyStop,
   normalizePermissionInput,
   restorePiInput,
 } from './pi-message-adapter'
@@ -97,6 +98,7 @@ import { summarizePrimeRefineArtifacts } from './pi-refine-state'
 import type { AgentRefineEntrySummary, AgentRefineNowResult, AgentRefineState } from '@proma/shared'
 import { PendingPromptSkillActivationTracker } from './pi-skill-activation-tracker'
 import { createPiRetryTerminalGate, mapPiNativeRetryEvent } from './pi-retry-control'
+import { recoverPiEmptyStops } from './pi-empty-stop-recovery'
 import {
   closePiRequestProxyDispatcher,
   createPiRequestProxyDispatcher,
@@ -174,6 +176,8 @@ type SkillLoadResult = ReturnType<ResourceLoader['getSkills']>
 
 const PI_NATIVE_MAX_RETRIES = 8
 const PI_NATIVE_RETRY_BASE_DELAY_MS = 1_000
+const PI_EMPTY_STOP_MAX_RETRIES = 2
+const PI_EMPTY_STOP_RETRY_BASE_DELAY_MS = 500
 const MAX_AUTOMATIC_COMPACTION_CONTINUATIONS = 20
 
 export function shouldMarkCompactionAfterCompletedTurn(
@@ -1592,6 +1596,7 @@ export class PiAgentAdapter implements AgentProviderAdapter {
         assistantUuid: string
       }>()
       let pendingNativeOverflowRecovery = false
+      let pendingRecoverableEmptyStop: AssistantMessage | undefined
       // message_end 发生在 Pi 落盘前；保留对象身份，待 prompt 完成后从
       // SessionManager entries 精确取得 Pi entry ID，绝不按文本猜测。
       const finalAssistantUuids = new Map<AssistantMessage, string>()
@@ -1658,6 +1663,13 @@ export class PiAgentAdapter implements AgentProviderAdapter {
               }
               const isAssistant = isAssistantPiMessage(event.message)
               const assistantUuid = isAssistant ? assistantUuidFor() : undefined
+              if (isAssistant && isRecoverablePiEmptyStop(event.message)) {
+                // qwen3.8-max 经部分 OpenAI-compatible 网关偶发只产出 thinking，
+                // stopReason 却为 stop。先不把它当终态展示/计费；prompt 静默后会在
+                // 同一 transcript 上有限 continue，避免重投用户 prompt 重复副作用。
+                pendingRecoverableEmptyStop = event.message
+                break
+              }
               const converted = convertPiMessage(event.message, session.sessionId, input.model, {
                 ...(assistantUuid && { uuid: assistantUuid }),
               })
@@ -1906,7 +1918,34 @@ export class PiAgentAdapter implements AgentProviderAdapter {
                 return
               }
               currentInterrupt?.resolveAccepted()
+              pendingRecoverableEmptyStop = undefined
               await session.prompt(shieldPrimeSessionCommands(prompt), { source: 'rpc' })
+              const emptyStopRecovery = await recoverPiEmptyStops({
+                takePending: () => {
+                  const pending = pendingRecoverableEmptyStop
+                  pendingRecoverableEmptyStop = undefined
+                  return pending
+                },
+                removeFromActiveHistory: (emptyStop) => {
+                  const stateMessages = session.agent.state.messages
+                  if (stateMessages[stateMessages.length - 1] === emptyStop) {
+                    session.agent.state.messages = stateMessages.slice(0, -1)
+                  }
+                },
+                continueAgent: () => session.agent.continue(),
+                isAborted: () => active.abortRequested,
+                wait: (delayMs) => new Promise<void>((resolve) => setTimeout(resolve, delayMs)),
+                maxRetries: PI_EMPTY_STOP_MAX_RETRIES,
+                baseDelayMs: PI_EMPTY_STOP_RETRY_BASE_DELAY_MS,
+                onAttempt: (attempt, maxRetries, delayMs) => console.warn(
+                  `[Pi SDK] 检测到 thinking-only 空 stop，继续同一 transcript `
+                  + `(${attempt}/${maxRetries}, ${delayMs}ms)`,
+                ),
+              })
+              if (emptyStopRecovery === 'exhausted') {
+                console.error(`[Pi SDK] thinking-only 空 stop 连续 ${PI_EMPTY_STOP_MAX_RETRIES + 1} 次，交由上层呈现可重试错误`)
+                resetAssistantStream()
+              }
               // Research outcome hook 只记账；native rollback 必须等 prompt 完整退出、
               // Agent 已静默后再执行。禁止在 afterToolCall 内调用公开 refine()，否则
               // refine.waitForIdle 与 toolResult 生成互相等待，整条会话会锁死。

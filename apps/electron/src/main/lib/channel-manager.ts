@@ -321,7 +321,7 @@ function applyPresetModelCandidateUpdates(config: ChannelsConfig): { config: Cha
  *
  * 读取时自动将旧版本配置迁移到 CONFIG_VERSION，并在发生变更时回写。
  */
-function readConfig(): ChannelsConfig {
+function readConfig(options: { allowLastKnownGood?: boolean } = {}): ChannelsConfig {
   const configPath = getChannelsPath()
 
   if (!existsSync(configPath)) {
@@ -342,7 +342,7 @@ function readConfig(): ChannelsConfig {
     return cloneChannelsConfig(config)
   } catch (error) {
     console.error('[渠道管理] 读取配置文件失败:', error)
-    if (lastKnownGoodConfig) {
+    if (options.allowLastKnownGood !== false && lastKnownGoodConfig) {
       console.warn('[渠道管理] 本次读取失败，沿用进程内最后一次有效渠道配置')
       return cloneChannelsConfig(lastKnownGoodConfig)
     }
@@ -449,6 +449,38 @@ export function listChannels(): Channel[] {
 export function getChannelById(id: string): Channel | undefined {
   const config = readConfig()
   return config.channels.find((c) => c.id === id)
+}
+
+export interface ChannelDiskRetryOptions {
+  attempts?: number
+  delayMs?: number
+  sleep?: (delayMs: number) => Promise<void>
+}
+
+/**
+ * 运行期外部写入渠道后，首次读取可能恰好撞上尚未完成的 JSON。
+ *
+ * 普通读取可以退回 last-known-good 以维持既有会话，但按 ID 未命中时不能把
+ * 旧快照直接解释成“渠道已删除”。这里短退避并强制绕过旧快照重读磁盘；仅在
+ * 所有尝试都稳定未命中后，调用方才应报告 channel_not_found。
+ */
+export async function resolveChannelByIdWithDiskRetry(
+  id: string,
+  options: ChannelDiskRetryOptions = {},
+): Promise<Channel | undefined> {
+  const immediate = getChannelById(id)
+  if (immediate) return immediate
+
+  const attempts = Math.max(1, options.attempts ?? 3)
+  const delayMs = Math.max(0, options.delayMs ?? 50)
+  const sleep = options.sleep ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)))
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    if (delayMs > 0) await sleep(delayMs)
+    const config = readConfig({ allowLastKnownGood: false })
+    const channel = config.channels.find((candidate) => candidate.id === id)
+    if (channel) return channel
+  }
+  return undefined
 }
 
 /**
