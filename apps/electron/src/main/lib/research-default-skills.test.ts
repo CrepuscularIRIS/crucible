@@ -181,11 +181,11 @@ describe('受管 research 默认 Skills', () => {
 
   it('所有改动过的默认 Research Skills 都递增了 patch 版本', () => {
     const expectedVersions: Record<string, string> = {
-      'research-loop': '0.5.3',
+      'research-loop': '0.5.4',
       'research-abduce': '0.5.2',
       'research-probe': '0.6.2',
       'research-grill': '0.4.2',
-      'research-report': '0.4.2',
+      'research-report': '0.4.3',
       'research-kit': '0.4.1',
       'research-moves': '0.2.2',
     }

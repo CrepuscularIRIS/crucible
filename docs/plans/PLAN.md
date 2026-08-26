@@ -636,12 +636,30 @@ routing-acceptance 那对 RED/GREEN）。
 
 ---
 
-## P7 · Benchmark 后的端到端论文与科研绘图交付（计划项）
+## P7 · Benchmark 后的比赛技术报告、论文与科研绘图交付（计划项）
 
 **顺序不变：先冻结并跑完 P6 benchmark，再接本阶段。** P7 是只读消费已归档
 evidence 的交付层，不进入首轮 RCB / NeuronBench / AutoResearchEval，不得改变模型、
 Research Skills、MCP、联网策略或任何评测分数。端到端的终点定义为
-**evidence-grounded manuscript draft**，不是未经人工复核即可投稿的论文。
+**比赛要求的 evidence-grounded 技术方案 PDF**；论文形态草稿是其后的可选输出，
+不是未经人工复核即可投稿的论文。
+
+### P7.0 · 比赛交付优先于论文投稿形态
+
+方向 1B 的正式主交付是不超过 20 页的技术方案 PPT/PDF，并要求 Qwen/百炼调用证据、
+真实两轮反馈闭环、同条件对照或消融、失败和适用边界、源代码、测试 API 与可交互前端。
+报告生成层必须直接消费 P1-P20 对应的 evidence slots；缺少第一轮预登记、原始结果、
+第二轮调整依据或复现入口时，应产生阻塞项，不得用流畅叙事补齐。
+
+当前能力边界：
+
+- 默认 `pdf`/`docx` Skills 能读写和排版文件，但不理解 Research evidence 语义；
+- `research-report` 负责单场战役的 `REPORT.md` 和 gate，不负责比赛技术方案；
+- `nature-skills`、`paper-plot-skills` 已列为候选，但尚未受管安装进默认工作区/Docker；
+- 因此需要的是轻量的交付编译契约，而不是新增一段全局系统提示词。
+
+比赛报告流水线为：`P1-P20 evidence map → section slots → figure slots → DOCX/PDF → 全页
+渲染 QA`。学术论文流水线复用同一 evidence/figure manifest，但在比赛 PDF 完成后再启用。
 
 ### P7.1 · 受管外部 Skills，而不是重写论文系统
 
@@ -715,6 +733,7 @@ caption 和目标章节，不能只凭论文叙事临时挑图。
 
 - [ ] benchmark 基线及消融已冻结，P7 未进入任何评测臂
 - [ ] 外部 Skills 的版本、许可证、依赖与受管安装路径已审计
+- [ ] 生成一份 ≤20 页的方向 1B 技术方案 PDF，P1-P20 可追溯到 evidence slots，逐页渲染 QA 通过
 - [ ] 一组真实 evidence 完成“数据 → PDF/SVG 图 → caption → 论文草稿”
 - [ ] DashScope 只参与非数值视觉草图，最终数值图可由脚本完全复现
 - [ ] 引用、统计、图数值与主张边界四类反向用例全部变红

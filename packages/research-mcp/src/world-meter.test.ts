@@ -179,6 +179,8 @@ describe('计量接口（EVAL-PLAN §1.3）', () => {
       run, world: 'h_sag', seed: 0, counts,
     })) as Record<string, unknown>
     expect(typeof first.spike_forecast_mse).toBe('number')
+    expect(first.next_required_action).toBe('report_declare')
+    expect(first.proma_tool_name).toBe('mcp__research__report_declare')
 
     rmSync(join(root, 'world-ledger.jsonl'), { force: true })
     await expect(callTool('world_forecast', {

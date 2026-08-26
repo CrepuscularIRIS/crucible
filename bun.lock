@@ -37,7 +37,7 @@
     },
     "apps/electron": {
       "name": "@proma/electron",
-      "version": "0.17.76",
+      "version": "0.17.77",
       "dependencies": {
         "@earendil-works/pi-agent-core": "file:../../../oss/prime-agent/packages/agent",
         "@earendil-works/pi-ai": "file:../../../oss/prime-agent/packages/ai",
@@ -172,7 +172,7 @@
     },
     "packages/research-mcp": {
       "name": "@proma/research-mcp",
-      "version": "0.2.4",
+      "version": "0.2.6",
       "dependencies": {
         "@modelcontextprotocol/sdk": "^1.29.0",
         "zod": "^4.0.0",

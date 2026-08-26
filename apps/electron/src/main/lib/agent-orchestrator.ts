@@ -54,7 +54,7 @@ import { getAgentWorkspace, getLocalProjectRootStatus, getProjectFilesPath, getW
 import { getAgentWorkspacePath, getAgentSessionWorkspacePath, getSdkConfigDir, getWorkspaceSkillsDir } from './config-paths'
 import { getRuntimeStatus } from './runtime-init'
 import { getSettings } from './settings-service'
-import { buildSystemPrompt, buildDynamicContext } from './agent-prompt-builder'
+import { buildSystemPrompt, buildDynamicContext, buildResearchTerminalContext } from './agent-prompt-builder'
 import { resolveProjectInstructions } from './project-instruction-resolver'
 import { combinePromaInstructionFiles } from './adapters/pi-resource-loader-overrides'
 import { MAX_CONTEXT_MESSAGES, buildContextPrompt, buildRecoveryPrompt, buildReferencedSessionsPrompt } from './agent-session-context-prompt'
@@ -1083,7 +1083,11 @@ export class AgentOrchestrator {
         console.log(`[Agent 编排] 注入 referenced_planning: ${mentionedTodoIds?.length ?? 0} todos, ${mentionedCalendarEventIds?.length ?? 0} calendar events`)
       }
 
-      const contextualMessage = [dynamicCtx, enrichedMessage].filter(Boolean).join('\n\n')
+      const researchTerminalContext = buildResearchTerminalContext(
+        Boolean(researchIsolation),
+        sessionMeta?.delegationRole,
+      )
+      const contextualMessage = [dynamicCtx, researchTerminalContext, enrichedMessage].filter(Boolean).join('\n\n')
 
       const isCompactCommand = userMessage.trim() === '/compact'
       const finalPrompt = isCompactCommand

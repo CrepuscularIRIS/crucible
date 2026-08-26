@@ -42,6 +42,25 @@ interface SystemPromptContext {
   memoryRefreshOpportunity?: { memoryUpdatedAt?: number; newestSessionAt: number; newerSessionCount: number }
 }
 
+/**
+ * 父会话每回合注入的 Research 终局契约。
+ *
+ * 不能放进 ResourceLoader 的 append system prompt：Prime RLM child 会复用父会话的
+ * ResourceLoader，继承后会与“child 只回传、不得写 Research 状态”的契约冲突。
+ */
+export function buildResearchTerminalContext(
+  researchIsolation: boolean,
+  delegationRole?: AgentDelegationRole,
+): string {
+  if (!researchIsolation || delegationRole) return ''
+  return `<research_terminal_contract>
+本父会话处于 research 隔离模式，以下三条不可协商：
+- 写完 REPORT.md **不等于**终局。终局唯一成立条件：真实调用 \`mcp__research__report_declare\` 并收到 gate 裁决结果。
+- \`mcp__research__world_forecast\` 成功后、收到 gate 裁决前，战役未完成；自评“gate 全绿”无效，必须调用 \`mcp__research__report_declare\` 收口。
+- 不得凭记忆声称工具不存在：先按上述完整工具名真实调用；若运行时确实返回注册或连接错误，如实报告原始错误，不得伪造裁决或自行宣布完成。
+</research_terminal_contract>`
+}
+
 function buildWorkspacePaths(
   workspaceSlug: string,
   sessionId: string,

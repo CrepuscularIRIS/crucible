@@ -377,6 +377,41 @@ export function hasDisjointBandPair(bands: Record<string, Band>): boolean {
   return false
 }
 
+/** 恒等回显探针（E1 r4 实测）：整条命令只打印一个常数——输出与任何输入无关，不是测量。 */
+const NUM = String.raw`-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?`
+const CONSTANT_OUTPUT_COMMANDS = [
+  new RegExp(`^(?:python|python3)\\s+-c\\s+(['"])\\s*print\\s*\\(\\s*${NUM}\\s*\\)\\s*\\1$`),
+  new RegExp(`^echo\\s+${NUM}$`),
+  new RegExp(`^printf\\s+['"]?${NUM}['"]?\\s*$`),
+]
+
+function isConstantOutputCommand(command: string): boolean {
+  const trimmed = command.trim()
+  return CONSTANT_OUTPUT_COMMANDS.some((re) => re.test(trimmed))
+}
+
+/** predicts 方向词；只在可无歧义推断时执法（双方向、无方向或否定方向 → 跳过）。
+ *  短语两侧钉 \b，避免 enterprise→rise、furthermore→more、fallback→fall、setup→up 的子串误配；
+ *  否定短语（不低于/不超过/no less than/increase does not occur）保守跳过——
+ *  边界词或被否定的趋势不是可安全机械推断的方向。 */
+const PREDICTS_UP = /(higher|increas(?:e|es|ing)|above|\bris(?:e|es|ing)\b|larger|greater|\bmore\b|\bup\b|升|上升|超过|更高|更多|增大)/i
+const PREDICTS_DOWN = /(lower|decreas(?:e|es|ing)|below|\bfall(?:s|ing)?\b|smaller|fewer|\bless\b|\bdown\b|降|下降|低于|更低|更少|减小)/i
+const NEGATED_DIRECTION = [
+  /不(?:会|再|能|得|曾|将)?\s*(?:低于|超过|上升|下降|增加|减少|升高|降低|更高|更低|更多|更少|增大|减小|升|降)/,
+  /(?:没有|并未|未见|无)(?:明显)?\s*(?:上升|下降|增加|减少|升高|降低|增大|减小)/,
+  /(?:上升|下降|增加|减少|升高|降低|增大|减小)\s*(?:并)?(?:不|未)(?:明显|发生|出现)/,
+  /\b(?:no|not|never|hardly|without)\s+(?:expected\s+to\s+)?(?:less|more|higher|lower|above|below|increas\w*|decreas\w*|ris\w+|fall\w+)/i,
+  /\b(?:increas\w*|decreas\w*|ris\w+|fall\w+)\s+(?:does|did|will|would|is|was)\s+not\b/i,
+]
+
+function predictsDirection(predicts: string[]): 'up' | 'down' | undefined {
+  const text = predicts.join(' ')
+  if (NEGATED_DIRECTION.some((re) => re.test(text))) return undefined
+  const up = PREDICTS_UP.test(text)
+  const down = PREDICTS_DOWN.test(text)
+  return up === down ? undefined : (up ? 'up' : 'down')
+}
+
 /** 预登记的结构性检查：互斥频段 + kill/scope 分支 + 分支目标存在。 */
 export function validateProbeSpec(spec: ProbeSpec, state: ResearchState): void {
   if (!spec.pid || !spec.question || !spec.evalCommand) {
@@ -433,6 +468,40 @@ export function validateProbeSpec(spec: ProbeSpec, state: ResearchState): void {
   for (const branch of spec.branches ?? []) {
     if (!state.claims.some((c) => c.id === branch.target)) {
       throw new ResearchStateError(`分支目标不存在: ${branch.target}`)
+    }
+  }
+  // 恒等回显探针（ARFT C.1 预登记剧场）：常量输出让频段必中，SUPPORTED 是结构性保送。
+  // 这条挡不住复杂蓄意造假（语义层由 trace/对抗证据兜底），挡住的是最常见的那次——
+  // 把已观测数字直接 print 回来。band-direction 检查同理：只判结构可判的倒置。
+  if (isConstantOutputCommand(spec.evalCommand)) {
+    throw new ResearchStateError(
+      `${spec.pid} 的 evalCommand 是常量输出（${spec.evalCommand}）：不读输入、不算数的命令不是测量，`
+      + '频段必中等于没有判别力 → research-probe：改成真正读取数据/执行对比的命令',
+    )
+  }
+  // 稻草人假设（ARFT A.6）：predicts 说升、频段却整体落在预测降的对侧——注册即注定 kill。
+  const directions = Object.entries(spec.bands ?? {})
+    .map(([claimId, band]) => ({
+      claimId,
+      band,
+      dir: predictsDirection(state.claims.find((c) => c.id === claimId)?.predicts ?? []),
+    }))
+    .filter((d) => d.dir !== undefined)
+  for (let i = 0; i < directions.length; i += 1) {
+    for (let j = i + 1; j < directions.length; j += 1) {
+      const a = directions[i]
+      const b = directions[j]
+      if (a.dir === b.dir) continue
+      const [aLo, aHi] = a.band
+      const [bLo, bHi] = b.band
+      const inverted = a.dir === 'up' ? aHi <= bLo : bHi <= aLo
+      if (inverted) {
+        throw new ResearchStateError(
+          `频段方向与 predicts 相反：${a.claimId} 预测方向为${a.dir === 'up' ? '升' : '降'}，`
+          + `频段 [${aLo}, ${aHi}] 却整体落在预测为${b.dir === 'up' ? '升' : '降'}的 ${b.claimId} `
+          + `[${bLo}, ${bHi}] 的对侧——注册即注定 kill，是稻草人假设 → research-abduce：修正 predicts 或重写频段，使两者方向一致`,
+        )
+      }
     }
   }
 }

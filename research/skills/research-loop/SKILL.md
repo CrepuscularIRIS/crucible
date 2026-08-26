@@ -1,7 +1,7 @@
 ---
 name: research-loop
 description: 研究工作的第一动作。Use when 接到研究问题、想执行评测命令、开始或继续任何研究战役、会话刚启动、压缩刚发生、或不确定当前该做什么时。
-version: 0.5.3
+version: 0.5.4
 ---
 
 # research-loop —— 研究战役主路由
@@ -22,6 +22,16 @@ prereg/probes）= 造假，trace gate 逐字重放当场抓——run 目录里�
 `REPORT.md` 这一个文件；预登记前用 Bash/kernel"看一眼"将被登记的命令 =
 把预测变成回忆，且这条违规发生在 journal 之外，三道 gate 一道都拦不住；
 gate 是裁决不是续命。
+
+## 完成定义（DoD）
+
+**战役完成 = `mcp__research__report_declare` 收到三道 gate 裁决事件。** 写完 REPORT.md、
+自评"全绿"、或声称"工具不可用"都不构成完成——journal 里没有 declare 事件，
+战役永远是未完成态，会话不得停止。
+
+预算纪律：确证阶段（最后一个 LIVE 假设的攻击 + 对账）预留 **≥2 reps**；
+第一个假设出现前花光全部预算 = 确证阶段零预算，只会把你自己逼向回显探针
+那条歪路（prereg 现已结构性拒绝常量输出命令）。
 
 ## 程序
 
@@ -114,6 +124,9 @@ Ruling: <决定> — <理由> — <押错的代价>
 | "research_state 拿到状态了，不用 anchor" | COUNTERS 与 ⚠ 只在锚里。state 是权威，锚是调度信号——P5.1 实测只调 state 的会话，⚠ 层全程未激活（FRICTION F3）。 |
 | "先跑一遍各条件了解全景，不算观测" | 全景预览就是观测：P5.1 实测 14:26 预览 4 条件 → 14:29 写频段，两轮频段全是回忆（FRICTION F1，P14 违背）。读源码可以，执行评测不行——要动手就 init → prereg，FAILED 很便宜。 |
 | "问题都想过了，不必逐类清账" | 未落成 claim/prereg/attack/ruling 的思考无法影响下一阶段。问题债跨阶段滚动，最后只会变成报告期的昂贵补洞。 |
+| "REPORT.md 写完了，战役结束" | 完成 = `mcp__research__report_declare` 的 gate 裁决事件（DoD）。写完未 declare = 未完成，会话不得停止。 |
+| "report_declare 好像不可用/不存在" | 不得凭记忆判断。先按 Pi 完整工具名 `mcp__research__report_declare` 真实调用；只有运行时返回注册/连接错误才算不可用，并须原样报告。 |
+| "预算还多，先把探索铺开" | 确证阶段预留 ≥2 reps。8/8 烧在第一个假设之前，确证就只剩常量回显一条歪路——而那条路已被结构性堵死。 |
 
 ## 快速参考
 

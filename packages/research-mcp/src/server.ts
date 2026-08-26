@@ -398,7 +398,11 @@ export function buildServer(): McpServer {
       const failures = verdicts.flatMap((v) => v.failures)
       if (failures.length > 0) {
         const lines = failures.map((f) => `✗ [${f.gate}] ${f.reason}`)
-        throw new ResearchStateError(`报告未通过 gate，拒绝声明：\n${lines.join('\n')}`)
+        throw new ResearchStateError(
+          `报告未通过 gate，拒绝声明：\n${lines.join('\n')}`
+          + '\n→ 逐条修复 REPORT.md（或回 research-probe 补实验）后重调 report_declare'
+          + '（Proma 工具名 mcp__research__report_declare）；终局只能由 declare 裁决',
+        )
       }
 
       appendEvent(root, 'report.declare', { path: normalizedPath, sha256: digest })
@@ -568,7 +572,18 @@ export function buildServer(): McpServer {
         spike_forecast_mse: result.spike_forecast_mse,
         budget_spent: worldState.spent,
       })
-      return { content: [{ type: 'text', text: proc.stdout }] }
+      // 邻近反馈：forecast 成功 ≠ 终局。机器可读的下一步指令，避免长上下文里遗忘 declare。
+      return {
+        content: [{
+          type: 'text',
+          text: JSON.stringify({
+            ...result,
+            next_required_action: 'report_declare',
+            proma_tool_name: 'mcp__research__report_declare',
+            next_step_hint: '终局唯一成立条件：写 REPORT.md 后真实调用 mcp__research__report_declare 并收到 gate 裁决；自评"gate 全绿"无效',
+          }),
+        }],
+      }
     },
     )
   }

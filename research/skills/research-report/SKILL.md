@@ -1,7 +1,7 @@
 ---
 name: research-report
 description: Use when 用户要结论，或坟场与 SUPPORTED 已足以回答战役问题、且每个进结论的主张都已挨过攻击时。
-version: 0.4.2
+version: 0.4.3
 ---
 
 # research-report —— 报告纪律
@@ -10,18 +10,21 @@ version: 0.4.2
 
 把战役结果写成 `.proma-research/<run>/REPORT.md`——这是 run 目录里**唯一
 由你写入**的文件（journal/register/prereg/probes 只有 server 能写），声明时
-调 `report_declare(run, path="REPORT.md")`（path 相对 run 目录，越界被拒）。
+调 `mcp__research__report_declare(run, path="REPORT.md")`（MCP 内部短名
+`report_declare`；path 相对 run 目录，越界被拒）。
 报告的可信度不来自文采，来自**每个数字都能被重算对账**——gate 2 逐行检查，
 写的时候就按对账契约写。
 
 ## 铁律
 
 ```
-数字只能来自 metric_recompute；gate 红了改报告或补实验，绝不动 journal 与 register
+数字只能来自 metric_recompute 且必须带 (P#) 出处；写完 REPORT 同一回合内 declare；
+gate 红了改报告或补实验，绝不动 journal 与 register
 ```
 
 **违反字面就是违反精神。** 手改账本凑绿 = 造假，trace gate 逐字重放当场抓
-【结构】；"我记得那个数是 0.83" 不是出处。
+【结构】；"我记得那个数是 0.83" 不是出处；没有 (P#) 的小数整行被拒，写的时候
+就别留侥幸。
 
 ## 程序（硬格式 = gate 的对账契约，全部【结构】）
 
@@ -33,7 +36,9 @@ version: 0.4.2
    LIVE 且未检验照写 LIVE——这不丢人；把 LIVE 写成 SUPPORTED 才丢人。
 4. **假设引用**：正文 `H#` 必须存在（`据H99的分析` 会被抓）。
 5. **declare 即裁决**：`report_declare` 当庭跑三道 gate，任何一道红 → 声明被拒
-   并逐条给理由。全绿才写入 journal。用户/CI 可独立复跑同一份实现：
+   并逐条给理由。全绿才写入 journal。**写完 REPORT.md 后同一回合内必须调用
+   `mcp__research__report_declare`**；被拒按理由逐条修复后重调。停在"报告已写"未 declare =
+   战役未完成（research-loop 的 DoD）。用户/CI 可独立复跑同一份实现：
 
    ```bash
    bun <repo>/packages/research-mcp/gates/prereg.ts     <run-dir>

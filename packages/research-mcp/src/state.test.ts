@@ -108,3 +108,66 @@ describe('路径与命名', () => {
     expect(confined('/tmp/run', 'probes/P1/raw/output.txt')).toBe('/tmp/run/probes/P1/raw/output.txt')
   })
 })
+
+describe('约束 5：恒等回显探针（ARFT C.1 预登记剧场）', () => {
+  it('python -c print(常数) → 拒绝', () => {
+    const state = minimalState()
+    expect(() => validateProbeSpec(validSpec({ evalCommand: 'python3 -c "print(13.5)"' }), state))
+      .toThrow(/常量输出/)
+  })
+
+  it('echo / printf 常数 → 拒绝', () => {
+    const state = minimalState()
+    expect(() => validateProbeSpec(validSpec({ evalCommand: 'echo 13.5' }), state)).toThrow(/常量输出/)
+    expect(() => validateProbeSpec(validSpec({ evalCommand: 'printf "13.5"' }), state)).toThrow(/常量输出/)
+  })
+
+  it('读取数据/执行计算的命令 → 通过', () => {
+    const state = minimalState()
+    expect(() => validateProbeSpec(validSpec({ evalCommand: 'python3 probe_eval.py --out /tmp/x.json' }), state))
+      .not.toThrow()
+  })
+})
+
+describe('约束 6：稻草人频段方向（ARFT A.6）', () => {
+  it('H1 预测升、H2 预测降，但频段整体倒置 → 拒绝', () => {
+    const state = minimalState()
+    expect(() => validateProbeSpec(validSpec({ bands: { H1: [0, 0.3], H2: [0.5, 1.0] } }), state))
+      .toThrow(/稻草人/)
+  })
+
+  it('方向与频段一致 → 通过', () => {
+    const state = minimalState()
+    expect(() => validateProbeSpec(validSpec(), state)).not.toThrow()
+  })
+
+  it('predicts 无法推断方向 → 不执法', () => {
+    const dir = join(root, 'no-dir-claims')
+    mkdirSync(dir, { recursive: true })
+    appendEvent(dir, 'run.init', { run: 'test' })
+    appendEvent(dir, 'claim.propose', { id: 'H1', statement: 'A', predicts: ['格式差异'] })
+    appendEvent(dir, 'claim.propose', { id: 'H2', statement: 'B', predicts: ['另一种格式'] })
+    expect(() => validateProbeSpec(validSpec({ bands: { H1: [0, 0.3], H2: [0.5, 1.0] } }), replay(dir)))
+      .not.toThrow()
+  })
+
+  it('否定短语（不低于/不超过）不算方向 → 互补频段不被误杀', () => {
+    const dir = join(root, 'neg-claims')
+    mkdirSync(dir, { recursive: true })
+    appendEvent(dir, 'run.init', { run: 'test' })
+    appendEvent(dir, 'claim.propose', { id: 'H1', statement: 'A', predicts: ['准确率不低于 0.8'] })
+    appendEvent(dir, 'claim.propose', { id: 'H2', statement: 'B', predicts: ['准确率不超过 0.5'] })
+    expect(() => validateProbeSpec(validSpec({ bands: { H1: [0.8, 1.0], H2: [0.0, 0.5] } }), replay(dir)))
+      .not.toThrow()
+  })
+
+  it('前置与后置趋势否定都保守跳过，不把“没有上升”当作升方向', () => {
+    const dir = join(root, 'neg-trend-claims')
+    mkdirSync(dir, { recursive: true })
+    appendEvent(dir, 'run.init', { run: 'test' })
+    appendEvent(dir, 'claim.propose', { id: 'H1', statement: 'A', predicts: ['准确率没有明显上升'] })
+    appendEvent(dir, 'claim.propose', { id: 'H2', statement: 'B', predicts: ['error increase does not occur'] })
+    expect(() => validateProbeSpec(validSpec({ bands: { H1: [0, 0.3], H2: [0.5, 1.0] } }), replay(dir)))
+      .not.toThrow()
+  })
+})
