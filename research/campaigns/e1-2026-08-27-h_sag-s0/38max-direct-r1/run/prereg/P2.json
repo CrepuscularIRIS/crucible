@@ -1,0 +1,132 @@
+{
+  "pid": "P2",
+  "question": "反跳判别器：250 ms -30 uA 超极化 + 120 ms 间隙后，+6 uA/60 ms 弱测试窗响应有多大？判别 H1(Ih 反跳提升 ∈[8.5,12.9]) vs H4(噪声 ≈7.2) vs H3(去失活爆发 ≥13)。Load-bearing variable：test 窗 spike_count（reps=2 均值，ledger 第 1 条该协议条目）；对照：参考 7.2。间隙期本身不计入窗口，但间隙期反跳尖峰会在轨迹中可见作旁证。Severity：若无反跳电流，结果落 ≥8.5 概率 <5%。",
+  "evalCommand": "python3 -c 'import json; p=\"/root/.proma-research/e1-2026-08-27-h_sag-s0/world-ledger.jsonl\"; L=[json.loads(l) for l in open(p) if l.strip()]; obs=[e for e in L if e.get(\"cmd\")==\"observe\" and e.get(\"protocol\")==\"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)\"]; e=obs[0]; print(json.dumps({\"spike_count\": e[\"spike_count\"], \"reps\": e[\"reps\"]}))'",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H1": [
+      8.5,
+      12.9
+    ],
+    "H3": [
+      13,
+      60
+    ],
+    "H4": [
+      5.2,
+      8.4
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        8.5,
+        12.9
+      ],
+      "action": "support",
+      "target": "H1",
+      "scopeNote": "反跳提升弱测试，与 Ih 激活后的残余内向一致（参考模拟 g=25 给 11.3）"
+    },
+    {
+      "band": [
+        8.5,
+        12.9
+      ],
+      "action": "kill",
+      "target": "H4",
+      "scopeNote": "超出 H4 预登记带；8.5–9.2 属参考±2 边缘区，kill 偏保守但带界先于观测冻结"
+    },
+    {
+      "band": [
+        8.5,
+        12.9
+      ],
+      "action": "scope",
+      "target": "H2",
+      "scopeNote": "外向电流去活也可轻度增强，需长步适应度判别"
+    },
+    {
+      "band": [
+        8.5,
+        12.9
+      ],
+      "action": "scope",
+      "target": "H3",
+      "scopeNote": "低于 H3 爆发预测下限 13，收窄为弱变体"
+    },
+    {
+      "band": [
+        13,
+        60
+      ],
+      "action": "support",
+      "target": "H3",
+      "scopeNote": "强反跳爆发，去失活机制的标志"
+    },
+    {
+      "band": [
+        13,
+        60
+      ],
+      "action": "support",
+      "target": "H1",
+      "scopeNote": "强 Ih（13–16 在 H1 预测上界内）同样兼容，由 P1 压低方向二次判别"
+    },
+    {
+      "band": [
+        13,
+        60
+      ],
+      "action": "kill",
+      "target": "H4",
+      "scopeNote": "远超参考 7.2±2"
+    },
+    {
+      "band": [
+        13,
+        60
+      ],
+      "action": "scope",
+      "target": "H2",
+      "scopeNote": "外向去活难以到爆发水平，收窄"
+    },
+    {
+      "band": [
+        5.2,
+        8.4
+      ],
+      "action": "support",
+      "target": "H4",
+      "scopeNote": "与参考 7.2±2 一致"
+    },
+    {
+      "band": [
+        5.2,
+        8.4
+      ],
+      "action": "kill",
+      "target": "H1",
+      "scopeNote": "H1 预测 ≥8.5 反跳增强失败"
+    },
+    {
+      "band": [
+        5.2,
+        8.4
+      ],
+      "action": "kill",
+      "target": "H3",
+      "scopeNote": "H3 预测 ≥13 爆发失败"
+    },
+    {
+      "band": [
+        5.2,
+        8.4
+      ],
+      "action": "scope",
+      "target": "H2",
+      "scopeNote": "外向去活若有效应应增强，观测无增强则收窄为无效应变体"
+    }
+  ],
+  "frozenAt": "2026-08-27T14:33:25.635Z"
+}

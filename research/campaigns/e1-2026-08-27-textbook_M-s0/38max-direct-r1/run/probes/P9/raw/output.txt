@@ -1,0 +1,1 @@
+{"n_files": 1, "n_obs": 1, "prot": "brief step (12 uA, 40 ms)", "counts": [5.0], "metric": -1.7999999999999998, "file": "/root/.proma-research/e1-2026-08-27-textbook_M-s0/world-ledger.jsonl"}

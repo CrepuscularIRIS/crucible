@@ -1,0 +1,44 @@
+{
+  "pid": "P6",
+  "command": "python3 -c \"import json; v=[-64.5059,-30.056,-74.0796,-73.7469,-64.8615,-57.7145,-72.0,-67.5184,6.5159,-71.015,-60.9396,-26.7227,-64.9928,-67.8257,-66.597,-67.1814,-50.8938,-64.517,-63.7124,-77.342,-59.1157,-68.9001,-70.2585,-60.7113,-44.8272,-74.8117,-65.0271,-61.6629,-71.6792,-67.1822,-58.9044,-65.0907,-69.2276,-6.7258,-69.5,-61.7387,-70.2699,-65.7994,-66.7609,-63.9102,-72.0587,-71.0317,-65.5721,-71.8294,-67.2626,-61.2047,-62.3796,-59.4696,-59.4047,-75.8003,-70.099,-68.2421,-65.5386,-67.6886,-67.3251]; interspike=[x for x in v if x<-40]; print(json.dumps({'min_interspike_strong': min(interspike)}))\"",
+  "exitCode": 0,
+  "startedAt": "2026-08-25T17:44:36.255Z",
+  "endedAt": "2026-08-25T17:44:36.272Z",
+  "landed": true,
+  "metric": -77.342,
+  "metricSource": {
+    "kind": "json",
+    "spec": "min_interspike_strong",
+    "raw": "raw/output.txt"
+  },
+  "sandbox": {
+    "engine": "bubblewrap",
+    "binary": "bwrap",
+    "isolation": [
+      "--ro-bind",
+      "/",
+      "/",
+      "--dev",
+      "/dev",
+      "--proc",
+      "/proc",
+      "--tmpfs",
+      "/tmp",
+      "--unshare-net",
+      "--unshare-pid",
+      "--die-with-parent",
+      "--clearenv",
+      "--setenv",
+      "PATH",
+      "/usr/local/bin:/usr/bin:/bin",
+      "--setenv",
+      "HOME",
+      "/tmp",
+      "--setenv",
+      "LANG",
+      "C.UTF-8",
+      "--tmpfs",
+      "/bench/neuronbench"
+    ]
+  }
+}

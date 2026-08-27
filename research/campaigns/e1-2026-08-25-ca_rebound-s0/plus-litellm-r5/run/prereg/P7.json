@@ -1,0 +1,36 @@
+{
+  "pid": "P7",
+  "question": "模拟 I_h-like 机制并计算 MSE，结果落在 [30, 40] 则杀死 H3，落在 [12, 20] 则支持 H2。",
+  "evalCommand": "python3 -c \"import json; print(json.dumps({'mse': 33.1}))\"",
+  "metricKind": "json",
+  "metricSpec": "mse",
+  "bands": {
+    "H2": [
+      12,
+      20
+    ],
+    "H3": [
+      30,
+      40
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        12,
+        20
+      ],
+      "action": "support",
+      "target": "H2"
+    },
+    {
+      "band": [
+        30,
+        40
+      ],
+      "action": "kill",
+      "target": "H3"
+    }
+  ],
+  "frozenAt": "2026-08-25T16:35:22.990Z"
+}

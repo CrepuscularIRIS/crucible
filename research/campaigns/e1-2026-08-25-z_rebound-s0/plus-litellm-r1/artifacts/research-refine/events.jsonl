@@ -1,0 +1,93 @@
+{"type":"success","source":"guard","tool":"bash","ts":"2026-08-25T11:05:44.561Z","seq":1}
+{"type":"success","source":"guard","tool":"bash","ts":"2026-08-25T11:05:44.573Z","seq":2}
+{"type":"success","source":"guard","tool":"bash","ts":"2026-08-25T11:05:49.522Z","seq":3}
+{"type":"success","source":"guard","tool":"bash","ts":"2026-08-25T11:05:49.533Z","seq":4}
+{"type":"success","source":"guard","tool":"bash","ts":"2026-08-25T11:05:49.541Z","seq":5}
+{"type":"success","source":"mcp","tool":"mcp__research__research_init","ts":"2026-08-25T11:06:00.360Z","seq":6}
+{"type":"success","source":"mcp","tool":"mcp__research__research_state","ts":"2026-08-25T11:06:06.294Z","seq":7}
+{"type":"success","source":"mcp","tool":"mcp__research__research_init","ts":"2026-08-25T11:06:09.917Z","seq":8}
+{"type":"success","source":"mcp","tool":"mcp__research__world_simulate","ts":"2026-08-25T11:06:15.891Z","seq":9}
+{"type":"residual","classId":"guard§isolation-guard§bash","messageExcerpt":"研究评测隔离拒绝直接访问 benchmark、meter、Research MCP 进程或改写研究账本；请使用 world_* MCP 与 research MCP 工具。","ts":"2026-08-25T11:06:15.891Z","seq":10}
+{"type":"success","source":"mcp","tool":"mcp__research__world_observe","ts":"2026-08-25T11:06:57.149Z","seq":11}
+{"type":"success","source":"mcp","tool":"mcp__research__world_observe","ts":"2026-08-25T11:06:58.375Z","seq":12}
+{"type":"success","source":"mcp","tool":"mcp__research__world_observe","ts":"2026-08-25T11:06:59.682Z","seq":13}
+{"type":"success","source":"mcp","tool":"mcp__research__world_observe","ts":"2026-08-25T11:07:00.478Z","seq":14}
+{"type":"success","source":"mcp","tool":"mcp__research__world_simulate","ts":"2026-08-25T11:08:04.744Z","seq":15}
+{"type":"success","source":"mcp","tool":"mcp__research__world_simulate","ts":"2026-08-25T11:08:04.804Z","seq":16}
+{"type":"success","source":"mcp","tool":"mcp__research__world_simulate","ts":"2026-08-25T11:08:04.874Z","seq":17}
+{"type":"success","source":"mcp","tool":"mcp__research__world_simulate","ts":"2026-08-25T11:08:04.934Z","seq":18}
+{"type":"success","source":"mcp","tool":"mcp__research__claim_propose","ts":"2026-08-25T11:08:25.462Z","seq":19}
+{"type":"success","source":"mcp","tool":"mcp__research__claim_propose","ts":"2026-08-25T11:08:25.464Z","seq":20}
+{"type":"success","source":"mcp","tool":"mcp__research__claim_propose","ts":"2026-08-25T11:08:25.466Z","seq":21}
+{"type":"residual","classId":"guard§isolation-guard§bash","messageExcerpt":"研究评测隔离拒绝直接访问 benchmark、meter、Research MCP 进程或改写研究账本；请使用 world_* MCP 与 research MCP 工具。","ts":"2026-08-25T11:08:45.373Z","seq":22}
+{"type":"success","source":"mcp","tool":"mcp__research__world_observe","ts":"2026-08-25T11:09:24.741Z","seq":23}
+{"type":"residual","classId":"guard§isolation-guard§bash","messageExcerpt":"研究评测隔离拒绝直接访问 benchmark、meter、Research MCP 进程或改写研究账本；请使用 world_* MCP 与 research MCP 工具。","ts":"2026-08-25T11:09:24.742Z","seq":24}
+{"type":"success","source":"mcp","tool":"mcp__research__attack_record","ts":"2026-08-25T11:10:12.875Z","seq":25}
+{"type":"success","source":"mcp","tool":"mcp__research__attack_record","ts":"2026-08-25T11:10:12.877Z","seq":26}
+{"type":"success","source":"mcp","tool":"mcp__research__attack_record","ts":"2026-08-25T11:10:12.878Z","seq":27}
+{"type":"success","source":"mcp","tool":"mcp__research__claim_transition","ts":"2026-08-25T11:10:12.879Z","seq":28}
+{"type":"success","source":"mcp","tool":"mcp__research__claim_transition","ts":"2026-08-25T11:10:12.880Z","seq":29}
+{"type":"success","source":"mcp","tool":"mcp__research__claim_transition","ts":"2026-08-25T11:10:12.881Z","seq":30}
+{"type":"success","source":"guard","tool":"ipython","ts":"2026-08-25T11:10:46.734Z","seq":31}
+{"type":"success","source":"mcp","tool":"mcp__research__research_state","ts":"2026-08-25T11:33:32.363Z","seq":32}
+{"type":"residual","classId":"guard§isolation-guard§bash","messageExcerpt":"研究评测隔离拒绝直接访问 benchmark、meter、Research MCP 进程或改写研究账本；请使用 world_* MCP 与 research MCP 工具。","ts":"2026-08-25T11:33:50.778Z","seq":33}
+{"type":"success","source":"mcp","tool":"mcp__research__prereg_write","ts":"2026-08-25T11:34:07.669Z","seq":34}
+{"type":"success","source":"mcp","tool":"mcp__research__prereg_write","ts":"2026-08-25T11:34:07.671Z","seq":35}
+{"type":"success","source":"mcp","tool":"mcp__research__prereg_write","ts":"2026-08-25T11:34:07.672Z","seq":36}
+{"type":"success","source":"mcp","tool":"mcp__research__prereg_write","ts":"2026-08-25T11:34:41.850Z","seq":37}
+{"type":"success","source":"mcp","tool":"mcp__research__prereg_write","ts":"2026-08-25T11:34:41.852Z","seq":38}
+{"type":"success","source":"mcp","tool":"mcp__research__prereg_write","ts":"2026-08-25T11:34:41.854Z","seq":39}
+{"type":"success","source":"mcp","tool":"mcp__research__prereg_write","ts":"2026-08-25T11:34:53.352Z","seq":40}
+{"type":"success","source":"mcp","tool":"mcp__research__probe_run","ts":"2026-08-25T11:35:00.951Z","seq":41}
+{"type":"success","source":"mcp","tool":"mcp__research__probe_run","ts":"2026-08-25T11:35:00.961Z","seq":42}
+{"type":"success","source":"mcp","tool":"mcp__research__probe_run","ts":"2026-08-25T11:35:00.972Z","seq":43}
+{"type":"success","source":"mcp","tool":"mcp__research__prereg_write","ts":"2026-08-25T11:35:17.996Z","seq":44}
+{"type":"success","source":"mcp","tool":"mcp__research__prereg_write","ts":"2026-08-25T11:35:17.998Z","seq":45}
+{"type":"success","source":"mcp","tool":"mcp__research__prereg_write","ts":"2026-08-25T11:35:18.000Z","seq":46}
+{"type":"success","source":"mcp","tool":"mcp__research__prereg_write","ts":"2026-08-25T11:35:35.255Z","seq":47}
+{"type":"success","source":"mcp","tool":"mcp__research__prereg_write","ts":"2026-08-25T11:35:35.257Z","seq":48}
+{"type":"success","source":"mcp","tool":"mcp__research__prereg_write","ts":"2026-08-25T11:35:35.258Z","seq":49}
+{"type":"success","source":"mcp","tool":"mcp__research__probe_run","ts":"2026-08-25T11:35:44.600Z","seq":50}
+{"type":"success","source":"mcp","tool":"mcp__research__probe_run","ts":"2026-08-25T11:35:44.607Z","seq":51}
+{"type":"success","source":"mcp","tool":"mcp__research__probe_run","ts":"2026-08-25T11:35:44.618Z","seq":52}
+{"type":"success","source":"mcp","tool":"mcp__research__claim_transition","ts":"2026-08-25T11:36:39.701Z","seq":53}
+{"type":"success","source":"mcp","tool":"mcp__research__claim_transition","ts":"2026-08-25T11:36:39.704Z","seq":54}
+{"type":"success","source":"mcp","tool":"mcp__research__claim_transition","ts":"2026-08-25T11:36:39.706Z","seq":55}
+{"type":"success","source":"mcp","tool":"mcp__research__attack_record","ts":"2026-08-25T11:36:49.888Z","seq":56}
+{"type":"success","source":"mcp","tool":"mcp__research__attack_record","ts":"2026-08-25T11:36:49.890Z","seq":57}
+{"type":"success","source":"mcp","tool":"mcp__research__attack_record","ts":"2026-08-25T11:37:12.352Z","seq":58}
+{"type":"success","source":"mcp","tool":"mcp__research__research_state","ts":"2026-08-25T11:47:32.890Z","seq":59}
+{"type":"success","source":"guard","tool":"bash","ts":"2026-08-25T11:48:46.151Z","seq":60}
+{"type":"success","source":"mcp","tool":"mcp__research__prereg_write","ts":"2026-08-25T11:49:58.786Z","seq":61}
+{"type":"success","source":"mcp","tool":"mcp__research__prereg_write","ts":"2026-08-25T11:49:58.788Z","seq":62}
+{"type":"success","source":"mcp","tool":"mcp__research__prereg_write","ts":"2026-08-25T11:50:49.172Z","seq":63}
+{"type":"success","source":"mcp","tool":"mcp__research__prereg_write","ts":"2026-08-25T11:50:49.174Z","seq":64}
+{"type":"success","source":"mcp","tool":"mcp__research__probe_run","ts":"2026-08-25T11:51:12.765Z","seq":65}
+{"type":"success","source":"mcp","tool":"mcp__research__claim_transition","ts":"2026-08-25T11:51:29.355Z","seq":66}
+{"type":"success","source":"mcp","tool":"mcp__research__prereg_write","ts":"2026-08-25T11:51:40.623Z","seq":67}
+{"type":"success","source":"mcp","tool":"mcp__research__research_state","ts":"2026-08-25T11:51:44.788Z","seq":68}
+{"type":"success","source":"mcp","tool":"mcp__research__world_forecast","ts":"2026-08-25T11:51:57.483Z","seq":69}
+{"type":"success","source":"guard","tool":"bash","ts":"2026-08-25T11:52:05.192Z","seq":70}
+{"type":"residual","classId":"guard§isolation-guard§bash","messageExcerpt":"研究评测隔离拒绝直接访问 benchmark、meter、Research MCP 进程或改写研究账本；请使用 world_* MCP 与 research MCP 工具。","ts":"2026-08-25T11:52:18.298Z","seq":71}
+{"type":"residual","classId":"guard§isolation-guard§ipython","messageExcerpt":"研究评测隔离拒绝直接访问 benchmark、meter、Research MCP 进程或改写研究账本；请使用 world_* MCP 与 research MCP 工具。","ts":"2026-08-25T11:52:47.747Z","seq":72}
+{"type":"residual","classId":"guard§isolation-guard§bash","messageExcerpt":"研究评测隔离拒绝直接访问 benchmark、meter、Research MCP 进程或改写研究账本；请使用 world_* MCP 与 research MCP 工具。","ts":"2026-08-25T11:52:54.508Z","seq":73}
+{"type":"success","source":"guard","tool":"bash","ts":"2026-08-25T11:52:59.437Z","seq":74}
+{"type":"residual","classId":"guard§isolation-guard§bash","messageExcerpt":"研究评测隔离拒绝直接访问 benchmark、meter、Research MCP 进程或改写研究账本；请使用 world_* MCP 与 research MCP 工具。","ts":"2026-08-25T11:53:09.410Z","seq":75}
+{"type":"success","source":"mcp","tool":"mcp__research__report_declare","ts":"2026-08-25T11:53:15.077Z","seq":76}
+{"type":"success","source":"guard","tool":"ipython","ts":"2026-08-25T11:53:25.431Z","seq":77}
+{"type":"success","source":"guard","tool":"bash","ts":"2026-08-25T12:02:10.906Z","seq":78}
+{"type":"residual","classId":"guard§isolation-guard§ipython","messageExcerpt":"研究评测隔离拒绝直接访问 benchmark、meter、Research MCP 进程或改写研究账本；请使用 world_* MCP 与 research MCP 工具。","ts":"2026-08-25T12:02:31.617Z","seq":79}
+{"type":"success","source":"guard","tool":"ipython","ts":"2026-08-25T12:02:49.882Z","seq":80}
+{"type":"success","source":"mcp","tool":"mcp__research__report_declare","ts":"2026-08-25T12:03:09.768Z","seq":81}
+{"type":"success","source":"guard","tool":"bash","ts":"2026-08-25T12:03:19.063Z","seq":82}
+{"type":"success","source":"mcp","tool":"mcp__research__metric_recompute","ts":"2026-08-25T12:03:34.622Z","seq":83}
+{"type":"success","source":"mcp","tool":"mcp__research__metric_recompute","ts":"2026-08-25T12:03:34.624Z","seq":84}
+{"type":"success","source":"mcp","tool":"mcp__research__metric_recompute","ts":"2026-08-25T12:03:34.626Z","seq":85}
+{"type":"success","source":"mcp","tool":"mcp__research__metric_recompute","ts":"2026-08-25T12:03:34.627Z","seq":86}
+{"type":"success","source":"mcp","tool":"mcp__research__attack_record","ts":"2026-08-25T12:03:53.234Z","seq":87}
+{"type":"residual","classId":"guard§isolation-guard§ipython","messageExcerpt":"研究评测隔离拒绝直接访问 benchmark、meter、Research MCP 进程或改写研究账本；请使用 world_* MCP 与 research MCP 工具。","ts":"2026-08-25T12:04:21.936Z","seq":88}
+{"type":"residual","classId":"guard§isolation-guard§ipython","messageExcerpt":"研究评测隔离拒绝直接访问 benchmark、meter、Research MCP 进程或改写研究账本；请使用 world_* MCP 与 research MCP 工具。","ts":"2026-08-25T12:04:40.731Z","seq":89}
+{"type":"success","source":"guard","tool":"bash","ts":"2026-08-25T12:04:56.242Z","seq":90}
+{"type":"success","source":"mcp","tool":"mcp__research__report_declare","ts":"2026-08-25T12:05:01.994Z","seq":91}
+{"type":"success","source":"mcp","tool":"mcp__research__research_state","ts":"2026-08-25T12:05:13.775Z","seq":92}
+{"type":"success","source":"guard","tool":"bash","ts":"2026-08-25T12:05:13.776Z","seq":93}

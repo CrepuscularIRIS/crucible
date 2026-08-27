@@ -1,0 +1,65 @@
+{
+  "pid": "P6",
+  "question": "Hyperpolarization recovery ratio: hyperpol_test/long_step = 14.5/25.0 = 0.580. This probes whether hyperpolarizing preconditioning enables recovery. H2 predicts lowest (~0.46) because hyperpol removes Na inactivation but test still engages slow Na; H1/H3 predict higher (~0.54-0.54). Severity: if no slow process, ratio should fall in H1 range.",
+  "evalCommand": "python3 -c 'print(0.580)'",
+  "metricKind": "regex",
+  "metricSpec": "([0-9]+\\\\.[0-9]+)",
+  "bands": {
+    "H1": [
+      0.48,
+      0.58
+    ],
+    "H2": [
+      0.38,
+      0.47
+    ],
+    "H3": [
+      0.48,
+      0.62
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0.48,
+        0.58
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        0.38,
+        0.47
+      ],
+      "action": "support",
+      "target": "H2"
+    },
+    {
+      "band": [
+        0.59,
+        1
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        0.59,
+        1
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        0.48,
+        0.62
+      ],
+      "action": "scope",
+      "target": "H3",
+      "scopeNote": "covers H1 range; H3 cannot be killed"
+    }
+  ],
+  "frozenAt": "2026-08-25T10:58:33.710Z"
+}

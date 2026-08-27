@@ -1,0 +1,72 @@
+{
+  "pid": "P1",
+  "question": "hyperpol conditioning (-30 uA, 250 ms) 期间的 sag 幅度是多少 mV？(final - minimum voltage)",
+  "evalCommand": "awk '/sag_mV/ {print $2}' /tmp/sag_eval.txt",
+  "metricKind": "json",
+  "metricSpec": "{\"extract\": \"sag_mV\"}",
+  "bands": {
+    "H1": [
+      10,
+      30
+    ],
+    "H2": [
+      0,
+      5
+    ],
+    "H3": [
+      0,
+      5
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        10,
+        30
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        0,
+        5
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        0,
+        5
+      ],
+      "action": "support",
+      "target": "H2"
+    },
+    {
+      "band": [
+        10,
+        30
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        0,
+        5
+      ],
+      "action": "support",
+      "target": "H3"
+    },
+    {
+      "band": [
+        10,
+        30
+      ],
+      "action": "kill",
+      "target": "H3"
+    }
+  ],
+  "frozenAt": "2026-08-25T17:26:51.862Z"
+}

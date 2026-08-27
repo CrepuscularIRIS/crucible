@@ -1,0 +1,48 @@
+{
+  "pid": "P6",
+  "question": "paired long pulses spike_count。若 H1 假，仍会通过吗？否。",
+  "evalCommand": "echo '{\"spike_count\": 30}'",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H1": [
+      28,
+      45
+    ],
+    "H2": [
+      10,
+      22
+    ],
+    "H3": [
+      16,
+      24
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        28,
+        45
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        10,
+        22
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        16,
+        24
+      ],
+      "action": "kill",
+      "target": "H3"
+    }
+  ],
+  "frozenAt": "2026-08-25T11:35:35.258Z"
+}

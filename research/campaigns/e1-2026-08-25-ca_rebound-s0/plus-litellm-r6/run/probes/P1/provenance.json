@@ -1,0 +1,38 @@
+{
+  "pid": "P1",
+  "command": "python3 -c \"import json; d=json.load(open('/tmp/probe_data/discrim_results.json')); print(json.dumps({'spike_count': d['spike_count']}))\"",
+  "exitCode": 1,
+  "startedAt": "2026-08-25T17:27:07.601Z",
+  "endedAt": "2026-08-25T17:27:07.622Z",
+  "landed": false,
+  "sandbox": {
+    "engine": "bubblewrap",
+    "binary": "bwrap",
+    "isolation": [
+      "--ro-bind",
+      "/",
+      "/",
+      "--dev",
+      "/dev",
+      "--proc",
+      "/proc",
+      "--tmpfs",
+      "/tmp",
+      "--unshare-net",
+      "--unshare-pid",
+      "--die-with-parent",
+      "--clearenv",
+      "--setenv",
+      "PATH",
+      "/usr/local/bin:/usr/bin:/bin",
+      "--setenv",
+      "HOME",
+      "/tmp",
+      "--setenv",
+      "LANG",
+      "C.UTF-8",
+      "--tmpfs",
+      "/bench/neuronbench"
+    ]
+  }
+}

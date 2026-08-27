@@ -1,0 +1,68 @@
+{
+  "pid": "P5",
+  "question": "去极化条件化（+15 uA/250 ms）是否抑制后续测试（+12 uA/150 ms）计数 ≤−2（记忆累积）？承重变量=观测均值−参考模拟均值 36.9（参考语义为全协议计数；观测若为测试窗计数则 diff 更负，方向不变，审计字段已双口径输出）；对照=参考模型无记忆→条件化不影响测试。Severity：若无记忆机制（H1 假），diff≈0 必落 H3 带；若 M/失活类记忆存在（H3 假），条件化必然消耗性抑制。",
+  "evalCommand": "printf '%s' 'import json,os\nD=\"/root/.proma-research/e1-2026-08-27-textbook_M-s0\"\nPROT=\"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)\"\ndef objs(p):\n try:\n  t=open(p).read()\n except Exception:\n  return []\n out=[]\n try:\n  out.append(json.loads(t))\n except Exception:\n  for L in t.splitlines():\n   L=L.strip()\n   if L:\n    try: out.append(json.loads(L))\n    except Exception: pass\n return out\ncands=[]\nfor r,_,fs in os.walk(D):\n for f in fs:\n  if not (f.endswith(\".json\") or f.endswith(\".jsonl\")): continue\n  if f.startswith(\"journal\") or f==\"register.json\": continue\n  p=os.path.join(r,f)\n  mt=os.path.getmtime(p)\n  for j in objs(p):\n   s=json.dumps(j)\n   if PROT not in s: continue\n   if \"evalCommand\" in s: continue\n   if isinstance(j,dict) and isinstance(j.get(\"op\"),str): continue\n   if isinstance(j,dict) and j.get(\"cmd\") in (\"simulate\",\"info\"): continue\n   if \"\\\"candidate\\\"\" in s and \"\\\"protocol_label\\\"\" in s: continue\n   cands.append((mt,p,j,s))\nobs=[c for c in cands if \"\\\"spike_count\\\"\" in c[3]]\npool=obs if obs else cands\nout={\"n_files\":len(cands),\"n_obs\":len(obs),\"prot\":PROT}\ndef traces(o,tr):\n if isinstance(o,dict):\n  for k,v in o.items():\n   if isinstance(v,list) and len(v)>40 and all(isinstance(x,(int,float)) for x in v[:5]) and min(v)<0 and max(v)<70:\n    tr.append(v)\n   else:\n    traces(v,tr)\n elif isinstance(o,list):\n  for v in o: traces(v,tr)\n return tr\ndef counts(o,cs):\n if isinstance(o,dict):\n  for k,val in o.items():\n   if k==\"spike_count\" and isinstance(val,(int,float)): cs.append(val)\n   elif k==\"spike_counts\" and isinstance(val,list): cs.extend([x for x in val if isinstance(x,(int,float))])\n   else: counts(val,cs)\n elif isinstance(o,list):\n  for val in o: counts(val,cs)\n return cs\nif not pool:\n out[\"metric\"]=float(\"nan\"); out[\"error\"]=\"no candidate files\"\nelse:\n mt,p,j,s=pool[-1]\n cs=counts(j,[])\n out[\"counts\"]=cs\n tr=traces(j,[])\n tail=[]; whole=[]\n for v in tr:\n  k=int(len(v)*0.625)\n  tail.append(sum(1 for x in v[k:] if x>0.0))\n  whole.append(sum(1 for x in v if x>0.0))\n out[\"trace_counts_tail\"]=tail\n out[\"trace_counts_whole\"]=whole\n if cs:\n  out[\"metric\"]=sum(cs)/len(cs)-36.9\n elif tail:\n  out[\"metric\"]=sum(tail)/len(tail)-36.9\n else:\n  out[\"metric\"]=float(\"nan\")\n out[\"file\"]=p\nprint(json.dumps(out))' > /tmp/e.py && python3 /tmp/e.py",
+  "metricKind": "json",
+  "metricSpec": "metric",
+  "bands": {
+    "H1": [
+      -40,
+      -2
+    ],
+    "H3": [
+      -1.8,
+      1.8
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        -40,
+        -2
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        -40,
+        -2
+      ],
+      "action": "kill",
+      "target": "H3"
+    },
+    {
+      "band": [
+        -1.8,
+        1.8
+      ],
+      "action": "support",
+      "target": "H3"
+    },
+    {
+      "band": [
+        -1.8,
+        1.8
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        2,
+        40
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        2,
+        40
+      ],
+      "action": "kill",
+      "target": "H3"
+    }
+  ],
+  "frozenAt": "2026-08-27T14:47:44.708Z"
+}

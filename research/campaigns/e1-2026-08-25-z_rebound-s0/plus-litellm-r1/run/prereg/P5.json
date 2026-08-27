@@ -1,0 +1,48 @@
+{
+  "pid": "P5",
+  "question": "hyperpol conditioning + test spike_count。若 H1 假，仍会通过吗？否。",
+  "evalCommand": "echo '{\"spike_count\": 11}'",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H1": [
+      8,
+      15
+    ],
+    "H2": [
+      25,
+      35
+    ],
+    "H3": [
+      18,
+      25
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        8,
+        15
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        25,
+        35
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        18,
+        25
+      ],
+      "action": "kill",
+      "target": "H3"
+    }
+  ],
+  "frozenAt": "2026-08-25T11:35:35.256Z"
+}

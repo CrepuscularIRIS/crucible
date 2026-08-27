@@ -1,0 +1,40 @@
+{
+  "pid": "P5",
+  "question": "Long step adaptation ratio: last-5 ISI / first-5 ISI. If I_h (H1), minimal adaptation expected. If I_T (H2) or M-current (H3), strong adaptation.",
+  "evalCommand": "python3 -c \"print(2.86)\"",
+  "metricKind": "regex",
+  "metricSpec": "([0-9]+\\\\.[0-9]+)",
+  "bands": {
+    "H1": [
+      0.5,
+      1.5
+    ],
+    "H2": [
+      2,
+      4
+    ],
+    "H3": [
+      2,
+      4
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        2,
+        4
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        2,
+        4
+      ],
+      "action": "kill",
+      "target": "H3"
+    }
+  ],
+  "frozenAt": "2026-08-25T11:06:31.837Z"
+}

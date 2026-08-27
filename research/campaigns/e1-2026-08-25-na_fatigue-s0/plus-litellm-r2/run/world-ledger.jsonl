@@ -1,0 +1,15 @@
+{"ts": "2026-08-25T17:22:58.062+00:00", "cmd": "info", "world": "na_fatigue", "seed": 0, "cost": 0, "budget_before": 0}
+{"ts": "2026-08-25T17:23:26.947+00:00", "cmd": "observe", "world": "na_fatigue", "seed": 0, "protocol": "long step (10 uA, 300 ms)", "reps": 1, "cost": 1, "budget_before": 0, "budget_after": 1, "spike_count": 25.0}
+{"ts": "2026-08-25T17:23:27.801+00:00", "cmd": "observe", "world": "na_fatigue", "seed": 0, "protocol": "strong step (18 uA, 120 ms)", "reps": 1, "cost": 1, "budget_before": 1, "budget_after": 2, "spike_count": 13.0}
+{"ts": "2026-08-25T17:23:28.285+00:00", "cmd": "observe", "world": "na_fatigue", "seed": 0, "protocol": "weak step (5 uA, 120 ms)", "reps": 1, "cost": 1, "budget_before": 2, "budget_after": 3, "spike_count": 13.0}
+{"ts": "2026-08-25T17:23:28.792+00:00", "cmd": "observe", "world": "na_fatigue", "seed": 0, "protocol": "hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)", "reps": 1, "cost": 1, "budget_before": 3, "budget_after": 4, "spike_count": 13.0}
+{"ts": "2026-08-25T17:23:29.813+00:00", "cmd": "observe", "world": "na_fatigue", "seed": 0, "protocol": "hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)", "reps": 1, "cost": 1, "budget_before": 4, "budget_after": 5, "spike_count": 6.0}
+{"ts": "2026-08-25T17:23:30.897+00:00", "cmd": "observe", "world": "na_fatigue", "seed": 0, "protocol": "paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)", "reps": 1, "cost": 1, "budget_before": 5, "budget_after": 6, "spike_count": 24.0}
+{"ts": "2026-08-25T17:23:32.450+00:00", "cmd": "observe", "world": "na_fatigue", "seed": 0, "protocol": "depolarising conditioning + test (+15 uA/250 ms, then +12 uA)", "reps": 1, "cost": 1, "budget_before": 6, "budget_after": 7, "spike_count": 34.0}
+{"ts": "2026-08-25T17:23:33.511+00:00", "cmd": "observe", "world": "na_fatigue", "seed": 0, "protocol": "brief step (12 uA, 40 ms)", "reps": 1, "cost": 1, "budget_before": 7, "budget_after": 8, "spike_count": 9.0}
+{"ts": "2026-08-25T17:25:19.276+00:00", "cmd": "info", "world": "na_fatigue", "seed": 0, "cost": 0, "budget_before": 8}
+{"ts": "2026-08-25T17:25:19.333+00:00", "cmd": "info", "world": "na_fatigue", "seed": 0, "cost": 0, "budget_before": 8}
+{"ts": "2026-08-25T17:25:19.391+00:00", "cmd": "info", "world": "na_fatigue", "seed": 0, "cost": 0, "budget_before": 8}
+{"ts": "2026-08-25T17:25:35.803+00:00", "cmd": "info", "world": "na_fatigue", "seed": 0, "cost": 0, "budget_before": 8}
+{"ts": "2026-08-25T17:25:35.862+00:00", "cmd": "info", "world": "na_fatigue", "seed": 0, "cost": 0, "budget_before": 8}
+{"ts": "2026-08-25T17:33:23.497+00:00", "cmd": "forecast", "world": "na_fatigue", "seed": 0, "cost": 0, "mse": 175.71553333333335, "predictions": {"paired 10 uA/300+300": 40.0, "paired 12 uA/350+350": 40.0, "paired 14 uA/250+250": 40.0, "paired 8 uA/300+300": 40.0, "single long 10 uA/300 ms": 25.0, "single long 12 uA/300 ms": 25.0}, "budget_spent_final": 8}

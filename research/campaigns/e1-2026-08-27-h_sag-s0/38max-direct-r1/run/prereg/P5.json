@@ -1,0 +1,110 @@
+{
+  "pid": "P5",
+  "question": "方差与低抽样判别器（回应 G2/G7 攻击，预算最后一发）：长步重测，P3=22 是单次低抽样还是真实均值？判别 H5（真均值 [21,26]，M* 均值 26.4、分布 22–30）vs H6（真均值 ≈参考 27.6±2，P3 为低抽样）。Load-bearing variable：全协议 spike_count（reps=1，ledger 第 2 条该协议条目，evalCommand 取 obs[1]）；对照：P3=22、参考 27.6。Severity：若 H5 为假（真均值≈27.6），单次抽样落 [20,26.9] 概率约 35%（σ≈2）——此探针不能干净杀 H5，但能杀 H6 或把两者收窄；这是预算约束下的最强设计。",
+  "evalCommand": "python3 -c 'import json; p=\"/root/.proma-research/e1-2026-08-27-h_sag-s0/world-ledger.jsonl\"; L=[json.loads(l) for l in open(p) if l.strip()]; obs=[e for e in L if e.get(\"cmd\")==\"observe\" and e.get(\"protocol\")==\"long step (10 uA, 300 ms)\"]; e=obs[1]; print(json.dumps({\"spike_count\": e[\"spike_count\"], \"reps\": e[\"reps\"]}))'",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H5": [
+      20,
+      26.9
+    ],
+    "H6": [
+      27,
+      29.6
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        20,
+        25.5
+      ],
+      "action": "support",
+      "target": "H5",
+      "scopeNote": "H5 predicts[2] [21,26] 命中；P3=22 确认低抽样"
+    },
+    {
+      "band": [
+        20,
+        25.5
+      ],
+      "action": "kill",
+      "target": "H6",
+      "scopeNote": "H6 预测 [25.6,29.6] 被违反"
+    },
+    {
+      "band": [
+        25.6,
+        26.9
+      ],
+      "action": "support",
+      "target": "H5",
+      "scopeNote": "H5 带内；但处两假设预测重叠区，只支持不杀"
+    },
+    {
+      "band": [
+        25.6,
+        26.9
+      ],
+      "action": "scope",
+      "target": "H6",
+      "scopeNote": "H6 预测未败但均值偏向 H5；收窄为待决"
+    },
+    {
+      "band": [
+        27,
+        29.6
+      ],
+      "action": "kill",
+      "target": "H5",
+      "scopeNote": "超出 H5 predicts[2] 上界 + 噪声裕度：适应分量声明失败"
+    },
+    {
+      "band": [
+        27,
+        29.6
+      ],
+      "action": "support",
+      "target": "H6",
+      "scopeNote": "回到参考均值邻域：P3=22 为低抽样，适应不改变长步均值"
+    },
+    {
+      "band": [
+        29.7,
+        60
+      ],
+      "action": "scope",
+      "target": "H5",
+      "scopeNote": "适应弱于声明甚至不存在：H5 收窄为仅 Ih 分量（H5a），slow_na 分量（H5b）出局"
+    },
+    {
+      "band": [
+        29.7,
+        60
+      ],
+      "action": "kill",
+      "target": "H6",
+      "scopeNote": "H6 预测上界 29.6 也被突破：既非参考也非适应，需新解释"
+    },
+    {
+      "band": [
+        0,
+        19.9
+      ],
+      "action": "scope",
+      "target": "H5",
+      "scopeNote": "适应强于 M*：收窄为『适应机制存在但参数化不足』，forecast 长步项下调"
+    },
+    {
+      "band": [
+        0,
+        19.9
+      ],
+      "action": "kill",
+      "target": "H6",
+      "scopeNote": "H6 预测 [25.6,29.6] 被违反"
+    }
+  ],
+  "frozenAt": "2026-08-27T15:20:27.902Z"
+}

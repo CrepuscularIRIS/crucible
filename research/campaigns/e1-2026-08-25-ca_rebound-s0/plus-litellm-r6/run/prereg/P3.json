@@ -1,0 +1,68 @@
+{
+  "pid": "P3",
+  "question": "Long step (10 uA, 300 ms) 的 spike count 能否区分 H2（预测 42）和 H3（预测 27）？H2 预测 36-50，H3 预测 25-34。如果实测 25-34 支持 H3 并杀死 H2；如果实测 36-50 支持 H2 并杀死 H3；如果实测 0-24 两者都错。Severity: 若 H2 为假但 fast_in 恰好产生 30-40 spikes，测试可能误通过——但 42 vs 27 的差异足够大。",
+  "evalCommand": "cat /root/.proma-dev/agent-workspaces/default/workspace-files/probe_data/long_step_obs.json",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H2": [
+      36,
+      50
+    ],
+    "H3": [
+      25,
+      34
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0,
+        24
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        25,
+        34
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        36,
+        50
+      ],
+      "action": "support",
+      "target": "H2"
+    },
+    {
+      "band": [
+        0,
+        24
+      ],
+      "action": "kill",
+      "target": "H3"
+    },
+    {
+      "band": [
+        25,
+        34
+      ],
+      "action": "support",
+      "target": "H3"
+    },
+    {
+      "band": [
+        36,
+        50
+      ],
+      "action": "kill",
+      "target": "H3"
+    }
+  ],
+  "frozenAt": "2026-08-25T17:31:07.187Z"
+}

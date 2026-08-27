@@ -1,0 +1,83 @@
+{
+  "pid": "P6",
+  "question": "长步程重复观测（reps=2，取 journal 最后一条）确证单脉冲累积并判别 τ：H7（τ≈150，预测 29–33）vs H9（τ≥300，预测 24–28）。load-bearing variable=单脉冲尖峰计数；对照=参考 25.5 与首次观测 29。severity：若电流非 300ms 内可累积（两假设皆假），计数停留≈ 25–26，29+ 判据不会通过——成立。",
+  "evalCommand": "python3 -c \"import json; evs=[json.loads(l) for l in open('/root/.proma-research/e1-2026-08-27-d_type-s0/journal.jsonl')]; ob=[e for e in evs if e.get('op')=='world.observe' and e.get('protocol')=='long step (10 uA, 300 ms)']; print(json.dumps({'spike_count': ob[-1]['spike_count']}))\"",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H7": [
+      29,
+      33
+    ],
+    "H9": [
+      24,
+      28
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        29,
+        33
+      ],
+      "action": "support",
+      "target": "H7",
+      "scopeNote": "确证 300ms 单脉冲内显著累积，τ≈150ms 级"
+    },
+    {
+      "band": [
+        29,
+        33
+      ],
+      "action": "kill",
+      "target": "H9",
+      "scopeNote": "极慢 τ 预测 300ms 内累积有限（≤28），被显著易化证伪"
+    },
+    {
+      "band": [
+        24,
+        28
+      ],
+      "action": "support",
+      "target": "H9",
+      "scopeNote": "轻度易化，与极慢 τ 一致"
+    },
+    {
+      "band": [
+        24,
+        28
+      ],
+      "action": "scope",
+      "target": "H7",
+      "scopeNote": "P4 单发 29 可能偏高：收窄 H7 为更小 g 或更慢 τ"
+    },
+    {
+      "band": [
+        0,
+        23
+      ],
+      "action": "kill",
+      "target": "H7",
+      "scopeNote": "低于参考 25.5：单脉冲无易化，累积机制证伪"
+    },
+    {
+      "band": [
+        0,
+        23
+      ],
+      "action": "kill",
+      "target": "H9",
+      "scopeNote": "低于参考，累积机制证伪"
+    },
+    {
+      "band": [
+        34,
+        50
+      ],
+      "action": "scope",
+      "target": "H7",
+      "scopeNote": "易化更强：收窄为更大 g，重新拟合"
+    }
+  ],
+  "frozenAt": "2026-08-27T16:37:19.669Z"
+}

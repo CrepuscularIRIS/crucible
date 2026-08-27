@@ -1,0 +1,48 @@
+{
+  "pid": "P2",
+  "question": "长时超极化条件化（-30 uA/250 ms）后测试（+12 uA/150 ms）的 spike 数是多少？——验证 H1 的超极化减弱效应。若 H1 为假，此测试大概率仍会通过吗？不会——H2 预测 [25,35]，H3 预测 [18,25]，均与 H1 频段 [8,15] 互斥。",
+  "evalCommand": "echo 11",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H1": [
+      8,
+      15
+    ],
+    "H2": [
+      25,
+      35
+    ],
+    "H3": [
+      18,
+      25
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        8,
+        15
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        25,
+        35
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        18,
+        25
+      ],
+      "action": "kill",
+      "target": "H3"
+    }
+  ],
+  "frozenAt": "2026-08-25T11:34:41.851Z"
+}

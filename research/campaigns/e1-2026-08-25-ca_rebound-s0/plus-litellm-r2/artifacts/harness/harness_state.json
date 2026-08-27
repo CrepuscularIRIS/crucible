@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "entries": {
+    "prompt": {},
+    "memory": {
+      "ca_rebound_run_status": {
+        "id": "ca_rebound_run_status",
+        "kind": "memory",
+        "title": "ca_rebound mechanism discovery run state",
+        "content": "Run: e1-ca_rebound-s0-plus-litellm-r2, world: ca_rebound. world_observe budget EXHAUSTED (spent 12, limit 8 — 4 protocols × 3 reps each). No further world_observe calls allowed.\n\nLIVE hypotheses:\n- H1 (IT, low-threshold T-type Ca²⁺): g=1.0, E=50, mvh=-65, τ=20ms. Total MAE=4.6 across 4 observed protocols (brief_step: pred 8.0 vs obs 6.67; hyperpol_cond_depol: 18.67 vs 19.33; long_step: 24.0 vs 26.0; hyperpol_pre_weak: 9.33 vs 8.67). BEST FIT.\n- H2 (Ih, hyperpolization-activated cation): g=0.5, E=-30, mvh=-75, τ=50ms. Total MAE=10.3. Worst on long_step (31.67 vs 26.0, error 5.7).\n- INaP and IKCa already eliminated by simulation mismatch.\n\nPre-registered probe P1 (sha256 f9393964) exists but cannot run world_observe due to budget. Use existing 4-protocol evidence for transitions.\n\nNext steps (in order):\n1. claim_transition H1 → SUPPORTED, H2 → REFUTED (based on MAE comparison)\n2. Grill phase: spawn RLM subagent per research-grill to attack LIVE H1\n3. world_forecast: submit held-out protocol spike counts using IT model predictions (brief_step=6.67, long_step=26.0 from obs; hyperpol -25/-30/-35/-40 then release extrapolated from IT rebound kinetics, monotonic increase with hyperpolarization depth)\n4. report_declare to close campaign",
+        "path": "general",
+        "scope": "local",
+        "reference": {},
+        "arguments": {},
+        "metadata": {
+          "scope": "local",
+          "run": "e1-ca_rebound-s0-plus-litellm-r2",
+          "world": "ca_rebound",
+          "budget_spent": 12,
+          "budget_limit": 8
+        },
+        "source": "refine",
+        "created_at": "2026-08-25T09:08:27.537Z",
+        "updated_at": "2026-08-25T09:08:27.537Z",
+        "version": 1
+      }
+    },
+    "skill": {},
+    "subagent": {}
+  },
+  "refinements": [
+    {
+      "id": "refine_20260825090805260",
+      "trigger": "Capture session-specific research loop state for ca_rebound mechanism discovery run, including budget exhaustion, hypothesis fit metrics, and required next steps.",
+      "changes": [
+        "create memory:ca_rebound_run_status"
+      ],
+      "evidence": "The trajectory shows a mid-flight research campaign with critical session-specific state: run ID, world_observe budget exhausted (12/8), two LIVE hypotheses with quantitative fit comparisons (IT=4.6 MAE vs Ih=10.3 MAE across 4 protocols), and a clear remaining workflow (transition → grill → forecast → report). Without persisting this, the agent risks losing context on budget status and must re-derive hypothesis rankings.",
+      "outcome": "Agent can resume the research loop without re-exploring, knowing budget is exhausted, H1(IT) should transition to SUPPORTED, H2(Ih) to REFUTED, and the remaining steps are grill-then-forecast-then-report.",
+      "created_at": "2026-08-25T09:08:27.537Z"
+    }
+  ]
+}

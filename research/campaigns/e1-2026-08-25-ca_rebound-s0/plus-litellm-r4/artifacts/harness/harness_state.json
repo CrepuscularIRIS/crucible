@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "entries": {
+    "prompt": {},
+    "memory": {},
+    "skill": {},
+    "subagent": {}
+  },
+  "refinements": [
+    {
+      "id": "refine_20260825132149557",
+      "trigger": "Document correct mcp__research API constraints after repeated failures in trajectory",
+      "changes": [
+        "create memory:mcp_research_api_constraints"
+      ],
+      "evidence": "The trajectory shows 3+ failed probe_run calls and 3 failed claim_transition calls due to misunderstandings of the mcp__research API schema. These are durable tool-usage lessons needed for future turns in this session. The user refine instructions explicitly request documenting these constraints.",
+      "outcome": "Future tool calls to mcp__research will use correct schema formats, avoiding repeated failures with prereg_write, probe_run, and claim_transition.",
+      "created_at": "2026-08-25T13:22:05.061Z"
+    },
+    {
+      "id": "refine_20260825132947711",
+      "trigger": "Rollback refinement refine_20260825132149557",
+      "changes": [
+        "delete memory:mcp_research_api_constraints"
+      ],
+      "evidence": "Restores continual harness state snapshots from refinement refine_20260825132149557.",
+      "outcome": "Faulty refinement edits are reverted.",
+      "created_at": "2026-08-25T13:29:47.711Z"
+    }
+  ]
+}

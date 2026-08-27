@@ -1,0 +1,66 @@
+{
+  "pid": "P1",
+  "question": "超极化预处理后的弱测试（+6uA）产生的 test window spike 数是多少？Load-bearing variable: 超极化是否改变了细胞对弱去极化的反应。对照：普通弱步（+5uA/120ms）产生 14 spikes。若 H1（电压门控 NaP）为真，超极化去除失活→反应增强（18-25 spikes）；若 H2（钙激活电流）为真，超极化不加载钙→反应不变（10-15 spikes）。若被检验假设为假，这个测试大概率仍会通过吗？答：否——两个假设对超极化后弱测试的预测互斥。",
+  "evalCommand": "python3 /crucible/research/eval/world-meter.py --ledger /tmp/ledger.jsonl --budget 0 observe ca_rebound 0 'hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)' --reps 3",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H1": [
+      18,
+      25
+    ],
+    "H2": [
+      10,
+      15
+    ],
+    "H3": [
+      11,
+      16
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        18,
+        25
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        10,
+        15
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        16,
+        17
+      ],
+      "action": "scope",
+      "target": "H1",
+      "scopeNote": "中间值需要更多探针"
+    },
+    {
+      "band": [
+        16,
+        17
+      ],
+      "action": "scope",
+      "target": "H2",
+      "scopeNote": "中间值需要更多探针"
+    },
+    {
+      "band": [
+        11,
+        16
+      ],
+      "action": "kill",
+      "target": "H3"
+    }
+  ],
+  "frozenAt": "2026-08-25T10:48:22.154Z"
+}

@@ -1,0 +1,47 @@
+{
+  "pid": "P5",
+  "question": "long step (10uA/300ms) 中 inter-spike 最低电压是多少？H1（Na+失活）预测 inter-spike 电压维持在静息附近（无额外超极化）[-78,-60]mV；H2（K+积累）预测 Ek 变负导致 inter-spike 超极化 [-100,-82]mV",
+  "evalCommand": "python3 -c \"v=[-74.1549,-73.4934,-72.5051,-75.8922,-71.8958,-71.8171,-69.2048,-74.549,-71.9756,-72.2185,-66.453,-72.2277,-76.0972,-67.6666,-66.6176,-75.6201,-72.332,-70.315,-74.5034,-68.2325,-66.1502,-68.534,-75.8393,-75.2302,-69.2942,-71.0624,-68.6116,-67.7306,-67.0234,-66.697,-76.7037,-74.53,-72.1429,-70.6278,-62.7734]; import json; print(json.dumps({'min_interspike': min(v)}))\"",
+  "metricKind": "json",
+  "metricSpec": "min_interspike",
+  "bands": {
+    "H1": [
+      -78,
+      -60
+    ],
+    "H2": [
+      -100,
+      -82
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        -78,
+        -60
+      ],
+      "action": "support",
+      "target": "H1",
+      "scopeNote": "inter-spike voltage stays near rest, consistent with Na+ inactivation (no extra hyperpolarisation)"
+    },
+    {
+      "band": [
+        -100,
+        -82
+      ],
+      "action": "kill",
+      "target": "H2",
+      "scopeNote": "inter-spike voltage hyperpolarised below rest, consistent with K+ accumulation (Ek more negative)"
+    },
+    {
+      "band": [
+        -81,
+        -79
+      ],
+      "action": "scope",
+      "target": "H1",
+      "scopeNote": "borderline — neither mechanism cleanly predicts"
+    }
+  ],
+  "frozenAt": "2026-08-25T17:39:03.726Z"
+}

@@ -1,0 +1,41 @@
+{"ts":"2026-08-25T17:30:16.392Z","op":"run.init","run":"e1-d_type-s0-plus-litellm-r2"}
+{"ts":"2026-08-25T17:30:23.693Z","op":"world.info","world":"d_type","seed":0}
+{"ts":"2026-08-25T17:31:19.448Z","op":"world.observe","world":"d_type","seed":0,"protocol":"brief step (12 uA, 40 ms)","reps":2,"cost":2,"spike_count":5.5}
+{"ts":"2026-08-25T17:31:46.953Z","op":"claim.propose","id":"H1","statement":"Extra current is a low-threshold depolarizing current activating near resting potential with fast kinetics","predicts":["low-threshold activation (mvh ~ -60 to -50 mV)","moderate conductance (g ~ 0.5-2 mS/cm^2)","fast kinetics (mtau ~ 5-20 ms)","depolarization-evoked firing increase"],"conflicts":"H2 conflicts with H1 on activation voltage range and time constant"}
+{"ts":"2026-08-25T17:31:54.875Z","op":"claim.propose","id":"H3","statement":"Extra current is a hyperpolarization-activated cation current (Ih-like) that contributes to rebound excitation","predicts":["hyperpolarization removes inactivation (visible in conditioning protocols)","rebound excitation after hyperpolarization","paired-pulse facilitation","slow recovery from inactivation (tau > 50 ms)"],"conflicts":"H3 conflicts with H1/H2 on recovery kinetics and voltage dependence"}
+{"ts":"2026-08-25T17:32:03.175Z","op":"claim.propose","id":"H4","statement":"Extra current is a persistent slow-inactivating sodium-like current that sustains depolarization","predicts":["slow activation (mtau > 30 ms)","persistent current visible in long steps","contributes to plateau potential","minimal effect in brief steps","voltage-dependent inactivation with slow recovery"],"conflicts":"H4 conflicts with H1/H3 on slow dynamics and plateau contribution"}
+{"ts":"2026-08-25T17:32:39.370Z","op":"world.simulate","world":"d_type","seed":0,"protocol":"brief step (12 uA, 40 ms)","mode":"candidate","mean_spike_count":6}
+{"ts":"2026-08-25T17:34:59.546Z","op":"world.observe","world":"d_type","seed":0,"protocol":"long step (10 uA, 300 ms)","reps":2,"cost":2,"spike_count":22.5}
+{"ts":"2026-08-25T17:36:05.903Z","op":"world.observe","world":"d_type","seed":0,"protocol":"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)","reps":1,"cost":1,"spike_count":15}
+{"ts":"2026-08-25T17:36:27.254Z","op":"world.observe","world":"d_type","seed":0,"protocol":"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)","reps":1,"cost":1,"spike_count":39}
+{"ts":"2026-08-25T17:36:49.193Z","op":"world.simulate","world":"d_type","seed":0,"protocol":"brief step (12 uA, 40 ms)","mode":"candidate","mean_spike_count":7}
+{"ts":"2026-08-25T17:37:56.622Z","op":"world.simulate","world":"d_type","seed":0,"protocol":"long step (10 uA, 300 ms)","mode":"candidate","mean_spike_count":31}
+{"ts":"2026-08-25T17:37:57.488Z","op":"world.simulate","world":"d_type","seed":0,"protocol":"long step (10 uA, 300 ms)","mode":"candidate","mean_spike_count":30}
+{"ts":"2026-08-25T17:37:58.374Z","op":"world.simulate","world":"d_type","seed":0,"protocol":"long step (10 uA, 300 ms)","mode":"candidate","mean_spike_count":27}
+{"ts":"2026-08-25T17:38:30.188Z","op":"world.simulate","world":"d_type","seed":0,"protocol":"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)","mode":"candidate","mean_spike_count":40}
+{"ts":"2026-08-25T17:38:31.249Z","op":"world.simulate","world":"d_type","seed":0,"protocol":"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)","mode":"candidate","mean_spike_count":39}
+{"ts":"2026-08-25T17:38:32.305Z","op":"world.simulate","world":"d_type","seed":0,"protocol":"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)","mode":"candidate","mean_spike_count":42}
+{"ts":"2026-08-25T17:39:11.463Z","op":"world.simulate","world":"d_type","seed":0,"protocol":"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)","mode":"candidate","mean_spike_count":15}
+{"ts":"2026-08-25T17:39:12.108Z","op":"world.simulate","world":"d_type","seed":0,"protocol":"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)","mode":"candidate","mean_spike_count":15}
+{"ts":"2026-08-25T17:40:36.218Z","op":"prereg.write","pid":"P1","spec_sha256":"2ac7828d963ba493749f98aa8bcbe16692d8370bdc152024623b014640321420","prereg_path":"prereg/P1.json"}
+{"ts":"2026-08-25T17:40:52.943Z","op":"probe.start","pid":"P1"}
+{"ts":"2026-08-25T17:40:52.966Z","op":"probe.land","pid":"P1","exit_code":1,"metric":null}
+{"ts":"2026-08-25T17:41:36.283Z","op":"prereg.write","pid":"P2","spec_sha256":"3cf08b2694069857590d56fa28c7f6636c429b4a5ccd1203c1ee73980f73dd19","prereg_path":"prereg/P2.json"}
+{"ts":"2026-08-25T17:41:48.837Z","op":"prereg.write","pid":"P3","spec_sha256":"39415bfd265cb79d0bda8cde19a68dba456a801d63964b9dc081f31e63e402b3","prereg_path":"prereg/P3.json"}
+{"ts":"2026-08-25T17:41:57.149Z","op":"probe.start","pid":"P3"}
+{"ts":"2026-08-25T17:41:57.156Z","op":"probe.land","pid":"P3","exit_code":0,"metric":15}
+{"ts":"2026-08-25T17:42:07.898Z","op":"claim.transition","id":"H3","to":"REFUTED","by_probe":"P3","note":"超极化预处理后 spike count = 15.0，远低于 H3 预测的 28-40 范围。H3 (Ih-like) 被杀死。"}
+{"ts":"2026-08-25T17:42:22.730Z","op":"world.observe","world":"d_type","seed":0,"protocol":"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)","reps":1,"cost":1,"spike_count":35}
+{"ts":"2026-08-25T18:00:01.887Z","op":"attack.record","gid":"G1","target":"H1","kind":"constraint","text":"去极化条件测试（+15uA/250ms 后接 +12uA）产生 39 spikes，远超 baseline 22.5，表明存在条件易化机制。H1 的\"快速激活去极化电流\"预测无法解释为何预先去极化会显著增强后续发放——这需要额外的易化/启动机制（如钙积累、钠通道恢复动力学等），超出了 H1 的声明范围。"}
+{"ts":"2026-08-25T18:00:29.565Z","op":"attack.record","gid":"G2","target":"H1","kind":"constraint","text":"去极化条件测试（+15uA/250ms 后接 +12uA）产生 39 spikes，远超 baseline 22.5，表明存在条件易化机制。H1 的\"快速激活去极化电流\"预测无法解释为何预先去极化会显著增强后续发放——这需要额外的易化/启动机制（如钙积累、钠通道恢复动力学等），超出了 H1 的声明范围。"}
+{"ts":"2026-08-25T18:00:29.567Z","op":"attack.record","gid":"G3","target":"H1","kind":"new_h","text":"替代解释：A 型钾电流 (I_A) 缓慢从失活恢复。若未知机制是减少抑制（而非增加兴奋）：I_A 缓慢从失活恢复 → 超极化去除失活 → 更多 I_A 可用 → 更多 spike 对抗 → 更少 spike (15)。去极化条件保持 I_A 失活 → 更少对抗 → 更多 spike (39)。这反转了机制（减少抑制而非增加兴奋），但预测相同的 spike 模式。"}
+{"ts":"2026-08-25T18:00:29.568Z","op":"attack.record","gid":"G4","target":"H1","kind":"constraint","text":"P3 观测值 15 落在 H1 [12,18] 和 H4 [10,16] 的重叠区 [12,16]，实际未能区分两者。H1 的\"存活\"只是因为 H4 同样存活，而非正面证据支持 H1。"}
+{"ts":"2026-08-25T18:00:54.504Z","op":"attack.record","gid":"G5","target":"H4","kind":"constraint","text":"H4 称电流为\"sodium-like\"，但无药理学证据（如 TTX 阻断）、离子替换或反转电位测量支持。\"sodium-like\"标签是从单一标量输出（spike count）的无根据外推。"}
+{"ts":"2026-08-25T18:00:54.506Z","op":"attack.record","gid":"G6","target":"H4","kind":"constraint","text":"H4 预测\"persistent\"且\"slow-inactivating\"，但未定义关键时间尺度边界。若电流缓慢失活且缓慢恢复，不清楚在持续去极化期间什么维持了\"persistent\"特性。假设混淆了两个不同动力学机制（persistent/non-inactivating vs. slow-inactivating）。"}
+{"ts":"2026-08-25T18:00:54.507Z","op":"attack.record","gid":"G7","target":"H4","kind":"constraint","text":"H4 预测\"minimal effect in brief steps\"，但 P3 的测试脉冲（短暂去极化）仍产生 15 spikes。若电流对短暂步骤影响最小，测试脉冲应产生接近 baseline 的发放，而非可计数的不同响应。要么电流确实影响短暂步骤（矛盾其自身预测），要么 15 spikes 反映 baseline 响应未受额外电流影响——此时 H4 的贡献未被测量，而非被确认。"}
+{"ts":"2026-08-25T18:00:54.509Z","op":"attack.record","gid":"G8","target":"H4","kind":"new_h","text":"替代解释：钙激活非特异性阳离子电流 (I_CAN)。钙激活阳离子电流在条件阶段积累钙，测试阶段产生增强发放。超极化后钙进入少 → I_CAN 少 → 更少 spike (15)。去极化条件后钙进入多 → I_CAN 多 → 更多 spike (39)。此机制解释完整模式（brief=5.5, long=22.5, hyperpol=15, depol=39），无需假设快速激活动力学或低阈值电压依赖性。"}
+{"ts":"2026-08-25T18:03:02.259Z","op":"world.forecast","world":"d_type","seed":0,"counts":{"brief step (12 uA, 40 ms)":6,"cond -25/+12":18,"cond -28/+11":15,"cond -30/+14":23,"cond -35/+10":11,"long step (10 uA, 300 ms)":22},"spike_forecast_mse":20.041995833333335,"budget_spent":7}
+{"ts":"2026-08-25T18:03:57.774Z","op":"probe.start","pid":"P2"}
+{"ts":"2026-08-25T18:03:57.792Z","op":"probe.land","pid":"P2","exit_code":0,"metric":15}
+{"ts":"2026-08-25T18:09:30.878Z","op":"report.declare","path":"REPORT.md","sha256":"1f14ea455abed4c3d9841b7902341bdb69951daeffeebc3d3caf980fa7eaccf8"}
+{"ts":"2026-08-25T18:09:30.878Z","op":"gate.verdict","passed":true,"report":"REPORT.md","prereg":true,"reconcile":true,"trace":true}

@@ -1,0 +1,52 @@
+{
+  "pid": "P1",
+  "question": "在 depolarising conditioning + test 协议上，真实 spike 数落入哪个频段？",
+  "evalCommand": "world_simulate(protocol=depolarising conditioning + test (+15 uA/250 ms, then +12 uA))",
+  "metricKind": "json",
+  "metricSpec": "$.mean_spike_count",
+  "bands": {
+    "H1": [
+      20,
+      30
+    ],
+    "H2": [
+      35,
+      50
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        20,
+        30
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        35,
+        50
+      ],
+      "action": "support",
+      "target": "H2"
+    },
+    {
+      "band": [
+        35,
+        50
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        20,
+        30
+      ],
+      "action": "kill",
+      "target": "H2"
+    }
+  ],
+  "frozenAt": "2026-08-25T09:07:03.997Z"
+}

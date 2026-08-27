@@ -1,0 +1,136 @@
+{
+  "pid": "P1",
+  "question": "主判别器：250 ms 长超极化条件化（-30 uA）后的 +12 uA 测试窗响应被额外电流压低还是增强？判别 H1(Ih,压低) vs H4(噪声,≈参考15.4) vs H2/H3(增强族)。Load-bearing variable：test 窗 spike_count（reps=2 均值，ledger 第 1 条该协议 observe 条目）；对照：参考模型 15.4（10 次免费模拟，MC σ<0.5）。Severity：若 H1 为假（无 Ih 压低效应），观测仍落 [4,12.9] 的概率 <5%。",
+  "evalCommand": "python3 -c 'import json; p=\"/root/.proma-research/e1-2026-08-27-h_sag-s0/world-ledger.jsonl\"; L=[json.loads(l) for l in open(p) if l.strip()]; obs=[e for e in L if e.get(\"cmd\")==\"observe\" and e.get(\"protocol\")==\"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)\"]; e=obs[0]; print(json.dumps({\"spike_count\": e[\"spike_count\"], \"reps\": e[\"reps\"]}))'",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H1": [
+      4,
+      12.9
+    ],
+    "H2": [
+      17.6,
+      60
+    ],
+    "H3": [
+      17.6,
+      60
+    ],
+    "H4": [
+      13.1,
+      17.5
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        4,
+        12.9
+      ],
+      "action": "support",
+      "target": "H1",
+      "scopeNote": "压低方向与 Ih 的 sag 分流+钠恢复不足一致"
+    },
+    {
+      "band": [
+        4,
+        12.9
+      ],
+      "action": "kill",
+      "target": "H4",
+      "scopeNote": "偏离参考 15.4 超过 ±2，噪声零假设破产"
+    },
+    {
+      "band": [
+        4,
+        12.9
+      ],
+      "action": "kill",
+      "target": "H2",
+      "scopeNote": "H2 预测测试响应 ≥15（外向解除）"
+    },
+    {
+      "band": [
+        4,
+        12.9
+      ],
+      "action": "kill",
+      "target": "H3",
+      "scopeNote": "H3 预测 ≥15.4（去失活易化）"
+    },
+    {
+      "band": [
+        13.1,
+        17.5
+      ],
+      "action": "support",
+      "target": "H4",
+      "scopeNote": "与参考 15.4±2 一致"
+    },
+    {
+      "band": [
+        13.1,
+        17.5
+      ],
+      "action": "kill",
+      "target": "H1",
+      "scopeNote": "H1 声称可观测压低效应，预测 [4,12.9] 失败"
+    },
+    {
+      "band": [
+        13.1,
+        17.5
+      ],
+      "action": "scope",
+      "target": "H2",
+      "scopeNote": "仅弱外向电流（效应<2 spikes）与此兼容，需长步协议二次判别"
+    },
+    {
+      "band": [
+        13.1,
+        17.5
+      ],
+      "action": "scope",
+      "target": "H3",
+      "scopeNote": "仅弱内向易化兼容，需 pre-pulse 协议二次判别"
+    },
+    {
+      "band": [
+        17.6,
+        60
+      ],
+      "action": "support",
+      "target": "H2",
+      "scopeNote": "增强方向与外向电流去活一致"
+    },
+    {
+      "band": [
+        17.6,
+        60
+      ],
+      "action": "support",
+      "target": "H3",
+      "scopeNote": "增强方向与去失活易化一致；P2 区分两者"
+    },
+    {
+      "band": [
+        17.6,
+        60
+      ],
+      "action": "kill",
+      "target": "H1",
+      "scopeNote": "H1 预测压低"
+    },
+    {
+      "band": [
+        17.6,
+        60
+      ],
+      "action": "kill",
+      "target": "H4",
+      "scopeNote": "远超参考 ±2"
+    }
+  ],
+  "frozenAt": "2026-08-27T14:32:59.047Z"
+}

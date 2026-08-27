@@ -1,0 +1,38 @@
+{
+  "pid": "P1",
+  "question": "仪器建立：bwrap 沙箱内能否找到真细胞观测 raw 产物（判别对象=H3 测量伪影假设与 H1 机制假设的后续可检验通道；load-bearing variable=run 目录内含 test_start_index 的观测 artifact 文件数；对照=run 目录基础账本文件必然存在，因此只数以 test_start_index 为标记的观测文件）。此结果决定后续判别探针的形态（从 raw 重算计数/电压 vs 行为性协议对照）。严重性：若 meter 把 raw 存在沙箱不可见处，本探针必然给 0-1 并触发 scope 改道，不会在假前提下通过。",
+  "evalCommand": "bash -lc 'R=/root/.proma-dev/agent-workspaces/default/workspace-files/.proma-research/e1-ca_rebound-s0-38max-litellm-r2; k=$(grep -rl \"test_start_index\" \"$R\" 2>/dev/null | wc -l); f=$(find \"$R\" -type f 2>/dev/null | wc -l); echo \"obs_artifacts=$k run_files=$f\"; echo TREE; find \"$R\" -type f 2>/dev/null | sed \"s|$R/||\" | sort | head -40; echo P1DONE'",
+  "metricKind": "regex",
+  "metricSpec": "obs_artifacts=(\\d+)",
+  "bands": {
+    "H1": [
+      2,
+      20
+    ],
+    "H3": [
+      0,
+      1
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0,
+        1
+      ],
+      "action": "scope",
+      "target": "H3",
+      "scopeNote": "观测 raw 不在沙箱可见文件系统（或仅有极少非 raw 文件）：H3 伪影假设只能经协议对照行为性检验（重复性、极性对照）；后续探针 evalCommand 改为自含式对比脚本"
+    },
+    {
+      "band": [
+        2,
+        20
+      ],
+      "action": "scope",
+      "target": "H1",
+      "scopeNote": "观测 raw 在 run 目录可见：H1/H2 机制判别获得从 raw 重算计数/电压的强通道，H3 伪影假设也必须经受 raw 重算检验"
+    }
+  ],
+  "frozenAt": "2026-08-25T10:28:14.281Z"
+}

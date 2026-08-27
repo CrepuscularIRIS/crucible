@@ -1,0 +1,45 @@
+{
+  "pid": "P7",
+  "question": "H7 家族（慢激活累积，mtau=100, g=1.5，长步阶已给 36≥30 的成员）能否同时复现条件化协议观测 16±2？load-bearing variable = 该成员在 'hyperpol conditioning + depol test' 的 mean_spike_count（journal 条件化模拟列表索引 7）；对照 = 观测 16。判别 H7 的同时拟合声明。severity：若 H7 真能同时拟合，该成员应 ≤18；累积动力学预测 150 ms 测试窗重累积 ~78%，将超额 4+ 个发放，[14,18] 不会大概率通过。",
+  "evalCommand": "python3 -c \"import json; evs=[json.loads(l) for l in open('/root/.proma-research/e1-2026-08-27-ca_rebound-s0/journal.jsonl')]; sims=[e['mean_spike_count'] for e in evs if e.get('op')=='world.simulate' and e.get('protocol')=='hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)']; assert len(sims)>7; print(json.dumps({'best_h7': sims[7]}))\"",
+  "metricKind": "json",
+  "metricSpec": "best_h7",
+  "bands": {
+    "H7": [
+      14,
+      18
+    ],
+    "H3": [
+      19,
+      30
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        14,
+        18
+      ],
+      "action": "support",
+      "target": "H7"
+    },
+    {
+      "band": [
+        19,
+        30
+      ],
+      "action": "kill",
+      "target": "H7",
+      "scopeNote": "长步阶 36 的成员在条件化协议给 20 > 18：慢累积无法同时复现两个观测（测试窗重累积结构性超额）"
+    },
+    {
+      "band": [
+        19,
+        30
+      ],
+      "action": "support",
+      "target": "H3"
+    }
+  ],
+  "frozenAt": "2026-08-27T14:49:50.845Z"
+}

@@ -1,0 +1,78 @@
+{
+  "schema": 1,
+  "entries": {
+    "prompt": {},
+    "memory": {
+      "hypotheses": {
+        "id": "hypotheses",
+        "kind": "memory",
+        "title": "Registered hypotheses (ca_rebound run e1-ca_rebound-s0-plus-litellm-r3)",
+        "content": "H1 (LIVE): Slow persistent voltage-gated Na-like depolarizing current (NaP). Activates V>-50mV, tau>200ms, non-inactivating, sustained inward drive. Predicts: strong step [17,24], depol cond+test [36,45], hyperpol cond+test [12,18].\n\nH2 (LIVE): Ca-activated non-specific cation current (I_CAN). Ca2+-dependent activation (not directly voltage-gated), slow kinetics from Ca diffusion/buffering. Predicts: strong step [15,22], depol cond+test [35,46], hyperpol pre-pulse+weak test [10,15] (same as weak step alone since hyperpol doesn't load Ca), paired long pulses 2nd pulse [28,40] (residual Ca boost).\n\nH3 (LIVE but weakened): Noise artifact — no extra current, all differences within stochastic variation of reference model. Predicts: all spike counts within ±2 of reference (already contradicted: strong step real=19 vs ref max=16).",
+        "path": "general",
+        "scope": "local",
+        "reference": {},
+        "arguments": {},
+        "metadata": {
+          "scope": "local",
+          "run": "e1-ca_rebound-s0-plus-litellm-r3"
+        },
+        "source": "refine",
+        "created_at": "2026-08-25T10:33:04.515Z",
+        "updated_at": "2026-08-25T10:33:04.515Z",
+        "version": 1
+      },
+      "observed-data": {
+        "id": "observed-data",
+        "kind": "memory",
+        "title": "Observed real-cell vs reference model spike counts (6 protocols)",
+        "content": "Protocol | Real | Ref (no extra, slow_na=false) | Ref range\nhyperpol cond+test (-30uA/250ms then +12uA) | 16 | 15.6 | 13-18\ndepol cond+test (+15uA/250ms then +12uA) | 40 | 36.0 | 32-41\nbrief step (12uA, 40ms) | 7 | 6.0 | 4-8\nlong step (10uA, 300ms) | 32 | (not yet simulated)\nstrong step (18uA, 120ms) | 19 | 13.7 | 10-16 ← real exceeds ref max\nweak step (5uA, 120ms) | 14 | 11.3 | 10-13\n\nKey pattern: real cell consistently fires more spikes than reference, especially under strong/sustained depolarization. Depol conditioning boosts test response (40 vs 36) suggesting a mechanism that accumulates during depolarization.",
+        "path": "general",
+        "scope": "local",
+        "reference": {},
+        "arguments": {},
+        "metadata": {
+          "scope": "local",
+          "run": "e1-ca_rebound-s0-plus-litellm-r3"
+        },
+        "source": "refine",
+        "created_at": "2026-08-25T10:33:04.515Z",
+        "updated_at": "2026-08-25T10:33:04.515Z",
+        "version": 1
+      },
+      "remaining-plan": {
+        "id": "remaining-plan",
+        "kind": "memory",
+        "title": "Remaining budget, probe targets, and methodological constraints",
+        "content": "Budget: 3 of 8 observations remaining.\n\nProbe targets (discriminate H1 vs H2):\n1. hyperpol pre-pulse + weak test (-30uA/250ms, gap, +6uA): H1 predicts rebound boost (de-inactivation); H2 predicts same as weak step alone (no Ca loaded during hyperpol).\n2. paired long pulses (12uA/300ms, 60ms gap, 12uA/300ms): H2 predicts 2nd pulse boosted by residual Ca [28,40]; H1 predicts same as 1st pulse (no Ca mechanism).\n\nMethodological constraint: Pre-register probes with bands derived from theoretical reasoning ONLY. Never peek at simulation candidates to derive bands — doing so turns prediction into回忆 (recall) and invalidates the evidence chain. Write prereg first, then run.\n\nAfter probes: grill (attack) LIVE hypotheses, then forecast 6 held-out test protocols (hyperpol -25/-30/-35/-40 release, brief step 12uA/40ms, long step 10uA/300ms).",
+        "path": "general",
+        "scope": "local",
+        "reference": {},
+        "arguments": {},
+        "metadata": {
+          "scope": "local",
+          "run": "e1-ca_rebound-s0-plus-litellm-r3"
+        },
+        "source": "refine",
+        "created_at": "2026-08-25T10:33:04.515Z",
+        "updated_at": "2026-08-25T10:33:04.515Z",
+        "version": 1
+      }
+    },
+    "skill": {},
+    "subagent": {}
+  },
+  "refinements": [
+    {
+      "id": "refine_20260825103226283",
+      "trigger": "Persist session-critical research state (hypotheses, observed data, budget, probe strategy) to local harness to prevent context loss across turns.",
+      "changes": [
+        "create memory:hypotheses",
+        "create memory:observed-data",
+        "create memory:remaining-plan"
+      ],
+      "evidence": "The trajectory shows dense progress on a constrained hypothesis-testing task (ca_rebound world) with 3 registered hypotheses, 6 observed protocols, and 3/8 budget remaining. The harness is currently empty; without saving this state, future turns will lose the registered predictions, observed evidence, and methodological constraints.",
+      "outcome": "Future turns can resume by reading the local harness to know: which hypotheses are LIVE with their discriminating predictions, what data has been collected, how much budget remains, which protocols to run next, and the strict pre-registration constraint.",
+      "created_at": "2026-08-25T10:33:04.515Z"
+    }
+  ]
+}

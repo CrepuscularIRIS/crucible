@@ -1,0 +1,36 @@
+{
+  "pid": "P4",
+  "question": "Direct comparison: H1 (slow Na+) predicts spike counts within ±2 of observed. Test on brief step protocol: observed=6.0, H1 predicts 6.3, H4 (null) predicts 7.0. Result should show H1 is closer.",
+  "evalCommand": "world_simulate --mechanism '{\"extra\":[],\"slow_na\":true}' --protocol 'brief step (12 uA, 40 ms)' --world ca_rebound --reps 1 --seed 0",
+  "metricKind": "json",
+  "metricSpec": "mean_spike_count",
+  "bands": {
+    "H1": [
+      6.1,
+      6.5
+    ],
+    "H4": [
+      6.8,
+      7.2
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        6.1,
+        6.5
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        6.8,
+        7.2
+      ],
+      "action": "kill",
+      "target": "H4"
+    }
+  ],
+  "frozenAt": "2026-08-25T16:14:36.154Z"
+}

@@ -1,0 +1,36 @@
+{
+  "pid": "P5",
+  "question": "Simple test: observed brief step = 6.0 spikes. H1 (slow Na+) predicts 6.3, H4 (null) predicts 7.0. Distance from observed: H1=0.3, H4=1.0. If result ≤0.5, H1 is closer.",
+  "evalCommand": "echo 0.3",
+  "metricKind": "regex",
+  "metricSpec": "\\d+\\.\\d+",
+  "bands": {
+    "H1": [
+      0,
+      0.5
+    ],
+    "H4": [
+      0.8,
+      1.2
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0,
+        0.5
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        0.8,
+        1.2
+      ],
+      "action": "kill",
+      "target": "H4"
+    }
+  ],
+  "frozenAt": "2026-08-25T16:15:17.994Z"
+}

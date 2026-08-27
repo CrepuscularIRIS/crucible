@@ -1,0 +1,74 @@
+{
+  "pid": "P5",
+  "question": "去极化条件化(+15uA/250ms)+测试(+12uA)的全协议计数判别 τ：H7（τ≈150ms，预测 38–52）vs H9（τ≥300ms，预测 32–37）。load-bearing variable=全协议尖峰计数（含条件化段）；对照=参考模型同协议模拟=35.6。severity：若电流不随去极化累积（两者皆假），计数停留≈ 35 或更低，38+ 判据不会通过——成立。",
+  "evalCommand": "python3 -c \"import json; evs=[json.loads(l) for l in open('/root/.proma-research/e1-2026-08-27-d_type-s0/journal.jsonl')]; ob=[e for e in evs if e.get('op')=='world.observe' and e.get('protocol')=='depolarising conditioning + test (+15 uA/250 ms, then +12 uA)']; print(json.dumps({'spike_count': ob[0]['spike_count']}))\"",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H7": [
+      38,
+      52
+    ],
+    "H9": [
+      32,
+      37
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        38,
+        60
+      ],
+      "action": "support",
+      "target": "H7",
+      "scopeNote": "强易化，τ≈150ms 级累积成立"
+    },
+    {
+      "band": [
+        38,
+        60
+      ],
+      "action": "kill",
+      "target": "H9",
+      "scopeNote": "极慢 τ 假设预测 400ms 内无强累积，被强易化证伪"
+    },
+    {
+      "band": [
+        32,
+        37
+      ],
+      "action": "support",
+      "target": "H9",
+      "scopeNote": "仅轻度易化，与极慢 τ 一致"
+    },
+    {
+      "band": [
+        32,
+        37
+      ],
+      "action": "scope",
+      "target": "H7",
+      "scopeNote": "H7 定量预测失败但方向不变：收窄为更小 g 或更慢 τ"
+    },
+    {
+      "band": [
+        0,
+        31
+      ],
+      "action": "kill",
+      "target": "H7",
+      "scopeNote": "无易化甚至抑制：活动依赖累积机制被证伪（参考 35.6）"
+    },
+    {
+      "band": [
+        0,
+        31
+      ],
+      "action": "kill",
+      "target": "H9",
+      "scopeNote": "低于参考且无易化，累积机制证伪"
+    }
+  ],
+  "frozenAt": "2026-08-27T16:36:10.035Z"
+}

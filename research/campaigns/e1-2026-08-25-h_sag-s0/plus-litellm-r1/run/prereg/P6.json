@@ -1,0 +1,32 @@
+{
+  "pid": "P6",
+  "question": "Ratio of test spike counts: hyperpol conditioning test (13) vs depolarising conditioning test (33). If I_h (H1) or I_T (H2), hyperpol de-inactivates channels so test is suppressed relative to depol. If M-current (H3), both conditions similar.",
+  "evalCommand": "python3 -c 'print(0.39)'",
+  "metricKind": "regex",
+  "metricSpec": "([0-9]+[.][0-9]+)",
+  "bands": {
+    "H1": [
+      0.3,
+      0.5
+    ],
+    "H2": [
+      0.3,
+      0.5
+    ],
+    "H3": [
+      0.8,
+      1.5
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0.8,
+        1.5
+      ],
+      "action": "kill",
+      "target": "H3"
+    }
+  ],
+  "frozenAt": "2026-08-25T11:06:51.721Z"
+}

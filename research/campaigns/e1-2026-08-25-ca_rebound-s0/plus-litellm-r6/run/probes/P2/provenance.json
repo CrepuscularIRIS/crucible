@@ -1,0 +1,44 @@
+{
+  "pid": "P2",
+  "command": "cat /root/.proma-dev/agent-workspaces/default/workspace-files/probe_data/strong_step_obs.json",
+  "exitCode": 0,
+  "startedAt": "2026-08-25T17:28:03.701Z",
+  "endedAt": "2026-08-25T17:28:03.707Z",
+  "landed": true,
+  "metric": 19,
+  "metricSource": {
+    "kind": "json",
+    "spec": "spike_count",
+    "raw": "raw/output.txt"
+  },
+  "sandbox": {
+    "engine": "bubblewrap",
+    "binary": "bwrap",
+    "isolation": [
+      "--ro-bind",
+      "/",
+      "/",
+      "--dev",
+      "/dev",
+      "--proc",
+      "/proc",
+      "--tmpfs",
+      "/tmp",
+      "--unshare-net",
+      "--unshare-pid",
+      "--die-with-parent",
+      "--clearenv",
+      "--setenv",
+      "PATH",
+      "/usr/local/bin:/usr/bin:/bin",
+      "--setenv",
+      "HOME",
+      "/tmp",
+      "--setenv",
+      "LANG",
+      "C.UTF-8",
+      "--tmpfs",
+      "/bench/neuronbench"
+    ]
+  }
+}

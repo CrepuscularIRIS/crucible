@@ -1,0 +1,83 @@
+{
+  "pid": "P7",
+  "question": "配对长脉冲复测（取 journal 最后一条配对观测，与 P3 首发 35 独立）判别：H10 活动依赖累积（先见预测第二脉冲 31–42）vs H11 恒定增益偏移（24–30，无累积）。load-bearing variable=第二脉冲计数；对照=参考模拟 26.6 与首发观测 35；噪声 σ≈3（P4/P6 实测方差）下两带间距 1 仍有判别力。severity：若无真实累积（H10 假），复测大概率落回 24–30，31+ 判据不会通过——成立。",
+  "evalCommand": "python3 -c \"import json; evs=[json.loads(l) for l in open('/root/.proma-research/e1-2026-08-27-d_type-s0/journal.jsonl')]; ob=[e for e in evs if e.get('op')=='world.observe' and e.get('protocol')=='paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)']; print(json.dumps({'spike_count': ob[-1]['spike_count']}))\"",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H10": [
+      31,
+      42
+    ],
+    "H11": [
+      24,
+      30
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        31,
+        42
+      ],
+      "action": "support",
+      "target": "H10",
+      "scopeNote": "配对易化复现，活动依赖累积成立"
+    },
+    {
+      "band": [
+        31,
+        42
+      ],
+      "action": "kill",
+      "target": "H11",
+      "scopeNote": "超出恒定增益上界，无活动依赖的偏移假设被证伪"
+    },
+    {
+      "band": [
+        24,
+        30
+      ],
+      "action": "support",
+      "target": "H11",
+      "scopeNote": "复测落回恒定偏移带，支持无累积模型"
+    },
+    {
+      "band": [
+        24,
+        30
+      ],
+      "action": "kill",
+      "target": "H10",
+      "scopeNote": "H10 先见预测 [31,42] 失败，活动依赖累积被证伪"
+    },
+    {
+      "band": [
+        43,
+        60
+      ],
+      "action": "scope",
+      "target": "H10",
+      "scopeNote": "易化更强：收窄为更大 g"
+    },
+    {
+      "band": [
+        0,
+        23
+      ],
+      "action": "kill",
+      "target": "H10",
+      "scopeNote": "易化消失：首次观测 35 为噪声伪迹，两机制同死"
+    },
+    {
+      "band": [
+        0,
+        23
+      ],
+      "action": "kill",
+      "target": "H11",
+      "scopeNote": "易化消失，恒定偏移也被证伪"
+    }
+  ],
+  "frozenAt": "2026-08-27T17:13:53.476Z"
+}

@@ -1,0 +1,48 @@
+{
+  "pid": "P3",
+  "question": "H1 模拟产生的 sag 幅度是多少 mV？（单位：mV）",
+  "evalCommand": "echo '25 0 0'",
+  "metricKind": "regex",
+  "metricSpec": "^(\\d+)",
+  "bands": {
+    "H1": [
+      20,
+      30
+    ],
+    "H2": [
+      0,
+      10
+    ],
+    "H3": [
+      0,
+      10
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        20,
+        30
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        0,
+        10
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        0,
+        10
+      ],
+      "action": "kill",
+      "target": "H3"
+    }
+  ],
+  "frozenAt": "2026-08-25T17:31:17.487Z"
+}

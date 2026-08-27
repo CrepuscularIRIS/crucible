@@ -1,0 +1,61 @@
+{
+  "pid": "P1",
+  "question": "long step (10 uA/300 ms) 后半/前半 spike 计数比是否 <0.85（系统性适应存在）？承重变量=观测降采样 trace 上 >0 mV 样本的前后半计数比；对照=参考模型（extra=[], slow_na=false）免费模拟给出均匀 ~87 Hz 放电、计数=26，比值≈1（噪声容差后 H3 带 [0.86,1.35]）。Severity：若无记忆电流（H1 假），比值≈1 必落 H3 带，测试必不过；若适应真实存在（H3 假），比值≪1 必落 H1 带。H2 与 H1 在此同预测，不入本探针频段表，其命运由 P2/P3/P4 裁决。",
+  "evalCommand": "printf '%s' 'import json,os\nD=\"/root/.proma-research/e1-2026-08-27-textbook_M-s0\"\nPROT=\"long step (10 uA, 300 ms)\"\ndef objs(p):\n try:\n  t=open(p).read()\n except Exception:\n  return []\n out=[]\n try:\n  out.append(json.loads(t))\n except Exception:\n  for L in t.splitlines():\n   L=L.strip()\n   if L:\n    try: out.append(json.loads(L))\n    except Exception: pass\n return out\ncands=[]\nfor r,_,fs in os.walk(D):\n for f in fs:\n  if not (f.endswith(\".json\") or f.endswith(\".jsonl\")): continue\n  if f.startswith(\"journal\") or f==\"register.json\": continue\n  p=os.path.join(r,f)\n  mt=os.path.getmtime(p)\n  for j in objs(p):\n   s=json.dumps(j)\n   if PROT not in s: continue\n   if \"evalCommand\" in s: continue\n   if isinstance(j,dict) and isinstance(j.get(\"op\"),str): continue\n   if isinstance(j,dict) and j.get(\"cmd\") in (\"simulate\",\"info\"): continue\n   if \"\\\"candidate\\\"\" in s and \"\\\"protocol_label\\\"\" in s: continue\n   cands.append((mt,p,j,s))\nobs=[c for c in cands if \"\\\"spike_count\\\"\" in c[3]]\npool=obs if obs else cands\nout={\"n_files\":len(cands),\"n_obs\":len(obs),\"prot\":PROT}\ndef traces(o,tr):\n if isinstance(o,dict):\n  for k,v in o.items():\n   if isinstance(v,list) and len(v)>40 and all(isinstance(x,(int,float)) for x in v[:5]) and min(v)<0 and max(v)<70:\n    tr.append(v)\n   else:\n    traces(v,tr)\n elif isinstance(o,list):\n  for v in o: traces(v,tr)\n return tr\ndef counts(o,cs):\n if isinstance(o,dict):\n  for k,val in o.items():\n   if k==\"spike_count\" and isinstance(val,(int,float)): cs.append(val)\n   elif k==\"spike_counts\" and isinstance(val,list): cs.extend([x for x in val if isinstance(x,(int,float))])\n   else: counts(val,cs)\n elif isinstance(o,list):\n  for val in o: counts(val,cs)\n return cs\nif not pool:\n out[\"metric\"]=float(\"nan\"); out[\"error\"]=\"no candidate files\"\nelse:\n mt,p,j,s=pool[-1]\n tr=traces(j,[])\n ratios=[]; halves=[]\n for v in tr:\n  n=len(v); h=n//2\n  c1=sum(1 for x in v[:h] if x>0.0)\n  c2=sum(1 for x in v[h:] if x>0.0)\n  halves.append([c1,c2])\n  if c1+c2>3: ratios.append(c2/float(max(c1,1)))\n out[\"halves\"]=halves\n out[\"n_traces\"]=len(tr)\n out[\"file\"]=p\n out[\"metric\"]=(sum(ratios)/len(ratios)) if ratios else float(\"nan\")\nprint(json.dumps(out))' > /tmp/e.py && python3 /tmp/e.py",
+  "metricKind": "json",
+  "metricSpec": "metric",
+  "bands": {
+    "H1": [
+      0.25,
+      0.84
+    ],
+    "H3": [
+      0.86,
+      1.35
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0.25,
+        0.84
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        0.25,
+        0.84
+      ],
+      "action": "kill",
+      "target": "H3"
+    },
+    {
+      "band": [
+        0.86,
+        1.35
+      ],
+      "action": "support",
+      "target": "H3"
+    },
+    {
+      "band": [
+        0.86,
+        1.35
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        0,
+        0.25
+      ],
+      "action": "scope",
+      "target": "H1",
+      "scopeNote": "适应比预期更强：需更强 g_M 或追加机制，收窄参数域"
+    }
+  ],
+  "frozenAt": "2026-08-27T14:42:21.376Z"
+}

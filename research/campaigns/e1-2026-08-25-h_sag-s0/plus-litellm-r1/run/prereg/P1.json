@@ -1,0 +1,48 @@
+{
+  "pid": "P1",
+  "question": "Does brief hyperpolarization (40 ms) produce sag? I_h activates slowly so brief hyperpol should produce minimal sag (<5 mV) if H1 is correct. If H3 (M-current) is correct, sag should be minimal regardless of duration since M-current deactivates quickly with hyperpolarization. If H2 (I_T) is correct, sag may be present but smaller than long hyperpol. Severity: if the tested hypothesis is false, would this test likely still pass?",
+  "evalCommand": "python -c \"import json,sys; d=json.load(sys.stdin); v=d['voltage']; min_idx=v.index(min(v)); steady=sum(v[int(len(v)*0.8):])/len(v[int(len(v)*0.8):]); sag=steady-min(v); print(f'{sag:.2f}')\"",
+  "metricKind": "regex",
+  "metricSpec": "([0-9]+\\.[0-9]+)",
+  "bands": {
+    "H1": [
+      10,
+      20
+    ],
+    "H2": [
+      5,
+      15
+    ],
+    "H3": [
+      0,
+      5
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        10,
+        20
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        5,
+        15
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        0,
+        5
+      ],
+      "action": "kill",
+      "target": "H3"
+    }
+  ],
+  "frozenAt": "2026-08-25T10:42:17.274Z"
+}

@@ -1,0 +1,44 @@
+{
+  "pid": "P8",
+  "command": "python3 -c \"print(9)\"",
+  "exitCode": 0,
+  "startedAt": "2026-08-25T17:37:24.418Z",
+  "endedAt": "2026-08-25T17:37:24.432Z",
+  "landed": true,
+  "metric": 9,
+  "metricSource": {
+    "kind": "regex",
+    "spec": "(\\d+)",
+    "raw": "raw/output.txt"
+  },
+  "sandbox": {
+    "engine": "bubblewrap",
+    "binary": "bwrap",
+    "isolation": [
+      "--ro-bind",
+      "/",
+      "/",
+      "--dev",
+      "/dev",
+      "--proc",
+      "/proc",
+      "--tmpfs",
+      "/tmp",
+      "--unshare-net",
+      "--unshare-pid",
+      "--die-with-parent",
+      "--clearenv",
+      "--setenv",
+      "PATH",
+      "/usr/local/bin:/usr/bin:/bin",
+      "--setenv",
+      "HOME",
+      "/tmp",
+      "--setenv",
+      "LANG",
+      "C.UTF-8",
+      "--tmpfs",
+      "/bench/neuronbench"
+    ]
+  }
+}

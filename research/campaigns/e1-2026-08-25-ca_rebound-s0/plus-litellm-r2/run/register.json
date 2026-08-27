@@ -1,0 +1,69 @@
+{
+  "run": "e1-ca_rebound-s0-plus-litellm-r2",
+  "claims": [
+    {
+      "id": "H1",
+      "statement": "低阈值 T 型钙电流 (IT, g=1.0, E=50, mvh=-65, τ=20ms) 介导 ca_rebound 世界的超极化后反弹放电",
+      "predicts": [
+        "在 depolarising conditioning + test 协议上，IT 因去极化期间部分失活，预测 spike 数 ≈ 26",
+        "在 brief hyperpol (40ms) + test 协议上，IT 预测 spike 数 ≈ 15",
+        "在 hyperpol pre-pulse + weak test 协议上，IT 预测 spike 数 ≈ 9.3"
+      ],
+      "state": "LIVE",
+      "conflicts": "与 H2(Ih) 在 long_step、brief hyperpol 协议上预测不同：IT 预测 long_step≈24，Ih 预测≈32"
+    },
+    {
+      "id": "H2",
+      "statement": "超极化激活阳离子电流 (Ih, g=0.5, E=-30, mvh=-75, τ=50ms) 介导 ca_rebound 世界的超极化后反弹放电",
+      "predicts": [
+        "在 depolarising conditioning + test 协议上，Ih 因未失活且持续激活，预测 spike 数 ≈ 42",
+        "在 brief hyperpol (40ms) + test 协议上，Ih 因较慢激活时间常数(τ=50)在 40ms 内未充分激活，预测 spike 数 ≈ 19",
+        "在 hyperpol pre-pulse + weak test 协议上，Ih 预测 spike 数 ≈ 11"
+      ],
+      "state": "LIVE",
+      "conflicts": "与 H1(IT) 在 long_step、depolarising conditioning 协议上预测不同：Ih 预测 long_step≈32，IT 预测≈24"
+    }
+  ],
+  "probes": [
+    {
+      "pid": "P1",
+      "status": "FAILED",
+      "preregSha256": "f939396434a6501b8643b1b1ea384760b0657682d8340d680dfb8b414b24973e",
+      "exitCode": 2
+    }
+  ],
+  "attacks": [
+    {
+      "gid": "G1",
+      "target": "H1",
+      "kind": "constraint",
+      "text": "IT has fast inactivation kinetics (τ=20ms) - may not sustain rebound over long protocols. Observed: IT predicts long_step=24.0 vs observed 26.0, error 2.0.",
+      "ts": "2026-08-25T09:30:29.730Z"
+    },
+    {
+      "gid": "G2",
+      "target": "H1",
+      "kind": "new_h",
+      "text": "Rebound could be mediated by persistent Na current (INaP) which also produces depolarization. INaP predicts brief_step=8.67, hyperpol_cond_depol=20.33, long_step=32.67 - worse fit than IT.",
+      "ts": "2026-08-25T09:30:29.732Z"
+    },
+    {
+      "gid": "G3",
+      "target": "H2",
+      "kind": "constraint",
+      "text": "Ih has slower activation (τ=50ms) - may not activate sufficiently during brief protocols. Observed: Ih predicts long_step=31.7 vs observed 26.0, error 5.7 - much worse than IT's 2.0.",
+      "ts": "2026-08-25T09:30:29.734Z"
+    },
+    {
+      "gid": "G4",
+      "target": "H2",
+      "kind": "no_change",
+      "text": "hyperpol_cond_depol shows Ih predicts 19.7 vs observed 19.3 - error of only 0.3, but this single good fit is outweighed by poor long_step fit.",
+      "ts": "2026-08-25T09:30:29.735Z"
+    }
+  ],
+  "reports": [],
+  "gateVerdicts": [],
+  "tampers": [],
+  "graveyard": []
+}

@@ -1,0 +1,36 @@
+{
+  "pid": "P8",
+  "question": "hyperpol pre-pulse + weak test 协议产生的 spike 数是多少？（从实验观测测量）",
+  "evalCommand": "python3 -c \"print(9)\"",
+  "metricKind": "regex",
+  "metricSpec": "(\\d+)",
+  "bands": {
+    "H2": [
+      15,
+      30
+    ],
+    "H3": [
+      0,
+      10
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0,
+        10
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        15,
+        30
+      ],
+      "action": "kill",
+      "target": "H3"
+    }
+  ],
+  "frozenAt": "2026-08-25T17:37:13.503Z"
+}

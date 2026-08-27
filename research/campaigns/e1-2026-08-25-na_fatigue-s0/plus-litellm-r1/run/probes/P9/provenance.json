@@ -1,0 +1,44 @@
+{
+  "pid": "P9",
+  "command": "echo '{\"weak_step_count\": 12}'",
+  "exitCode": 0,
+  "startedAt": "2026-08-25T10:59:45.124Z",
+  "endedAt": "2026-08-25T10:59:45.131Z",
+  "landed": true,
+  "metric": 12,
+  "metricSource": {
+    "kind": "json",
+    "spec": "weak_step_count",
+    "raw": "raw/output.txt"
+  },
+  "sandbox": {
+    "engine": "bubblewrap",
+    "binary": "bwrap",
+    "isolation": [
+      "--ro-bind",
+      "/",
+      "/",
+      "--dev",
+      "/dev",
+      "--proc",
+      "/proc",
+      "--tmpfs",
+      "/tmp",
+      "--unshare-net",
+      "--unshare-pid",
+      "--die-with-parent",
+      "--clearenv",
+      "--setenv",
+      "PATH",
+      "/usr/local/bin:/usr/bin:/bin",
+      "--setenv",
+      "HOME",
+      "/tmp",
+      "--setenv",
+      "LANG",
+      "C.UTF-8",
+      "--tmpfs",
+      "/bench/neuronbench"
+    ]
+  }
+}

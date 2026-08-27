@@ -1,0 +1,105 @@
+{
+  "pid": "P5",
+  "question": "40 ms 短超极化 conditioning 后的 test 发放是易化还是抑制（参考模型=13）？load-bearing variable：conditioning 时长（40 ms vs P1 的 250 ms）——它决定失活门恢复量。对照=参考模型 13。精化平台模型（C16/C4）预测部分恢复→易化 17-24；H3 预测≈参考 13；H4（I_A 快恢复）预测抑制 ≤10。severity：若平台模型动力学错误（恢复更慢或机制不同），计数将落 [0,15]，探针杀死 H5——通过。",
+  "evalCommand": "python3 -c \"import json,statistics;P='brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)';vs=[e['spike_count'] for e in map(json.loads,open('/root/.proma-research/e1-2026-08-27-z_rebound-s0/journal.jsonl')) if e.get('op')=='world.observe' and e.get('protocol')==P and e.get('world')=='z_rebound' and e.get('seed')==0];print(json.dumps({'spikes':statistics.mean(vs) if vs else float('nan')}))\"",
+  "metricKind": "json",
+  "metricSpec": "spikes",
+  "bands": {
+    "H5": [
+      16,
+      30
+    ],
+    "H3": [
+      11,
+      15
+    ],
+    "H4": [
+      0,
+      10
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0,
+        10
+      ],
+      "action": "support",
+      "target": "H4"
+    },
+    {
+      "band": [
+        0,
+        10
+      ],
+      "action": "kill",
+      "target": "H5"
+    },
+    {
+      "band": [
+        0,
+        10
+      ],
+      "action": "kill",
+      "target": "H3"
+    },
+    {
+      "band": [
+        11,
+        15
+      ],
+      "action": "support",
+      "target": "H3"
+    },
+    {
+      "band": [
+        11,
+        15
+      ],
+      "action": "kill",
+      "target": "H5"
+    },
+    {
+      "band": [
+        11,
+        15
+      ],
+      "action": "kill",
+      "target": "H4"
+    },
+    {
+      "band": [
+        16,
+        30
+      ],
+      "action": "support",
+      "target": "H5"
+    },
+    {
+      "band": [
+        16,
+        30
+      ],
+      "action": "kill",
+      "target": "H3"
+    },
+    {
+      "band": [
+        16,
+        30
+      ],
+      "action": "kill",
+      "target": "H4"
+    },
+    {
+      "band": [
+        31,
+        100
+      ],
+      "action": "scope",
+      "target": "H5",
+      "scopeNote": "易化超出精化模型上界：平台电流恢复更快或增益更高，需重估参数"
+    }
+  ],
+  "frozenAt": "2026-08-27T14:51:04.493Z"
+}

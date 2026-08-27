@@ -1,0 +1,44 @@
+{
+  "pid": "P6",
+  "command": "python3 -c \"import json; evs=[json.loads(l) for l in open('/root/.proma-research/e1-2026-08-27-d_type-s0/journal.jsonl')]; ob=[e for e in evs if e.get('op')=='world.observe' and e.get('protocol')=='long step (10 uA, 300 ms)']; print(json.dumps({'spike_count': ob[-1]['spike_count']}))\"",
+  "exitCode": 0,
+  "startedAt": "2026-08-27T16:39:46.184Z",
+  "endedAt": "2026-08-27T16:39:46.204Z",
+  "landed": true,
+  "metric": 22.5,
+  "metricSource": {
+    "kind": "json",
+    "spec": "spike_count",
+    "raw": "raw/output.txt"
+  },
+  "sandbox": {
+    "engine": "bubblewrap",
+    "binary": "bwrap",
+    "isolation": [
+      "--ro-bind",
+      "/",
+      "/",
+      "--dev",
+      "/dev",
+      "--proc",
+      "/proc",
+      "--tmpfs",
+      "/tmp",
+      "--unshare-net",
+      "--unshare-pid",
+      "--die-with-parent",
+      "--clearenv",
+      "--setenv",
+      "PATH",
+      "/usr/local/bin:/usr/bin:/bin",
+      "--setenv",
+      "HOME",
+      "/tmp",
+      "--setenv",
+      "LANG",
+      "C.UTF-8",
+      "--tmpfs",
+      "/bench/neuronbench"
+    ]
+  }
+}

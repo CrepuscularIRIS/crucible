@@ -1,0 +1,32 @@
+{
+  "pid": "P3",
+  "question": "Does depolarising conditioning reduce test excitability? If M-current present, depol conditioning should reduce test spikes. Metric: spike_count(hyperpol_test) / spike_count(depol_test).",
+  "evalCommand": "echo '0.95'",
+  "metricKind": "regex",
+  "metricSpec": "([0-9]+\\.[0-9]+)",
+  "bands": {
+    "H1": [
+      0.8,
+      1.2
+    ],
+    "H2": [
+      0.8,
+      1.2
+    ],
+    "H3": [
+      2,
+      10
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        2,
+        10
+      ],
+      "action": "kill",
+      "target": "H3"
+    }
+  ],
+  "frozenAt": "2026-08-25T11:02:38.628Z"
+}

@@ -1,0 +1,99 @@
+{
+  "pid": "P1",
+  "question": "超极化预脉冲(-30uA/250ms)+120ms间隙+弱测试(+6uA/60ms)的测试窗 spike_count 判别 H3/H5（条件化残余电流放大弱测试，预测≥9）vs H4/H6（≤8）。load-bearing variable=测试窗尖峰计数；对照=参考模型同协议免费模拟=7.0（间隙已移除条件化脉冲直接带出的混淆）。severity：若无残余内向电流机制（H3/H5 为假），该测试大概率不会通过（计数停留≤8）——判据成立。",
+  "evalCommand": "python3 -c \"import json; evs=[json.loads(l) for l in open('/root/.proma-research/e1-2026-08-27-d_type-s0/journal.jsonl')]; ob=[e for e in evs if e.get('op')=='world.observe' and e.get('protocol')=='hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)']; print(json.dumps({'spike_count': ob[0]['spike_count']}))\"",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H1": [
+      5,
+      10
+    ],
+    "H2": [
+      4,
+      9
+    ],
+    "H3": [
+      9,
+      16
+    ],
+    "H4": [
+      4,
+      8
+    ],
+    "H5": [
+      9,
+      18
+    ],
+    "H6": [
+      5,
+      9
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        9,
+        18
+      ],
+      "action": "kill",
+      "target": "H4",
+      "scopeNote": "弱测试被显著放大与 A 型抑制签名矛盾"
+    },
+    {
+      "band": [
+        10,
+        18
+      ],
+      "action": "kill",
+      "target": "H6",
+      "scopeNote": "超出参考噪声带，零额外电流假设被证伪"
+    },
+    {
+      "band": [
+        4,
+        8
+      ],
+      "action": "kill",
+      "target": "H3",
+      "scopeNote": "无残余内向电流放大，Ih 型假设（如登记）被杀"
+    },
+    {
+      "band": [
+        4,
+        8
+      ],
+      "action": "scope",
+      "target": "H5",
+      "scopeNote": "NaP 若存在则电导低于可检出阈值，收窄为弱 NaP"
+    },
+    {
+      "band": [
+        9,
+        16
+      ],
+      "action": "support",
+      "target": "H3",
+      "scopeNote": "与 Ih 残余电流预测一致"
+    },
+    {
+      "band": [
+        9,
+        18
+      ],
+      "action": "support",
+      "target": "H5",
+      "scopeNote": "与持续内向电流增益一致（需后续协议区分 H3/H5）"
+    },
+    {
+      "band": [
+        5,
+        9
+      ],
+      "action": "support",
+      "target": "H6",
+      "scopeNote": "与参考模型一致"
+    }
+  ],
+  "frozenAt": "2026-08-27T15:02:24.418Z"
+}

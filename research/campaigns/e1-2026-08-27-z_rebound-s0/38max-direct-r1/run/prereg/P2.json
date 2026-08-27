@@ -1,0 +1,108 @@
+{
+  "pid": "P2",
+  "question": "去极化 conditioning（+15 uA/250 ms）是否抑制 test 发放（参考模型=37）？load-bearing variable：conditioning 电位方向；对照=参考模型同协议计数 37。若计数≤32 说明存在去极化可积累的失活（H1 独有预测）；若≥45 说明去极化移除了外向抑制（H4）。severity：若 H1 假，计数≥33 大概率落 flat 带，探针不会误判 support——通过。",
+  "evalCommand": "python3 -c \"import json,statistics;P='depolarising conditioning + test (+15 uA/250 ms, then +12 uA)';vs=[e['spike_count'] for e in map(json.loads,open('/root/.proma-research/e1-2026-08-27-z_rebound-s0/journal.jsonl')) if e.get('op')=='world.observe' and e.get('protocol')==P and e.get('world')=='z_rebound' and e.get('seed')==0];print(json.dumps({'spikes':statistics.mean(vs) if vs else float('nan')}))\"",
+  "metricKind": "json",
+  "metricSpec": "spikes",
+  "bands": {
+    "H1": [
+      0,
+      32
+    ],
+    "H2": [
+      33,
+      44
+    ],
+    "H3": [
+      34,
+      40
+    ],
+    "H4": [
+      45,
+      100
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0,
+        32
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        0,
+        32
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        0,
+        32
+      ],
+      "action": "kill",
+      "target": "H4"
+    },
+    {
+      "band": [
+        33,
+        44
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        33,
+        44
+      ],
+      "action": "support",
+      "target": "H2"
+    },
+    {
+      "band": [
+        33,
+        44
+      ],
+      "action": "support",
+      "target": "H3"
+    },
+    {
+      "band": [
+        45,
+        100
+      ],
+      "action": "support",
+      "target": "H4"
+    },
+    {
+      "band": [
+        45,
+        100
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        45,
+        100
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        45,
+        100
+      ],
+      "action": "kill",
+      "target": "H3"
+    }
+  ],
+  "frozenAt": "2026-08-27T14:26:16.346Z"
+}

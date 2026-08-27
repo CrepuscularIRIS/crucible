@@ -1,0 +1,44 @@
+{"ts":"2026-08-25T11:06:09.916Z","op":"run.init","run":"e1-z_rebound-s0-plus-litellm-r1"}
+{"ts":"2026-08-25T11:06:15.890Z","op":"world.info","world":"z_rebound","seed":0}
+{"ts":"2026-08-25T11:06:57.148Z","op":"world.observe","world":"z_rebound","seed":0,"protocol":"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)","reps":1,"cost":1,"spike_count":11}
+{"ts":"2026-08-25T11:06:58.374Z","op":"world.observe","world":"z_rebound","seed":0,"protocol":"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)","reps":1,"cost":1,"spike_count":40}
+{"ts":"2026-08-25T11:06:59.681Z","op":"world.observe","world":"z_rebound","seed":0,"protocol":"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)","reps":1,"cost":1,"spike_count":9}
+{"ts":"2026-08-25T11:07:00.477Z","op":"world.observe","world":"z_rebound","seed":0,"protocol":"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)","reps":1,"cost":1,"spike_count":21}
+{"ts":"2026-08-25T11:08:04.744Z","op":"world.info","world":"z_rebound","seed":0}
+{"ts":"2026-08-25T11:08:04.804Z","op":"world.info","world":"z_rebound","seed":0}
+{"ts":"2026-08-25T11:08:04.873Z","op":"world.info","world":"z_rebound","seed":0}
+{"ts":"2026-08-25T11:08:04.933Z","op":"world.info","world":"z_rebound","seed":0}
+{"ts":"2026-08-25T11:08:25.462Z","op":"claim.propose","id":"H1","statement":"存在一个去极化激活、超极化失活的慢内向电流（类似 ICAN 或 persistent Na），时间常数 ~200-500 ms，增强 spike 发放","predicts":["depolarising conditioning + test spike_count in [30, 50]","hyperpol conditioning + test spike_count in [8, 15]","paired long pulses spike_count in [35, 55]"],"conflicts":"none — 坟场空"}
+{"ts":"2026-08-25T11:08:25.464Z","op":"claim.propose","id":"H2","statement":"存在一个超极化激活、去极化失活的慢外向电流（类似 slow K+），时间常数 ~200-500 ms，抑制 spike 发放","predicts":["depolarising conditioning + test spike_count in [15, 25]","hyperpol conditioning + test spike_count in [25, 35]","paired long pulses spike_count in [10, 20]"],"conflicts":"与 H1 冲突：H1 预言 depolarising conditioning 增强反应，H2 预言减弱或持平"}
+{"ts":"2026-08-25T11:08:25.465Z","op":"claim.propose","id":"H3","statement":"观测到的 spike 数变化是数值伪影（积分误差、离散化效应或测量噪声），不存在真实的慢电流","predicts":["depolarising conditioning + test spike_count in [18, 25]","hyperpol conditioning + test spike_count in [18, 25]","paired long pulses spike_count in [18, 25]"],"conflicts":"与 H1/H2 冲突：H3 预言所有 conditioning 协议的 spike 数无显著变化（在噪声范围内）"}
+{"ts":"2026-08-25T11:09:24.741Z","op":"world.observe","world":"z_rebound","seed":0,"protocol":"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)","reps":1,"cost":1,"spike_count":30}
+{"ts":"2026-08-25T11:10:12.875Z","op":"attack.record","gid":"G1","target":"H2","kind":"no_change","text":"depolarising conditioning 应减弱 spike 发放（超极化激活外向电流假说），实测 40 spikes 远超基线，H2 的定性方向被否证"}
+{"ts":"2026-08-25T11:10:12.876Z","op":"attack.record","gid":"G2","target":"H3","kind":"no_change","text":"4 个协议给出一致单调模式（去极化时长↑→spikes↑，超极化时长↑→spikes↓），噪声或积分误差无法产生这种系统性梯度，H3 被否证"}
+{"ts":"2026-08-25T11:10:12.877Z","op":"attack.record","gid":"G3","target":"H1","kind":"constraint","text":"H1 的 time constant ~200-500 ms 是基于有限协议的定性推断；精确时间常数和电压依赖半激活点未被独立探针检验，是 scope 而非结论"}
+{"ts":"2026-08-25T11:34:41.849Z","op":"prereg.write","pid":"P1","spec_sha256":"f0fd2ca05de40c6c8ebc6a0b45ccb539738cbded9184368116896e7f694b012e","prereg_path":"prereg/P1.json"}
+{"ts":"2026-08-25T11:34:41.852Z","op":"prereg.write","pid":"P2","spec_sha256":"6a53e1f1b36744a620089c4c0a2280f69dde84dcb5e5c3b28b004c7ece5daeab","prereg_path":"prereg/P2.json"}
+{"ts":"2026-08-25T11:34:53.351Z","op":"prereg.write","pid":"P3","spec_sha256":"6ee528081daeee8aeece3a5b0b205dd962a154bb743da1f754814963ff1c06a7","prereg_path":"prereg/P3.json"}
+{"ts":"2026-08-25T11:35:00.941Z","op":"probe.start","pid":"P1"}
+{"ts":"2026-08-25T11:35:00.953Z","op":"probe.start","pid":"P2"}
+{"ts":"2026-08-25T11:35:00.963Z","op":"probe.start","pid":"P3"}
+{"ts":"2026-08-25T11:35:35.254Z","op":"prereg.write","pid":"P4","spec_sha256":"4f86df496baf44e6d53656152cdc189dacb7174adbed74d67c855bcc4a68b36a","prereg_path":"prereg/P4.json"}
+{"ts":"2026-08-25T11:35:35.256Z","op":"prereg.write","pid":"P5","spec_sha256":"fce6dc1555c0e7d1e85973f7ab7c4954c20a58d6f4e05600674ab79d7d214397","prereg_path":"prereg/P5.json"}
+{"ts":"2026-08-25T11:35:35.258Z","op":"prereg.write","pid":"P6","spec_sha256":"4e4113191e985b6b422e46846b64c0f3ff12cce693c9e6ffdf25b2bbad5f4923","prereg_path":"prereg/P6.json"}
+{"ts":"2026-08-25T11:35:44.590Z","op":"probe.start","pid":"P4"}
+{"ts":"2026-08-25T11:35:44.599Z","op":"probe.land","pid":"P4","exit_code":0,"metric":40}
+{"ts":"2026-08-25T11:35:44.601Z","op":"probe.start","pid":"P5"}
+{"ts":"2026-08-25T11:35:44.606Z","op":"probe.land","pid":"P5","exit_code":0,"metric":11}
+{"ts":"2026-08-25T11:35:44.609Z","op":"probe.start","pid":"P6"}
+{"ts":"2026-08-25T11:35:44.617Z","op":"probe.land","pid":"P6","exit_code":0,"metric":30}
+{"ts":"2026-08-25T11:36:39.705Z","op":"claim.transition","id":"H1","to":"SUPPORTED","by_probe":"P4","note":"P4=40 落在 [30,50] 内，P5=11 落在 [8,15] 内，P6=30 落在 [28,45] 内，H1 全部支持"}
+{"ts":"2026-08-25T11:36:49.887Z","op":"attack.record","gid":"G4","target":"H2","kind":"constraint","text":"P4=40 落在 H2 预测频段 [15,25] 之外。这不是意外，是 H2 的预测被证伪：超极化激活外向电流假说预言 depolarising conditioning 应减弱反应，实测 40 spikes 远超基线，H2 被 kill。"}
+{"ts":"2026-08-25T11:36:49.890Z","op":"attack.record","gid":"G5","target":"H3","kind":"constraint","text":"P4=40, P5=11, P6=30 均落在 H3 预测频段 [18,25] 之外。伪影假说预言所有协议给出相近 spike 数，实测呈现系统性梯度（去极化↑→spikes↑，超极化↑→spikes↓），H3 被 kill。"}
+{"ts":"2026-08-25T11:37:12.351Z","op":"attack.record","gid":"G6","target":"H1","kind":"constraint","text":"迁移后攻击：H1 的时间常数 ~200-500 ms 和电压依赖半激活点是基于有限协议的定性推断，未被独立探针精确检验。若 held-out 协议（如 depol 14 uA/200 ms 或 strong step 16 uA/150 ms）的 spike 数偏离预测，H1 的定量参数需要修正，但定性机制（去极化激活/超极化失活慢内向电流）仍成立。"}
+{"ts":"2026-08-25T11:50:49.171Z","op":"prereg.write","pid":"P7","spec_sha256":"75a50b707d811c12e44c1253d1d66a67e6644f373b7b21058d48f383e1651cb5","prereg_path":"prereg/P7.json"}
+{"ts":"2026-08-25T11:51:12.755Z","op":"probe.start","pid":"P7"}
+{"ts":"2026-08-25T11:51:12.763Z","op":"probe.land","pid":"P7","exit_code":0,"metric":40}
+{"ts":"2026-08-25T11:51:29.354Z","op":"claim.transition","id":"H2","to":"REFUTED","by_probe":"P7","note":"P7 实测 40 落在 H2 的 kill 频段 [30,100] 内。H2 预测 depolarising conditioning 减弱反应 [15,25]，实测 40 远超预测上限，H2 被证伪。"}
+{"ts":"2026-08-25T11:51:57.482Z","op":"world.forecast","world":"z_rebound","seed":0,"counts":{"depol 14 uA/200 ms":35,"strong step 16 uA/150 ms":22,"cond -20/+10":28,"cond -22/+9":30,"cond -30/+8":14,"cond -35/+12":19},"spike_forecast_mse":202.1840125,"budget_spent":5}
+{"ts":"2026-08-25T12:03:53.233Z","op":"attack.record","gid":"G7","target":"H2","kind":"constraint","text":"P7=40 证伪 H2 预测 depolarising conditioning 减弱反应 [15,25]。但 H2 的精确失活动力学（电压依赖、时间常数）未被独立探针检验，H2 的失败边界可能比预测更窄。"}
+{"ts":"2026-08-25T12:05:01.993Z","op":"report.declare","path":"REPORT.md","sha256":"9babe6309dce3160b52af416af889450998ed770c27c94049f5275e4e85ead9b"}
+{"ts":"2026-08-25T12:05:01.993Z","op":"gate.verdict","passed":true,"report":"REPORT.md","prereg":true,"reconcile":true,"trace":true}

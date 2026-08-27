@@ -1,0 +1,86 @@
+{
+  "pid": "P8",
+  "question": "paired long pulses（12 uA/300 ms ×2，60 ms gap）的测试窗（第二脉冲）计数是否显著低于参考（≤−2.7）？承重变量=观测显式 spike_count−参考免费模拟均值 26.2；机制逻辑=第一脉冲累积的 M 激活在 60 ms gap 后仅部分去激活（τ≈50 ms），第二脉冲始于残余外向电导→测试窗计数下降；对照=参考模型无记忆，双脉冲计数相等（免费模拟 26.2）；竞争者=H4（本协议上与参考不可区分）。Severity：若无记忆电流（H1 假），测试窗≈参考必落 H4 带；若慢速外向记忆电流存在（H4 假），残余激活必压低第二脉冲——候选生成模型（g=3）预测 19.0，该测试在 H1 为假时几乎不可能通过。",
+  "evalCommand": "printf '%s' 'import json,os\nD=\"/root/.proma-research/e1-2026-08-27-textbook_M-s0\"\nPROT=\"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)\"\ndef objs(p):\n try:\n  t=open(p).read()\n except Exception:\n  return []\n out=[]\n try:\n  out.append(json.loads(t))\n except Exception:\n  for L in t.splitlines():\n   L=L.strip()\n   if L:\n    try: out.append(json.loads(L))\n    except Exception: pass\n return out\ncands=[]\nfor r,_,fs in os.walk(D):\n for f in fs:\n  if not (f.endswith(\".json\") or f.endswith(\".jsonl\")): continue\n  if f.startswith(\"journal\") or f==\"register.json\": continue\n  p=os.path.join(r,f)\n  mt=os.path.getmtime(p)\n  for j in objs(p):\n   s=json.dumps(j)\n   if PROT not in s: continue\n   if \"evalCommand\" in s: continue\n   if isinstance(j,dict) and isinstance(j.get(\"op\"),str): continue\n   if isinstance(j,dict) and j.get(\"cmd\") in (\"simulate\",\"info\"): continue\n   if \"\\\"candidate\\\"\" in s and \"\\\"protocol_label\\\"\" in s: continue\n   cands.append((mt,p,j,s))\nobs=[c for c in cands if \"\\\"spike_count\\\"\" in c[3]]\npool=obs if obs else cands\nout={\"n_files\":len(cands),\"n_obs\":len(obs),\"prot\":PROT}\ndef traces(o,tr):\n if isinstance(o,dict):\n  for k,v in o.items():\n   if isinstance(v,list) and len(v)>40 and all(isinstance(x,(int,float)) for x in v[:5]) and min(v)<0 and max(v)<70:\n    tr.append(v)\n   else:\n    traces(v,tr)\n elif isinstance(o,list):\n  for v in o: traces(v,tr)\n return tr\ndef counts(o,cs):\n if isinstance(o,dict):\n  for k,val in o.items():\n   if k==\"spike_count\" and isinstance(val,(int,float)): cs.append(val)\n   elif k==\"spike_counts\" and isinstance(val,list): cs.extend([x for x in val if isinstance(x,(int,float))])\n   else: counts(val,cs)\n elif isinstance(o,list):\n  for val in o: counts(val,cs)\n return cs\nif not pool:\n out[\"metric\"]=float(\"nan\"); out[\"error\"]=\"no candidate files\"\nelse:\n mt,p,j,s=pool[-1]\n cs=counts(j,[])\n out[\"counts\"]=cs\n out[\"metric\"]=(sum(cs)/len(cs)-26.2) if cs else float(\"nan\")\n out[\"file\"]=p\nprint(json.dumps(out))' > /tmp/e.py && python3 /tmp/e.py",
+  "metricKind": "json",
+  "metricSpec": "metric",
+  "bands": {
+    "H1": [
+      -13,
+      -2.7
+    ],
+    "H4": [
+      -1.7,
+      4
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        -13,
+        -2.7
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        -13,
+        -2.7
+      ],
+      "action": "kill",
+      "target": "H4"
+    },
+    {
+      "band": [
+        -1.7,
+        4
+      ],
+      "action": "support",
+      "target": "H4"
+    },
+    {
+      "band": [
+        -1.7,
+        4
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        -2.7,
+        -1.7
+      ],
+      "action": "scope",
+      "target": "H1",
+      "scopeNote": "间隙带：噪声边缘"
+    },
+    {
+      "band": [
+        -26,
+        -13
+      ],
+      "action": "scope",
+      "target": "H1",
+      "scopeNote": "抑制远强于候选模型：需更强 g 或额外机制"
+    },
+    {
+      "band": [
+        4,
+        26
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        4,
+        26
+      ],
+      "action": "kill",
+      "target": "H4"
+    }
+  ],
+  "frozenAt": "2026-08-27T15:10:13.805Z"
+}

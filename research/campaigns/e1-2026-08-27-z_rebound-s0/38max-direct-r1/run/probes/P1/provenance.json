@@ -1,0 +1,44 @@
+{
+  "pid": "P1",
+  "command": "python3 -c \"import json,statistics;P='hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)';vs=[e['spike_count'] for e in map(json.loads,open('/root/.proma-research/e1-2026-08-27-z_rebound-s0/journal.jsonl')) if e.get('op')=='world.observe' and e.get('protocol')==P and e.get('world')=='z_rebound' and e.get('seed')==0];print(json.dumps({'spikes':statistics.mean(vs) if vs else float('nan')}))\"",
+  "exitCode": 0,
+  "startedAt": "2026-08-27T14:29:12.024Z",
+  "endedAt": "2026-08-27T14:29:12.085Z",
+  "landed": true,
+  "metric": 10.5,
+  "metricSource": {
+    "kind": "json",
+    "spec": "spikes",
+    "raw": "raw/output.txt"
+  },
+  "sandbox": {
+    "engine": "bubblewrap",
+    "binary": "bwrap",
+    "isolation": [
+      "--ro-bind",
+      "/",
+      "/",
+      "--dev",
+      "/dev",
+      "--proc",
+      "/proc",
+      "--tmpfs",
+      "/tmp",
+      "--unshare-net",
+      "--unshare-pid",
+      "--die-with-parent",
+      "--clearenv",
+      "--setenv",
+      "PATH",
+      "/usr/local/bin:/usr/bin:/bin",
+      "--setenv",
+      "HOME",
+      "/tmp",
+      "--setenv",
+      "LANG",
+      "C.UTF-8",
+      "--tmpfs",
+      "/bench/neuronbench"
+    ]
+  }
+}

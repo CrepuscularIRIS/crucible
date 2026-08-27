@@ -1,0 +1,60 @@
+{
+  "pid": "P1",
+  "question": "What is the MSE of each hypothesis on the 4 observed protocols? H1 predicts MSE<3, H2 predicts MSE 4-6, H3 predicts MSE>30, H4 predicts MSE~9. Severity: if the mechanism is wrong, it cannot fit the data this well.",
+  "evalCommand": "python /root/.proma-dev/agent-workspaces/default/workspace-files/compute_mse.py mse",
+  "metricKind": "json",
+  "metricSpec": "H1",
+  "bands": {
+    "H1": [
+      0,
+      3
+    ],
+    "H2": [
+      3,
+      6
+    ],
+    "H3": [
+      30,
+      40
+    ],
+    "H4": [
+      8,
+      12
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0,
+        3
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        3,
+        6
+      ],
+      "action": "scope",
+      "target": "H2"
+    },
+    {
+      "band": [
+        30,
+        40
+      ],
+      "action": "kill",
+      "target": "H3"
+    },
+    {
+      "band": [
+        8,
+        12
+      ],
+      "action": "kill",
+      "target": "H4"
+    }
+  ],
+  "frozenAt": "2026-08-25T16:12:02.462Z"
+}

@@ -1,0 +1,44 @@
+{
+  "pid": "P7",
+  "command": "python3 -c \"import json; evs=[json.loads(l) for l in open('/root/.proma-research/e1-2026-08-27-ca_rebound-s0/journal.jsonl')]; sims=[e['mean_spike_count'] for e in evs if e.get('op')=='world.simulate' and e.get('protocol')=='hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)']; assert len(sims)>7; print(json.dumps({'best_h7': sims[7]}))\"",
+  "exitCode": 0,
+  "startedAt": "2026-08-27T14:51:49.883Z",
+  "endedAt": "2026-08-27T14:51:49.904Z",
+  "landed": true,
+  "metric": 20,
+  "metricSource": {
+    "kind": "json",
+    "spec": "best_h7",
+    "raw": "raw/output.txt"
+  },
+  "sandbox": {
+    "engine": "bubblewrap",
+    "binary": "bwrap",
+    "isolation": [
+      "--ro-bind",
+      "/",
+      "/",
+      "--dev",
+      "/dev",
+      "--proc",
+      "/proc",
+      "--tmpfs",
+      "/tmp",
+      "--unshare-net",
+      "--unshare-pid",
+      "--die-with-parent",
+      "--clearenv",
+      "--setenv",
+      "PATH",
+      "/usr/local/bin:/usr/bin:/bin",
+      "--setenv",
+      "HOME",
+      "/tmp",
+      "--setenv",
+      "LANG",
+      "C.UTF-8",
+      "--tmpfs",
+      "/bench/neuronbench"
+    ]
+  }
+}

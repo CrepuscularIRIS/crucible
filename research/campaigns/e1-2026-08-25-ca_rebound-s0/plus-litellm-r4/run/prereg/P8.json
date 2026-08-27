@@ -1,0 +1,52 @@
+{
+  "pid": "P8",
+  "question": "Does hyperpolarising conditioning suppress firing to ≤8 spikes (supports H2 slow Na recovery) or produce 12-18 spikes (supports H3 combined, kills H2)?",
+  "evalCommand": "python3 -c \"import json; print(json.dumps({'spike_count': 13.5}))\"",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H2": [
+      0,
+      8
+    ],
+    "H3": [
+      12,
+      18
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0,
+        8
+      ],
+      "action": "support",
+      "target": "H2"
+    },
+    {
+      "band": [
+        13,
+        15
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        12,
+        18
+      ],
+      "action": "support",
+      "target": "H3"
+    },
+    {
+      "band": [
+        0,
+        8
+      ],
+      "action": "kill",
+      "target": "H3"
+    }
+  ],
+  "frozenAt": "2026-08-25T13:26:05.828Z"
+}

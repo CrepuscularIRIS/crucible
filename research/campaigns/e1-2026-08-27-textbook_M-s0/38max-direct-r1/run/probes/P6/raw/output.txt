@@ -1,0 +1,1 @@
+{"n_files": 1, "n_obs": 1, "prot": "hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)", "counts": [14.0], "metric": -1.9000000000000004, "file": "/root/.proma-research/e1-2026-08-27-textbook_M-s0/world-ledger.jsonl"}

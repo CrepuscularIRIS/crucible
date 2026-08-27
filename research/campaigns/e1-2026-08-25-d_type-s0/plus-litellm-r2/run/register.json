@@ -1,0 +1,154 @@
+{
+  "run": "e1-d_type-s0-plus-litellm-r2",
+  "claims": [
+    {
+      "id": "H1",
+      "statement": "Extra current is a low-threshold depolarizing current activating near resting potential with fast kinetics",
+      "predicts": [
+        "low-threshold activation (mvh ~ -60 to -50 mV)",
+        "moderate conductance (g ~ 0.5-2 mS/cm^2)",
+        "fast kinetics (mtau ~ 5-20 ms)",
+        "depolarization-evoked firing increase"
+      ],
+      "state": "LIVE",
+      "conflicts": "H2 conflicts with H1 on activation voltage range and time constant"
+    },
+    {
+      "id": "H3",
+      "statement": "Extra current is a hyperpolarization-activated cation current (Ih-like) that contributes to rebound excitation",
+      "predicts": [
+        "hyperpolarization removes inactivation (visible in conditioning protocols)",
+        "rebound excitation after hyperpolarization",
+        "paired-pulse facilitation",
+        "slow recovery from inactivation (tau > 50 ms)"
+      ],
+      "state": "REFUTED",
+      "conflicts": "H3 conflicts with H1/H2 on recovery kinetics and voltage dependence",
+      "byProbe": "P3",
+      "note": "超极化预处理后 spike count = 15.0，远低于 H3 预测的 28-40 范围。H3 (Ih-like) 被杀死。"
+    },
+    {
+      "id": "H4",
+      "statement": "Extra current is a persistent slow-inactivating sodium-like current that sustains depolarization",
+      "predicts": [
+        "slow activation (mtau > 30 ms)",
+        "persistent current visible in long steps",
+        "contributes to plateau potential",
+        "minimal effect in brief steps",
+        "voltage-dependent inactivation with slow recovery"
+      ],
+      "state": "LIVE",
+      "conflicts": "H4 conflicts with H1/H3 on slow dynamics and plateau contribution"
+    }
+  ],
+  "probes": [
+    {
+      "pid": "P1",
+      "status": "FAILED",
+      "preregSha256": "2ac7828d963ba493749f98aa8bcbe16692d8370bdc152024623b014640321420",
+      "exitCode": 1
+    },
+    {
+      "pid": "P2",
+      "status": "LANDED",
+      "preregSha256": "3cf08b2694069857590d56fa28c7f6636c429b4a5ccd1203c1ee73980f73dd19",
+      "exitCode": 0,
+      "metric": 15
+    },
+    {
+      "pid": "P3",
+      "status": "LANDED",
+      "preregSha256": "39415bfd265cb79d0bda8cde19a68dba456a801d63964b9dc081f31e63e402b3",
+      "exitCode": 0,
+      "metric": 15
+    }
+  ],
+  "attacks": [
+    {
+      "gid": "G1",
+      "target": "H1",
+      "kind": "constraint",
+      "text": "去极化条件测试（+15uA/250ms 后接 +12uA）产生 39 spikes，远超 baseline 22.5，表明存在条件易化机制。H1 的\"快速激活去极化电流\"预测无法解释为何预先去极化会显著增强后续发放——这需要额外的易化/启动机制（如钙积累、钠通道恢复动力学等），超出了 H1 的声明范围。",
+      "ts": "2026-08-25T18:00:01.887Z"
+    },
+    {
+      "gid": "G2",
+      "target": "H1",
+      "kind": "constraint",
+      "text": "去极化条件测试（+15uA/250ms 后接 +12uA）产生 39 spikes，远超 baseline 22.5，表明存在条件易化机制。H1 的\"快速激活去极化电流\"预测无法解释为何预先去极化会显著增强后续发放——这需要额外的易化/启动机制（如钙积累、钠通道恢复动力学等），超出了 H1 的声明范围。",
+      "ts": "2026-08-25T18:00:29.565Z"
+    },
+    {
+      "gid": "G3",
+      "target": "H1",
+      "kind": "new_h",
+      "text": "替代解释：A 型钾电流 (I_A) 缓慢从失活恢复。若未知机制是减少抑制（而非增加兴奋）：I_A 缓慢从失活恢复 → 超极化去除失活 → 更多 I_A 可用 → 更多 spike 对抗 → 更少 spike (15)。去极化条件保持 I_A 失活 → 更少对抗 → 更多 spike (39)。这反转了机制（减少抑制而非增加兴奋），但预测相同的 spike 模式。",
+      "ts": "2026-08-25T18:00:29.567Z"
+    },
+    {
+      "gid": "G4",
+      "target": "H1",
+      "kind": "constraint",
+      "text": "P3 观测值 15 落在 H1 [12,18] 和 H4 [10,16] 的重叠区 [12,16]，实际未能区分两者。H1 的\"存活\"只是因为 H4 同样存活，而非正面证据支持 H1。",
+      "ts": "2026-08-25T18:00:29.568Z"
+    },
+    {
+      "gid": "G5",
+      "target": "H4",
+      "kind": "constraint",
+      "text": "H4 称电流为\"sodium-like\"，但无药理学证据（如 TTX 阻断）、离子替换或反转电位测量支持。\"sodium-like\"标签是从单一标量输出（spike count）的无根据外推。",
+      "ts": "2026-08-25T18:00:54.504Z"
+    },
+    {
+      "gid": "G6",
+      "target": "H4",
+      "kind": "constraint",
+      "text": "H4 预测\"persistent\"且\"slow-inactivating\"，但未定义关键时间尺度边界。若电流缓慢失活且缓慢恢复，不清楚在持续去极化期间什么维持了\"persistent\"特性。假设混淆了两个不同动力学机制（persistent/non-inactivating vs. slow-inactivating）。",
+      "ts": "2026-08-25T18:00:54.506Z"
+    },
+    {
+      "gid": "G7",
+      "target": "H4",
+      "kind": "constraint",
+      "text": "H4 预测\"minimal effect in brief steps\"，但 P3 的测试脉冲（短暂去极化）仍产生 15 spikes。若电流对短暂步骤影响最小，测试脉冲应产生接近 baseline 的发放，而非可计数的不同响应。要么电流确实影响短暂步骤（矛盾其自身预测），要么 15 spikes 反映 baseline 响应未受额外电流影响——此时 H4 的贡献未被测量，而非被确认。",
+      "ts": "2026-08-25T18:00:54.507Z"
+    },
+    {
+      "gid": "G8",
+      "target": "H4",
+      "kind": "new_h",
+      "text": "替代解释：钙激活非特异性阳离子电流 (I_CAN)。钙激活阳离子电流在条件阶段积累钙，测试阶段产生增强发放。超极化后钙进入少 → I_CAN 少 → 更少 spike (15)。去极化条件后钙进入多 → I_CAN 多 → 更多 spike (39)。此机制解释完整模式（brief=5.5, long=22.5, hyperpol=15, depol=39），无需假设快速激活动力学或低阈值电压依赖性。",
+      "ts": "2026-08-25T18:00:54.509Z"
+    }
+  ],
+  "reports": [
+    {
+      "path": "REPORT.md",
+      "sha256": "1f14ea455abed4c3d9841b7902341bdb69951daeffeebc3d3caf980fa7eaccf8",
+      "ts": "2026-08-25T18:09:30.878Z"
+    }
+  ],
+  "gateVerdicts": [
+    {
+      "ts": "2026-08-25T18:09:30.878Z",
+      "passed": true,
+      "report": "REPORT.md"
+    }
+  ],
+  "tampers": [],
+  "graveyard": [
+    {
+      "id": "H3",
+      "statement": "Extra current is a hyperpolarization-activated cation current (Ih-like) that contributes to rebound excitation",
+      "predicts": [
+        "hyperpolarization removes inactivation (visible in conditioning protocols)",
+        "rebound excitation after hyperpolarization",
+        "paired-pulse facilitation",
+        "slow recovery from inactivation (tau > 50 ms)"
+      ],
+      "state": "REFUTED",
+      "conflicts": "H3 conflicts with H1/H2 on recovery kinetics and voltage dependence",
+      "byProbe": "P3"
+    }
+  ]
+}

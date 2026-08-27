@@ -1,0 +1,74 @@
+{
+  "run": "e1-ca_rebound-s0-plus-litellm-r3",
+  "claims": [
+    {
+      "id": "H1",
+      "statement": "The extra current is a slow persistent voltage-gated Na-like depolarizing current (NaP): activates at V > -50mV with slow kinetics (tau > 200ms), non-inactivating, provides sustained inward drive during prolonged depolarization that boosts repetitive firing rate proportional to stimulus strength.",
+      "predicts": [
+        "strong step (18uA, 120ms) test window spike count ∈ [17, 24]",
+        "depol cond + test (15uA/250ms then 12uA) test window spike count ∈ [36, 45]",
+        "hyperpol cond + depol test (-30uA/250ms then 12uA) test window spike count ∈ [12, 18]"
+      ],
+      "state": "LIVE",
+      "conflicts": "none — 攻击未探索的轴，首批假设"
+    },
+    {
+      "id": "H2",
+      "statement": "The extra current is a calcium-activated non-specific cation current (I_CAN): activated by intracellular Ca2+ accumulation during depolarization (not directly voltage-gated), with slow kinetics dominated by Ca diffusion/buffering, producing a depolarizing drive that scales with recent Ca influx history rather than instantaneous voltage.",
+      "predicts": [
+        "strong step (18uA, 120ms) test window spike count ∈ [15, 22]",
+        "depol cond + test (15uA/250ms then 12uA) test window spike count ∈ [35, 46]",
+        "hyperpol pre-pulse + weak test (-30uA/250ms, gap, +6uA) test window spike count ∈ [10, 15] (same as weak step alone, because hyperpolarization does not load Ca so I_CAN stays off)",
+        "paired long pulses second pulse spike count ∈ [28, 40] (Ca accumulates during first pulse, boosting second)"
+      ],
+      "state": "LIVE",
+      "conflicts": "graveyard 为空，首批假设无冲突。H1 是电压门控慢 NaP（直接电压依赖），H2 是 Ca 依赖的非特异性阳离子电流（间接通过 Ca 积累激活）。二者在 hyperpol pre-pulse + weak test 协议上可判别：H1 预测超极化去除失活→弱测试反应增强；H2 预测超极化无特殊效果→弱测试反应与普通弱步相同。"
+    },
+    {
+      "id": "H3",
+      "statement": "The observed spike count differences from reference model are an artifact of stochastic noise and sampling variability, not a genuine novel current mechanism. The cell's behavior is fully explained by the standard Hodgkin-Huxley Na/K channels with stochastic gating, and the apparent \"extra\" spikes are within normal stochastic fluctuation bounds.",
+      "predicts": [
+        "All protocol spike counts will match reference model within ±2 spikes (stochastic variation only, no systematic mechanism)",
+        "Hyperpolarizing conditioning protocols will NOT show rebound bursts or voltage sag beyond reference model predictions",
+        "Voltage traces during depolarization will show no systematic deviation from reference model voltage distribution"
+      ],
+      "state": "LIVE",
+      "conflicts": "none — 首批假设，坟场为空，H3 是伪影/混杂类对手，与 H1/H2 正交"
+    }
+  ],
+  "probes": [
+    {
+      "pid": "P1",
+      "status": "FAILED",
+      "preregSha256": "5bc16386308221334e1bfbc98affb54e7ad426099138d4b7dd77dbea5b11712e",
+      "exitCode": 1
+    }
+  ],
+  "attacks": [
+    {
+      "gid": "G1",
+      "target": "H1",
+      "kind": "constraint",
+      "text": "Hyperpol conditioning + depol test produced 16 spikes, matching reference model (15.6) rather than showing the boost H1 predicts from NaP de-inactivation by hyperpolarization. The depol cond+test boost (40 vs ~36 reference) could be explained by any sustained depolarizing current, not uniquely NaP. H1's key distinguishing prediction (hyperpolarization de-inactivates NaP → enhanced rebound) is not supported by the observed data.",
+      "ts": "2026-08-25T10:52:25.629Z"
+    },
+    {
+      "gid": "G2",
+      "target": "H2",
+      "kind": "constraint",
+      "text": "The depol cond+test result (40 spikes) could be explained by direct voltage activation (H1 NaP) without requiring Ca accumulation as H2 demands. H2's key distinguishing predictions (paired long pulses showing Ca accumulation, hyperpol pre-pulse + weak test showing no enhancement) were never successfully probed due to P1 failure, leaving H2 untested on its unique claims.",
+      "ts": "2026-08-25T10:52:25.630Z"
+    },
+    {
+      "gid": "G3",
+      "target": "H3",
+      "kind": "no_change",
+      "text": "Observed deviations from reference model (strong step +5.3, weak step +2.7, depol cond+test +4.6) systematically exceed H3's predicted ±2 spike stochastic bound. While this suggests H3 is inconsistent with observations, this assessment rests on direct world_observe data rather than formal probe evidence, so it does not change the formal belief state.",
+      "ts": "2026-08-25T10:52:25.631Z"
+    }
+  ],
+  "reports": [],
+  "gateVerdicts": [],
+  "tampers": [],
+  "graveyard": []
+}

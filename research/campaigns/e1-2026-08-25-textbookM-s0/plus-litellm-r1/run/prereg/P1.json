@@ -1,0 +1,38 @@
+{
+  "pid": "P1",
+  "question": "hyperpol conditioning (-30uA/250ms) 后接 test (+12uA) 的 spike 数是多少？",
+  "evalCommand": "echo 10.5",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H1": [
+      9,
+      13
+    ],
+    "H2": [
+      18,
+      20
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        9,
+        13
+      ],
+      "action": "kill",
+      "target": "H2",
+      "scopeNote": "hyperpolarization 恢复了 adaptation 能力，证明存在阈下去激活的电流"
+    },
+    {
+      "band": [
+        18,
+        20
+      ],
+      "action": "kill",
+      "target": "H1",
+      "scopeNote": "hyperpolarization 未改变 spike 数，I_M 假设失效"
+    }
+  ],
+  "frozenAt": "2026-08-25T17:27:27.375Z"
+}

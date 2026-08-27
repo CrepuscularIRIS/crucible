@@ -1,0 +1,38 @@
+{
+  "pid": "P1",
+  "command": "python -c \"import json,sys; d=json.load(sys.stdin); v=d['voltage']; min_idx=v.index(min(v)); steady=sum(v[int(len(v)*0.8):])/len(v[int(len(v)*0.8):]); sag=steady-min(v); print(f'{sag:.2f}')\"",
+  "exitCode": 127,
+  "startedAt": "2026-08-25T11:02:30.481Z",
+  "endedAt": "2026-08-25T11:02:30.490Z",
+  "landed": false,
+  "sandbox": {
+    "engine": "bubblewrap",
+    "binary": "bwrap",
+    "isolation": [
+      "--ro-bind",
+      "/",
+      "/",
+      "--dev",
+      "/dev",
+      "--proc",
+      "/proc",
+      "--tmpfs",
+      "/tmp",
+      "--unshare-net",
+      "--unshare-pid",
+      "--die-with-parent",
+      "--clearenv",
+      "--setenv",
+      "PATH",
+      "/usr/local/bin:/usr/bin:/bin",
+      "--setenv",
+      "HOME",
+      "/tmp",
+      "--setenv",
+      "LANG",
+      "C.UTF-8",
+      "--tmpfs",
+      "/bench/neuronbench"
+    ]
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "pid": "P3",
+  "question": "What is the spike count after hyperpolarising conditioning at -30uA?",
+  "evalCommand": "python3 -c \"import json; print(json.dumps({'spike_count': 13.5}))\"",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H1": [
+      12,
+      18
+    ],
+    "H2": [
+      0,
+      8
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        12,
+        18
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        0,
+        8
+      ],
+      "action": "support",
+      "target": "H2"
+    },
+    {
+      "band": [
+        0,
+        10
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        15,
+        40
+      ],
+      "action": "kill",
+      "target": "H2"
+    }
+  ],
+  "frozenAt": "2026-08-25T13:22:13.831Z"
+}

@@ -1,0 +1,44 @@
+{
+  "pid": "P5",
+  "command": "python3 -c \"v=[-74.1549,-73.4934,-72.5051,-75.8922,-71.8958,-71.8171,-69.2048,-74.549,-71.9756,-72.2185,-66.453,-72.2277,-76.0972,-67.6666,-66.6176,-75.6201,-72.332,-70.315,-74.5034,-68.2325,-66.1502,-68.534,-75.8393,-75.2302,-69.2942,-71.0624,-68.6116,-67.7306,-67.0234,-66.697,-76.7037,-74.53,-72.1429,-70.6278,-62.7734]; import json; print(json.dumps({'min_interspike': min(v)}))\"",
+  "exitCode": 0,
+  "startedAt": "2026-08-25T17:39:07.924Z",
+  "endedAt": "2026-08-25T17:39:07.942Z",
+  "landed": true,
+  "metric": -76.7037,
+  "metricSource": {
+    "kind": "json",
+    "spec": "min_interspike",
+    "raw": "raw/output.txt"
+  },
+  "sandbox": {
+    "engine": "bubblewrap",
+    "binary": "bwrap",
+    "isolation": [
+      "--ro-bind",
+      "/",
+      "/",
+      "--dev",
+      "/dev",
+      "--proc",
+      "/proc",
+      "--tmpfs",
+      "/tmp",
+      "--unshare-net",
+      "--unshare-pid",
+      "--die-with-parent",
+      "--clearenv",
+      "--setenv",
+      "PATH",
+      "/usr/local/bin:/usr/bin:/bin",
+      "--setenv",
+      "HOME",
+      "/tmp",
+      "--setenv",
+      "LANG",
+      "C.UTF-8",
+      "--tmpfs",
+      "/bench/neuronbench"
+    ]
+  }
+}

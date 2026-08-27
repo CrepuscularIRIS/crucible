@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "entries": {
+    "prompt": {},
+    "memory": {},
+    "skill": {},
+    "subagent": {}
+  },
+  "refinements": [
+    {
+      "id": "refine_20260825161119360",
+      "trigger": "Capture current research state including observation data, hypothesis rankings, helper script path, and immediate next steps for probe execution and forecasting.",
+      "changes": [
+        "create memory:ca_rebound_observation_data",
+        "create memory:ca_rebound_probe_script",
+        "create memory:ca_rebound_immediate_plan"
+      ],
+      "evidence": "The agent has completed the observation phase (8/8 budget used), identified H1 (slow_na only) as the best-fitting hypothesis with MSE=2.0, and written a compute script for probe evaluation. These facts are critical for continuing the workflow: running probes to transition hypotheses, then forecasting held-out protocols.",
+      "outcome": "The agent can immediately resume by running probes with the compute script, transitioning hypotheses to appropriate states, and generating forecasts for the 4 held-out hyperpol release protocols.",
+      "created_at": "2026-08-25T16:11:43.496Z"
+    },
+    {
+      "id": "refine_20260825162247937",
+      "trigger": "Rollback refinement refine_20260825161119360",
+      "changes": [
+        "delete memory:ca_rebound_immediate_plan",
+        "delete memory:ca_rebound_probe_script",
+        "delete memory:ca_rebound_observation_data"
+      ],
+      "evidence": "Restores continual harness state snapshots from refinement refine_20260825161119360.",
+      "outcome": "Faulty refinement edits are reverted.",
+      "created_at": "2026-08-25T16:22:47.938Z"
+    },
+    {
+      "id": "refine_20260825164209968",
+      "trigger": "Capture research MCP report_declare validation constraints (trace gate, reconcile gate, path policy) to prevent repeated gate failures.",
+      "changes": [
+        "create memory:research_report_declare_gates"
+      ],
+      "evidence": "The agent spent many turns blocked by report_declare validation errors. Evidence shows: (1) trace gate rejects declare if any terminal claim.transition lacks a subsequent attack.record; (2) reconcile gate requires every numeric literal in REPORT.md to carry a (P#) citation from a landed probe's metric_recompute, and rejects numbers from world_forecast or world_simulate as uncitable; (3) reconcile gate also detects hallucinated numbers that don't match the probe's actual metric_recompute output; (4) path must resolve strictly inside the active run directory. These are durable API contract facts for the ca_rebound project that will prevent the same failure loop in future sessions.",
+      "outcome": "Future sessions will write REPORT.md with only probe-citable numbers (qualitative descriptions for world_forecast/world_simulate results), ensure an attack.record follows every terminal transition, and use run-relative paths, avoiding repeated gate-rejection loops.",
+      "created_at": "2026-08-25T16:42:31.399Z"
+    },
+    {
+      "id": "refine_20260825164625541",
+      "trigger": "Rollback refinement refine_20260825164209968",
+      "changes": [
+        "delete memory:research_report_declare_gates"
+      ],
+      "evidence": "Restores continual harness state snapshots from refinement refine_20260825164209968.",
+      "outcome": "Faulty refinement edits are reverted.",
+      "created_at": "2026-08-25T16:46:25.541Z"
+    }
+  ]
+}

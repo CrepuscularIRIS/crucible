@@ -1,0 +1,120 @@
+{
+  "pid": "P2",
+  "question": "无条件化历史的基线长步阶（10 uA/300 ms）发放是否被额外电流非特异性放大？load-bearing variable = spike_count；对照 = 参考模型预测 21（免费模拟）。判别 H3（≥ 27）vs H1/H2/H4（≈ 21±4）vs H5（衰减 ≤ 17）。若 H3 为假，读数应 < 27，[27,45] 带不会大概率通过。",
+  "evalCommand": "python3 -c \"import json; evs=[json.loads(l) for l in open('/root/.proma-research/e1-2026-08-27-ca_rebound-s0/journal.jsonl')]; obs=[e['spike_count'] for e in evs if e.get('op')=='world.observe' and e.get('protocol')=='long step (10 uA, 300 ms)' and e.get('reps')==1]; assert obs, 'observation not landed'; print(json.dumps({'spike_count': obs[0]}))\"",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H1": [
+      17,
+      25
+    ],
+    "H2": [
+      17,
+      25
+    ],
+    "H3": [
+      27,
+      45
+    ],
+    "H4": [
+      19,
+      23
+    ],
+    "H5": [
+      8,
+      17
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        27,
+        45
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        27,
+        45
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        27,
+        45
+      ],
+      "action": "kill",
+      "target": "H4"
+    },
+    {
+      "band": [
+        27,
+        45
+      ],
+      "action": "kill",
+      "target": "H5"
+    },
+    {
+      "band": [
+        27,
+        45
+      ],
+      "action": "support",
+      "target": "H3"
+    },
+    {
+      "band": [
+        17,
+        26
+      ],
+      "action": "kill",
+      "target": "H3"
+    },
+    {
+      "band": [
+        18,
+        45
+      ],
+      "action": "kill",
+      "target": "H5"
+    },
+    {
+      "band": [
+        19,
+        23
+      ],
+      "action": "support",
+      "target": "H4"
+    },
+    {
+      "band": [
+        17,
+        25
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        17,
+        25
+      ],
+      "action": "support",
+      "target": "H2"
+    },
+    {
+      "band": [
+        8,
+        17
+      ],
+      "action": "support",
+      "target": "H5"
+    }
+  ],
+  "frozenAt": "2026-08-27T14:26:54.458Z"
+}

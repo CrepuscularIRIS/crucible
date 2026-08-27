@@ -1,0 +1,97 @@
+{
+  "pid": "P1",
+  "question": "真细胞在长超极化条件化后是否有反跳超额（de-inactivation 或 Ih 累积激活的标志）？load-bearing variable = 条件化协议 spike_count；对照 = 参考模型免费模拟同协议预测 15——若真细胞 ≤ 参考+2，说明额外电流在该协议无功能效应。判别 {H1,H2,H3} vs {H4,H5}。severity：若 H1/H2 为假（无超极化门控内流），该读数应落入 [13,17] 参考带，不会大概率通过 [18,40] 检验带。",
+  "evalCommand": "python3 -c \"import json; evs=[json.loads(l) for l in open('/root/.proma-research/e1-2026-08-27-ca_rebound-s0/journal.jsonl')]; obs=[e['spike_count'] for e in evs if e.get('op')=='world.observe' and e.get('protocol')=='hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)' and e.get('reps')==1]; assert obs, 'observation not landed'; print(json.dumps({'spike_count': obs[0]}))\"",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H1": [
+      18,
+      40
+    ],
+    "H2": [
+      18,
+      40
+    ],
+    "H3": [
+      19,
+      45
+    ],
+    "H4": [
+      13,
+      17
+    ],
+    "H5": [
+      12,
+      18
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        18,
+        40
+      ],
+      "action": "kill",
+      "target": "H4"
+    },
+    {
+      "band": [
+        19,
+        45
+      ],
+      "action": "kill",
+      "target": "H5"
+    },
+    {
+      "band": [
+        13,
+        17
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        13,
+        17
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        13,
+        17
+      ],
+      "action": "scope",
+      "target": "H3",
+      "scopeNote": "条件化无超额；H3 只能靠步阶放大解释全部效应，待 P2 裁决"
+    },
+    {
+      "band": [
+        12,
+        18
+      ],
+      "action": "support",
+      "target": "H4"
+    },
+    {
+      "band": [
+        18,
+        40
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        18,
+        40
+      ],
+      "action": "support",
+      "target": "H2"
+    }
+  ],
+  "frozenAt": "2026-08-27T14:26:21.629Z"
+}

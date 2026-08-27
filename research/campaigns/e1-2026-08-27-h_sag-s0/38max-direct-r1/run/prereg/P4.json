@@ -1,0 +1,74 @@
+{
+  "pid": "P4",
+  "question": "确证判别器（预留给确证阶段的 2 reps）：弱步阶（5 uA/120 ms）发放是否被静息活性外向电流压制？判别 H2(外向→≤8) vs H5(弱 Ih+慢钠→≈参考，M* 免费模拟预记 12.2，参考模型 11.0)。Load-bearing variable：全协议 spike_count（reps=2 均值，ledger 第 1 条该协议条目）；对照：参考 11.0、M* 预记 12.2。Severity：若 H5 为假而 H2 为真，结果落 [9.5,14.5] 概率 <5%；此协议是 H2 自己的 predicts[2] 点名协议，非我事后挑选。",
+  "evalCommand": "python3 -c 'import json; p=\"/root/.proma-research/e1-2026-08-27-h_sag-s0/world-ledger.jsonl\"; L=[json.loads(l) for l in open(p) if l.strip()]; obs=[e for e in L if e.get(\"cmd\")==\"observe\" and e.get(\"protocol\")==\"weak step (5 uA, 120 ms)\"]; e=obs[0]; print(json.dumps({\"spike_count\": e[\"spike_count\"], \"reps\": e[\"reps\"]}))'",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H2": [
+      0,
+      9.4
+    ],
+    "H5": [
+      9.5,
+      14.5
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0,
+        9.4
+      ],
+      "action": "support",
+      "target": "H2",
+      "scopeNote": "与 H2 的弱步受抑预测（≤8 + 噪声裕度）一致"
+    },
+    {
+      "band": [
+        0,
+        9.4
+      ],
+      "action": "kill",
+      "target": "H5",
+      "scopeNote": "H5 拟合模型 M* 预记 12.2（弱步上 Ih 关闭、慢失活米积累），观测 ≤9.4 则预测失败"
+    },
+    {
+      "band": [
+        9.5,
+        14.5
+      ],
+      "action": "support",
+      "target": "H5",
+      "scopeNote": "与参考 11.0±噪声及 M* 预记 12.2 一致：去极化协议上额外电流基本不可见"
+    },
+    {
+      "band": [
+        9.5,
+        14.5
+      ],
+      "action": "kill",
+      "target": "H2",
+      "scopeNote": "H2 预记弱步 ≤8（外向电流静息部分开放压制弱发放），观测 ≥9.5 直接违反"
+    },
+    {
+      "band": [
+        15,
+        60
+      ],
+      "action": "kill",
+      "target": "H2",
+      "scopeNote": "H2 预测压低"
+    },
+    {
+      "band": [
+        15,
+        60
+      ],
+      "action": "kill",
+      "target": "H5",
+      "scopeNote": "远超 M* 预测上界，需新机制（异常易化）"
+    }
+  ],
+  "frozenAt": "2026-08-27T14:52:44.850Z"
+}

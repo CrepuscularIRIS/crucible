@@ -1,0 +1,90 @@
+{
+  "run": "e1-textbookM-s0-plus-litellm-r1",
+  "claims": [
+    {
+      "id": "H1",
+      "statement": "textbook_M 的 spike-frequency adaptation 由 M 型非失活钾电流 I_M 驱动，其电导 g ∈ [2.8, 4.0]，E_rev ≈ -80 mV，激活时间常数 ~50 ms；I_M 在阈下去激活（hyperpolarization 可恢复）、缓慢激活动力学使其成为 adaptation 的主因",
+      "predicts": [
+        "I_M g∈[2.8,4.0] 在 long step 10uA/300ms 上产生 17-22 spikes",
+        "hyperpol conditioning 通过去激活 I_M 使 test 窗口 spike 数回升到 9-13 范围",
+        "强电流 18uA/120ms 产生 8-12 spikes（快速激活的 I_M 压制）",
+        "depolarising conditioning 预激活 I_M 使 test 仍维持较高放电 25-31 spikes"
+      ],
+      "state": "SUPPORTED",
+      "conflicts": "none — 攻击未探索的轴（坟场为空）",
+      "byProbe": "P3"
+    },
+    {
+      "id": "H2",
+      "statement": "textbook_M 的 adaptation 由 spike 累积激活的慢钾电流 I_AHP（钙激活钾或类似）驱动，其电导 g_AHP 在每次 spike 后阶梯式上升、失活时间常数 > 300 ms；spike-frequency 随累积 I_AHP 下降，而非 I_M 式的亚阈值激活",
+      "predicts": [
+        "paired-pulse 第二脉冲 spike 数 ≤ 第一脉冲的 60%",
+        "hyperpol conditioning 不显著改变 test 的 spike 数（±1）",
+        "强电流 18uA/120ms 产生 ≤ 8 spikes（快速失活导致前 3 个 spike 后即刻沉默）",
+        "depolarising conditioning 后 test 的 spike 数 ≥ long step 的 95%（无 I_M 式预激活动力学）"
+      ],
+      "state": "LIVE",
+      "conflicts": "H1 死于 I_M 的阈下去激活动力学（hyperpolarization 恢复 adaptation 能力）；H2 以 spike-locked 累积的慢失活电流代替，两者在 paired-pulse 与 conditioning 协议上可判别"
+    }
+  ],
+  "probes": [
+    {
+      "pid": "P1",
+      "status": "RUNNING",
+      "preregSha256": "efe94ba79aaff0b835d155942a62ec47dfbf80947645e5603243cda47710ae00"
+    },
+    {
+      "pid": "P2",
+      "status": "RUNNING",
+      "preregSha256": "6deedb27a2fb81f1c47755c6ac9c948537d2a58af3bcc7d6af753ede405e391e"
+    },
+    {
+      "pid": "P3",
+      "status": "LANDED",
+      "preregSha256": "40a6dfadf1be0327a76cf3a89838ac12f6f2c9fa8c3a14ee3276c8d8f1b4eb03",
+      "exitCode": 0,
+      "metric": 10.5
+    }
+  ],
+  "attacks": [
+    {
+      "gid": "G1",
+      "target": "H1",
+      "kind": "new_h",
+      "text": "slow_na 单独无法解释观察到的 spike 数（sim 24 vs obs 19），排除单一 slow_na 假设。H1 的 I_M 机制更可能是主导因素。",
+      "ts": "2026-08-25T17:30:20.891Z"
+    },
+    {
+      "gid": "G2",
+      "target": "H1",
+      "kind": "constraint",
+      "text": "I_M g=3.0 在 hyperpol test 上预测 15.0 vs 观察 10.5，偏离显著；g=4.0 在 long step 上预测 15.5 vs 观察 19.0。有效参数区间窄，g=3.5 左右最佳。",
+      "ts": "2026-08-25T17:30:20.892Z"
+    },
+    {
+      "gid": "G3",
+      "target": "H1",
+      "kind": "new_h",
+      "text": "可能存在 I_M + slow_na 组合效应：I_M 提供主要的 adaptation，slow Na inactivation 贡献额外的 spike-rate 下降，两者的交互可能导致单因素预测的系统性偏高。",
+      "ts": "2026-08-25T17:30:20.894Z"
+    }
+  ],
+  "reports": [],
+  "gateVerdicts": [],
+  "tampers": [],
+  "graveyard": [
+    {
+      "id": "H1",
+      "statement": "textbook_M 的 spike-frequency adaptation 由 M 型非失活钾电流 I_M 驱动，其电导 g ∈ [2.8, 4.0]，E_rev ≈ -80 mV，激活时间常数 ~50 ms；I_M 在阈下去激活（hyperpolarization 可恢复）、缓慢激活动力学使其成为 adaptation 的主因",
+      "predicts": [
+        "I_M g∈[2.8,4.0] 在 long step 10uA/300ms 上产生 17-22 spikes",
+        "hyperpol conditioning 通过去激活 I_M 使 test 窗口 spike 数回升到 9-13 范围",
+        "强电流 18uA/120ms 产生 8-12 spikes（快速激活的 I_M 压制）",
+        "depolarising conditioning 预激活 I_M 使 test 仍维持较高放电 25-31 spikes"
+      ],
+      "state": "SUPPORTED",
+      "conflicts": "none — 攻击未探索的轴（坟场为空）",
+      "byProbe": "P3"
+    }
+  ]
+}

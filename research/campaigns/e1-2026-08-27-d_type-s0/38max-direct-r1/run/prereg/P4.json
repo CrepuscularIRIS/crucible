@@ -1,0 +1,74 @@
+{
+  "pid": "P4",
+  "question": "长步程(10uA/300ms)单脉冲计数判别 H7（活动依赖内向电流在单脉冲内累积→易化，预测 28–33）vs H8（高阈值、10uA 不激活→≈参考 24–27）。load-bearing variable=单脉冲尖峰计数；对照=参考模型同协议=25.5。severity：若内向电流非活动依赖累积（H7 假），长步程将停留≈25，28+ 判据不会通过——成立。",
+  "evalCommand": "python3 -c \"import json; evs=[json.loads(l) for l in open('/root/.proma-research/e1-2026-08-27-d_type-s0/journal.jsonl')]; ob=[e for e in evs if e.get('op')=='world.observe' and e.get('protocol')=='long step (10 uA, 300 ms)']; print(json.dumps({'spike_count': ob[0]['spike_count']}))\"",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H7": [
+      28,
+      33
+    ],
+    "H8": [
+      24,
+      27
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        28,
+        33
+      ],
+      "action": "support",
+      "target": "H7",
+      "scopeNote": "单脉冲自身累积内向电流→易化，支持活动依赖型"
+    },
+    {
+      "band": [
+        28,
+        33
+      ],
+      "action": "kill",
+      "target": "H8",
+      "scopeNote": "高阈值型预测长步程不易化，被易化证伪"
+    },
+    {
+      "band": [
+        24,
+        27
+      ],
+      "action": "support",
+      "target": "H8",
+      "scopeNote": "长步程≈参考，10uA 未激活，支持高阈值型"
+    },
+    {
+      "band": [
+        24,
+        27
+      ],
+      "action": "kill",
+      "target": "H7",
+      "scopeNote": "活动依赖型预测长步程易化≥28，未易化被证伪"
+    },
+    {
+      "band": [
+        34,
+        60
+      ],
+      "action": "kill",
+      "target": "H7",
+      "scopeNote": "超出两者上界→更强累积或紧张性成分，意外"
+    },
+    {
+      "band": [
+        0,
+        23
+      ],
+      "action": "kill",
+      "target": "H8",
+      "scopeNote": "低于两者下界→抑制性机制，意外"
+    }
+  ],
+  "frozenAt": "2026-08-27T15:40:19.129Z"
+}

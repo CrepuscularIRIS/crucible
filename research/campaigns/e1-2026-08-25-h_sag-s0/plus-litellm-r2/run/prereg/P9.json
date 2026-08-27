@@ -1,0 +1,36 @@
+{
+  "pid": "P9",
+  "question": "hyperpol conditioning 期间的 sag 幅度是多少？（测量 min_voltage - max_voltage，单位 mV）",
+  "evalCommand": "python3 /tmp/sag_analysis.py",
+  "metricKind": "regex",
+  "metricSpec": "^(\\d+\\.?\\d*)$",
+  "bands": {
+    "H3": [
+      0,
+      5
+    ],
+    "H4": [
+      10,
+      25
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        10,
+        25
+      ],
+      "action": "support",
+      "target": "H4"
+    },
+    {
+      "band": [
+        0,
+        5
+      ],
+      "action": "kill",
+      "target": "H3"
+    }
+  ],
+  "frozenAt": "2026-08-25T17:40:13.880Z"
+}

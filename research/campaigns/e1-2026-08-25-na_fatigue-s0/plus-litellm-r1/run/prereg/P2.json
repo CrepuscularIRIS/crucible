@@ -1,0 +1,65 @@
+{
+  "pid": "P2",
+  "question": "Hyperpolarization recovery ratio: hyperpol_test spike_count / long_step spike_count. This probes whether hyperpolarizing preconditioning (-30uA/250ms) enables recovery from slow processes. H2 (slow Na inactivation) predicts the lowest ratio (~0.46) because hyperpolarization removes Na inactivation but the subsequent test still engages slow Na processes; H1 (slow K) and H3 (null) predict higher ratios (~0.54-0.54) because hyperpolarization deactivates slow K or has no extra effect. Severity: if slow processes don't exist (H3 null), ratio should still fall in the H1 range.",
+  "evalCommand": "python3 -c \"import json; obs=json.load(open('/tmp/na_fatigue_obs.json')); print(round(obs['hyperpol_test']/obs['long_step'], 3))\"",
+  "metricKind": "json",
+  "metricSpec": "$",
+  "bands": {
+    "H1": [
+      0.48,
+      0.58
+    ],
+    "H2": [
+      0.38,
+      0.47
+    ],
+    "H3": [
+      0.48,
+      0.62
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0.48,
+        0.58
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        0.38,
+        0.47
+      ],
+      "action": "support",
+      "target": "H2"
+    },
+    {
+      "band": [
+        0.59,
+        1
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        0.59,
+        1
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        0.48,
+        0.62
+      ],
+      "action": "scope",
+      "target": "H3",
+      "scopeNote": "covers H1 range; H3 cannot be killed here"
+    }
+  ],
+  "frozenAt": "2026-08-25T10:55:57.195Z"
+}

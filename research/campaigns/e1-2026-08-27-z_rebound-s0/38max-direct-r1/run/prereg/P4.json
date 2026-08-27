@@ -1,0 +1,108 @@
+{
+  "pid": "P4",
+  "question": "超极化 prepulse 后 6 uA 弱 test 是否出现回弹增益（参考模型=8）？load-bearing variable：弱 test 强度（6 uA，阈附近）放大回弹差异；对照=参考模型计数 8。≤5=外向增强（H4），6-11=无效应（H3），≥12=回弹（H1/H2）。severity：若 H1 假且 H4 真，计数≤5 概率高，探针不会误判——通过。",
+  "evalCommand": "python3 -c \"import json,statistics;P='hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)';vs=[e['spike_count'] for e in map(json.loads,open('/root/.proma-research/e1-2026-08-27-z_rebound-s0/journal.jsonl')) if e.get('op')=='world.observe' and e.get('protocol')==P and e.get('world')=='z_rebound' and e.get('seed')==0];print(json.dumps({'spikes':statistics.mean(vs) if vs else float('nan')}))\"",
+  "metricKind": "json",
+  "metricSpec": "spikes",
+  "bands": {
+    "H1": [
+      12,
+      100
+    ],
+    "H2": [
+      12,
+      100
+    ],
+    "H3": [
+      6,
+      11
+    ],
+    "H4": [
+      0,
+      5
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0,
+        5
+      ],
+      "action": "support",
+      "target": "H4"
+    },
+    {
+      "band": [
+        0,
+        5
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        0,
+        5
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        6,
+        11
+      ],
+      "action": "support",
+      "target": "H3"
+    },
+    {
+      "band": [
+        6,
+        11
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        6,
+        11
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        12,
+        100
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        12,
+        100
+      ],
+      "action": "support",
+      "target": "H2"
+    },
+    {
+      "band": [
+        12,
+        100
+      ],
+      "action": "kill",
+      "target": "H3"
+    },
+    {
+      "band": [
+        12,
+        100
+      ],
+      "action": "kill",
+      "target": "H4"
+    }
+  ],
+  "frozenAt": "2026-08-27T14:26:16.348Z"
+}

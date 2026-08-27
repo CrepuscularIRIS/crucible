@@ -1,0 +1,152 @@
+{
+  "pid": "P2",
+  "question": "同 P1（频段完全继承 P1 冻结版，sha d98416699c71…，预登记时间戳早于观测——P1 的 evalCommand 在沙箱中不存在（exit 127），本探针以从 world-ledger 重算指标的命令落地同一条已冻结预测）。判别：真细胞 long step (10 uA,300 ms) reps=2 的 spike_count 落在哪个家族带？对照=参考模型免费模拟 25。severity：若 H1 为假，观测大概率 ≤25，落在 H1 带 [26,40] 之外。",
+  "evalCommand": "python3 -c \"import json; rows=[json.loads(l) for l in open('/root/.proma-research/e1-2026-08-27-na_fatigue-s0/world-ledger.jsonl')]; obs=[r for r in rows if r.get('cmd')=='observe' and r.get('protocol')=='long step (10 uA, 300 ms)' and r.get('reps')==2]; print(json.dumps({'mean_spike_count': obs[-1]['spike_count']}))\"",
+  "metricKind": "json",
+  "metricSpec": "mean_spike_count",
+  "bands": {
+    "H1": [
+      26,
+      40
+    ],
+    "H2": [
+      0,
+      22
+    ],
+    "H3": [
+      20,
+      30
+    ],
+    "H4": [
+      21,
+      29
+    ],
+    "H5": [
+      21,
+      29
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        26,
+        40
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        26,
+        40
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        26,
+        40
+      ],
+      "action": "kill",
+      "target": "H4"
+    },
+    {
+      "band": [
+        26,
+        40
+      ],
+      "action": "scope",
+      "target": "H3",
+      "scopeNote": "H3 带 [20,30] 与观测区重叠于 26-30；>30 则 H3 也出局"
+    },
+    {
+      "band": [
+        26,
+        40
+      ],
+      "action": "scope",
+      "target": "H5",
+      "scopeNote": "中度去极化未显示虚高，伪影主张收窄到强去极化协议"
+    },
+    {
+      "band": [
+        0,
+        22
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        0,
+        22
+      ],
+      "action": "support",
+      "target": "H2"
+    },
+    {
+      "band": [
+        0,
+        22
+      ],
+      "action": "scope",
+      "target": "H3",
+      "scopeNote": "H3 带下限 20；≤19 则出局"
+    },
+    {
+      "band": [
+        0,
+        22
+      ],
+      "action": "scope",
+      "target": "H4",
+      "scopeNote": "H4 带下限 21；≤20 则出局"
+    },
+    {
+      "band": [
+        0,
+        22
+      ],
+      "action": "scope",
+      "target": "H5",
+      "scopeNote": "无虚高→伪影主张收窄"
+    },
+    {
+      "band": [
+        21,
+        29
+      ],
+      "action": "scope",
+      "target": "H1",
+      "scopeNote": "H1 要求 ≥26；中间区只容弱版本"
+    },
+    {
+      "band": [
+        21,
+        29
+      ],
+      "action": "scope",
+      "target": "H2",
+      "scopeNote": "H2 要求 ≤22；中间区只容弱电导版本"
+    },
+    {
+      "band": [
+        21,
+        29
+      ],
+      "action": "support",
+      "target": "H4"
+    },
+    {
+      "band": [
+        21,
+        29
+      ],
+      "action": "scope",
+      "target": "H5",
+      "scopeNote": "中度去极化未虚高"
+    }
+  ],
+  "frozenAt": "2026-08-27T14:51:43.308Z"
+}

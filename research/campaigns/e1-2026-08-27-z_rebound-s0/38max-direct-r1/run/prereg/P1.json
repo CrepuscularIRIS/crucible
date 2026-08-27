@@ -1,0 +1,116 @@
+{
+  "pid": "P1",
+  "question": "超极化 conditioning 是否改变 test 窗 spike 输出（参考模型=16）？load-bearing variable：conditioning 极性（-30 uA/250 ms），对照=参考模型同协议计数 16；若真细胞计数≥20 或 ≤11 则参考模型（零假设）被证伪。severity：若 H1/H2 为假（H3 或 H4 真），计数将落 [0,19]，探针不会给它们 support——通过。",
+  "evalCommand": "python3 -c \"import json,statistics;P='hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)';vs=[e['spike_count'] for e in map(json.loads,open('/root/.proma-research/e1-2026-08-27-z_rebound-s0/journal.jsonl')) if e.get('op')=='world.observe' and e.get('protocol')==P and e.get('world')=='z_rebound' and e.get('seed')==0];print(json.dumps({'spikes':statistics.mean(vs) if vs else float('nan')}))\"",
+  "metricKind": "json",
+  "metricSpec": "spikes",
+  "bands": {
+    "H1": [
+      20,
+      100
+    ],
+    "H2": [
+      20,
+      100
+    ],
+    "H3": [
+      12,
+      19
+    ],
+    "H4": [
+      0,
+      11
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0,
+        11
+      ],
+      "action": "support",
+      "target": "H4"
+    },
+    {
+      "band": [
+        0,
+        11
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        0,
+        11
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        12,
+        19
+      ],
+      "action": "support",
+      "target": "H3"
+    },
+    {
+      "band": [
+        12,
+        19
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        12,
+        19
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        12,
+        19
+      ],
+      "action": "kill",
+      "target": "H4"
+    },
+    {
+      "band": [
+        20,
+        100
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        20,
+        100
+      ],
+      "action": "support",
+      "target": "H2"
+    },
+    {
+      "band": [
+        20,
+        100
+      ],
+      "action": "kill",
+      "target": "H3"
+    },
+    {
+      "band": [
+        20,
+        100
+      ],
+      "action": "kill",
+      "target": "H4"
+    }
+  ],
+  "frozenAt": "2026-08-27T14:26:16.343Z"
+}

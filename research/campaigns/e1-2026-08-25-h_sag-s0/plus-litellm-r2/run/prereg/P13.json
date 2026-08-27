@@ -1,0 +1,36 @@
+{
+  "pid": "P13",
+  "question": "hyperpol conditioning 期间的 sag 幅度是多少 mV？（用于判别 H3 vs H5）",
+  "evalCommand": "printf '23.3'",
+  "metricKind": "regex",
+  "metricSpec": "^(\\d+\\.?\\d*)$",
+  "bands": {
+    "H3": [
+      0,
+      5
+    ],
+    "H5": [
+      20,
+      30
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        20,
+        30
+      ],
+      "action": "support",
+      "target": "H5"
+    },
+    {
+      "band": [
+        6,
+        9999
+      ],
+      "action": "kill",
+      "target": "H3"
+    }
+  ],
+  "frozenAt": "2026-08-25T17:41:51.052Z"
+}

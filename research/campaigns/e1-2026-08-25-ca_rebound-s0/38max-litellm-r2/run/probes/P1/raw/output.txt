@@ -1,0 +1,7 @@
+obs_artifacts=1 run_files=4
+TREE
+journal.jsonl
+prereg/P1.json
+register.json
+world-ledger.jsonl
+P1DONE

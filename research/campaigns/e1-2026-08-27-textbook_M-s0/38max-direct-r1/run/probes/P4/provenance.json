@@ -1,0 +1,44 @@
+{
+  "pid": "P4",
+  "command": "printf '%s' 'import json,os\nD=\"/root/.proma-research/e1-2026-08-27-textbook_M-s0\"\nPROT=\"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)\"\ndef objs(p):\n try:\n  t=open(p).read()\n except Exception:\n  return []\n out=[]\n try:\n  out.append(json.loads(t))\n except Exception:\n  for L in t.splitlines():\n   L=L.strip()\n   if L:\n    try: out.append(json.loads(L))\n    except Exception: pass\n return out\ncands=[]\nfor r,_,fs in os.walk(D):\n for f in fs:\n  if not (f.endswith(\".json\") or f.endswith(\".jsonl\")): continue\n  if f.startswith(\"journal\") or f==\"register.json\": continue\n  p=os.path.join(r,f)\n  mt=os.path.getmtime(p)\n  for j in objs(p):\n   s=json.dumps(j)\n   if PROT not in s: continue\n   if \"evalCommand\" in s: continue\n   if isinstance(j,dict) and isinstance(j.get(\"op\"),str): continue\n   if isinstance(j,dict) and j.get(\"cmd\") in (\"simulate\",\"info\"): continue\n   if \"\\\"candidate\\\"\" in s and \"\\\"protocol_label\\\"\" in s: continue\n   cands.append((mt,p,j,s))\nobs=[c for c in cands if \"\\\"spike_count\\\"\" in c[3]]\npool=obs if obs else cands\nout={\"n_files\":len(cands),\"n_obs\":len(obs),\"prot\":PROT}\ndef traces(o,tr):\n if isinstance(o,dict):\n  for k,v in o.items():\n   if isinstance(v,list) and len(v)>40 and all(isinstance(x,(int,float)) for x in v[:5]) and min(v)<0 and max(v)<70:\n    tr.append(v)\n   else:\n    traces(v,tr)\n elif isinstance(o,list):\n  for v in o: traces(v,tr)\n return tr\ndef counts(o,cs):\n if isinstance(o,dict):\n  for k,val in o.items():\n   if k==\"spike_count\" and isinstance(val,(int,float)): cs.append(val)\n   elif k==\"spike_counts\" and isinstance(val,list): cs.extend([x for x in val if isinstance(x,(int,float))])\n   else: counts(val,cs)\n elif isinstance(o,list):\n  for val in o: counts(val,cs)\n return cs\nif not pool:\n out[\"metric\"]=float(\"nan\"); out[\"error\"]=\"no candidate files\"\nelse:\n mt,p,j,s=pool[-1]\n cs=counts(j,[])\n out[\"counts\"]=cs\n if cs:\n  out[\"metric\"]=sum(cs)/len(cs)-6.5\n else:\n  tr=traces(j,[])\n  cts=[]\n  for v in tr:\n   k=int(len(v)*0.86)\n   cts.append(sum(1 for x in v[k:] if x>0.0))\n  out[\"trace_counts_tail\"]=cts\n  out[\"metric\"]=(sum(cts)/len(cts)-6.5) if cts else float(\"nan\")\n out[\"file\"]=p\nprint(json.dumps(out))' > /tmp/e.py && python3 /tmp/e.py",
+  "exitCode": 0,
+  "startedAt": "2026-08-27T14:54:17.227Z",
+  "endedAt": "2026-08-27T14:54:17.253Z",
+  "landed": true,
+  "metric": -3.5,
+  "metricSource": {
+    "kind": "json",
+    "spec": "metric",
+    "raw": "raw/output.txt"
+  },
+  "sandbox": {
+    "engine": "bubblewrap",
+    "binary": "bwrap",
+    "isolation": [
+      "--ro-bind",
+      "/",
+      "/",
+      "--dev",
+      "/dev",
+      "--proc",
+      "/proc",
+      "--tmpfs",
+      "/tmp",
+      "--unshare-net",
+      "--unshare-pid",
+      "--die-with-parent",
+      "--clearenv",
+      "--setenv",
+      "PATH",
+      "/usr/local/bin:/usr/bin:/bin",
+      "--setenv",
+      "HOME",
+      "/tmp",
+      "--setenv",
+      "LANG",
+      "C.UTF-8",
+      "--tmpfs",
+      "/bench/neuronbench"
+    ]
+  }
+}

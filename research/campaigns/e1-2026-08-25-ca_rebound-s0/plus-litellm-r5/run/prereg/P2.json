@@ -1,0 +1,52 @@
+{
+  "pid": "P2",
+  "question": "What is the ratio of depolarizing prepulse spike count to long step alone? Real data shows 34/23=1.478. H1 predicts 1.466, H2 predicts 1.333, H3 predicts 1.194. Severity: if the mechanism cannot reproduce this systematic modulation, it fails.",
+  "evalCommand": "python /root/.proma-dev/agent-workspaces/default/workspace-files/compute_mse.py prepulse_ratio",
+  "metricKind": "json",
+  "metricSpec": "ratio",
+  "bands": {
+    "H1": [
+      1.4,
+      1.5
+    ],
+    "H2": [
+      1.25,
+      1.35
+    ],
+    "H3": [
+      1.15,
+      1.25
+    ],
+    "H4": [
+      1.25,
+      1.35
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        1.4,
+        1.5
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        1.25,
+        1.35
+      ],
+      "action": "scope",
+      "target": "H2"
+    },
+    {
+      "band": [
+        1.15,
+        1.25
+      ],
+      "action": "kill",
+      "target": "H3"
+    }
+  ],
+  "frozenAt": "2026-08-25T16:12:02.463Z"
+}

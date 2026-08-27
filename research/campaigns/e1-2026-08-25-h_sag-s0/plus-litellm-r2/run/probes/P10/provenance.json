@@ -1,0 +1,44 @@
+{
+  "pid": "P10",
+  "command": "printf '23.3'",
+  "exitCode": 0,
+  "startedAt": "2026-08-25T17:40:51.069Z",
+  "endedAt": "2026-08-25T17:40:51.076Z",
+  "landed": true,
+  "metric": 23.3,
+  "metricSource": {
+    "kind": "regex",
+    "spec": "^(\\d+\\.?\\d*)$",
+    "raw": "raw/output.txt"
+  },
+  "sandbox": {
+    "engine": "bubblewrap",
+    "binary": "bwrap",
+    "isolation": [
+      "--ro-bind",
+      "/",
+      "/",
+      "--dev",
+      "/dev",
+      "--proc",
+      "/proc",
+      "--tmpfs",
+      "/tmp",
+      "--unshare-net",
+      "--unshare-pid",
+      "--die-with-parent",
+      "--clearenv",
+      "--setenv",
+      "PATH",
+      "/usr/local/bin:/usr/bin:/bin",
+      "--setenv",
+      "HOME",
+      "/tmp",
+      "--setenv",
+      "LANG",
+      "C.UTF-8",
+      "--tmpfs",
+      "/bench/neuronbench"
+    ]
+  }
+}

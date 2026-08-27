@@ -1,0 +1,61 @@
+{
+  "pid": "P3",
+  "question": "long step 过程中 spike 峰幅（>0 mV 样本均值）后半相对前半是否衰减 ≥2 mV（Na 可用性下降=慢失活签名）？承重变量=前半峰均−后半峰均；对照=参考模型峰幅稳定（模拟中峰样本 ~+45 无趋势）。Severity：若无慢失活（H2 假），峰幅趋势≈0 必落 H1 带；若慢失活显著（H1 假），Na 驱动减弱应致峰幅走低。降采样抖动可致 ±2 mV 噪声，故带宽取 2。",
+  "evalCommand": "printf '%s' 'import json,os\nD=\"/root/.proma-research/e1-2026-08-27-textbook_M-s0\"\nPROT=\"long step (10 uA, 300 ms)\"\ndef objs(p):\n try:\n  t=open(p).read()\n except Exception:\n  return []\n out=[]\n try:\n  out.append(json.loads(t))\n except Exception:\n  for L in t.splitlines():\n   L=L.strip()\n   if L:\n    try: out.append(json.loads(L))\n    except Exception: pass\n return out\ncands=[]\nfor r,_,fs in os.walk(D):\n for f in fs:\n  if not (f.endswith(\".json\") or f.endswith(\".jsonl\")): continue\n  if f.startswith(\"journal\") or f==\"register.json\": continue\n  p=os.path.join(r,f)\n  mt=os.path.getmtime(p)\n  for j in objs(p):\n   s=json.dumps(j)\n   if PROT not in s: continue\n   if \"evalCommand\" in s: continue\n   if isinstance(j,dict) and isinstance(j.get(\"op\"),str): continue\n   if isinstance(j,dict) and j.get(\"cmd\") in (\"simulate\",\"info\"): continue\n   if \"\\\"candidate\\\"\" in s and \"\\\"protocol_label\\\"\" in s: continue\n   cands.append((mt,p,j,s))\nobs=[c for c in cands if \"\\\"spike_count\\\"\" in c[3]]\npool=obs if obs else cands\nout={\"n_files\":len(cands),\"n_obs\":len(obs),\"prot\":PROT}\ndef traces(o,tr):\n if isinstance(o,dict):\n  for k,v in o.items():\n   if isinstance(v,list) and len(v)>40 and all(isinstance(x,(int,float)) for x in v[:5]) and min(v)<0 and max(v)<70:\n    tr.append(v)\n   else:\n    traces(v,tr)\n elif isinstance(o,list):\n  for v in o: traces(v,tr)\n return tr\ndef counts(o,cs):\n if isinstance(o,dict):\n  for k,val in o.items():\n   if k==\"spike_count\" and isinstance(val,(int,float)): cs.append(val)\n   elif k==\"spike_counts\" and isinstance(val,list): cs.extend([x for x in val if isinstance(x,(int,float))])\n   else: counts(val,cs)\n elif isinstance(o,list):\n  for val in o: counts(val,cs)\n return cs\nif not pool:\n out[\"metric\"]=float(\"nan\"); out[\"error\"]=\"no candidate files\"\nelse:\n mt,p,j,s=pool[-1]\n tr=traces(j,[])\n trends=[]\n for v in tr:\n  n=len(v)\n  fh=[v[i] for i in range(n) if v[i]>0.0 and i<n//2]\n  sh=[v[i] for i in range(n) if v[i]>0.0 and i>=n//2]\n  if len(fh)>=2 and len(sh)>=2:\n   trends.append(sum(fh)/len(fh)-sum(sh)/len(sh))\n out[\"trends\"]=trends\n out[\"n_traces\"]=len(tr)\n out[\"file\"]=p\n out[\"metric\"]=(sum(trends)/len(trends)) if trends else float(\"nan\")\nprint(json.dumps(out))' > /tmp/e.py && python3 /tmp/e.py",
+  "metricKind": "json",
+  "metricSpec": "metric",
+  "bands": {
+    "H1": [
+      -30,
+      1.8
+    ],
+    "H2": [
+      2,
+      30
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        -30,
+        1.8
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        -30,
+        1.8
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        2,
+        30
+      ],
+      "action": "support",
+      "target": "H2"
+    },
+    {
+      "band": [
+        2,
+        30
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        1.8,
+        2
+      ],
+      "action": "scope",
+      "target": "H2",
+      "scopeNote": "间隙带：按噪声边缘处理，必要时重测"
+    }
+  ],
+  "frozenAt": "2026-08-27T14:45:49.584Z"
+}

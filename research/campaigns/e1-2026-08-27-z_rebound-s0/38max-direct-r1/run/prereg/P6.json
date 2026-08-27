@@ -1,0 +1,70 @@
+{
+  "pid": "P6",
+  "question": "成对长脉冲（12 uA/300 ms ×2，60 ms 间隔）总发放是否被平台电流改变（参考模型=28）？load-bearing variable：第一脉冲结束时的释放（无外部超极化）——检验平台电流在普通脉冲释放后是否积累影响。对照=参考模型 28。精化平台模型（C16）预测 33（轻度易化）；H3 预测≈参考 28。severity：若平台模型对重复去极化的响应错误，计数落 [24,29]，探针杀死 H5——通过。",
+  "evalCommand": "python3 -c \"import json,statistics;P='paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)';vs=[e['spike_count'] for e in map(json.loads,open('/root/.proma-research/e1-2026-08-27-z_rebound-s0/journal.jsonl')) if e.get('op')=='world.observe' and e.get('protocol')==P and e.get('world')=='z_rebound' and e.get('seed')==0];print(json.dumps({'spikes':statistics.mean(vs) if vs else float('nan')}))\"",
+  "metricKind": "json",
+  "metricSpec": "spikes",
+  "bands": {
+    "H5": [
+      30,
+      38
+    ],
+    "H3": [
+      24,
+      29
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        24,
+        29
+      ],
+      "action": "support",
+      "target": "H3"
+    },
+    {
+      "band": [
+        24,
+        29
+      ],
+      "action": "kill",
+      "target": "H5"
+    },
+    {
+      "band": [
+        30,
+        38
+      ],
+      "action": "support",
+      "target": "H5"
+    },
+    {
+      "band": [
+        30,
+        38
+      ],
+      "action": "kill",
+      "target": "H3"
+    },
+    {
+      "band": [
+        0,
+        23
+      ],
+      "action": "scope",
+      "target": "H5",
+      "scopeNote": "意外抑制：超出两模型预测，需新机制（如活动依赖外向电流）"
+    },
+    {
+      "band": [
+        39,
+        100
+      ],
+      "action": "scope",
+      "target": "H5",
+      "scopeNote": "意外过度易化：平台电流增益或累积超精化模型"
+    }
+  ],
+  "frozenAt": "2026-08-27T14:51:04.496Z"
+}

@@ -1,0 +1,55 @@
+{"ts":"2026-08-25T17:17:09.343Z","op":"run.init","run":"e1-ca_rebound-s0-plus-litellm-r6"}
+{"ts":"2026-08-25T17:17:19.840Z","op":"world.info","world":"ca_rebound","seed":0}
+{"ts":"2026-08-25T17:18:24.809Z","op":"world.observe","world":"ca_rebound","seed":0,"protocol":"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)","reps":1,"cost":1,"spike_count":16}
+{"ts":"2026-08-25T17:18:25.539Z","op":"world.observe","world":"ca_rebound","seed":0,"protocol":"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)","reps":1,"cost":1,"spike_count":17}
+{"ts":"2026-08-25T17:18:25.932Z","op":"world.observe","world":"ca_rebound","seed":0,"protocol":"brief step (12 uA, 40 ms)","reps":1,"cost":1,"spike_count":7}
+{"ts":"2026-08-25T17:18:26.931Z","op":"world.observe","world":"ca_rebound","seed":0,"protocol":"long step (10 uA, 300 ms)","reps":1,"cost":1,"spike_count":32}
+{"ts":"2026-08-25T17:19:00.084Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)","mode":"candidate","mean_spike_count":13}
+{"ts":"2026-08-25T17:19:18.113Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"brief step (12 uA, 40 ms)","mode":"candidate","mean_spike_count":8}
+{"ts":"2026-08-25T17:19:18.959Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"long step (10 uA, 300 ms)","mode":"candidate","mean_spike_count":27}
+{"ts":"2026-08-25T17:19:19.810Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)","mode":"candidate","mean_spike_count":18}
+{"ts":"2026-08-25T17:19:20.091Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"brief step (12 uA, 40 ms)","mode":"candidate","mean_spike_count":6}
+{"ts":"2026-08-25T17:19:20.777Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"long step (10 uA, 300 ms)","mode":"candidate","mean_spike_count":27}
+{"ts":"2026-08-25T17:20:18.085Z","op":"claim.propose","id":"H1","statement":"存在慢钠电流（slow_na=true）加上钙激活的非特异性阳离子电流（extra slow inward current, E≈-10 to 0 mV, 慢激活动力学）","predicts":["长脉冲应产生 30-34 spikes（slow_na + extra slow inward）","超极化后去极化应产生 14-18 spikes（部分激活的钙电流）","短脉冲应产生 6-8 spikes（轻微增强）"]}
+{"ts":"2026-08-25T17:20:18.086Z","op":"claim.propose","id":"H2","statement":"存在慢钠电流（slow_na=true）加上持续钠电流（persistent Na+, E≈+50 mV, 快激活动力学）","predicts":["长脉冲应产生 30-35 spikes（slow_na + persistent Na）","超极化后去极化应产生 15-19 spikes（持续钠电流不受超极化影响）","短脉冲应产生 7-9 spikes（持续钠增强兴奋性）"]}
+{"ts":"2026-08-25T17:20:18.087Z","op":"claim.propose","id":"H3","statement":"仅存在慢钠电流（slow_na=true），无额外电流，观测到的 spike 增加源于慢钠的电压依赖性失活动力学","predicts":["长脉冲应产生 27-29 spikes（仅 slow_na）","超极化后去极化应产生 13-15 spikes（纯慢钠）","短脉冲应产生 8-9 spikes（慢钠轻微增强）"]}
+{"ts":"2026-08-25T17:20:36.633Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)","mode":"candidate","mean_spike_count":20}
+{"ts":"2026-08-25T17:20:37.690Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"long step (10 uA, 300 ms)","mode":"candidate","mean_spike_count":32}
+{"ts":"2026-08-25T17:20:38.076Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"brief step (12 uA, 40 ms)","mode":"candidate","mean_spike_count":12}
+{"ts":"2026-08-25T17:21:25.139Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"long step (10 uA, 300 ms)","mode":"candidate","mean_spike_count":42}
+{"ts":"2026-08-25T17:21:26.401Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)","mode":"candidate","mean_spike_count":20}
+{"ts":"2026-08-25T17:21:26.803Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"brief step (12 uA, 40 ms)","mode":"candidate","mean_spike_count":10}
+{"ts":"2026-08-25T17:24:16.530Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"long step (10 uA, 300 ms)","mode":"candidate","mean_spike_count":28}
+{"ts":"2026-08-25T17:24:16.929Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"brief step (12 uA, 40 ms)","mode":"candidate","mean_spike_count":10}
+{"ts":"2026-08-25T17:24:18.216Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)","mode":"candidate","mean_spike_count":21}
+{"ts":"2026-08-25T17:24:52.804Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)","mode":"candidate","mean_spike_count":7}
+{"ts":"2026-08-25T17:24:54.122Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)","mode":"candidate","mean_spike_count":12}
+{"ts":"2026-08-25T17:24:55.364Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)","mode":"candidate","mean_spike_count":46}
+{"ts":"2026-08-25T17:24:56.608Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)","mode":"candidate","mean_spike_count":37}
+{"ts":"2026-08-25T17:24:58.483Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)","mode":"candidate","mean_spike_count":29}
+{"ts":"2026-08-25T17:25:00.352Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)","mode":"candidate","mean_spike_count":31}
+{"ts":"2026-08-25T17:25:54.166Z","op":"prereg.write","pid":"P1","spec_sha256":"b5d283cd6533658af81e0bd6927a71573410c39492c04d8036cc6d79697edb00","prereg_path":"prereg/P1.json"}
+{"ts":"2026-08-25T17:26:09.941Z","op":"world.observe","world":"ca_rebound","seed":0,"protocol":"strong step (18 uA, 120 ms)","reps":1,"cost":1,"spike_count":19}
+{"ts":"2026-08-25T17:27:07.601Z","op":"probe.start","pid":"P1"}
+{"ts":"2026-08-25T17:27:07.623Z","op":"probe.land","pid":"P1","exit_code":1,"metric":null}
+{"ts":"2026-08-25T17:27:58.280Z","op":"prereg.write","pid":"P2","spec_sha256":"64dca7767db68c94497776b56053cfbd9951276aa84b791161d51d2a526d0c88","prereg_path":"prereg/P2.json"}
+{"ts":"2026-08-25T17:28:03.700Z","op":"probe.start","pid":"P2"}
+{"ts":"2026-08-25T17:28:03.707Z","op":"probe.land","pid":"P2","exit_code":0,"metric":19}
+{"ts":"2026-08-25T17:28:11.451Z","op":"claim.transition","id":"H1","to":"SUPPORTED","by_probe":"P2","note":"Strong step 实测 19 spikes 落在 H1 预测频段 [14,26]，与 H2 预测 [28,50] 互斥，H1 获 P2 支持"}
+{"ts":"2026-08-25T17:31:07.187Z","op":"prereg.write","pid":"P3","spec_sha256":"4e130c0a4f9162f69ccd14fcbdf123de4003e9a36aaad6310e212047109e4308","prereg_path":"prereg/P3.json"}
+{"ts":"2026-08-25T17:31:10.860Z","op":"probe.start","pid":"P3"}
+{"ts":"2026-08-25T17:31:10.867Z","op":"probe.land","pid":"P3","exit_code":0,"metric":32}
+{"ts":"2026-08-25T17:31:35.491Z","op":"claim.transition","id":"H2","to":"REFUTED","by_probe":"P3","note":"P3 实测 long step = 32，落在 H2 预测频段 [36, 50] 之外，H2 被 P3 击杀"}
+{"ts":"2026-08-25T17:31:59.024Z","op":"claim.transition","id":"H3","to":"SUPPORTED","by_probe":"P3","note":"P3 实测 long step = 32，落在 H3 预测频段 [25, 34] 内，H3 被 P3 支持"}
+{"ts":"2026-08-25T17:33:39.405Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"brief step (12 uA, 40 ms)","mode":"candidate","mean_spike_count":10}
+{"ts":"2026-08-25T17:33:40.421Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"long step (10 uA, 300 ms)","mode":"candidate","mean_spike_count":32}
+{"ts":"2026-08-25T17:33:41.011Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"strong step (18 uA, 120 ms)","mode":"candidate","mean_spike_count":16}
+{"ts":"2026-08-25T17:33:42.275Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)","mode":"candidate","mean_spike_count":21}
+{"ts":"2026-08-25T17:36:15.388Z","op":"world.forecast","world":"ca_rebound","seed":0,"counts":{"brief hyperpol conditioning + test (-30 uA/40 ms, gap, +6 uA)":17,"brief step (12 uA, 40 ms)":7,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)":40,"hyperpol -25 then release":15,"hyperpol -30 then release":16,"hyperpol -35 then release":14,"hyperpol -40 then release":13,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)":8,"long step (10 uA, 300 ms)":32,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)":29,"strong step (18 uA, 120 ms)":19},"spike_forecast_mse":9.224762499999999,"budget_spent":5}
+{"ts":"2026-08-25T17:37:45.662Z","op":"attack.record","gid":"G1","target":"H1","kind":"new_h","text":"E_rev = -10 mV for a \"calcium-activated nonspecific cation current\" is biophysically anomalous. Known CAN channels (e.g., TRPM4/TRPM5) are non-selective monovalent cation channels with E_rev near 0 to +10 mV. The specified E_rev = -10 mV suggests either a modeling artifact or an unconventional ion selectivity not documented in known CAN channels."}
+{"ts":"2026-08-25T17:37:45.665Z","op":"attack.record","gid":"G2","target":"H1","kind":"no_change","text":"H1 predicts long step = 30–34 spikes, H3 predicts 27–29, and the observation is 32. H1's band contains 32 but H3 misses by 2 — however, this 2-spike difference is smaller than the P2 band half-width (±6 spikes around 20). The \"support\" P2 provides is for the strong step (obs=19, H1 band [14,26]), NOT for long step. H1's long step prediction band is not independently validated by a landed probe."}
+{"ts":"2026-08-25T17:37:45.666Z","op":"attack.record","gid":"G3","target":"H3","kind":"constraint","text":"观测值 32.0 直接落在 H3 自述预测区间 [25,29] 之外（超出上界 +3）。Reference 模型点估计 27，偏差 +5。H3 声称\"measurement noise fully explains\"，但 [25,29] 的半宽仅 ±2，远不足以吸收 +5 的偏差。Long step 的预测区间被直接证伪。"}
+{"ts":"2026-08-25T17:37:45.667Z","op":"attack.record","gid":"G4","target":"H3","kind":"new_h","text":"数据：brief hyperpol (40ms) → 17.0 spikes，long hyperpol (250ms) → 13.5 spikes。更长超极化产生更少反弹——差值 −3.5。Reference 模型仅产生 −2 (17→15)，CaT 候选反而反转方向为 +4 (17→21)。缺失的机制：超极化持续激活一种 slow K⁺ 电流，在反弹测试阶段持续抑制发放。这与 H3 的\"仅慢钠电流\"主张矛盾。"}
+{"ts":"2026-08-25T17:37:45.669Z","op":"attack.record","gid":"G5","target":"H3","kind":"constraint","text":"world_simulate 显示 slow_na=true 与 reference 在几乎所有协议上给出相同预测（16/16/27/36/15/6 vs 17/15/27/37/15/5），唯一差异是 brief_hyperpol 16 vs 17 和 long_hyperpol 16 vs 15。slow_na 使 long_hyperpol 从 15→16，反而远离观测 13.5。可检验：slow_na 的实现可能参数化不当，但当前证据表明它对 H3 的核心偏差（long_step +5, strong_step +4）无实质贡献。"}
+{"ts":"2026-08-25T17:37:45.670Z","op":"attack.record","gid":"G6","target":"H3","kind":"new_h","text":"观测与模型的偏差呈协议依赖的方向性模式：long_step 和 strong_step 均被低估（+5, +4），hyperpol 条件被高估或方向错误，brief_step 被低估（+2）。纯对称测量噪声应产生无方向性的残差分布。符号检验显示偏差非随机，暗示存在系统性缺失机制而非单纯噪声。"}
+{"ts":"2026-08-25T17:37:56.501Z","op":"attack.record","gid":"G7","target":"H1","kind":"constraint","text":"H1 和 H3 同时被 SUPPORTED 存在逻辑矛盾：H3 声称\"仅存在慢钠电流，无额外电流\"，而 H1 声称在慢钠基础上还有额外的慢内向电流。如果 H3 成立（无额外电流），则 H1 的额外电流假设不必要；如果 H1 成立（需要额外电流），则 H3 的\"无额外电流\"主张被违反。两个假设的核心主张互斥，不应同时获得支持。"}

@@ -1,0 +1,66 @@
+{"ts":"2026-08-25T10:38:45.285Z","op":"run.init","run":"e1-na_fatigue-s0-plus-litellm-r1"}
+{"ts":"2026-08-25T10:38:56.649Z","op":"world.info","world":"na_fatigue","seed":0}
+{"ts":"2026-08-25T10:40:59.261Z","op":"world.simulate","world":"na_fatigue","seed":0,"protocol":"long step (10 uA, 300 ms)","mode":"candidate","mean_spike_count":28}
+{"ts":"2026-08-25T10:41:15.654Z","op":"world.simulate","world":"na_fatigue","seed":0,"protocol":"long step (10 uA, 300 ms)","mode":"candidate","mean_spike_count":24}
+{"ts":"2026-08-25T10:41:16.654Z","op":"world.simulate","world":"na_fatigue","seed":0,"protocol":"long step (10 uA, 300 ms)","mode":"candidate","mean_spike_count":28}
+{"ts":"2026-08-25T10:41:17.489Z","op":"world.simulate","world":"na_fatigue","seed":0,"protocol":"long step (10 uA, 300 ms)","mode":"candidate","mean_spike_count":26}
+{"ts":"2026-08-25T10:41:44.151Z","op":"world.simulate","world":"na_fatigue","seed":0,"protocol":"brief step (12 uA, 40 ms)","mode":"candidate","mean_spike_count":7}
+{"ts":"2026-08-25T10:41:44.435Z","op":"world.simulate","world":"na_fatigue","seed":0,"protocol":"brief step (12 uA, 40 ms)","mode":"candidate","mean_spike_count":7}
+{"ts":"2026-08-25T10:41:44.768Z","op":"world.simulate","world":"na_fatigue","seed":0,"protocol":"brief step (12 uA, 40 ms)","mode":"candidate","mean_spike_count":7}
+{"ts":"2026-08-25T10:41:45.363Z","op":"world.simulate","world":"na_fatigue","seed":0,"protocol":"strong step (18 uA, 120 ms)","mode":"candidate","mean_spike_count":15}
+{"ts":"2026-08-25T10:41:45.766Z","op":"world.simulate","world":"na_fatigue","seed":0,"protocol":"strong step (18 uA, 120 ms)","mode":"candidate","mean_spike_count":14}
+{"ts":"2026-08-25T10:41:46.254Z","op":"world.simulate","world":"na_fatigue","seed":0,"protocol":"strong step (18 uA, 120 ms)","mode":"candidate","mean_spike_count":16}
+{"ts":"2026-08-25T10:42:20.020Z","op":"world.simulate","world":"na_fatigue","seed":0,"protocol":"long step (10 uA, 300 ms)","mode":"candidate","mean_spike_count":24}
+{"ts":"2026-08-25T10:42:20.881Z","op":"world.simulate","world":"na_fatigue","seed":0,"protocol":"long step (10 uA, 300 ms)","mode":"candidate","mean_spike_count":26}
+{"ts":"2026-08-25T10:42:21.735Z","op":"world.simulate","world":"na_fatigue","seed":0,"protocol":"long step (10 uA, 300 ms)","mode":"candidate","mean_spike_count":29}
+{"ts":"2026-08-25T10:42:22.241Z","op":"world.simulate","world":"na_fatigue","seed":0,"protocol":"weak step (5 uA, 120 ms)","mode":"candidate","mean_spike_count":10}
+{"ts":"2026-08-25T10:42:22.655Z","op":"world.simulate","world":"na_fatigue","seed":0,"protocol":"weak step (5 uA, 120 ms)","mode":"candidate","mean_spike_count":13}
+{"ts":"2026-08-25T10:42:23.165Z","op":"world.simulate","world":"na_fatigue","seed":0,"protocol":"weak step (5 uA, 120 ms)","mode":"candidate","mean_spike_count":9}
+{"ts":"2026-08-25T10:43:02.200Z","op":"world.observe","world":"na_fatigue","seed":0,"protocol":"long step (10 uA, 300 ms)","reps":2,"cost":2,"spike_count":25}
+{"ts":"2026-08-25T10:43:02.699Z","op":"world.observe","world":"na_fatigue","seed":0,"protocol":"weak step (5 uA, 120 ms)","reps":2,"cost":2,"spike_count":12}
+{"ts":"2026-08-25T10:43:03.741Z","op":"world.observe","world":"na_fatigue","seed":0,"protocol":"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)","reps":2,"cost":2,"spike_count":14.5}
+{"ts":"2026-08-25T10:43:04.773Z","op":"world.observe","world":"na_fatigue","seed":0,"protocol":"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)","reps":2,"cost":2,"spike_count":35}
+{"ts":"2026-08-25T10:43:35.267Z","op":"world.simulate","world":"na_fatigue","seed":0,"protocol":"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)","mode":"candidate","mean_spike_count":40}
+{"ts":"2026-08-25T10:43:36.123Z","op":"world.simulate","world":"na_fatigue","seed":0,"protocol":"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)","mode":"candidate","mean_spike_count":40}
+{"ts":"2026-08-25T10:43:37.149Z","op":"world.simulate","world":"na_fatigue","seed":0,"protocol":"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)","mode":"candidate","mean_spike_count":33}
+{"ts":"2026-08-25T10:43:38.217Z","op":"world.simulate","world":"na_fatigue","seed":0,"protocol":"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)","mode":"candidate","mean_spike_count":14}
+{"ts":"2026-08-25T10:43:39.060Z","op":"world.simulate","world":"na_fatigue","seed":0,"protocol":"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)","mode":"candidate","mean_spike_count":15}
+{"ts":"2026-08-25T10:43:40.091Z","op":"world.simulate","world":"na_fatigue","seed":0,"protocol":"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)","mode":"candidate","mean_spike_count":12}
+{"ts":"2026-08-25T10:44:38.628Z","op":"world.simulate","world":"na_fatigue","seed":0,"protocol":"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)","mode":"candidate","mean_spike_count":38}
+{"ts":"2026-08-25T10:44:39.494Z","op":"world.simulate","world":"na_fatigue","seed":0,"protocol":"long step (10 uA, 300 ms)","mode":"candidate","mean_spike_count":28}
+{"ts":"2026-08-25T10:44:40.568Z","op":"world.simulate","world":"na_fatigue","seed":0,"protocol":"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)","mode":"candidate","mean_spike_count":15}
+{"ts":"2026-08-25T10:44:41.067Z","op":"world.simulate","world":"na_fatigue","seed":0,"protocol":"weak step (5 uA, 120 ms)","mode":"candidate","mean_spike_count":12}
+{"ts":"2026-08-25T10:47:39.063Z","op":"world.simulate","world":"na_fatigue","seed":0,"protocol":"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)","mode":"candidate","mean_spike_count":28}
+{"ts":"2026-08-25T10:47:40.308Z","op":"world.simulate","world":"na_fatigue","seed":0,"protocol":"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)","mode":"candidate","mean_spike_count":31}
+{"ts":"2026-08-25T10:47:41.840Z","op":"world.simulate","world":"na_fatigue","seed":0,"protocol":"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)","mode":"candidate","mean_spike_count":20}
+{"ts":"2026-08-25T10:47:43.411Z","op":"world.simulate","world":"na_fatigue","seed":0,"protocol":"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)","mode":"candidate","mean_spike_count":26}
+{"ts":"2026-08-25T10:51:08.003Z","op":"claim.propose","id":"H1","statement":"存在一种慢激活钾电流（slow K+），反转电位约-80mV，激活时间常数~400ms，在持续去极化时逐渐积累外向电流，抑制重复放电频率。","predicts":["depol conditioning test spike_count ∈ [34, 39]","weak step spike_count ∈ [11, 13]","long step spike_count ∈ [24, 29]"],"conflicts":"none — 攻击未探索的轴"}
+{"ts":"2026-08-25T10:51:08.004Z","op":"claim.propose","id":"H2","statement":"Na+通道存在慢失活过程（slow Na inactivation），在持续活动后Na通道缓慢进入失活态，降低后续兴奋性，尤其在去极化预处理后放电显著减少。","predicts":["depol conditioning test spike_count ∈ [30, 35]","weak step spike_count ∈ [8, 10]","long step spike_count ∈ [24, 27]"],"conflicts":"none — 攻击未探索的轴"}
+{"ts":"2026-08-25T10:51:08.006Z","op":"claim.propose","id":"H3","statement":"观测到的 spike count 变化完全来自基线模型的随机噪声和测量伪影，不存在额外的膜电流成分（null hypothesis）。","predicts":["depol conditioning test spike_count ∈ [39, 43]","weak step spike_count ∈ [12, 15]","long step spike_count ∈ [27, 30]"],"conflicts":"none — 攻击未探索的轴"}
+{"ts":"2026-08-25T10:55:35.683Z","op":"prereg.write","pid":"P1","spec_sha256":"4f776f1b55b1c63308a22274c4d9dd1bf02e1f211f68a5f13af5fc630d0038dc","prereg_path":"prereg/P1.json"}
+{"ts":"2026-08-25T10:55:57.195Z","op":"prereg.write","pid":"P2","spec_sha256":"f3f928997dc90d4aa00ffd096f6a6126c108ee6712d76dcfe2859487b515dc5c","prereg_path":"prereg/P2.json"}
+{"ts":"2026-08-25T10:56:53.401Z","op":"prereg.write","pid":"P3","spec_sha256":"240a6d0ae68de40db666b75ce5235221a8945e0be54cc21a3868f51659b2811e","prereg_path":"prereg/P3.json"}
+{"ts":"2026-08-25T10:57:00.338Z","op":"probe.start","pid":"P1"}
+{"ts":"2026-08-25T10:57:00.361Z","op":"probe.land","pid":"P1","exit_code":1,"metric":null}
+{"ts":"2026-08-25T10:57:00.363Z","op":"probe.start","pid":"P2"}
+{"ts":"2026-08-25T10:57:00.384Z","op":"probe.land","pid":"P2","exit_code":1,"metric":null}
+{"ts":"2026-08-25T10:57:00.385Z","op":"probe.start","pid":"P3"}
+{"ts":"2026-08-25T10:57:00.404Z","op":"probe.land","pid":"P3","exit_code":1,"metric":null}
+{"ts":"2026-08-25T10:57:23.706Z","op":"prereg.write","pid":"P4","spec_sha256":"deb8f54e8a368dcb418b357c9b41692ae36b54a2eaa551053455d719c44e7b5b","prereg_path":"prereg/P4.json"}
+{"ts":"2026-08-25T10:57:50.400Z","op":"probe.start","pid":"P4"}
+{"ts":"2026-08-25T10:58:10.266Z","op":"prereg.write","pid":"P5","spec_sha256":"c4a419e4cd71dcf84e185447cb573f6eb9722604bdc9f416b12448e43f4af8db","prereg_path":"prereg/P5.json"}
+{"ts":"2026-08-25T10:58:16.802Z","op":"probe.start","pid":"P5"}
+{"ts":"2026-08-25T10:58:33.710Z","op":"prereg.write","pid":"P6","spec_sha256":"1de3eb26b7182cab249e3241661302ae3ac1c54105cf91aabe461214d6c61d14","prereg_path":"prereg/P6.json"}
+{"ts":"2026-08-25T10:58:41.848Z","op":"probe.start","pid":"P6"}
+{"ts":"2026-08-25T10:58:52.374Z","op":"prereg.write","pid":"P7","spec_sha256":"f8636555dacf1db75a54323fcf3cf52d0acb93a4e1dfb7052d34298cfd269a76","prereg_path":"prereg/P7.json"}
+{"ts":"2026-08-25T10:59:04.073Z","op":"probe.start","pid":"P7"}
+{"ts":"2026-08-25T10:59:16.242Z","op":"prereg.write","pid":"P8","spec_sha256":"a2e151df4ef4efda0595655870f59bd54a929f9e3aac5c20c7dac92a9b015205","prereg_path":"prereg/P8.json"}
+{"ts":"2026-08-25T10:59:32.768Z","op":"prereg.write","pid":"P9","spec_sha256":"c842ec4dcb7f17396cdb6d8a1f81ccb7b2abde63ea90cdc7aae2452337688b6a","prereg_path":"prereg/P9.json"}
+{"ts":"2026-08-25T10:59:45.124Z","op":"probe.start","pid":"P9"}
+{"ts":"2026-08-25T10:59:45.132Z","op":"probe.land","pid":"P9","exit_code":0,"metric":12}
+{"ts":"2026-08-25T11:01:05.236Z","op":"claim.transition","id":"H2","to":"REFUTED","by_probe":"P9","note":"P9 landed weak_step_count=12, outside H2's predicted band [8,10]. H2 predicted slow Na inactivation would reduce weak-step firing to 8-10, but observed 12."}
+{"ts":"2026-08-25T11:31:51.718Z","op":"world.forecast","world":"na_fatigue","seed":0,"counts":{"paired 10 uA/300+300":48,"paired 14 uA/250+250":42,"paired 8 uA/300+300":44,"paired 12 uA/350+350":52,"single long 10 uA/300 ms":24,"single long 12 uA/300 ms":26},"spike_forecast_mse":341.8722,"budget_spent":8}
+{"ts":"2026-08-25T11:34:10.293Z","op":"attack.record","gid":"G1","target":"H3","kind":"constraint","text":"H3 预测 long step ∈ [27,30]，但观测值 25 低于下限。H3 预测 depol test ∈ [39,43]，但观测值 35 低于下限。H3 的频段承诺与至少两个独立观测矛盾，无法解释观测到的放电抑制模式。"}
+{"ts":"2026-08-25T11:34:10.295Z","op":"attack.record","gid":"G2","target":"H1","kind":"constraint","text":"H1 的频段 [34,39] 基于 g=0.004, tau=400ms 这组参数。若参数偏离（g=0.001 或 tau=100ms），模拟结果可能落入不同区间。H1 的频段宽度承诺依赖于未检验的参数假设，实际不确定性被低估。"}
+{"ts":"2026-08-25T11:39:32.170Z","op":"report.declare","path":"REPORT.md","sha256":"375b10e6e8747eb9b5e361ad058d3b6a42dff69bf7b2f5b924716b72cb01ed72"}
+{"ts":"2026-08-25T11:39:32.170Z","op":"gate.verdict","passed":true,"report":"REPORT.md","prereg":true,"reconcile":true,"trace":true}

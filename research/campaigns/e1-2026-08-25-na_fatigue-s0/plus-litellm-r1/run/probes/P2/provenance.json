@@ -1,0 +1,38 @@
+{
+  "pid": "P2",
+  "command": "python3 -c \"import json; obs=json.load(open('/tmp/na_fatigue_obs.json')); print(round(obs['hyperpol_test']/obs['long_step'], 3))\"",
+  "exitCode": 1,
+  "startedAt": "2026-08-25T10:57:00.363Z",
+  "endedAt": "2026-08-25T10:57:00.384Z",
+  "landed": false,
+  "sandbox": {
+    "engine": "bubblewrap",
+    "binary": "bwrap",
+    "isolation": [
+      "--ro-bind",
+      "/",
+      "/",
+      "--dev",
+      "/dev",
+      "--proc",
+      "/proc",
+      "--tmpfs",
+      "/tmp",
+      "--unshare-net",
+      "--unshare-pid",
+      "--die-with-parent",
+      "--clearenv",
+      "--setenv",
+      "PATH",
+      "/usr/local/bin:/usr/bin:/bin",
+      "--setenv",
+      "HOME",
+      "/tmp",
+      "--setenv",
+      "LANG",
+      "C.UTF-8",
+      "--tmpfs",
+      "/bench/neuronbench"
+    ]
+  }
+}

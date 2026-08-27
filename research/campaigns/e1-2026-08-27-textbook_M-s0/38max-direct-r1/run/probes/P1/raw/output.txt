@@ -1,0 +1,1 @@
+{"n_files": 1, "n_obs": 1, "prot": "long step (10 uA, 300 ms)", "halves": [], "n_traces": 0, "file": "/root/.proma-research/e1-2026-08-27-textbook_M-s0/world-ledger.jsonl", "metric": NaN}

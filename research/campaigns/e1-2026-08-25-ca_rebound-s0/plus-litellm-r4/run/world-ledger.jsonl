@@ -1,0 +1,16 @@
+{"ts": "2026-08-25T13:13:04.381+00:00", "cmd": "info", "world": "ca_rebound", "seed": 0, "cost": 0, "budget_before": 0}
+{"ts": "2026-08-25T13:15:20.475+00:00", "cmd": "observe", "world": "ca_rebound", "seed": 0, "protocol": "hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)", "reps": 2, "cost": 2, "budget_before": 0, "budget_after": 2, "spike_count": 13.5}
+{"ts": "2026-08-25T13:15:21.744+00:00", "cmd": "observe", "world": "ca_rebound", "seed": 0, "protocol": "brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)", "reps": 1, "cost": 1, "budget_before": 2, "budget_after": 3, "spike_count": 17.0}
+{"ts": "2026-08-25T13:15:22.496+00:00", "cmd": "observe", "world": "ca_rebound", "seed": 0, "protocol": "depolarising conditioning + test (+15 uA/250 ms, then +12 uA)", "reps": 1, "cost": 1, "budget_before": 3, "budget_after": 4, "spike_count": 40.0}
+{"ts": "2026-08-25T13:15:23.723+00:00", "cmd": "observe", "world": "ca_rebound", "seed": 0, "protocol": "weak step (5 uA, 120 ms)", "reps": 1, "cost": 1, "budget_before": 4, "budget_after": 5, "spike_count": 14.0}
+{"ts": "2026-08-25T13:15:32.206+00:00", "cmd": "observe", "world": "ca_rebound", "seed": 0, "protocol": "hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)", "reps": 2, "cost": 2, "budget_before": 5, "budget_after": 7, "spike_count": 7.5}
+{"ts": "2026-08-25T13:15:33.497+00:00", "cmd": "observe", "world": "ca_rebound", "seed": 0, "protocol": "paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)", "reps": 1, "cost": 1, "budget_before": 7, "budget_after": 8, "spike_count": 30.0}
+{"ts": "2026-08-25T13:16:57.117+00:00", "cmd": "info", "world": "ca_rebound", "seed": 0, "cost": 0, "budget_before": 8}
+{"ts": "2026-08-25T13:16:57.174+00:00", "cmd": "info", "world": "ca_rebound", "seed": 0, "cost": 0, "budget_before": 8}
+{"ts": "2026-08-25T13:16:57.233+00:00", "cmd": "info", "world": "ca_rebound", "seed": 0, "cost": 0, "budget_before": 8}
+{"ts": "2026-08-25T13:17:13.242+00:00", "cmd": "info", "world": "ca_rebound", "seed": 0, "cost": 0, "budget_before": 8}
+{"ts": "2026-08-25T13:17:13.303+00:00", "cmd": "info", "world": "ca_rebound", "seed": 0, "cost": 0, "budget_before": 8}
+{"ts": "2026-08-25T13:17:27.691+00:00", "cmd": "info", "world": "ca_rebound", "seed": 0, "cost": 0, "budget_before": 8}
+{"ts": "2026-08-25T13:17:27.755+00:00", "cmd": "info", "world": "ca_rebound", "seed": 0, "cost": 0, "budget_before": 8}
+{"ts": "2026-08-25T13:22:44.987+00:00", "cmd": "simulate", "world": "ca_rebound", "seed": 0, "protocol": "hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)", "cost": 0, "candidate": true, "mean_spike_count": 24.3333}
+{"ts": "2026-08-25T13:26:55.759+00:00", "cmd": "forecast", "world": "ca_rebound", "seed": 0, "cost": 0, "mse": 33.15976250000001, "predictions": {"brief step (12 uA, 40 ms)": 20.0, "hyperpol -25 then release": 16.0, "hyperpol -30 then release": 13.0, "hyperpol -35 then release": 11.0, "hyperpol -40 then release": 9.0, "long step (10 uA, 300 ms)": 25.0}, "budget_spent_final": 8}

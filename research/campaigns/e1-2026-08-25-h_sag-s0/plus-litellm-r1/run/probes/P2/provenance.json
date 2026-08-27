@@ -1,0 +1,38 @@
+{
+  "pid": "P2",
+  "command": "python -c \"import sys; v=sys.stdin.read(); import json; d=json.loads(v); spikes=d['spike_times']; n=len(spikes); half=n//2; rate_first=sum(1 for t in spikes[:half] if t<150)/150.0; rate_last=sum(1 for t in spikes[half:] if 150<=t<=300)/150.0; ratio=rate_first/rate_last if rate_last>0 else 2.0; print(f'{ratio:.2f}')\"",
+  "exitCode": 127,
+  "startedAt": "2026-08-25T11:02:30.493Z",
+  "endedAt": "2026-08-25T11:02:30.498Z",
+  "landed": false,
+  "sandbox": {
+    "engine": "bubblewrap",
+    "binary": "bwrap",
+    "isolation": [
+      "--ro-bind",
+      "/",
+      "/",
+      "--dev",
+      "/dev",
+      "--proc",
+      "/proc",
+      "--tmpfs",
+      "/tmp",
+      "--unshare-net",
+      "--unshare-pid",
+      "--die-with-parent",
+      "--clearenv",
+      "--setenv",
+      "PATH",
+      "/usr/local/bin:/usr/bin:/bin",
+      "--setenv",
+      "HOME",
+      "/tmp",
+      "--setenv",
+      "LANG",
+      "C.UTF-8",
+      "--tmpfs",
+      "/bench/neuronbench"
+    ]
+  }
+}

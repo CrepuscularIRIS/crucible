@@ -1,0 +1,80 @@
+{
+  "pid": "P3",
+  "question": "Conditioning polarity difference: depol_test spike_count minus hyperpol_test spike_count. This probes the net asymmetry between depolarizing and hyperpolarizing conditioning. H3 (null) predicts the largest gap (~25) because no slow mechanism counters the depol enhancement; H1 (slow K) predicts intermediate (~23) because slow K partially counters; H2 (slow Na) predicts smallest (~21) because slow Na inactivation reduces spiking in both. H2 and H3 bands are mutually exclusive, ensuring this probe can kill at least one. Severity: if no slow process exists (H3), the difference should be largest because nothing counteracts depol-induced facilitation.",
+  "evalCommand": "python3 -c \"import json; obs=json.load(open('/tmp/na_fatigue_obs.json')); print(round(obs['depol_test'] - obs['hyperpol_test'], 1))\"",
+  "metricKind": "json",
+  "metricSpec": "$",
+  "bands": {
+    "H1": [
+      20,
+      25
+    ],
+    "H2": [
+      17,
+      22
+    ],
+    "H3": [
+      24,
+      29
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        20,
+        25
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        17,
+        22
+      ],
+      "action": "support",
+      "target": "H2"
+    },
+    {
+      "band": [
+        24,
+        29
+      ],
+      "action": "support",
+      "target": "H3"
+    },
+    {
+      "band": [
+        0,
+        16
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        0,
+        16
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        30,
+        100
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        30,
+        100
+      ],
+      "action": "kill",
+      "target": "H3"
+    }
+  ],
+  "frozenAt": "2026-08-25T10:56:53.401Z"
+}

@@ -1,0 +1,72 @@
+{
+  "pid": "P1",
+  "question": "超极化预处理条件测试: -30uA/250ms 后接 +12uA 测试脉冲,spike count 判别去极化激活电流(H1/H4) vs Ih-like 电流(H3)。Load-bearing variable: conditioning 阶段的电压与持续时间。对照: 无预处理的 long step baseline(22.5)。若 H3 为假(非 Ih-like),此测试大概率失败——H3 预测超极化后 spike 增加至 28-40,但 H1 预测 12-18,H4 预测 10-16。",
+  "evalCommand": "python3 -c \"import json; data=json.loads(open('/tmp/probe1_data.json').read()); print(json.dumps({'spike_count': data['spike_count']}))\"",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H1": [
+      12,
+      18
+    ],
+    "H3": [
+      28,
+      40
+    ],
+    "H4": [
+      10,
+      16
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        10,
+        16
+      ],
+      "action": "kill",
+      "target": "H3"
+    },
+    {
+      "band": [
+        28,
+        40
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        28,
+        40
+      ],
+      "action": "kill",
+      "target": "H4"
+    },
+    {
+      "band": [
+        12,
+        18
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        28,
+        40
+      ],
+      "action": "support",
+      "target": "H3"
+    },
+    {
+      "band": [
+        10,
+        16
+      ],
+      "action": "support",
+      "target": "H4"
+    }
+  ],
+  "frozenAt": "2026-08-25T17:40:36.217Z"
+}

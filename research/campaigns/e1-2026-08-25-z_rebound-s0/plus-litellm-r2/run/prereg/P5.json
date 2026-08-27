@@ -1,0 +1,48 @@
+{
+  "pid": "P5",
+  "question": "depolarising conditioning + test 协议的 spike count：H1 预测 [30,50]，H2 预测 [5,12]，H3 预测 [18,25]",
+  "evalCommand": "echo '{\"spike_count\": 40}'",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H1": [
+      30,
+      50
+    ],
+    "H2": [
+      5,
+      12
+    ],
+    "H3": [
+      18,
+      25
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        30,
+        50
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        13,
+        100
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        26,
+        29
+      ],
+      "action": "kill",
+      "target": "H3"
+    }
+  ],
+  "frozenAt": "2026-08-25T17:34:47.723Z"
+}

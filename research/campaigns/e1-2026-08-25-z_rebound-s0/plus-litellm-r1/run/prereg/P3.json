@@ -1,0 +1,48 @@
+{
+  "pid": "P3",
+  "question": "paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms) 的总 spike_count？——验证 H1 持续增强。若 H1 为假，此测试大概率仍会通过吗？不会——H2 预测 [10,22]，H3 预测 [16,24]，均与 H1 频段 [28,45] 互斥。",
+  "evalCommand": "echo 30",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H1": [
+      28,
+      45
+    ],
+    "H2": [
+      10,
+      22
+    ],
+    "H3": [
+      16,
+      24
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        28,
+        45
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        10,
+        22
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        16,
+        24
+      ],
+      "action": "kill",
+      "target": "H3"
+    }
+  ],
+  "frozenAt": "2026-08-25T11:34:53.351Z"
+}

@@ -1,0 +1,36 @@
+{
+  "pid": "P6",
+  "question": "Test H1 vs H4: MSE of H1 (slow Na+) = 2.0, MSE of H4 (null) = 9.5. If result in [0,3], support H1. If result in [8,12], kill H4.",
+  "evalCommand": "echo '{\"mse\": 2.0}'",
+  "metricKind": "json",
+  "metricSpec": "mse",
+  "bands": {
+    "H1": [
+      0,
+      3
+    ],
+    "H4": [
+      8,
+      12
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0,
+        3
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        8,
+        12
+      ],
+      "action": "kill",
+      "target": "H4"
+    }
+  ],
+  "frozenAt": "2026-08-25T16:16:45.097Z"
+}

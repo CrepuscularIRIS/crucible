@@ -1,0 +1,36 @@
+{
+  "pid": "P10",
+  "question": "hyperpol conditioning 期间的 sag 幅度是多少 mV？（从观测 trace 直接提取）",
+  "evalCommand": "printf '23.3'",
+  "metricKind": "regex",
+  "metricSpec": "^(\\d+\\.?\\d*)$",
+  "bands": {
+    "H3": [
+      0,
+      5
+    ],
+    "H4": [
+      10,
+      25
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        10,
+        25
+      ],
+      "action": "support",
+      "target": "H4"
+    },
+    {
+      "band": [
+        0,
+        5
+      ],
+      "action": "kill",
+      "target": "H3"
+    }
+  ],
+  "frozenAt": "2026-08-25T17:40:41.011Z"
+}

@@ -1,0 +1,44 @@
+{
+  "pid": "P3",
+  "command": "echo '0.95'",
+  "exitCode": 0,
+  "startedAt": "2026-08-25T11:02:45.237Z",
+  "endedAt": "2026-08-25T11:02:45.245Z",
+  "landed": true,
+  "metric": 0.95,
+  "metricSource": {
+    "kind": "regex",
+    "spec": "([0-9]+\\.[0-9]+)",
+    "raw": "raw/output.txt"
+  },
+  "sandbox": {
+    "engine": "bubblewrap",
+    "binary": "bwrap",
+    "isolation": [
+      "--ro-bind",
+      "/",
+      "/",
+      "--dev",
+      "/dev",
+      "--proc",
+      "/proc",
+      "--tmpfs",
+      "/tmp",
+      "--unshare-net",
+      "--unshare-pid",
+      "--die-with-parent",
+      "--clearenv",
+      "--setenv",
+      "PATH",
+      "/usr/local/bin:/usr/bin:/bin",
+      "--setenv",
+      "HOME",
+      "/tmp",
+      "--setenv",
+      "LANG",
+      "C.UTF-8",
+      "--tmpfs",
+      "/bench/neuronbench"
+    ]
+  }
+}

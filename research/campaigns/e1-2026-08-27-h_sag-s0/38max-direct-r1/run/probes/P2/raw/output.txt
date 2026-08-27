@@ -1,0 +1,1 @@
+{"spike_count": 8.0, "reps": 2}

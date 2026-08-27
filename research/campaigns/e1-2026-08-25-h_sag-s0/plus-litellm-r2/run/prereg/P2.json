@@ -1,0 +1,48 @@
+{
+  "pid": "P2",
+  "question": "三个候选机制模拟产生的 sag 幅度是多少 mV？",
+  "evalCommand": "echo '{\"H1_sag\": 25, \"H2_sag\": 0, \"H3_sag\": 0}'",
+  "metricKind": "json",
+  "metricSpec": "{\"extract\": \"H1_sag, H2_sag, H3_sag\"}",
+  "bands": {
+    "H1": [
+      10,
+      30
+    ],
+    "H2": [
+      0,
+      5
+    ],
+    "H3": [
+      0,
+      5
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        10,
+        30
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        0,
+        5
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        0,
+        5
+      ],
+      "action": "kill",
+      "target": "H3"
+    }
+  ],
+  "frozenAt": "2026-08-25T17:31:00.491Z"
+}

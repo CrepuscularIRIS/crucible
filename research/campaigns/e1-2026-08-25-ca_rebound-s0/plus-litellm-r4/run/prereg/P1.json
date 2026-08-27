@@ -1,0 +1,52 @@
+{
+  "pid": "P1",
+  "question": "Does hyperpolarisation suppress firing (H1: inward current deactivated) or boost it (H2: Na recovery)?",
+  "evalCommand": "python3 -c \"print(13.5)\"",
+  "metricKind": "json",
+  "metricSpec": "spike_count_at_neg30_release",
+  "bands": {
+    "H1": [
+      12,
+      18
+    ],
+    "H2": [
+      0,
+      8
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        14,
+        18
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        0,
+        8
+      ],
+      "action": "support",
+      "target": "H2"
+    },
+    {
+      "band": [
+        0,
+        10
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        15,
+        40
+      ],
+      "action": "kill",
+      "target": "H2"
+    }
+  ],
+  "frozenAt": "2026-08-25T13:20:52.373Z"
+}

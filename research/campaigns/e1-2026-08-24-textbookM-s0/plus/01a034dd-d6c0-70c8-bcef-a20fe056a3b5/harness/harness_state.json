@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "entries": {
+    "prompt": {},
+    "memory": {
+      "research_report_write_protection": {
+        "id": "research_report_write_protection",
+        "kind": "memory",
+        "title": "Research Report Write Protection",
+        "content": "Direct file writes (Python pathlib.write_text, bash cat/echo) to `.proma-research/<run>/` directories are blocked by Research Eval Isolation gates. To create a final report, you MUST use the `mcp__research__report_declare` MCP tool. Do not attempt to manually create REPORT.md in the run directory; the tool handles file generation and validation against prereg/journal state.",
+        "path": "general",
+        "scope": "local",
+        "reference": {},
+        "arguments": {},
+        "metadata": {
+          "scope": "local",
+          "category": "environment_constraint",
+          "source": "trajectory_failure_e1-smoke-textbookM-s0"
+        },
+        "source": "refine",
+        "created_at": "2026-08-24T18:12:52.740Z",
+        "updated_at": "2026-08-24T18:12:52.740Z",
+        "version": 1
+      }
+    },
+    "skill": {},
+    "subagent": {}
+  },
+  "refinements": [
+    {
+      "id": "refine_20260824181239675",
+      "trigger": "Recorded isolation constraint preventing direct writes to .proma-research run directories and mandating use of report_declare MCP tool.",
+      "changes": [
+        "create memory:research_report_write_protection"
+      ],
+      "evidence": "The trajectory shows repeated failures when attempting to write REPORT.md directly to the protected .proma-research/e1-smoke-textbookM-s0/ directory using Python or bash, triggering 'Research Eval Isolation' errors. The correct procedure is to use the mcp__research__report_declare tool, which manages file creation and gate validation. This is a durable environmental constraint that should be preserved in local memory to prevent recurrence in this session's future research tasks.",
+      "outcome": "Future attempts to finalize research reports in this session will correctly use report_declare instead of direct file I/O, avoiding isolation errors and saving token budget.",
+      "created_at": "2026-08-24T18:12:52.740Z"
+    }
+  ]
+}

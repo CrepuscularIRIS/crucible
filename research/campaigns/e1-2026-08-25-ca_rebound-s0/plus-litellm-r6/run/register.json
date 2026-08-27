@@ -1,0 +1,152 @@
+{
+  "run": "e1-ca_rebound-s0-plus-litellm-r6",
+  "claims": [
+    {
+      "id": "H1",
+      "statement": "存在慢钠电流（slow_na=true）加上钙激活的非特异性阳离子电流（extra slow inward current, E≈-10 to 0 mV, 慢激活动力学）",
+      "predicts": [
+        "长脉冲应产生 30-34 spikes（slow_na + extra slow inward）",
+        "超极化后去极化应产生 14-18 spikes（部分激活的钙电流）",
+        "短脉冲应产生 6-8 spikes（轻微增强）"
+      ],
+      "state": "SUPPORTED",
+      "byProbe": "P2",
+      "note": "Strong step 实测 19 spikes 落在 H1 预测频段 [14,26]，与 H2 预测 [28,50] 互斥，H1 获 P2 支持"
+    },
+    {
+      "id": "H2",
+      "statement": "存在慢钠电流（slow_na=true）加上持续钠电流（persistent Na+, E≈+50 mV, 快激活动力学）",
+      "predicts": [
+        "长脉冲应产生 30-35 spikes（slow_na + persistent Na）",
+        "超极化后去极化应产生 15-19 spikes（持续钠电流不受超极化影响）",
+        "短脉冲应产生 7-9 spikes（持续钠增强兴奋性）"
+      ],
+      "state": "REFUTED",
+      "byProbe": "P3",
+      "note": "P3 实测 long step = 32，落在 H2 预测频段 [36, 50] 之外，H2 被 P3 击杀"
+    },
+    {
+      "id": "H3",
+      "statement": "仅存在慢钠电流（slow_na=true），无额外电流，观测到的 spike 增加源于慢钠的电压依赖性失活动力学",
+      "predicts": [
+        "长脉冲应产生 27-29 spikes（仅 slow_na）",
+        "超极化后去极化应产生 13-15 spikes（纯慢钠）",
+        "短脉冲应产生 8-9 spikes（慢钠轻微增强）"
+      ],
+      "state": "SUPPORTED",
+      "byProbe": "P3",
+      "note": "P3 实测 long step = 32，落在 H3 预测频段 [25, 34] 内，H3 被 P3 支持"
+    }
+  ],
+  "probes": [
+    {
+      "pid": "P1",
+      "status": "FAILED",
+      "preregSha256": "b5d283cd6533658af81e0bd6927a71573410c39492c04d8036cc6d79697edb00",
+      "exitCode": 1
+    },
+    {
+      "pid": "P2",
+      "status": "LANDED",
+      "preregSha256": "64dca7767db68c94497776b56053cfbd9951276aa84b791161d51d2a526d0c88",
+      "exitCode": 0,
+      "metric": 19
+    },
+    {
+      "pid": "P3",
+      "status": "LANDED",
+      "preregSha256": "4e130c0a4f9162f69ccd14fcbdf123de4003e9a36aaad6310e212047109e4308",
+      "exitCode": 0,
+      "metric": 32
+    }
+  ],
+  "attacks": [
+    {
+      "gid": "G1",
+      "target": "H1",
+      "kind": "new_h",
+      "text": "E_rev = -10 mV for a \"calcium-activated nonspecific cation current\" is biophysically anomalous. Known CAN channels (e.g., TRPM4/TRPM5) are non-selective monovalent cation channels with E_rev near 0 to +10 mV. The specified E_rev = -10 mV suggests either a modeling artifact or an unconventional ion selectivity not documented in known CAN channels.",
+      "ts": "2026-08-25T17:37:45.662Z"
+    },
+    {
+      "gid": "G2",
+      "target": "H1",
+      "kind": "no_change",
+      "text": "H1 predicts long step = 30–34 spikes, H3 predicts 27–29, and the observation is 32. H1's band contains 32 but H3 misses by 2 — however, this 2-spike difference is smaller than the P2 band half-width (±6 spikes around 20). The \"support\" P2 provides is for the strong step (obs=19, H1 band [14,26]), NOT for long step. H1's long step prediction band is not independently validated by a landed probe.",
+      "ts": "2026-08-25T17:37:45.665Z"
+    },
+    {
+      "gid": "G3",
+      "target": "H3",
+      "kind": "constraint",
+      "text": "观测值 32.0 直接落在 H3 自述预测区间 [25,29] 之外（超出上界 +3）。Reference 模型点估计 27，偏差 +5。H3 声称\"measurement noise fully explains\"，但 [25,29] 的半宽仅 ±2，远不足以吸收 +5 的偏差。Long step 的预测区间被直接证伪。",
+      "ts": "2026-08-25T17:37:45.666Z"
+    },
+    {
+      "gid": "G4",
+      "target": "H3",
+      "kind": "new_h",
+      "text": "数据：brief hyperpol (40ms) → 17.0 spikes，long hyperpol (250ms) → 13.5 spikes。更长超极化产生更少反弹——差值 −3.5。Reference 模型仅产生 −2 (17→15)，CaT 候选反而反转方向为 +4 (17→21)。缺失的机制：超极化持续激活一种 slow K⁺ 电流，在反弹测试阶段持续抑制发放。这与 H3 的\"仅慢钠电流\"主张矛盾。",
+      "ts": "2026-08-25T17:37:45.667Z"
+    },
+    {
+      "gid": "G5",
+      "target": "H3",
+      "kind": "constraint",
+      "text": "world_simulate 显示 slow_na=true 与 reference 在几乎所有协议上给出相同预测（16/16/27/36/15/6 vs 17/15/27/37/15/5），唯一差异是 brief_hyperpol 16 vs 17 和 long_hyperpol 16 vs 15。slow_na 使 long_hyperpol 从 15→16，反而远离观测 13.5。可检验：slow_na 的实现可能参数化不当，但当前证据表明它对 H3 的核心偏差（long_step +5, strong_step +4）无实质贡献。",
+      "ts": "2026-08-25T17:37:45.669Z"
+    },
+    {
+      "gid": "G6",
+      "target": "H3",
+      "kind": "new_h",
+      "text": "观测与模型的偏差呈协议依赖的方向性模式：long_step 和 strong_step 均被低估（+5, +4），hyperpol 条件被高估或方向错误，brief_step 被低估（+2）。纯对称测量噪声应产生无方向性的残差分布。符号检验显示偏差非随机，暗示存在系统性缺失机制而非单纯噪声。",
+      "ts": "2026-08-25T17:37:45.670Z"
+    },
+    {
+      "gid": "G7",
+      "target": "H1",
+      "kind": "constraint",
+      "text": "H1 和 H3 同时被 SUPPORTED 存在逻辑矛盾：H3 声称\"仅存在慢钠电流，无额外电流\"，而 H1 声称在慢钠基础上还有额外的慢内向电流。如果 H3 成立（无额外电流），则 H1 的额外电流假设不必要；如果 H1 成立（需要额外电流），则 H3 的\"无额外电流\"主张被违反。两个假设的核心主张互斥，不应同时获得支持。",
+      "ts": "2026-08-25T17:37:56.501Z"
+    }
+  ],
+  "reports": [],
+  "gateVerdicts": [],
+  "tampers": [],
+  "graveyard": [
+    {
+      "id": "H1",
+      "statement": "存在慢钠电流（slow_na=true）加上钙激活的非特异性阳离子电流（extra slow inward current, E≈-10 to 0 mV, 慢激活动力学）",
+      "predicts": [
+        "长脉冲应产生 30-34 spikes（slow_na + extra slow inward）",
+        "超极化后去极化应产生 14-18 spikes（部分激活的钙电流）",
+        "短脉冲应产生 6-8 spikes（轻微增强）"
+      ],
+      "state": "SUPPORTED",
+      "byProbe": "P2"
+    },
+    {
+      "id": "H2",
+      "statement": "存在慢钠电流（slow_na=true）加上持续钠电流（persistent Na+, E≈+50 mV, 快激活动力学）",
+      "predicts": [
+        "长脉冲应产生 30-35 spikes（slow_na + persistent Na）",
+        "超极化后去极化应产生 15-19 spikes（持续钠电流不受超极化影响）",
+        "短脉冲应产生 7-9 spikes（持续钠增强兴奋性）"
+      ],
+      "state": "REFUTED",
+      "byProbe": "P3"
+    },
+    {
+      "id": "H3",
+      "statement": "仅存在慢钠电流（slow_na=true），无额外电流，观测到的 spike 增加源于慢钠的电压依赖性失活动力学",
+      "predicts": [
+        "长脉冲应产生 27-29 spikes（仅 slow_na）",
+        "超极化后去极化应产生 13-15 spikes（纯慢钠）",
+        "短脉冲应产生 8-9 spikes（慢钠轻微增强）"
+      ],
+      "state": "SUPPORTED",
+      "byProbe": "P3"
+    }
+  ]
+}

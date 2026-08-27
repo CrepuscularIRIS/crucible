@@ -1,0 +1,44 @@
+{
+  "pid": "P8",
+  "command": "python3 -c \"import json; evs=[json.loads(l) for l in open('/root/.proma-research/e1-2026-08-27-ca_rebound-s0/journal.jsonl')]; fc=[e for e in evs if e.get('op')=='world.forecast']; assert fc, 'forecast not landed'; print(json.dumps({'spike_forecast_mse': fc[-1]['spike_forecast_mse']}))\"",
+  "exitCode": 0,
+  "startedAt": "2026-08-27T15:30:57.999Z",
+  "endedAt": "2026-08-27T15:30:58.019Z",
+  "landed": true,
+  "metric": 35.53309583333333,
+  "metricSource": {
+    "kind": "json",
+    "spec": "spike_forecast_mse",
+    "raw": "raw/output.txt"
+  },
+  "sandbox": {
+    "engine": "bubblewrap",
+    "binary": "bwrap",
+    "isolation": [
+      "--ro-bind",
+      "/",
+      "/",
+      "--dev",
+      "/dev",
+      "--proc",
+      "/proc",
+      "--tmpfs",
+      "/tmp",
+      "--unshare-net",
+      "--unshare-pid",
+      "--die-with-parent",
+      "--clearenv",
+      "--setenv",
+      "PATH",
+      "/usr/local/bin:/usr/bin:/bin",
+      "--setenv",
+      "HOME",
+      "/tmp",
+      "--setenv",
+      "LANG",
+      "C.UTF-8",
+      "--tmpfs",
+      "/bench/neuronbench"
+    ]
+  }
+}

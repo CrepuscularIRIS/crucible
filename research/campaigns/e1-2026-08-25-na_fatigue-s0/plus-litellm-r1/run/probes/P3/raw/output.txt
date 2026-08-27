@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json; obs=json.load(open('/tmp/na_fatigue_obs.json')); print(round(obs['depol_test'] - obs['hyperpol_test'], 1))
+                               ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/na_fatigue_obs.json'

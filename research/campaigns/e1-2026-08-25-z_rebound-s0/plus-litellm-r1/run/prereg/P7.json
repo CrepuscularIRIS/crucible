@@ -1,0 +1,36 @@
+{
+  "pid": "P7",
+  "question": "depolarising conditioning + test spike_count=40。H2 预测 [15,25]，实测 40 远超预测上限，kill H2。H3 预测 [18,25]，实测 40 远超，kill H3。若 H2/H3 为真，此测试仍会通过吗？否——H2 预测 ≤25，H3 预测 [18,25]。",
+  "evalCommand": "echo '{\"spike_count\": 40}'",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H2": [
+      30,
+      100
+    ],
+    "H3": [
+      0,
+      17
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        30,
+        100
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        0,
+        17
+      ],
+      "action": "kill",
+      "target": "H3"
+    }
+  ],
+  "frozenAt": "2026-08-25T11:50:49.171Z"
+}

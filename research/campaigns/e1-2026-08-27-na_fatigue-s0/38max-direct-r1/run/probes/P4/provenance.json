@@ -1,0 +1,44 @@
+{
+  "pid": "P4",
+  "command": "python3 -c \"import json; rows=[json.loads(l) for l in open('/root/.proma-research/e1-2026-08-27-na_fatigue-s0/world-ledger.jsonl')]; obs=[r for r in rows if r.get('cmd')=='observe' and r.get('protocol')=='strong step (18 uA, 120 ms)' and r.get('reps')==2]; print(json.dumps({'mean_spike_count': obs[-1]['spike_count']}))\"",
+  "exitCode": 0,
+  "startedAt": "2026-08-27T14:57:00.310Z",
+  "endedAt": "2026-08-27T14:57:00.330Z",
+  "landed": true,
+  "metric": 14,
+  "metricSource": {
+    "kind": "json",
+    "spec": "mean_spike_count",
+    "raw": "raw/output.txt"
+  },
+  "sandbox": {
+    "engine": "bubblewrap",
+    "binary": "bwrap",
+    "isolation": [
+      "--ro-bind",
+      "/",
+      "/",
+      "--dev",
+      "/dev",
+      "--proc",
+      "/proc",
+      "--tmpfs",
+      "/tmp",
+      "--unshare-net",
+      "--unshare-pid",
+      "--die-with-parent",
+      "--clearenv",
+      "--setenv",
+      "PATH",
+      "/usr/local/bin:/usr/bin:/bin",
+      "--setenv",
+      "HOME",
+      "/tmp",
+      "--setenv",
+      "LANG",
+      "C.UTF-8",
+      "--tmpfs",
+      "/bench/neuronbench"
+    ]
+  }
+}

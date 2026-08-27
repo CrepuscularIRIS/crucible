@@ -1,0 +1,45 @@
+{
+  "pid": "P2",
+  "question": "Discriminate H1 (slow_ca_in, E=-10, g=0.5, slow activation) vs H2 (persistent_Na, E=+50, g=0.3, fast activation): Does the strong step (18 uA, 120 ms) produce spike counts in the H1-predicted range (14-26) or the H2-predicted range (28-50)? Free simulation predicts H1=32, H2=42 for long step. For strong step, H1's slow kinetics should limit spike count while H2's fast persistent Na should produce excessive spikes. Severity: if H1 is false but the slow_ca_in kinetics happen to produce moderate counts, the test could pass spuriously - but this is mitigated by the wide discriminability gap.",
+  "evalCommand": "cat /root/.proma-dev/agent-workspaces/default/workspace-files/probe_data/strong_step_obs.json",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H1": [
+      14,
+      26
+    ],
+    "H2": [
+      28,
+      50
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        14,
+        26
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        28,
+        50
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        0,
+        13
+      ],
+      "action": "scope",
+      "target": "H1",
+      "scopeNote": "Both models fail; suggests neither mechanism is sufficient alone"
+    }
+  ],
+  "frozenAt": "2026-08-25T17:27:58.280Z"
+}

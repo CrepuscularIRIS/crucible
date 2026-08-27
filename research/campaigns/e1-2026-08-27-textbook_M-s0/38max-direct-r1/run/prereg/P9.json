@@ -1,0 +1,86 @@
+{
+  "pid": "P9",
+  "question": "brief step (12 uA, 40 ms) 计数是否显著低于参考（≤−1）？承重变量=观测显式 spike_count−参考免费模拟均值 6.8；机制逻辑=tonic/早期激活的 M 外向电流抬高阈值、压低短步发放；对照=参考模型无 M 必给 ≈6.8；竞争者=H4（本协议与参考不可区分）。方向鲁棒：M 为外向电流只可能抑制、不可能增高短步计数。Severity：若无记忆电流（H1 假），计数≈6.8 必落 H4 带；候选生成模型（g=2→4.8，g=3→3.8）预测抑制 2-3 个 spike，该测试在 H1 为假时几乎不可能通过。",
+  "evalCommand": "printf '%s' 'import json,os\nD=\"/root/.proma-research/e1-2026-08-27-textbook_M-s0\"\nPROT=\"brief step (12 uA, 40 ms)\"\ndef objs(p):\n try:\n  t=open(p).read()\n except Exception:\n  return []\n out=[]\n try:\n  out.append(json.loads(t))\n except Exception:\n  for L in t.splitlines():\n   L=L.strip()\n   if L:\n    try: out.append(json.loads(L))\n    except Exception: pass\n return out\ncands=[]\nfor r,_,fs in os.walk(D):\n for f in fs:\n  if not (f.endswith(\".json\") or f.endswith(\".jsonl\")): continue\n  if f.startswith(\"journal\") or f==\"register.json\": continue\n  p=os.path.join(r,f)\n  mt=os.path.getmtime(p)\n  for j in objs(p):\n   s=json.dumps(j)\n   if PROT not in s: continue\n   if \"evalCommand\" in s: continue\n   if isinstance(j,dict) and isinstance(j.get(\"op\"),str): continue\n   if isinstance(j,dict) and j.get(\"cmd\") in (\"simulate\",\"info\"): continue\n   if \"\\\"candidate\\\"\" in s and \"\\\"protocol_label\\\"\" in s: continue\n   cands.append((mt,p,j,s))\nobs=[c for c in cands if \"\\\"spike_count\\\"\" in c[3]]\npool=obs if obs else cands\nout={\"n_files\":len(cands),\"n_obs\":len(obs),\"prot\":PROT}\ndef traces(o,tr):\n if isinstance(o,dict):\n  for k,v in o.items():\n   if isinstance(v,list) and len(v)>40 and all(isinstance(x,(int,float)) for x in v[:5]) and min(v)<0 and max(v)<70:\n    tr.append(v)\n   else:\n    traces(v,tr)\n elif isinstance(o,list):\n  for v in o: traces(v,tr)\n return tr\ndef counts(o,cs):\n if isinstance(o,dict):\n  for k,val in o.items():\n   if k==\"spike_count\" and isinstance(val,(int,float)): cs.append(val)\n   elif k==\"spike_counts\" and isinstance(val,list): cs.extend([x for x in val if isinstance(x,(int,float))])\n   else: counts(val,cs)\n elif isinstance(o,list):\n  for val in o: counts(val,cs)\n return cs\nif not pool:\n out[\"metric\"]=float(\"nan\"); out[\"error\"]=\"no candidate files\"\nelse:\n mt,p,j,s=pool[-1]\n cs=counts(j,[])\n out[\"counts\"]=cs\n out[\"metric\"]=(sum(cs)/len(cs)-6.8) if cs else float(\"nan\")\n out[\"file\"]=p\nprint(json.dumps(out))' > /tmp/e.py && python3 /tmp/e.py",
+  "metricKind": "json",
+  "metricSpec": "metric",
+  "bands": {
+    "H1": [
+      -5,
+      -1
+    ],
+    "H4": [
+      -0.8,
+      2
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        -5,
+        -1
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        -5,
+        -1
+      ],
+      "action": "kill",
+      "target": "H4"
+    },
+    {
+      "band": [
+        -0.8,
+        2
+      ],
+      "action": "support",
+      "target": "H4"
+    },
+    {
+      "band": [
+        -0.8,
+        2
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        -1,
+        -0.8
+      ],
+      "action": "scope",
+      "target": "H1",
+      "scopeNote": "间隙带：噪声边缘"
+    },
+    {
+      "band": [
+        -10,
+        -5
+      ],
+      "action": "scope",
+      "target": "H1",
+      "scopeNote": "抑制远强于候选：需更强 tonic M 或额外机制"
+    },
+    {
+      "band": [
+        2,
+        10
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        2,
+        10
+      ],
+      "action": "kill",
+      "target": "H4"
+    }
+  ],
+  "frozenAt": "2026-08-27T15:11:57.468Z"
+}

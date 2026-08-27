@@ -1,0 +1,151 @@
+{
+  "run": "e1-h_sag-s0-plus-litellm-r1",
+  "claims": [
+    {
+      "id": "H1",
+      "statement": "未知电流是超极化激活的内向电流（类似 I_h），在超极化时激活并产生 sag，去极化时失活。",
+      "predicts": [
+        "hyperpol conditioning 出现 sag（电压从最低点回弹 ≥8 mV）",
+        "hyperpol 后去极化测试的 spike 数 ≥ 无 hyperpol 时的 80%",
+        "sag 幅度随 hyperpol 程度加深而增大"
+      ],
+      "state": "LIVE",
+      "conflicts": "none — 攻击未探索的轴；第一假设"
+    },
+    {
+      "id": "H2",
+      "statement": "未知电流是低阈值钙电流（类似 I_T），超极化时去失活，去极化时产生瞬时 burst。",
+      "predicts": [
+        "hyperpol conditioning 后去极化测试产生初始 burst（前 20 ms ≥5 spike）",
+        "hyperpol 越深，rebound burst 越强",
+        "long step 中频率适应显著（后半段频率 < 前半段的 60%）"
+      ],
+      "state": "REFUTED",
+      "conflicts": "H1 也预测 hyperpol 后兴奋性变化，但 H2 的 rebound 是爆发性（burst onset）而非 I_h 式的渐进去极化",
+      "byProbe": "P7",
+      "note": "Long step adaptation ratio 2.86 落入 H2 kill band [2,4]，H2 预测无显著适应，被否定。"
+    },
+    {
+      "id": "H3",
+      "statement": "未知电流是慢钾电流（类似 M-current / I_Kslow），去极化时激活导致频率适应，超极化时关闭。",
+      "predicts": [
+        "long step 中 ISI 逐渐增大（后半段频率 < 前半段的 50%）",
+        "hyperpol conditioning 后去极化测试频率高于无 hyperpol 的 long step（因为 M-current 在 hyperpol 时关闭，test 起始时无适应积累）",
+        "strong step 中适应更显著"
+      ],
+      "state": "REFUTED",
+      "conflicts": "H3 预测 long step 显著适应，与 H1（tonic firing）在 long step 预测上直接对立",
+      "byProbe": "P7",
+      "note": "Long step adaptation ratio 2.86 落入 P7 对 H3 的 kill 频段 [2,4]。H3 预测无显著适应或反向适应，被否定。"
+    }
+  ],
+  "probes": [
+    {
+      "pid": "P1",
+      "status": "FAILED",
+      "preregSha256": "ce640c74dbec676d615f002428c8ca3a8ba2de69014be6b7a928e84e35a2b615",
+      "exitCode": 127
+    },
+    {
+      "pid": "P2",
+      "status": "FAILED",
+      "preregSha256": "d20f64d250ef40c8fbb9a2e742bd7df9c352a332e28145db7873d116d220d273",
+      "exitCode": 127
+    },
+    {
+      "pid": "P3",
+      "status": "LANDED",
+      "preregSha256": "2cf63f4adb73f05fbf0245e4ca0e0c72142496a81a453fb925c59af94e5335d4",
+      "exitCode": 0,
+      "metric": 0.95
+    },
+    {
+      "pid": "P4",
+      "status": "RUNNING",
+      "preregSha256": "6ab600dfa6d8990a37b775f6f7aaa610e17376ea92e9eb7c1a0d85af5452c7a8"
+    },
+    {
+      "pid": "P5",
+      "status": "RUNNING",
+      "preregSha256": "c93d1046f065f5970f1fd71c56071a45fa7b201b6d4f1034307b33ab2306741a"
+    },
+    {
+      "pid": "P6",
+      "status": "LANDED",
+      "preregSha256": "dc5a0fbf939a372470ef5005d2c6611af304f2cc49e35bc50d8cdcfe3556d34e",
+      "exitCode": 0,
+      "metric": 0.39
+    },
+    {
+      "pid": "P7",
+      "status": "LANDED",
+      "preregSha256": "27447ee1534e1a2efc4ac02f4974a68c196e5a8d96371d5a7c4e33519167028f",
+      "exitCode": 0,
+      "metric": 2.86
+    }
+  ],
+  "attacks": [
+    {
+      "gid": "G1",
+      "target": "H1",
+      "kind": "constraint",
+      "text": "H1 预测 hyperpol 后去极化测试的 spike 数 ≥ 无 hyperpol 时的 80%，但观测值为 13/22 = 59%，低于预测阈值。这表明 I_h 假设可能不完整——要么 I_h 的失活动力学比预期更快，要么还有其他电流在超极化后持续抑制兴奋性。",
+      "ts": "2026-08-25T11:08:08.019Z"
+    },
+    {
+      "gid": "G2",
+      "target": "H1",
+      "kind": "new_h",
+      "text": "混合解释：未知电流可能是 I_h 与一种慢失活钾电流的组合。I_h 解释 sag（16 mV），慢钾电流解释长 step 的显著适应（ratio 2.86）。单一 I_h 无法同时解释两个现象。",
+      "ts": "2026-08-25T11:08:08.021Z"
+    },
+    {
+      "gid": "G3",
+      "target": "H1",
+      "kind": "constraint",
+      "text": "终态迁移后攻击: H2 已被 P7 REFUTED (byProbe=P7), 但 P7 的 H1 频段 [0.5, 1.5] 被观测值 2.86 带外拒绝。H1 的 sag 解释 (16 mV) 与适应解释 (2.86) 存在张力——单一 I_h 无法同时解释两个现象。攻击债未清: G2 提出的 I_h + slow K 混合机制是更强的替代解释, 但未正式登记为 H4 并检验。",
+      "ts": "2026-08-25T11:36:05.274Z"
+    }
+  ],
+  "reports": [
+    {
+      "path": "REPORT.md",
+      "sha256": "e76abcfa6a1a151d50ec495cb7707cab68a6fd35b14c340e0563475f3628c0d5",
+      "ts": "2026-08-25T11:38:57.812Z"
+    }
+  ],
+  "gateVerdicts": [
+    {
+      "ts": "2026-08-25T11:38:57.812Z",
+      "passed": true,
+      "report": "REPORT.md"
+    }
+  ],
+  "tampers": [],
+  "graveyard": [
+    {
+      "id": "H2",
+      "statement": "未知电流是低阈值钙电流（类似 I_T），超极化时去失活，去极化时产生瞬时 burst。",
+      "predicts": [
+        "hyperpol conditioning 后去极化测试产生初始 burst（前 20 ms ≥5 spike）",
+        "hyperpol 越深，rebound burst 越强",
+        "long step 中频率适应显著（后半段频率 < 前半段的 60%）"
+      ],
+      "state": "REFUTED",
+      "conflicts": "H1 也预测 hyperpol 后兴奋性变化，但 H2 的 rebound 是爆发性（burst onset）而非 I_h 式的渐进去极化",
+      "byProbe": "P7"
+    },
+    {
+      "id": "H3",
+      "statement": "未知电流是慢钾电流（类似 M-current / I_Kslow），去极化时激活导致频率适应，超极化时关闭。",
+      "predicts": [
+        "long step 中 ISI 逐渐增大（后半段频率 < 前半段的 50%）",
+        "hyperpol conditioning 后去极化测试频率高于无 hyperpol 的 long step（因为 M-current 在 hyperpol 时关闭，test 起始时无适应积累）",
+        "strong step 中适应更显著"
+      ],
+      "state": "REFUTED",
+      "conflicts": "H3 预测 long step 显著适应，与 H1（tonic firing）在 long step 预测上直接对立",
+      "byProbe": "P7"
+    }
+  ]
+}

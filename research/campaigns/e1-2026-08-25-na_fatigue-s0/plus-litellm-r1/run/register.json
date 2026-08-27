@@ -1,0 +1,137 @@
+{
+  "run": "e1-na_fatigue-s0-plus-litellm-r1",
+  "claims": [
+    {
+      "id": "H1",
+      "statement": "存在一种慢激活钾电流（slow K+），反转电位约-80mV，激活时间常数~400ms，在持续去极化时逐渐积累外向电流，抑制重复放电频率。",
+      "predicts": [
+        "depol conditioning test spike_count ∈ [34, 39]",
+        "weak step spike_count ∈ [11, 13]",
+        "long step spike_count ∈ [24, 29]"
+      ],
+      "state": "LIVE",
+      "conflicts": "none — 攻击未探索的轴"
+    },
+    {
+      "id": "H2",
+      "statement": "Na+通道存在慢失活过程（slow Na inactivation），在持续活动后Na通道缓慢进入失活态，降低后续兴奋性，尤其在去极化预处理后放电显著减少。",
+      "predicts": [
+        "depol conditioning test spike_count ∈ [30, 35]",
+        "weak step spike_count ∈ [8, 10]",
+        "long step spike_count ∈ [24, 27]"
+      ],
+      "state": "REFUTED",
+      "conflicts": "none — 攻击未探索的轴",
+      "byProbe": "P9",
+      "note": "P9 landed weak_step_count=12, outside H2's predicted band [8,10]. H2 predicted slow Na inactivation would reduce weak-step firing to 8-10, but observed 12."
+    },
+    {
+      "id": "H3",
+      "statement": "观测到的 spike count 变化完全来自基线模型的随机噪声和测量伪影，不存在额外的膜电流成分（null hypothesis）。",
+      "predicts": [
+        "depol conditioning test spike_count ∈ [39, 43]",
+        "weak step spike_count ∈ [12, 15]",
+        "long step spike_count ∈ [27, 30]"
+      ],
+      "state": "LIVE",
+      "conflicts": "none — 攻击未探索的轴"
+    }
+  ],
+  "probes": [
+    {
+      "pid": "P1",
+      "status": "FAILED",
+      "preregSha256": "4f776f1b55b1c63308a22274c4d9dd1bf02e1f211f68a5f13af5fc630d0038dc",
+      "exitCode": 1
+    },
+    {
+      "pid": "P2",
+      "status": "FAILED",
+      "preregSha256": "f3f928997dc90d4aa00ffd096f6a6126c108ee6712d76dcfe2859487b515dc5c",
+      "exitCode": 1
+    },
+    {
+      "pid": "P3",
+      "status": "FAILED",
+      "preregSha256": "240a6d0ae68de40db666b75ce5235221a8945e0be54cc21a3868f51659b2811e",
+      "exitCode": 1
+    },
+    {
+      "pid": "P4",
+      "status": "RUNNING",
+      "preregSha256": "deb8f54e8a368dcb418b357c9b41692ae36b54a2eaa551053455d719c44e7b5b"
+    },
+    {
+      "pid": "P5",
+      "status": "RUNNING",
+      "preregSha256": "c4a419e4cd71dcf84e185447cb573f6eb9722604bdc9f416b12448e43f4af8db"
+    },
+    {
+      "pid": "P6",
+      "status": "RUNNING",
+      "preregSha256": "1de3eb26b7182cab249e3241661302ae3ac1c54105cf91aabe461214d6c61d14"
+    },
+    {
+      "pid": "P7",
+      "status": "RUNNING",
+      "preregSha256": "f8636555dacf1db75a54323fcf3cf52d0acb93a4e1dfb7052d34298cfd269a76"
+    },
+    {
+      "pid": "P8",
+      "status": "PREREG",
+      "preregSha256": "a2e151df4ef4efda0595655870f59bd54a929f9e3aac5c20c7dac92a9b015205"
+    },
+    {
+      "pid": "P9",
+      "status": "LANDED",
+      "preregSha256": "c842ec4dcb7f17396cdb6d8a1f81ccb7b2abde63ea90cdc7aae2452337688b6a",
+      "exitCode": 0,
+      "metric": 12
+    }
+  ],
+  "attacks": [
+    {
+      "gid": "G1",
+      "target": "H3",
+      "kind": "constraint",
+      "text": "H3 预测 long step ∈ [27,30]，但观测值 25 低于下限。H3 预测 depol test ∈ [39,43]，但观测值 35 低于下限。H3 的频段承诺与至少两个独立观测矛盾，无法解释观测到的放电抑制模式。",
+      "ts": "2026-08-25T11:34:10.293Z"
+    },
+    {
+      "gid": "G2",
+      "target": "H1",
+      "kind": "constraint",
+      "text": "H1 的频段 [34,39] 基于 g=0.004, tau=400ms 这组参数。若参数偏离（g=0.001 或 tau=100ms），模拟结果可能落入不同区间。H1 的频段宽度承诺依赖于未检验的参数假设，实际不确定性被低估。",
+      "ts": "2026-08-25T11:34:10.295Z"
+    }
+  ],
+  "reports": [
+    {
+      "path": "REPORT.md",
+      "sha256": "375b10e6e8747eb9b5e361ad058d3b6a42dff69bf7b2f5b924716b72cb01ed72",
+      "ts": "2026-08-25T11:39:32.170Z"
+    }
+  ],
+  "gateVerdicts": [
+    {
+      "ts": "2026-08-25T11:39:32.170Z",
+      "passed": true,
+      "report": "REPORT.md"
+    }
+  ],
+  "tampers": [],
+  "graveyard": [
+    {
+      "id": "H2",
+      "statement": "Na+通道存在慢失活过程（slow Na inactivation），在持续活动后Na通道缓慢进入失活态，降低后续兴奋性，尤其在去极化预处理后放电显著减少。",
+      "predicts": [
+        "depol conditioning test spike_count ∈ [30, 35]",
+        "weak step spike_count ∈ [8, 10]",
+        "long step spike_count ∈ [24, 27]"
+      ],
+      "state": "REFUTED",
+      "conflicts": "none — 攻击未探索的轴",
+      "byProbe": "P9"
+    }
+  ]
+}

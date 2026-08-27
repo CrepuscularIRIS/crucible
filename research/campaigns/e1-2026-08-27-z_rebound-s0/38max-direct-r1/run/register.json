@@ -1,0 +1,315 @@
+{
+  "run": "e1-2026-08-27-z_rebound-s0",
+  "claims": [
+    {
+      "id": "H1",
+      "statement": "额外电流是一个快激活、低阈值的内向电流，带超极化可移除的失活门（I_T 型 Ca 样电流）：超极化 conditioning 使失活门恢复，test 去极化时瞬态内流爆发，增加 test 窗 spike 数；去极化 conditioning 使失活积累，抑制 test 发放。",
+      "predicts": [
+        "protocol 'hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)' 的平均 spike_count ≥ 20（参考模型=16）",
+        "protocol 'depolarising conditioning + test (+15 uA/250 ms, then +12 uA)' 的平均 spike_count ≤ 32（参考模型=37）",
+        "protocol 'hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)' 的平均 spike_count ≥ 12（参考模型=8）"
+      ],
+      "state": "REFUTED",
+      "byProbe": "P1",
+      "note": "P1 观测 10.5 ∈ [0,11]（kill 带）：超极化 conditioning 未增加反而压低 test 发放，与 I_T 型去失活爆发预测（≥20）相反。P4 独立佐证：9.0 ∉ [12,100]。且 P1 电压迹线显示释放后 −40 mV 慢平台+部分性尖峰，非瞬态爆发形态。"
+    },
+    {
+      "id": "H2",
+      "statement": "额外电流是一个慢速（激活时间常数 ~100 ms 量级）超极化激活的混合阳离子内向电流（I_h 型，无失活门）：长时间超极化 conditioning 中缓慢激活，释放时尾电流+膜电阻升高产生回弹去极化，增加 test 窗 spike 数；去极化 conditioning 只是使其去激活，不产生抑制性失活，故 test 发放不被压低。",
+      "predicts": [
+        "protocol 'hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)' 的平均 spike_count ≥ 20（参考模型=16）",
+        "protocol 'depolarising conditioning + test (+15 uA/250 ms, then +12 uA)' 的平均 spike_count ∈ [33, 44]（无抑制；参考模型=37）",
+        "protocol 'brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)' 的平均 spike_count ≤ 17（慢激活动力学限制 40 ms conditioning 的增益；参考模型=13）"
+      ],
+      "state": "REFUTED",
+      "byProbe": "P1",
+      "note": "P1 观测 10.5 ∈ [0,11]（kill 带）：I_h 回弹增益预测（≥20）被否。P2 flat 带 support（35.5）不足以抵消：conditioning 期无 sag，释放后形态是自持平台而非 I_h 尾电流衰减。"
+    },
+    {
+      "id": "H3",
+      "statement": "无聊对手/零假设：真细胞不存在功能性额外电流；所有协议上的观测 spike 计数与参考模型 {extra:[],slow_na:false} 一致，任何表面偏差都是观测噪声或计量伪影。",
+      "predicts": [
+        "protocol 'hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)' 的平均 spike_count ∈ [12, 19]（参考模型=16）",
+        "protocol 'depolarising conditioning + test (+15 uA/250 ms, then +12 uA)' 的平均 spike_count ∈ [34, 40]（参考模型=37）",
+        "protocol 'hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)' 的平均 spike_count ∈ [6, 10]（参考模型=8）"
+      ],
+      "state": "REFUTED",
+      "byProbe": "P5",
+      "note": "P5 观测 21 ∈ [16,30]（H5 带），落在 H3 带 [11,15] 之外：40 ms conditioning 产生 +8 spike 易化，参考模型（13）无法表达任何电压历史依赖性。此前 P1（10.5 ∉ [12,19]）已带外。零假设死亡。"
+    },
+    {
+      "id": "H4",
+      "statement": "符号翻转对手：额外电流是一个瞬态外向电流（I_A 型 K 样电流），带超极化可移除的失活门：超极化 conditioning 移除失活，test 去极化时外向电流增强、压低 test 窗 spike 数；去极化 conditioning 使其保持失活，test 发放反而高于参考。",
+      "predicts": [
+        "protocol 'hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)' 的平均 spike_count ≤ 11（参考模型=16）",
+        "protocol 'hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)' 的平均 spike_count ≤ 5（参考模型=8）",
+        "protocol 'depolarising conditioning + test (+15 uA/250 ms, then +12 uA)' 的平均 spike_count ≥ 41（参考模型=37）"
+      ],
+      "state": "REFUTED",
+      "note": "P5 观测 21 ∈ [16,30]，远离 H4 带 [0,10]：短超极化不产生外向抑制而是强易化。叠加 G1 记录的两条 predicts 带外（P2:35.5∉[45,100], P4:9∉[0,5]）与形态学矛盾（自持平台非外向电流可产生）。",
+      "byProbe": "P5"
+    },
+    {
+      "id": "H5",
+      "statement": "额外电流是一个\"去抑制触发型持续内向电流\"（平台电流）：静息时处于失活/关闭态（基线≈参考），超极化 conditioning 使其恢复（去失活），释放回静息电位后激活并自持，把膜电位钳在 ≈−40 mV 平台（部分去极化阻滞：全幅 spike 减少、出现部分性尖峰），直到缓慢失活/去激活衰减。这解释 P1 计数压低（10.5<16）+ 平台形态、P4 弱测试计数≈参考（平台维持阈附近兴奋性）、P2≈参考（去极化 conditioning 保持其失活）、P3 基线≈参考。",
+      "predicts": [
+        "protocol 'brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)' 的平均 spike_count ∈ [7, 11]（参考模型=13；恢复足够快，40 ms conditioning 即可触发放电后平台压低发放）",
+        "protocol 'paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)' 的平均 spike_count ≤ 24（参考模型=28；第一脉冲结束释放触发的平台压低第二脉冲窗发放）",
+        "protocol 'hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)' 的重测平均 spike_count ∈ [8, 13]（平台压制效应可重复，实测 10.5）"
+      ],
+      "state": "SCOPED",
+      "conflicts": "graveyard 的 H1 死于 P1 kill 带（conditioning 压低而非增强 test 发放）；H2 同死于 P1（无回弹增益）。本假设与二者的关键区别：去抑制后不是瞬态爆发（H1）或尾电流增益（H2），而是自持平台+部分去极化阻滞，独有预测是\"计数压低+平台形态+paired-pulse 第二窗抑制\"，且对 brief conditioning 给出与参考分离的 [7,11] 频段。",
+      "byProbe": "P5",
+      "note": "接受 G8：H5 登记版 predicts#1([7,11])、#2(≤24) 被观测 21 (P5)、30 (P6) 证伪；机制框架（去抑制触发型平台电流）由 P5 带内命中（21∈[16,30]）与样本外预测命中（预测 21 实测 21）支持，但收窄为：conditioning≥~150-250 ms 才产生净抑制（10.5∈[0,11] P1 带）；40 ms conditioning 部分恢复产生易化；普通脉冲释放（无超极化）仅轻度易化（30∈[30,38] 边界命中，G9 似然比保留意见在案）。P6 证据强度按 G9 降权；参数级结论按 G11 孪生检验降为机制族级（孪生 hvh=-78/hk=7 在 P1 给 19≠10，被已观测数据部分排除，但平台计数对恢复分数高度敏感，点参数不辨识）。"
+    },
+    {
+      "id": "H6",
+      "statement": "G6 对抗产生的复合替代解释：额外效应=快恢复内向分量（I_T 族，τ_rec≈30-60 ms）+ 慢去失活外向分量（τ_rec≈200-300 ms）的叠加，无自持平台：40 ms conditioning 内向占优（易化），250 ms conditioning 外向饱和（净抑制），去极化 conditioning 双失活（≈参考）。与 H5 的唯一判别点是 −40 mV 自持平台形态（需冻结电压指标，当前预算与账本结构不可执行）。",
+      "predicts": [
+        "protocol 'hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)' 的 test 窗电压无自持平台：V≥−45 mV 占比 ≤ 10%（H5 预测 ≥50%）",
+        "protocol 'hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)' 的平均 spike_count ∈ [8, 13]（计数层面与 H5 简并）",
+        "protocol 'brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)' 的平均 spike_count ∈ [16, 26]（计数层面与 H5 简并）"
+      ],
+      "state": "LIVE",
+      "conflicts": "源于 G6 对 SUPPORTED H5 的 new_h 攻击。与 graveyard 的关系：H1 死于 P1（纯内向必易化）——H6 的内向分量混入慢外向而翻转 250 ms 净符号，不是 H1 复活；H2 死于 P1（conditioning 窗慢激活必在释放时易化）——H6 的内向分量是快去失活恢复型、不在 conditioning 窗慢激活，绕开死因；H4 死于 P5（快恢复外向被 21 杀死）——H6 的外向分量是慢动力学亲属（40 ms 仅恢复 ~15%），不被 P5 触及。"
+    }
+  ],
+  "probes": [
+    {
+      "pid": "P1",
+      "status": "LANDED",
+      "preregSha256": "f01f3bf0d3da1a726f7192753618ff22e47c37e17e5705ad149841c81bf534da",
+      "exitCode": 0,
+      "metric": 10.5
+    },
+    {
+      "pid": "P2",
+      "status": "LANDED",
+      "preregSha256": "dc857eab53fffb3afd622dfa82b7fadc0670c1cca0c78d3149063edf30e17ab7",
+      "exitCode": 0,
+      "metric": 35.5
+    },
+    {
+      "pid": "P3",
+      "status": "LANDED",
+      "preregSha256": "ab4568a103e2cdb050e975d08a850d89dc6a6a6d01129f37d64d18f21df52bdc",
+      "exitCode": 0,
+      "metric": 8
+    },
+    {
+      "pid": "P4",
+      "status": "LANDED",
+      "preregSha256": "1d92bc558576d2af75cf1cfe8cd88592204b98baa881d42d48a30976363e2c70",
+      "exitCode": 0,
+      "metric": 9
+    },
+    {
+      "pid": "P5",
+      "status": "LANDED",
+      "preregSha256": "17298f6277584e6c13c23d4d41bdcfb42dd0803bc0855690c5aa8403cf590ca1",
+      "exitCode": 0,
+      "metric": 21
+    },
+    {
+      "pid": "P6",
+      "status": "LANDED",
+      "preregSha256": "c3995c6b4efc73f7e98bb887ac34c333228288a24df71dc26e7c357cc8766c52",
+      "exitCode": 0,
+      "metric": 30
+    }
+  ],
+  "attacks": [
+    {
+      "gid": "G1",
+      "target": "H4",
+      "kind": "constraint",
+      "text": "H4 的两条定量预测带外：P2 预测 depol-cond+test ≥41，实测 35.5（band 外）；P4 预测 weak-test ≤5，实测 9.0（band 外）。仅 P1 计数带 [0,11] 命中（10.5），但 P1 电压迹线显示释放后 −40 mV 自持平台与部分性尖峰——瞬态外向电流（I_A）在物理上无法产生自持去极化平台。H4 幸存仅因预登记分支未覆盖这两个落点，属结构性欠账。",
+      "ts": "2026-08-27T14:29:01.232Z"
+    },
+    {
+      "gid": "G2",
+      "target": "H3",
+      "kind": "constraint",
+      "text": "H3（零假设）的 P1 频段 [12,19] 未命中实测 10.5，且免费参考仿真在 test 窗为正常强直发放（无平台），而真细胞 P1/P4 迹线在释放后出现 −40 mV 自持平台+部分性尖峰。spike 计数带内≠机制同一：形态学差异是 H3 无法解释的残差。",
+      "ts": "2026-08-27T14:29:01.233Z"
+    },
+    {
+      "gid": "G3",
+      "target": "H5",
+      "kind": "constraint",
+      "text": "拟合候选（C16: g=3,E=50,mvh=-55,mk=4,mtau=10,hvh=-75,hk=5,htau=250）在复现全部 4 个已观测协议（P1:10 vs 10.5; P2:43 vs 35.5; P3:9 vs 8; P4:11 vs 9）的同时，对 H5 登记的两条未测 predicts 给出相反定量：40 ms brief conditioning 只部分恢复（h: 0.12→0.25），预测 brief-cond+test=17-24（易化，非 predicts 的 [7,11] 压低）；paired long pulses=33（非 ≤24）。即 H5 的机制框架（去抑制触发平台电流）存活，但\"恢复足够快\"的动力学措辞过强。P5/P6 确认探针按精化模型预登记；若落空则 H5 整体被杀。",
+      "ts": "2026-08-27T14:50:29.962Z"
+    },
+    {
+      "gid": "G4",
+      "target": "H5",
+      "kind": "constraint",
+      "text": "占据度/测量：P2 观测 35.5 与候选族仿真 40-47 持续偏离 +4.5~+7.5（全部 NaP 参数化在强去极化协议上系统性过热）。spike_count 计的是全协议窗（含 conditioning 窗发放），偏离可能集中在 conditioning 窗的模型过度兴奋。若额外存在活动依赖型外向电流（如 IKCa/Spike-frequency adaptation），它在 250 ms 强去极化中积累并压低 test 窗，恰能解释该残差。falsifier：若重测 P2（reps≥4）均值 ≥40，则无未建模抑制过程；当前预算已尽，留作报告中的显式不确定项。",
+      "ts": "2026-08-27T14:55:24.826Z"
+    },
+    {
+      "gid": "G5",
+      "target": "H5",
+      "kind": "constraint",
+      "text": "框架：held-out 预报假设 'cond -20/+10' 等标签沿用池协议时序（250 ms conditioning + 150 ms test）。若 conditioning 时长不同（如 120 ms），恢复分数 h_end 按 1−exp(−t/250ms) 变化（120 ms → h≈0.46 vs 0.66），计数预报将系统性偏移 ±2-4。此为不可由现有预算消除的结构性假设，报告中须列为预报条件。",
+      "ts": "2026-08-27T14:55:24.828Z"
+    },
+    {
+      "gid": "G6",
+      "target": "H5",
+      "kind": "new_h",
+      "text": "混合总体替代：快恢复内向分量（I_T 族，τ_rec≈30-60 ms——graveyard H1 死于 P1 仅因纯内向必易化，混入外向分量即可翻转 250 ms 净符号而不复活 H1）+ 慢去失活外向分量（τ_rec≈200-300 ms，即 H4 的慢动力学亲属；H4-快恢复已被 P5 频段 [0,10] vs 观测 21 杀死，慢变体在 40 ms 只恢复 ~15%，不被该频段触及）。该复合体复现全部 6 点计数证据：40 ms 内向占优（P5=21↑）、250 ms 外向饱和（P1=10.5↓）、去极化 conditioning 双失活（P2≈参考）、且在 P2（复合≈37，C16=43，实测 35.5）与 P6（复合≈28-30，C16=33，实测 30）上全面优于 C16。它同样受 graveyard H2 死因约束（H2 死于 P1：conditioning 期间慢激活必在释放时易化——故复合体的内向分量只能快去失活恢复、不得在 conditioning 窗慢激活）。复合体唯一被排除的依据是 −40 mV 自持平台形态——而该形态从未预登记为指标。falsifier：在 P1/P4 已录 raw 电压上冻结指标『test 窗 V≥−45 mV 占比与平台持续时间』做 metric_recompute：平台模型预测占比≥50% 且平台在 test 开始后持续≥50 ms，复合体预测≤10%（瞬态增强后被外向压回）；复算≤10% 则 H5 死、本复合体立。",
+      "ts": "2026-08-27T15:16:06.665Z"
+    },
+    {
+      "gid": "G7",
+      "target": "H5",
+      "kind": "new_h",
+      "text": "双偏差模型：平台电流 + 真细胞基线兴奋性系统性低于参考 ≈1-2 spike（等价手段之一是 slow_na=true，生成空间里 slow_na 标志与 extra 列表独立可调，而 C16 未经任何甄别探针即固定 slow_na=false）。它原样保留 P1=10/P5=21 两个锚点，同时吸收 C16 的全部系统性正残差（P2 +7.5、P4 +2、P6 +3、P3 +1）——且 P1 压低、P5 易化、P2 轻度压低本就都是慢 Na 失活的经典签名。falsifier：(a) held-out 池中若有≥500 ms 无 conditioning 长去极化：slow_na 分量预言迹线内适应（后段 ISI≥1.5×前段）且计数≤参考，纯平台（slow_na=false）预言无适应；(b) 免费仿真 C16×slow_na=true 对 6 点复现：若其 P2/P6 残差显著小于 slow_na=false 版，则 SUPPORTED 至少须收窄为『平台电流存在、slow_na 状态未定』。",
+      "ts": "2026-08-27T15:16:06.666Z"
+    },
+    {
+      "gid": "G8",
+      "target": "H5",
+      "kind": "constraint",
+      "text": "静默依赖：裁决与假设自身预登记 predicts 一致。实际 predicts#1（40 ms conditioning 计数∈[7,11]）与 predicts#2（成对脉冲≤24）分别被观测 21 与 30 证伪；落地带 P5=[16,30]、P6=[30,38] 是按精化模型 C16（预测 17-24 与 33）预登记的，P5 的 kill 分支 [0,15] 甚至原样包含 H5 自己的 predicts#1 区间——预登记构造的就是『原教旨 H5 若成真即杀原教旨 H5』。falsifier（已兑现）：观测 21∉[7,11] 且 30∉(−∞,24]；正确终态是 SCOPED（conditioning≥≈150 ms 才抑制，40-100 ms 部分恢复产生易化，普通脉冲释放不触发平台）。另 predicts#2 与主张自身门控逻辑自相矛盾：从去极化释放不会去失活（h 在去极化中保持低位），该故事永远给不出≤24——一条不可由本机制导出的预测被证伪不构成对机制的确认。",
+      "ts": "2026-08-27T15:16:06.668Z"
+    },
+    {
+      "gid": "G9",
+      "target": "H5",
+      "kind": "constraint",
+      "text": "静默依赖：P6 是 severity 级判别探针。实测 30 恰好落在 H5 带下边界（30∈[30,38]），kill 带 [24,29] 包含 H3 点预测 28；reps=1、σ≈0.7-1（P1 双发 {10,11}、P2 双发 {35,36}，逐 rep 极差仅 1）。30 在参考(28) 与 C16(33) 下的似然比 exp(5/2σ²)≈3-160×：这条『确认平台模型对重复去极化响应』的探针返回的数据更可能出自零假设，pass 是边界整数伪影。falsifier：σ≥1 时 |30−28|=2σ 不达 95% 显著，无法拒 H3；σ=0.7 时 30 以 z≈4.3 拒绝 C16 点预测 33，同时只以 z≈2.9 弱拒参考——任何 σ 下 P6 都不构成 H5 优于 H3 的证据，报告若引 P6 为确认须同时引用该似然比。",
+      "ts": "2026-08-27T15:16:06.669Z"
+    },
+    {
+      "gid": "G10",
+      "target": "H5",
+      "kind": "constraint",
+      "text": "静默依赖：spike_count 计全协议窗（含 conditioning 窗发放，G4 已指出）而机制故事只谈 test 窗。C16 在 P2 预测 43，实测 35.5（reps=2，z≈10-15σ），是全协议族最大偏差且方向与主张相反——实测低于参考 37，C16 却预测 +6 易化；校准账中根本不存在 P2×H5 频段，『P2≈参考（去极化 conditioning 保持失活）』是纯事后叙述。falsifier：在已录 P2 raw 上冻结『仅 test 窗 spike 数』指标复算（按 +15 uA/250 ms conditioning 切窗）：若偏差集中在 conditioning 窗，C16 的 test 窗机制幸存（G4 的活动依赖外向假设成立）；若 test 窗复算仍 ≤参考+1，C16 失败恰在 H5 声称解释的窗内，叙述性解释死亡。",
+      "ts": "2026-08-27T15:16:06.671Z"
+    },
+    {
+      "gid": "G11",
+      "target": "H5",
+      "kind": "constraint",
+      "text": "静默依赖：证据占据度足以把主张定到 C16 的参数级。实际 6 个协议均值中只有 P1（10.5 vs C16=10）与 P5（21 vs C16=21）支持 C16；P2/P4/P6 的似然分别以 ≈e^27/e^1.5/e^2.5（σ=1）偏向 H3，P3 等距（LR=1）。8 个自由参数（g,E,mvh,mk,mtau,hvh,hk,htau）只有两个恢复分数组合（h(40 ms)≈0.25、h(250 ms)≈0.99，按 G3 与 τh=250 指数恢复律）被数据钳住，其余参数不辨识。falsifier：免费仿真构造 C16 参数孪生（如 hvh=−78,hk=7，调 mk 使 40/250 ms 恢复分数不变）：孪生应复现 P1/P5 而给出系统性不同的 held-out 预报——若存在，现证据无法在孪生间判别，SUPPORTED 只及机制族、不及参数化，预报必须按孪生散布给区间。",
+      "ts": "2026-08-27T15:16:06.672Z"
+    },
+    {
+      "gid": "G12",
+      "target": "H5",
+      "kind": "constraint",
+      "text": "静默依赖：平台点燃依赖双稳态裕度——静息 −65 mV 下 m_inf≈0.08（mvh=−55,mk=4）、h≈0.99、驱动力≈115 mV，C16 的再生点燃要求额外电导超过漏电导，而真细胞的漏电导/输入电阻从未独立测过（P3 仅 40 ms 步进，不足以定稳态 I-V；P3=8 vs 参考 7 的 1-spike、reps=1 差值没有此效力）。falsifier：held-out 若含±2 uA 小步稳态 I-V：真细胞输入电阻偏离参考 >±20% 时 C16 点燃裕度失效、平台触发阈值漂移，预报须随之重定；若池内无此类协议，此依赖须与 G5 的 conditioning 时长依赖并列写入报告的预报条件。",
+      "ts": "2026-08-27T15:16:06.674Z"
+    },
+    {
+      "gid": "G13",
+      "target": "H5",
+      "kind": "no_change",
+      "text": "statement 把『P2≈参考、P3 基线≈参考、P4 弱测试≈参考』列为解释性成功，但三点对 H5 vs H3 的信念更新为零或负：P3=8 与 P4=9 都落在 H3 自己的预登记带内（[4,9] 与 [6,11]），P2=35.5 落在 H3 带 [34,40] 中央且校准账中无 P2×H5 带；它们与 H5 的联系全部是事后叙述。falsifier：按似然比核算，三点贡献 ≤1（P2 对 C16 为 <1）——报告若引用它们作为 H5 的证据即重复利用零结果；它们只能作为『机制不破坏基线』的一致性检查出现，不能作为支持。",
+      "ts": "2026-08-27T15:16:06.676Z"
+    },
+    {
+      "gid": "G14",
+      "target": "H5",
+      "kind": "constraint",
+      "text": "静默依赖：『≈−40 mV 自持平台+部分性尖峰』形态已是被审计证据。实际 6 个探针 metricSpec 全部只是 spike_count，形态只存在于 G2 攻击文本与 H5 statement 里；报告数字应出自 metric_recompute，平台断言（V≈−40、自持、部分性尖峰）没有冻结 spec，也因此 H5 与 G6 复合体在计数层面从未被真正分离。falsifier：冻结两个指标——『test 窗 V≥−45 mV 占比』与『test 窗尖峰幅度分布（部分尖峰<50% 全幅）』：平台模型预言占比≥50%+双峰幅度分布，纯抑制模型预言占比≤10%+幅度不变的稀疏发放；只有这两个冻结指标能了结与复合体的占据度纠缠，当前状态下『形态学区分了竞争解释』是不可复核的证词。（父代理注：核查 world-ledger.jsonl 只存 spike_count 不存电压，raw 形态学探针在预算耗尽后不可执行，此欠账如实留至报告。）",
+      "ts": "2026-08-27T15:16:06.677Z"
+    },
+    {
+      "gid": "G15",
+      "target": "H5",
+      "kind": "constraint",
+      "text": "run 级定格后的最终审查：SCOPED H5 的终局预报静默依赖三条未检验前提——(1) held-out 'cond -X/+Y' 沿用池协议时序结构（250 ms conditioning + 150 ms test，G5/G12 同源）；(2) conditioning 幅度→膜电位映射约 1 mV/uA（仅由 −30 uA→−95 mV 单点外推）；(3) 恢复分数 h(250 ms)≈0.66 与平台计数-恢复分数的强敏感性（孪生检验：h_end 相差约 0.03 时 P1 计数在 10 与 19 间跳变）。任一前提失效，cond 系列预报应展宽为 [8,13]、depol 系列展宽为 [14,22]。点预报按区间解读才是诚实读数。",
+      "ts": "2026-08-27T15:19:23.507Z"
+    }
+  ],
+  "reports": [
+    {
+      "path": "REPORT.md",
+      "sha256": "37f1216e768fd820471c84f1bf192682edc5479a4d77ca7de73145f9988ada39",
+      "ts": "2026-08-27T15:32:18.062Z"
+    }
+  ],
+  "gateVerdicts": [
+    {
+      "ts": "2026-08-27T15:32:18.062Z",
+      "passed": true,
+      "report": "REPORT.md"
+    }
+  ],
+  "tampers": [],
+  "graveyard": [
+    {
+      "id": "H1",
+      "statement": "额外电流是一个快激活、低阈值的内向电流，带超极化可移除的失活门（I_T 型 Ca 样电流）：超极化 conditioning 使失活门恢复，test 去极化时瞬态内流爆发，增加 test 窗 spike 数；去极化 conditioning 使失活积累，抑制 test 发放。",
+      "predicts": [
+        "protocol 'hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)' 的平均 spike_count ≥ 20（参考模型=16）",
+        "protocol 'depolarising conditioning + test (+15 uA/250 ms, then +12 uA)' 的平均 spike_count ≤ 32（参考模型=37）",
+        "protocol 'hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)' 的平均 spike_count ≥ 12（参考模型=8）"
+      ],
+      "state": "REFUTED",
+      "byProbe": "P1"
+    },
+    {
+      "id": "H2",
+      "statement": "额外电流是一个慢速（激活时间常数 ~100 ms 量级）超极化激活的混合阳离子内向电流（I_h 型，无失活门）：长时间超极化 conditioning 中缓慢激活，释放时尾电流+膜电阻升高产生回弹去极化，增加 test 窗 spike 数；去极化 conditioning 只是使其去激活，不产生抑制性失活，故 test 发放不被压低。",
+      "predicts": [
+        "protocol 'hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)' 的平均 spike_count ≥ 20（参考模型=16）",
+        "protocol 'depolarising conditioning + test (+15 uA/250 ms, then +12 uA)' 的平均 spike_count ∈ [33, 44]（无抑制；参考模型=37）",
+        "protocol 'brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)' 的平均 spike_count ≤ 17（慢激活动力学限制 40 ms conditioning 的增益；参考模型=13）"
+      ],
+      "state": "REFUTED",
+      "byProbe": "P1"
+    },
+    {
+      "id": "H3",
+      "statement": "无聊对手/零假设：真细胞不存在功能性额外电流；所有协议上的观测 spike 计数与参考模型 {extra:[],slow_na:false} 一致，任何表面偏差都是观测噪声或计量伪影。",
+      "predicts": [
+        "protocol 'hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)' 的平均 spike_count ∈ [12, 19]（参考模型=16）",
+        "protocol 'depolarising conditioning + test (+15 uA/250 ms, then +12 uA)' 的平均 spike_count ∈ [34, 40]（参考模型=37）",
+        "protocol 'hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)' 的平均 spike_count ∈ [6, 10]（参考模型=8）"
+      ],
+      "state": "REFUTED",
+      "byProbe": "P5"
+    },
+    {
+      "id": "H4",
+      "statement": "符号翻转对手：额外电流是一个瞬态外向电流（I_A 型 K 样电流），带超极化可移除的失活门：超极化 conditioning 移除失活，test 去极化时外向电流增强、压低 test 窗 spike 数；去极化 conditioning 使其保持失活，test 发放反而高于参考。",
+      "predicts": [
+        "protocol 'hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)' 的平均 spike_count ≤ 11（参考模型=16）",
+        "protocol 'hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)' 的平均 spike_count ≤ 5（参考模型=8）",
+        "protocol 'depolarising conditioning + test (+15 uA/250 ms, then +12 uA)' 的平均 spike_count ≥ 41（参考模型=37）"
+      ],
+      "state": "REFUTED",
+      "note": "P1 命中 H4 的 [0,11] 带（10.5）构成形式支持，但 G1 记录了两条 predicts 带外（P2:35.5<45, P4:9.0>5）与形态学矛盾（自持平台非外向电流可产生）。保留 LIVE 待确证探针裁决。",
+      "byProbe": "P5"
+    },
+    {
+      "id": "H5",
+      "statement": "额外电流是一个\"去抑制触发型持续内向电流\"（平台电流）：静息时处于失活/关闭态（基线≈参考），超极化 conditioning 使其恢复（去失活），释放回静息电位后激活并自持，把膜电位钳在 ≈−40 mV 平台（部分去极化阻滞：全幅 spike 减少、出现部分性尖峰），直到缓慢失活/去激活衰减。这解释 P1 计数压低（10.5<16）+ 平台形态、P4 弱测试计数≈参考（平台维持阈附近兴奋性）、P2≈参考（去极化 conditioning 保持其失活）、P3 基线≈参考。",
+      "predicts": [
+        "protocol 'brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)' 的平均 spike_count ∈ [7, 11]（参考模型=13；恢复足够快，40 ms conditioning 即可触发放电后平台压低发放）",
+        "protocol 'paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)' 的平均 spike_count ≤ 24（参考模型=28；第一脉冲结束释放触发的平台压低第二脉冲窗发放）",
+        "protocol 'hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)' 的重测平均 spike_count ∈ [8, 13]（平台压制效应可重复，实测 10.5）"
+      ],
+      "state": "SUPPORTED",
+      "conflicts": "graveyard 的 H1 死于 P1 kill 带（conditioning 压低而非增强 test 发放）；H2 同死于 P1（无回弹增益）。本假设与二者的关键区别：去抑制后不是瞬态爆发（H1）或尾电流增益（H2），而是自持平台+部分去极化阻滞，独有预测是\"计数压低+平台形态+paired-pulse 第二窗抑制\"，且对 brief conditioning 给出与参考分离的 [7,11] 频段。",
+      "byProbe": "P5"
+    },
+    {
+      "id": "H5",
+      "statement": "额外电流是一个\"去抑制触发型持续内向电流\"（平台电流）：静息时处于失活/关闭态（基线≈参考），超极化 conditioning 使其恢复（去失活），释放回静息电位后激活并自持，把膜电位钳在 ≈−40 mV 平台（部分去极化阻滞：全幅 spike 减少、出现部分性尖峰），直到缓慢失活/去激活衰减。这解释 P1 计数压低（10.5<16）+ 平台形态、P4 弱测试计数≈参考（平台维持阈附近兴奋性）、P2≈参考（去极化 conditioning 保持其失活）、P3 基线≈参考。",
+      "predicts": [
+        "protocol 'brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)' 的平均 spike_count ∈ [7, 11]（参考模型=13；恢复足够快，40 ms conditioning 即可触发放电后平台压低发放）",
+        "protocol 'paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)' 的平均 spike_count ≤ 24（参考模型=28；第一脉冲结束释放触发的平台压低第二脉冲窗发放）",
+        "protocol 'hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)' 的重测平均 spike_count ∈ [8, 13]（平台压制效应可重复，实测 10.5）"
+      ],
+      "state": "SCOPED",
+      "conflicts": "graveyard 的 H1 死于 P1 kill 带（conditioning 压低而非增强 test 发放）；H2 同死于 P1（无回弹增益）。本假设与二者的关键区别：去抑制后不是瞬态爆发（H1）或尾电流增益（H2），而是自持平台+部分去极化阻滞，独有预测是\"计数压低+平台形态+paired-pulse 第二窗抑制\"，且对 brief conditioning 给出与参考分离的 [7,11] 频段。",
+      "byProbe": "P5",
+      "note": "P5 观测 21 ∈ [16,30]（精化模型 C16 预测 21/C4 预测 24，样本外精准命中）；P6 观测 30 ∈ [30,38] 独立佐证（C16 预测 33）。全部 6 条观测：P1:10.5(sim 10)、P2:35.5(sim 43)、P3:8(sim 9)、P4:9(sim 11)、P5:21(sim 21)、P6:30(sim 33)。机制：去抑制触发型平台电流，候选参数 {g=3,E=50,mvh=-55,mk=4,mtau=10,hvh=-75,hk=5,htau=250}。"
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+{"version": 1, "savedNames": ["goal", "research_kit"], "skipped": [{"name": "edit", "reason": "TypeError: cannot pickle '_PrimeAgentCallableSkillModule' object"}, {"name": "compact", "reason": "TypeError: cannot pickle '_PrimeAgentCallableSkillModule' object"}], "bytes": 3399, "pythonVersion": "3.11.16", "timestamp": "2026-08-25T13:45:48.659828+00:00"}

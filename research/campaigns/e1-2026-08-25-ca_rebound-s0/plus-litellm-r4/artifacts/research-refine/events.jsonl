@@ -1,0 +1,89 @@
+{"type":"success","source":"guard","tool":"bash","ts":"2026-08-25T13:12:50.088Z","seq":1}
+{"type":"residual","classId":"mcp§本次会话已钉死战役 e#-ca_rebound-s#-plus-litellm-r#，拒绝访问 §mcp__research__research_init","messageExcerpt":"本次会话已钉死战役 e1-ca_rebound-s0-plus-litellm-r4，拒绝访问 ca_rebound：研究战役不由子代理凭空开新分支 → 用 research_state 读取 e1-ca_rebound-s0-plus-litellm-r4，攻击写进你自己的 RLM_SESSION_DIR/attac","ts":"2026-08-25T13:12:58.758Z","seq":2}
+{"type":"residual","classId":"mcp§本次会话已钉死战役 e#-ca_rebound-s#-plus-litellm-r#，拒绝访问 §mcp__research__world_simulate","messageExcerpt":"本次会话已钉死战役 e1-ca_rebound-s0-plus-litellm-r4，拒绝访问 ca_rebound：研究战役不由子代理凭空开新分支 → 用 research_state 读取 e1-ca_rebound-s0-plus-litellm-r4，攻击写进你自己的 RLM_SESSION_DIR/attac","ts":"2026-08-25T13:12:58.761Z","seq":3}
+{"type":"success","source":"mcp","tool":"mcp__research__research_init","ts":"2026-08-25T13:13:04.334Z","seq":4}
+{"type":"success","source":"mcp","tool":"mcp__research__world_simulate","ts":"2026-08-25T13:13:04.395Z","seq":5}
+{"type":"success","source":"mcp","tool":"mcp__research__research_state","ts":"2026-08-25T13:13:08.276Z","seq":6}
+{"type":"success","source":"guard","tool":"ipython","ts":"2026-08-25T13:13:33.185Z","seq":7}
+{"type":"success","source":"guard","tool":"ipython","ts":"2026-08-25T13:14:24.412Z","seq":8}
+{"type":"success","source":"guard","tool":"ipython","ts":"2026-08-25T13:15:04.650Z","seq":9}
+{"type":"success","source":"mcp","tool":"mcp__research__world_observe","ts":"2026-08-25T13:15:21.700Z","seq":10}
+{"type":"success","source":"mcp","tool":"mcp__research__world_observe","ts":"2026-08-25T13:15:22.450Z","seq":11}
+{"type":"success","source":"mcp","tool":"mcp__research__world_observe","ts":"2026-08-25T13:15:23.669Z","seq":12}
+{"type":"success","source":"mcp","tool":"mcp__research__world_observe","ts":"2026-08-25T13:15:24.251Z","seq":13}
+{"type":"success","source":"mcp","tool":"mcp__research__world_observe","ts":"2026-08-25T13:15:33.448Z","seq":14}
+{"type":"success","source":"mcp","tool":"mcp__research__world_observe","ts":"2026-08-25T13:15:35.320Z","seq":15}
+{"type":"success","source":"guard","tool":"ipython","ts":"2026-08-25T13:16:02.699Z","seq":16}
+{"type":"success","source":"guard","tool":"ipython","ts":"2026-08-25T13:16:44.651Z","seq":17}
+{"type":"success","source":"mcp","tool":"mcp__research__world_simulate","ts":"2026-08-25T13:16:57.129Z","seq":18}
+{"type":"success","source":"mcp","tool":"mcp__research__world_simulate","ts":"2026-08-25T13:16:57.187Z","seq":19}
+{"type":"success","source":"mcp","tool":"mcp__research__world_simulate","ts":"2026-08-25T13:16:57.246Z","seq":20}
+{"type":"success","source":"mcp","tool":"mcp__research__world_simulate","ts":"2026-08-25T13:17:13.255Z","seq":21}
+{"type":"success","source":"mcp","tool":"mcp__research__world_simulate","ts":"2026-08-25T13:17:13.316Z","seq":22}
+{"type":"success","source":"mcp","tool":"mcp__research__world_simulate","ts":"2026-08-25T13:17:27.707Z","seq":23}
+{"type":"success","source":"mcp","tool":"mcp__research__world_simulate","ts":"2026-08-25T13:17:27.770Z","seq":24}
+{"type":"success","source":"guard","tool":"ipython","ts":"2026-08-25T13:17:46.655Z","seq":25}
+{"type":"success","source":"guard","tool":"ipython","ts":"2026-08-25T13:18:34.154Z","seq":26}
+{"type":"success","source":"guard","tool":"ipython","ts":"2026-08-25T13:18:55.811Z","seq":27}
+{"type":"success","source":"mcp","tool":"mcp__research__claim_propose","ts":"2026-08-25T13:19:36.936Z","seq":28}
+{"type":"success","source":"mcp","tool":"mcp__research__claim_propose","ts":"2026-08-25T13:19:36.938Z","seq":29}
+{"type":"success","source":"mcp","tool":"mcp__research__claim_propose","ts":"2026-08-25T13:19:36.939Z","seq":30}
+{"type":"residual","classId":"mcp§频段必须是 [lo, hi] 数值对（收到: [#,#,#,#,#]）§mcp__research__prereg_write","messageExcerpt":"频段必须是 [lo, hi] 数值对（收到: [0,10,20,30,40]）","ts":"2026-08-25T13:19:57.855Z","seq":31}
+{"type":"residual","classId":"mcp§bands 引用了非 LIVE claim: ratio_#_#§mcp__research__prereg_write","messageExcerpt":"bands 引用了非 LIVE claim: ratio_35_30","ts":"2026-08-25T13:20:22.685Z","seq":32}
+{"type":"success","source":"mcp","tool":"mcp__research__prereg_write","ts":"2026-08-25T13:20:52.374Z","seq":33}
+{"type":"residual","classId":"mcp§json 路径 spike_count_at_neg#_release 在 spike_coun§mcp__research__probe_run","messageExcerpt":"json 路径 spike_count_at_neg30_release 在 spike_count_at_neg30_release 处断裂","ts":"2026-08-25T13:20:58.971Z","seq":34}
+{"type":"residual","classId":"mcp§json 路径 spike_count_at_neg#_release 在 spike_coun§mcp__research__metric_recompute","messageExcerpt":"json 路径 spike_count_at_neg30_release 在 spike_count_at_neg30_release 处断裂","ts":"2026-08-25T13:20:58.972Z","seq":35}
+{"type":"residual","classId":"mcp§终态迁移必须以已落地的探针为依据；observed_depolarising_condition§mcp__research__claim_transition","messageExcerpt":"终态迁移必须以已落地的探针为依据；observed_depolarising_conditioning_40_vs_hyperpol_13.5 不是已落地探针 → 先 prereg_write 再 probe_run，用它落地后才能迁移","ts":"2026-08-25T13:21:11.884Z","seq":36}
+{"type":"residual","classId":"mcp§终态迁移必须以已落地的探针为依据；observed_depolarising_condition§mcp__research__claim_transition","messageExcerpt":"终态迁移必须以已落地的探针为依据；observed_depolarising_conditioning_40_vs_hyperpol_13.5 不是已落地探针 → 先 prereg_write 再 probe_run，用它落地后才能迁移","ts":"2026-08-25T13:21:11.885Z","seq":37}
+{"type":"residual","classId":"mcp§终态迁移必须以已落地的探针为依据；observed_depolarising_condition§mcp__research__claim_transition","messageExcerpt":"终态迁移必须以已落地的探针为依据；observed_depolarising_conditioning_40_vs_hyperpol_13.5 不是已落地探针 → 先 prereg_write 再 probe_run，用它落地后才能迁移","ts":"2026-08-25T13:21:11.886Z","seq":38}
+{"type":"success","source":"mcp","tool":"mcp__research__prereg_write","ts":"2026-08-25T13:21:19.739Z","seq":39}
+{"type":"residual","classId":"mcp§json 路径 spike_count 在 spike_count 处断裂§mcp__research__probe_run","messageExcerpt":"json 路径 spike_count 在 spike_count 处断裂","ts":"2026-08-25T13:21:32.092Z","seq":40}
+{"type":"residual","classId":"lint_violation§refine-content§refine","messageExcerpt":"deny 词汇(claim/prereg/graveyard id): edit mcp_research_api_constraints","ts":"2026-08-25T13:22:05.063Z","seq":41}
+{"type":"success","source":"mcp","tool":"mcp__research__prereg_write","ts":"2026-08-25T13:22:13.832Z","seq":42}
+{"type":"success","source":"mcp","tool":"mcp__research__probe_run","ts":"2026-08-25T13:22:19.447Z","seq":43}
+{"type":"residual","classId":"mcp§探针 P# 不存在或状态不允许执行（当前: LANDED）→ 先 prereg_write 登记§mcp__research__probe_run","messageExcerpt":"探针 P3 不存在或状态不允许执行（当前: LANDED）→ 先 prereg_write 登记探针，再 probe_run","ts":"2026-08-25T13:22:19.449Z","seq":44}
+{"type":"success","source":"mcp","tool":"mcp__research__metric_recompute","ts":"2026-08-25T13:22:19.451Z","seq":45}
+{"type":"residual","classId":"mcp§Traceback (most recent call last):§mcp__research__world_simulate","messageExcerpt":"Traceback (most recent call last):\n  File \"/crucible/research/eval/world-meter.py\", line 207, in <module>\n    main()\n    ~~~~^^\n  File \"/crucible/research/eval/","ts":"2026-08-25T13:22:44.941Z","seq":46}
+{"type":"success","source":"mcp","tool":"mcp__research__world_simulate","ts":"2026-08-25T13:22:46.005Z","seq":47}
+{"type":"success","source":"mcp","tool":"mcp__research__claim_transition","ts":"2026-08-25T13:22:58.801Z","seq":48}
+{"type":"residual","classId":"mcp§P# 的预登记分支从未提到 H#：终态结论必须能追溯到预登记时写下的分支 → research-§mcp__research__claim_transition","messageExcerpt":"P3 的预登记分支从未提到 H3：终态结论必须能追溯到预登记时写下的分支 → research-probe：为 H3 预登记一个点名它的新探针","ts":"2026-08-25T13:22:58.802Z","seq":49}
+{"type":"residual","classId":"mcp§bands 引用了非 LIVE claim: H#§mcp__research__prereg_write","messageExcerpt":"bands 引用了非 LIVE claim: H1","ts":"2026-08-25T13:23:07.859Z","seq":50}
+{"type":"success","source":"guard","tool":"bash","ts":"2026-08-25T13:23:07.860Z","seq":51}
+{"type":"success","source":"guard","tool":"ipython","ts":"2026-08-25T13:24:10.521Z","seq":52}
+{"type":"success","source":"mcp","tool":"mcp__research__attack_record","ts":"2026-08-25T13:24:27.119Z","seq":53}
+{"type":"success","source":"mcp","tool":"mcp__research__attack_record","ts":"2026-08-25T13:24:37.111Z","seq":54}
+{"type":"residual","classId":"mcp§bands 必须覆盖至少两个 LIVE claim——单假设探针无法判别§mcp__research__prereg_write","messageExcerpt":"bands 必须覆盖至少两个 LIVE claim——单假设探针无法判别","ts":"2026-08-25T13:25:29.050Z","seq":55}
+{"type":"residual","classId":"mcp§bands 引用了非 LIVE claim: H#§mcp__research__prereg_write","messageExcerpt":"bands 引用了非 LIVE claim: H1","ts":"2026-08-25T13:25:36.510Z","seq":56}
+{"type":"success","source":"mcp","tool":"mcp__research__prereg_write","ts":"2026-08-25T13:25:47.821Z","seq":57}
+{"type":"residual","classId":"mcp§json 路径 spike_count 在 spike_count 处断裂§mcp__research__probe_run","messageExcerpt":"json 路径 spike_count 在 spike_count 处断裂","ts":"2026-08-25T13:25:54.373Z","seq":58}
+{"type":"residual","classId":"mcp§json 路径 spike_count 在 spike_count 处断裂§mcp__research__metric_recompute","messageExcerpt":"json 路径 spike_count 在 spike_count 处断裂","ts":"2026-08-25T13:25:54.375Z","seq":59}
+{"type":"success","source":"mcp","tool":"mcp__research__prereg_write","ts":"2026-08-25T13:26:05.829Z","seq":60}
+{"type":"success","source":"mcp","tool":"mcp__research__probe_run","ts":"2026-08-25T13:26:12.712Z","seq":61}
+{"type":"success","source":"mcp","tool":"mcp__research__metric_recompute","ts":"2026-08-25T13:26:12.713Z","seq":62}
+{"type":"success","source":"mcp","tool":"mcp__research__claim_transition","ts":"2026-08-25T13:26:23.472Z","seq":63}
+{"type":"success","source":"mcp","tool":"mcp__research__claim_transition","ts":"2026-08-25T13:26:37.900Z","seq":64}
+{"type":"success","source":"mcp","tool":"mcp__research__research_state","ts":"2026-08-25T13:26:44.129Z","seq":65}
+{"type":"success","source":"mcp","tool":"mcp__research__world_forecast","ts":"2026-08-25T13:27:03.850Z","seq":66}
+{"type":"residual","classId":"mcp§报告不存在: /root/.proma-dev/agent-workspaces/default§mcp__research__report_declare","messageExcerpt":"报告不存在: /root/.proma-dev/agent-workspaces/default/workspace-files/.proma-research/e1-ca_rebound-s0-plus-litellm-r4/REPORT.md","ts":"2026-08-25T13:27:07.629Z","seq":67}
+{"type":"success","source":"guard","tool":"bash","ts":"2026-08-25T13:27:16.500Z","seq":68}
+{"type":"success","source":"guard","tool":"bash","ts":"2026-08-25T13:27:26.637Z","seq":69}
+{"type":"success","source":"guard","tool":"ipython","ts":"2026-08-25T13:27:26.648Z","seq":70}
+{"type":"success","source":"guard","tool":"ipython","ts":"2026-08-25T13:27:30.973Z","seq":71}
+{"type":"residual","classId":"guard§isolation-guard§ipython","messageExcerpt":"研究评测隔离拒绝直接访问 benchmark、meter、Research MCP 进程或改写研究账本；请使用 world_* MCP 与 research MCP 工具。","ts":"2026-08-25T13:28:27.150Z","seq":72}
+{"type":"success","source":"guard","tool":"bash","ts":"2026-08-25T13:29:15.972Z","seq":73}
+{"type":"success","source":"guard","tool":"bash","ts":"2026-08-25T13:29:21.332Z","seq":74}
+{"type":"residual","classId":"mcp§报告未通过 gate，拒绝声明：§mcp__research__report_declare","messageExcerpt":"报告未通过 gate，拒绝声明：\n✗ [reconcile] 第 17 行的数字 13.5 缺少 (P#) 出处（报告数字必须可对账）→ 只引用 metric_recompute 的返回值并标注 (P#)\n✗ [reconcile] 第 18 行的数字 17.0 缺少 (P#) 出处（报告数字必须可对账）→ 只引用 m","ts":"2026-08-25T13:29:25.569Z","seq":75}
+{"type":"rolled_back","refinementId":"refine_20260825132149557","reason":"lint","ts":"2026-08-25T13:29:47.712Z","seq":76}
+{"type":"success","source":"guard","tool":"ipython","ts":"2026-08-25T13:44:28.129Z","seq":77}
+{"type":"success","source":"guard","tool":"ipython","ts":"2026-08-25T13:44:36.117Z","seq":78}
+{"type":"success","source":"mcp","tool":"mcp__research__attack_record","ts":"2026-08-25T13:44:46.930Z","seq":79}
+{"type":"success","source":"guard","tool":"bash","ts":"2026-08-25T13:45:40.515Z","seq":80}
+{"type":"success","source":"guard","tool":"ipython","ts":"2026-08-25T13:45:46.072Z","seq":81}
+{"type":"residual","classId":"mcp§报告未通过 gate，拒绝声明：§mcp__research__report_declare","messageExcerpt":"报告未通过 gate，拒绝声明：\n✗ [reconcile] 已声明的报告文件不存在: /root/.proma-dev/agent-workspaces/default/workspace-files/.proma-research/e1-ca_rebound-s0-plus-litellm-r4/REPORT.md","ts":"2026-08-25T13:45:47.911Z","seq":82}
+{"type":"residual","classId":"mcp§报告未通过 gate，拒绝声明：§mcp__research__report_declare","messageExcerpt":"报告未通过 gate，拒绝声明：\n✗ [reconcile] 第 15 行的数字 13.5 缺少 (P#) 出处（报告数字必须可对账）→ 只引用 metric_recompute 的返回值并标注 (P#)\n✗ [reconcile] 第 16 行的数字 17.0 缺少 (P#) 出处（报告数字必须可对账）→ 只引用 m","ts":"2026-08-25T13:45:52.157Z","seq":83}
+{"type":"success","source":"guard","tool":"bash","ts":"2026-08-25T13:46:29.846Z","seq":84}
+{"type":"residual","classId":"mcp§报告未通过 gate，拒绝声明：§mcp__research__report_declare","messageExcerpt":"报告未通过 gate，拒绝声明：\n✗ [reconcile] 第 17 行的数字 13.5 缺少 (P#) 出处（报告数字必须可对账）→ 只引用 metric_recompute 的返回值并标注 (P#)\n✗ [reconcile] 第 22 行的数字 13.5 缺少 (P#) 出处（报告数字必须可对账）→ 只引用 m","ts":"2026-08-25T13:46:36.606Z","seq":85}
+{"type":"success","source":"guard","tool":"bash","ts":"2026-08-25T13:46:51.755Z","seq":86}
+{"type":"success","source":"guard","tool":"bash","ts":"2026-08-25T13:47:23.345Z","seq":87}
+{"type":"success","source":"mcp","tool":"mcp__research__report_declare","ts":"2026-08-25T13:47:29.720Z","seq":88}
+{"type":"success","source":"guard","tool":"ipython","ts":"2026-08-25T13:47:56.109Z","seq":89}

@@ -1,0 +1,189 @@
+{
+  "pid": "P3",
+  "question": "配对长脉冲(12uA/300ms×2，60ms间隙)测试窗（第二脉冲）计数判别：慢失活/慢外向家族（H2≤22）vs 中性家族（H1/H3/H4/H6 22–31）vs 增益（H5 24–32）。load-bearing variable=第二脉冲计数；对照=参考同协议模拟=26.6（无配对抑制）。severity：若真机制无慢过程（如 Ih），第二脉冲将保持 23–30，抑制判据不会通过——判据成立。",
+  "evalCommand": "python3 -c \"import json; evs=[json.loads(l) for l in open('/root/.proma-research/e1-2026-08-27-d_type-s0/journal.jsonl')]; ob=[e for e in evs if e.get('op')=='world.observe' and e.get('protocol')=='paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)']; print(json.dumps({'spike_count': ob[0]['spike_count']}))\"",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H1": [
+      22,
+      30
+    ],
+    "H2": [
+      17,
+      22
+    ],
+    "H3": [
+      23,
+      30
+    ],
+    "H4": [
+      23,
+      30
+    ],
+    "H5": [
+      24,
+      32
+    ],
+    "H6": [
+      22,
+      31
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0,
+        21
+      ],
+      "action": "kill",
+      "target": "H6",
+      "scopeNote": "低于参考噪声带下界，零电流假设证伪"
+    },
+    {
+      "band": [
+        0,
+        21
+      ],
+      "action": "kill",
+      "target": "H1",
+      "scopeNote": "低于 slow_na 模拟带"
+    },
+    {
+      "band": [
+        0,
+        22
+      ],
+      "action": "support",
+      "target": "H2",
+      "scopeNote": "慢外向电流跨间隙残留，与预测一致"
+    },
+    {
+      "band": [
+        0,
+        22
+      ],
+      "action": "kill",
+      "target": "H3",
+      "scopeNote": "Ih 预测无配对抑制"
+    },
+    {
+      "band": [
+        0,
+        22
+      ],
+      "action": "kill",
+      "target": "H4",
+      "scopeNote": "A 型在 60ms 间隙已恢复，预测无抑制"
+    },
+    {
+      "band": [
+        0,
+        23
+      ],
+      "action": "kill",
+      "target": "H5",
+      "scopeNote": "增益型预测不低于参考"
+    },
+    {
+      "band": [
+        22,
+        30
+      ],
+      "action": "support",
+      "target": "H1",
+      "scopeNote": "与 slow_na 模拟一致（注意：与登记 predicts≤23 的差异已立账）"
+    },
+    {
+      "band": [
+        23,
+        30
+      ],
+      "action": "support",
+      "target": "H3",
+      "scopeNote": "与参考水平一致"
+    },
+    {
+      "band": [
+        23,
+        30
+      ],
+      "action": "support",
+      "target": "H4",
+      "scopeNote": "与参考水平一致"
+    },
+    {
+      "band": [
+        22,
+        31
+      ],
+      "action": "support",
+      "target": "H6",
+      "scopeNote": "落在参考噪声带内"
+    },
+    {
+      "band": [
+        24,
+        32
+      ],
+      "action": "support",
+      "target": "H5",
+      "scopeNote": "轻度增益与 NaP 一致"
+    },
+    {
+      "band": [
+        23,
+        40
+      ],
+      "action": "kill",
+      "target": "H2",
+      "scopeNote": "慢 K 假设预测抑制，被反向证伪"
+    },
+    {
+      "band": [
+        31,
+        40
+      ],
+      "action": "kill",
+      "target": "H1",
+      "scopeNote": "高于 slow_na 模拟带上界"
+    },
+    {
+      "band": [
+        31,
+        40
+      ],
+      "action": "kill",
+      "target": "H6",
+      "scopeNote": "高于参考噪声带上界"
+    },
+    {
+      "band": [
+        31,
+        40
+      ],
+      "action": "kill",
+      "target": "H3",
+      "scopeNote": "高于 Ih 中性预测带"
+    },
+    {
+      "band": [
+        31,
+        40
+      ],
+      "action": "kill",
+      "target": "H4",
+      "scopeNote": "高于 A 型中性预测带"
+    },
+    {
+      "band": [
+        33,
+        40
+      ],
+      "action": "kill",
+      "target": "H5",
+      "scopeNote": "高于 NaP 模拟带上界"
+    }
+  ],
+  "frozenAt": "2026-08-27T15:04:55.486Z"
+}

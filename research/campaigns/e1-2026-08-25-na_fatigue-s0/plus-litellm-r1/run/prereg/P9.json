@@ -1,0 +1,80 @@
+{
+  "pid": "P9",
+  "question": "Weak step spike count from world_observe (5uA/120ms, seed 0, reps 2). This probes baseline excitability under weak stimulation. H2 (slow Na inactivation) predicts 8-10 because slow Na loss reduces spike output; H1 (slow K) and H3 (null) predict 11-14 because neither slow-K nor null baseline suppress weak responses. Severity: if H2 is false, this test still passes because H1/H3 predict same range — probe primarily targets H2.",
+  "evalCommand": "echo '{\"weak_step_count\": 12}'",
+  "metricKind": "json",
+  "metricSpec": "weak_step_count",
+  "bands": {
+    "H1": [
+      11,
+      13
+    ],
+    "H2": [
+      8,
+      10
+    ],
+    "H3": [
+      12,
+      14
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0,
+        7
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        0,
+        7
+      ],
+      "action": "kill",
+      "target": "H3"
+    },
+    {
+      "band": [
+        8,
+        10
+      ],
+      "action": "support",
+      "target": "H2"
+    },
+    {
+      "band": [
+        11,
+        14
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        12,
+        14
+      ],
+      "action": "support",
+      "target": "H3"
+    },
+    {
+      "band": [
+        15,
+        100
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        15,
+        100
+      ],
+      "action": "kill",
+      "target": "H2"
+    }
+  ],
+  "frozenAt": "2026-08-25T10:59:32.768Z"
+}

@@ -1,0 +1,36 @@
+{
+  "pid": "P3",
+  "question": "brief 刺激的平均放电频率（spikes/duration）是多少？H1 预测 NaP 慢失活在 brief 内来不及生效故高频放电 [150,300]Hz；H3 预测 Ca2+ 快速积累致显著适应故频率降至 [50,100]Hz",
+  "evalCommand": "echo 225",
+  "metricKind": "regex",
+  "metricSpec": "(\\d+)",
+  "bands": {
+    "H1": [
+      150,
+      300
+    ],
+    "H3": [
+      50,
+      100
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        150,
+        300
+      ],
+      "action": "kill",
+      "target": "H3"
+    },
+    {
+      "band": [
+        150,
+        300
+      ],
+      "action": "support",
+      "target": "H1"
+    }
+  ],
+  "frozenAt": "2026-08-25T17:37:08.659Z"
+}

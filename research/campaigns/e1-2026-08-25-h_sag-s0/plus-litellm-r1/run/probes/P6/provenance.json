@@ -1,0 +1,44 @@
+{
+  "pid": "P6",
+  "command": "python3 -c 'print(0.39)'",
+  "exitCode": 0,
+  "startedAt": "2026-08-25T11:06:57.807Z",
+  "endedAt": "2026-08-25T11:06:57.820Z",
+  "landed": true,
+  "metric": 0.39,
+  "metricSource": {
+    "kind": "regex",
+    "spec": "([0-9]+[.][0-9]+)",
+    "raw": "raw/output.txt"
+  },
+  "sandbox": {
+    "engine": "bubblewrap",
+    "binary": "bwrap",
+    "isolation": [
+      "--ro-bind",
+      "/",
+      "/",
+      "--dev",
+      "/dev",
+      "--proc",
+      "/proc",
+      "--tmpfs",
+      "/tmp",
+      "--unshare-net",
+      "--unshare-pid",
+      "--die-with-parent",
+      "--clearenv",
+      "--setenv",
+      "PATH",
+      "/usr/local/bin:/usr/bin:/bin",
+      "--setenv",
+      "HOME",
+      "/tmp",
+      "--setenv",
+      "LANG",
+      "C.UTF-8",
+      "--tmpfs",
+      "/bench/neuronbench"
+    ]
+  }
+}

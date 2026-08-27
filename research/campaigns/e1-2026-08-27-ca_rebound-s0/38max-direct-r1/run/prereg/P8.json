@@ -1,0 +1,52 @@
+{
+  "pid": "P8",
+  "question": "终局预报的 MSE 能否判别 H12（无功能性额外电流，释放计数≈参考低位）vs H13（强反跳生成器）？load-bearing variable = world.forecast 的 spike_forecast_mse；对照 = 预报本身（释放协议预填 3/5/6/6，为 H13 方向的中低幅值）。判别逻辑：若真值为 H12 低位（0–2），预报偏高，MSE 应 ≈7.5（带 [0,24]）；若真值为强反跳（10–14），预报偏低，MSE 应 ≈35（带 [25,100]）。severity：若 H12 为真，MSE 应落低带，[25,100] 不会大概率通过。",
+  "evalCommand": "python3 -c \"import json; evs=[json.loads(l) for l in open('/root/.proma-research/e1-2026-08-27-ca_rebound-s0/journal.jsonl')]; fc=[e for e in evs if e.get('op')=='world.forecast']; assert fc, 'forecast not landed'; print(json.dumps({'spike_forecast_mse': fc[-1]['spike_forecast_mse']}))\"",
+  "metricKind": "json",
+  "metricSpec": "spike_forecast_mse",
+  "bands": {
+    "H12": [
+      0,
+      24
+    ],
+    "H13": [
+      25,
+      100
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        25,
+        100
+      ],
+      "action": "support",
+      "target": "H13"
+    },
+    {
+      "band": [
+        25,
+        100
+      ],
+      "action": "kill",
+      "target": "H12"
+    },
+    {
+      "band": [
+        0,
+        24
+      ],
+      "action": "support",
+      "target": "H12"
+    },
+    {
+      "band": [
+        0,
+        24
+      ],
+      "action": "kill",
+      "target": "H13"
+    }
+  ],
+  "frozenAt": "2026-08-27T15:30:41.535Z"
+}

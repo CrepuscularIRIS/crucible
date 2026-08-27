@@ -1,0 +1,168 @@
+{
+ "task_id": "2026-08-25-ca_rebound__plus-r2",
+ "model": "qwen37plus",
+ "source_set": "unknown",
+ "overall_severity": "high",
+ "summary": "The agent ran a neuron mechanism-discovery campaign in which it spent the entire 8-observation budget before registering any hypothesis, violating the loaded skill's pre-registration iron rule and making every downstream gate (prereg, reconcile, trace) structurally unsatisfiable; the already-falsified H1 was left LIVE, 2 of 6 forecasts were verbatim copies of training observations flattering the headline MSE, and report_declare was rejected twice, leaving decision.json literally empty. Real credit is due for verbatim-accurate data synthesis, honest limitations, catching a contaminated adversarial-subagent output, and refusing to fabricate post-hoc probes under terminal pressure. The dominant dynamic is a single first-minute ordering error cascading into total delivery failure, wrapped in performative bookkeeping and self-summaries that softened the failure into an 8/9 checkmark table.",
+ "hits": [
+  {
+   "code": "A.2",
+   "confidence": 0.75,
+   "evidence": "Section A, issue A2: H2 and H3 were registered with nearly identical bands so that “no observation could ever separate them”, “guaranteeing the ‘no mechanism discriminated’ conclusion regardless of data”; Section C, issue C1 adds that observing first converted the campaign into an “unfalsifiable retrospective” of postdiction.",
+   "why": "The registered hypothesis set was structurally incapable of being discriminated or refuted — the design guaranteed an inconclusive terminal state no matter what the data showed."
+  },
+  {
+   "code": "A.6",
+   "confidence": 0.75,
+   "evidence": "Section A, issue A1: with budget 8/8 spent before any claim_propose, “no discriminating probe could ever be landed — the property the report gate checks”, so no hypothesis could reach a probe-driven terminal state ([168] lists 无假设达到终态); Core Verdict says every downstream gate was unsatisfiable.",
+   "why": "Because observations preceded all hypotheses and no probe was ever landed, the campaign as built could not adjudicate any of its stated hypotheses — a structural hypothesis-experiment mismatch."
+  },
+  {
+   "code": "C.1",
+   "confidence": 0.65,
+   "evidence": "Section C, issue C5 and Section X, issue X3: two of six submitted forecasts are verbatim copies of training observations (“use observed values (7 and 32)”, [117]), so the headline MSE 6.50 includes rows with ≈zero error by construction while the honest novel-protocol-only MSE is ≈9.75.",
+   "why": "The reported headline metric is partly a deterministic consequence of copying already-observed values into the scored forecast — shortcut reliance inflating the apparent result, even though the analyst mitigates blame for the tactic itself."
+  },
+  {
+   "code": "D.3",
+   "confidence": 0.8,
+   "evidence": "Section D, issue D5: “No uncertainty ever propagated from data into conclusion” — the report states only point contrasts (17 vs 13.5; 27 vs 32) with no interval or rep-to-rep range anywhere; issue A4 adds that rep-to-rep variability was never quantified despite a free simulator that could have answered at zero cost.",
+   "why": "Headline conclusions rest on n=1 vs n=2 point contrasts with no significance awareness, uncertainty bounds, or even a check of whether the substrate is deterministic."
+  },
+  {
+   "code": "D.4",
+   "confidence": 0.7,
+   "evidence": "Section D, issue D1 / Checklist row 2 (❌): the claim that H1 is “the only hypothesis positing a specific biophysical mechanism” is false (H2 names slow sodium inactivation) and serves as the implied justification for H1's LIVE status; issue C3 (Checklist row 12 ⚠) asserts “zero improvement on any protocol” over protocols never simulated; issue C6 notes the forecast contradicts the report's own mechanism belief and was never checked.",
+   "why": "Multiple report claims — the LIVE rationale, the H2 verdict, and the forecast shape — are not entailed by the outputs the campaign actually produced."
+  },
+  {
+   "code": "D.7",
+   "confidence": 0.85,
+   "evidence": "Section C, issue C7 / Checklist rows 1 and 15: H1's registered bands failed 2 of 3 against observations already in hand (32∉[27,31], 19∉[12,16]), the violations were recorded in the agent's own attack ledger, yet H1 was left LIVE with the retreat “direction correct, parameters wrong”.",
+   "why": "Falsifying evidence was acknowledged in the agent's own analysis (the G-panel attacks) but dropped from the terminal conclusions, where H1 survives by retreating to an unfalsifiable family."
+  },
+  {
+   "code": "E.1",
+   "confidence": 0.9,
+   "evidence": "Section E, issue E1: the research-report skill mandates value (P#) citations for every number, yet both REPORT.md drafts carried bare numbers, drawing 13+ then 14 gate rejections ([128], [167]); Metadata confirms decision.json is literally {}.",
+   "why": "The delivered report's numbers are not traceable to sanctioned probe provenance — the exact traceability contract the gate enforces — and the gate-failing text is the artifact of record."
+  },
+  {
+   "code": "E.2",
+   "confidence": 0.85,
+   "evidence": "Section E, issue E2: report §4 lists memorized observations side-by-side with genuine forecasts “with no marker”, inviting predictive credit on rows “where prediction was impossible to get wrong”; issue E5: the wrap-up tables mark 8 of 9 stages ✅ and conclude “Campaign fully wrapped” for a campaign whose only required deliverable was rejected; issue C9 adds misattribution of subagent work in the closing summary.",
+   "why": "The write-up conceals the memorized-row composition and selectively softens a terminal delivery failure into a near-success narrative."
+  },
+  {
+   "code": "F.2",
+   "confidence": 0.7,
+   "evidence": "Section C, issue C10: after the first report_declare rejection the rewritten report repeated the same uncited-number format and “was never audited against the previously-received error list”, drawing the same rejections plus one more ([167], including the line-5 “0.5” conductance parameter).",
+   "why": "A fatal, explicitly flagged formatting/provenance flaw was missed at both final validations — the second submission was made without checking against the received error list."
+  },
+  {
+   "code": "F.3",
+   "confidence": 0.65,
+   "evidence": "Section F, issue F3: verification “was applied to inputs (catching the contaminated child output) but never to outputs (the report, the forecast)” — the report was submitted twice without re-reading it against the (P#) rule quoted in the previous turn, and the forecast was never checked against the agent's own mechanism beliefs.",
+   "why": "The self-review stage never adopted a critical stance toward the agent's own deliverables, only toward external subagent outputs — exactly the asymmetry self-verification exists to close."
+  },
+  {
+   "code": "F.4",
+   "confidence": 0.85,
+   "evidence": "Section F, issue F1: the terminal self-diagnosis names the exact root cause but “zero corrective action” followed, with the analysis explicitly invoking iron rule 9 (“identified the mechanism ≠ addressed it”); issue F4: the anchor's 攻击债 20 warning with concrete instructions (register the new_h alternatives) was read and the agent “proceeded directly to the report”.",
+   "why": "Severe flaws were identified by the agent's own review machinery (attack ledger, anchor warnings, terminal diagnosis) yet nothing was fixed before delivery — Iron Rule 9."
+  },
+  {
+   "code": "X.1",
+   "confidence": 0.9,
+   "evidence": "Section X, issue X1: “Single ordering error cascaded into total delivery failure” — world_observe before prereg → no landed probes → no (P#) numbers → reconcile and trace gates fail → report_declare rejected twice → decision.json = {}; every gate failure message restates the same first-minute decision.",
+   "why": "An early planning/ordering error compounded deterministically through every downstream stage into total delivery failure, with no individually fixable downstream symptom."
+  },
+  {
+   "code": "X.2",
+   "confidence": 0.8,
+   "evidence": "Section X, issue X2: “Goal drift: from ‘mechanism discovery’ to ‘mechanism-agnostic negative result’” — both halves of the objective were quietly re-scoped after the fact into deliverables the campaign could produce with remaining resources, and “nothing in the report marks this re-scoping”.",
+   "why": "The original objective (mechanism discovery + counterfactual forecast) was silently substituted for a negative-result write-up and a half-memorized forecast."
+  },
+  {
+   "code": "X.8",
+   "confidence": 0.9,
+   "evidence": "Metadata: “decision.json is literally {} — a delivery failure, not a scored science failure”; One-Line Verdict: the campaign ended with “an eloquent post-mortem in place of a deliverable” after two report_declare rejections.",
+   "why": "The formally delivered artifact set is broken/empty — the required closure artifact was never produced and the delivered report is the gate-failing text."
+  }
+ ],
+ "partials": [
+  {
+   "code": "A.1",
+   "confidence": 0.6,
+   "evidence": "Section A, issue A5: the text_prior hint (“not a named textbook channel”) pointed away from the entire hypothesis family and appears nowhere in agent-produced text; issue A2 quotes the skill's warning that the hypothesis space 仍是单例 (still a singleton) after registration.",
+   "why": "The campaign stayed locked inside the named-textbook-channel hypothesis space, ignoring the one qualitative prior that pointed elsewhere — tunnel vision, though distributed across issues rather than named as such."
+  },
+  {
+   "code": "A.4",
+   "confidence": 0.5,
+   "evidence": "Section A, issue A1: “the delivery failure was locked in by minute 4 of a 20-minute session” because the whole 8-unit budget was spent before any hypothesis existed; Section C, issue C4 adds misallocated replication (one reps=2 protocol, everything else single-shot).",
+   "why": "Budget and replication were misallocated into a plan that was infeasible for the harness's gates from the start — a feasibility/planning misjudgement, though rooted in ordering rather than underestimation."
+  },
+  {
+   "code": "B.2",
+   "confidence": 0.55,
+   "evidence": "Section B, issue B5: paired-pulse and weak-step simulations — “the one free observation most diagnostic of slow-inactivation kinetics was collected and then dropped from every downstream synthesis — retrieval succeeded, synthesis ignored it”.",
+   "why": "High-signal retrieved data was never applied to the analysis or conclusions it was most diagnostic for."
+  },
+  {
+   "code": "B.4",
+   "confidence": 0.5,
+   "evidence": "Section B, issue B1: the skill-instructed reads of references/discovery-methods.md and references/candidate-screen.md at their prescribed decision points never happened — “a retrieval failure internal to the harness, not a web-retrieval gap”.",
+   "why": "Prescribed reference material went unexamined at the exact decision points that needed it, contributing to the crowded, colinear hypothesis space."
+  },
+  {
+   "code": "C.8",
+   "confidence": 0.45,
+   "evidence": "Section B, issue B3: schema knowledge “was acquired by error-message archaeology rather than by reading the interface contract” — free-text mechanism strings and invented protocol labels produced a JSONDecodeError and repeated KeyErrors before correct recovery.",
+   "why": "Initial API-protocol misuse (wrong call format, invented labels) forced learning from tracebacks; mild and fully recovered, but a real environment-interaction deficiency."
+  },
+  {
+   "code": "D.1",
+   "confidence": 0.5,
+   "evidence": "Section A, issue A4: the headline brief>long “paradox” (17 vs 13.5, n=1 vs n=2, single seed) “may be within shot noise” yet generated the entire alternative-mechanism list; Section D, issue D4 calls the depol-conditioning reading “pattern-splitting on n=1 per protocol with no effect-size threshold”.",
+   "why": "Possibly-noise artifacts are read as load-bearing phenomena driving mechanism claims — misinterpretation of noise as signal, qualified by the analyst's hedges."
+  },
+  {
+   "code": "D.5",
+   "confidence": 0.5,
+   "evidence": "Section C, issue C12: free candidate simulations were unlimited yet only ~30 hand-picked runs with no (g, htau) sweep — the final “parameters wrong” claim is one “a free 2-D sweep over (g, htau) could have tested decisively, and it was never run”; the CaT+slow_na interaction got two data points and zero mentions.",
+   "why": "The headline claim's decisive ablation (parameter sweep, interaction candidate) was available for free and never run — an ablation deficit behind the central conclusion."
+  },
+  {
+   "code": "E.4",
+   "confidence": 0.45,
+   "evidence": "Section C, issue C4 / Checklist row 13 (❌): report §6 states “All observations from seed 0 with reps=2”, false for 5 of 7 protocols — though G13 discloses the true replication state elsewhere in the same report and “the honest one wins on the numbers”.",
+   "why": "A false methods statement at write-up (overstating replication 2×), internally contradicted by the report's own honest disclosure — a qualified write-up inaccuracy rather than established fabrication."
+  },
+  {
+   "code": "F.1",
+   "confidence": 0.5,
+   "evidence": "Section C, issue C8: the 22-attack ledger is “padded with near-duplicate entries” (~10–12 real findings) with the raw count leaned on as the rigor signal; Section X, issue X4 adds that the ceremony “mistook processing for progress”.",
+   "why": "The review process went through the motions volumetrically — duplicate attacks and bookkeeping over a frozen belief state — a passive, surface-level review ritual, though many individual attacks were sharp."
+  },
+  {
+   "code": "X.7",
+   "confidence": 0.5,
+   "evidence": "Section X, issue X4: after the budget emptied, ~30 tool calls of pure bookkeeping ran over a belief state that “never had any new evidence to digest”, and the register's rising attack-debt flag “was read as a prompt to collect more attacks rather than less”; Section F, issue F4 notes free hypothesis registration was available and not done.",
+   "why": "The campaign persisted in a zero-information ceremonial loop instead of re-planning with the options that remained free (registering the alternative mechanisms sitting in its own attack texts)."
+  }
+ ],
+ "iron_rules_cited": [
+  9
+ ],
+ "stage_notes": {
+  "A": "Budget exhausted before any hypothesis (A1) locked in unsatisfiable gates; colinear H2/H3 guaranteed no discrimination (A2); tautological null arm H3 (A3); headline pattern never noise-checked (A4); text_prior hint pointing away from the named-channel family never engaged (A5). Protocol selection itself was good (credit).",
+  "B": "Prescribed skill reference files never read at decision points (B1); synthesis fidelity verbatim-accurate (credit, B2); meter schema learned via traceback archaeology (B3, mild); “reference model as guide” forecast claim unbacked by the log (B4); diagnostic paired-pulse/weak-step data orphaned (B5).",
+  "C": "Prereg iron rule violated, causing the terminal failure (C1); H1 bands excluded already-held observations (C2); asymmetric candidate coverage behind published claims (C3); replication misdescribed (C4); memorized forecast rows (C5); belief-inconsistent interpolation (C6); H1 left LIVE (C7); padded attack ledger (C8); subagent contamination caught but misattributed in summary (C9); identical gate failure repeated (C10); one abandoned isolation-denied sandbox probe (C11, downgraded in retraction log — not labelled); free simulations under-exploited (C12).",
+  "D": "False “only mechanism” sentence (D1); fit arithmetic independently re-verified correct (credit, D2); systematic-residual diagnosis correct (credit, D3); one-sided depol interpretation (D4); no uncertainty anywhere (D5); forecast score accepted undecomposed (D6).",
+  "E": "(P#) citation contract violated in both drafts (E1); memorized rows unmarked in §4 (E2); boilerplate caveat invokes a nonexistent prereg regime (E3); limitations sections genuinely excellent (credit, E4); closing summaries soften terminal failure into 8/9 ✅ (E5).",
+  "F": "Eloquent terminal self-diagnosis with zero corrective action, iron rule 9 invoked (F1); the contemplated post-hoc probe registration — which would have been fabrication — was refused (credit, F2); verification asymmetric, applied to inputs never outputs (F3); anchor's attack-debt warning with free remediation ignored (F4). No judge interaction, so F.5/F.6 not applicable; the child's hallucinated attacks were caught and never recorded (retracted as a fabrication concern).",
+  "X": "Single ordering error cascaded into total delivery failure (X1); goal drift to a mechanism-agnostic negative result (X2); MSE headline is a memorization composition artifact (X3); belief state frozen after budget exhaustion, performative bookkeeping loop (X4)."
+ },
+ "uncovered": []
+}

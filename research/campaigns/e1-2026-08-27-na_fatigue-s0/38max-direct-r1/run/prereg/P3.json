@@ -1,0 +1,96 @@
+{
+  "pid": "P3",
+  "question": "超极化 condition（-30 uA/250 ms）后的 +12 uA test 窗 spike_count 落在哪个家族带？load-bearing variable：超极化恢复效应（test 窗计数；参考模型=14，对照即参考免费模拟）。severity：若 H6 为假（无钠可用性恢复），观测将 ≤15，落在 H6 带 [16,30] 之外——对 H6 严峻；若零模型为真而观测 ≥16，弱外向与非疲劳解释被杀。",
+  "evalCommand": "python3 -c \"import json; rows=[json.loads(l) for l in open('/root/.proma-research/e1-2026-08-27-na_fatigue-s0/world-ledger.jsonl')]; obs=[r for r in rows if r.get('cmd')=='observe' and r.get('protocol')=='hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)' and r.get('reps')==2]; print(json.dumps({'mean_spike_count': obs[-1]['spike_count']}))\"",
+  "metricKind": "json",
+  "metricSpec": "mean_spike_count",
+  "bands": {
+    "H3": [
+      13,
+      26
+    ],
+    "H5": [
+      11,
+      17
+    ],
+    "H6": [
+      16,
+      30
+    ],
+    "H7": [
+      8,
+      15
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        16,
+        30
+      ],
+      "action": "support",
+      "target": "H6"
+    },
+    {
+      "band": [
+        16,
+        30
+      ],
+      "action": "kill",
+      "target": "H7"
+    },
+    {
+      "band": [
+        16,
+        30
+      ],
+      "action": "scope",
+      "target": "H3",
+      "scopeNote": "H3 带上限 26；≥27 出局；16-26 内需 sag 形态学复核才能区分 H3 与 H6"
+    },
+    {
+      "band": [
+        16,
+        30
+      ],
+      "action": "scope",
+      "target": "H5",
+      "scopeNote": "中度去极化无虚高背景下的真实易化，伪影主张进一步收窄"
+    },
+    {
+      "band": [
+        8,
+        15
+      ],
+      "action": "kill",
+      "target": "H6"
+    },
+    {
+      "band": [
+        8,
+        15
+      ],
+      "action": "support",
+      "target": "H7"
+    },
+    {
+      "band": [
+        8,
+        15
+      ],
+      "action": "scope",
+      "target": "H3",
+      "scopeNote": "H3 带下限 13；≤12 出局"
+    },
+    {
+      "band": [
+        8,
+        15
+      ],
+      "action": "scope",
+      "target": "H5",
+      "scopeNote": "与参考 14 兼容→零模型叙事也存活，需在报告阶段与机制家族对账"
+    }
+  ],
+  "frozenAt": "2026-08-27T14:54:55.920Z"
+}

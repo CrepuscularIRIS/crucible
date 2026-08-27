@@ -1,0 +1,161 @@
+{
+  "run": "e1-ca_rebound-s0-plus-litellm-r5",
+  "claims": [
+    {
+      "id": "H1",
+      "statement": "Slow Na+ inactivation kinetics (slow_na=true, no extra current) is the dominant mechanism underlying the observed rebound behavior in ca_rebound",
+      "predicts": [
+        "spike counts within ±2 of observed values across all 4 protocols",
+        "MSE < 5 when compared to real observations",
+        "captures prepulse modulation of excitability"
+      ],
+      "state": "SUPPORTED",
+      "conflicts": "none — first hypothesis in this campaign",
+      "byProbe": "P6",
+      "note": "P6指标=2落在H1带[0,3]内，支持慢钠电流主导反弹行为的假设。"
+    },
+    {
+      "id": "H2",
+      "statement": "A slow K+ current (E=-90mV, g≈0.5-1.2 nS, tau≈300-400ms, mvh≈-50 to -60mV) combined with slow Na+ inactivation explains the prepulse-dependent excitability modulation",
+      "predicts": [
+        "spike counts within ±3 of observed values",
+        "MSE < 8 when compared to real observations",
+        "depol conditioning produces more spikes than hyperpol due to slow K+ deactivation"
+      ],
+      "state": "LIVE",
+      "conflicts": "H1 — proposes slow K+ current as additional mechanism beyond slow Na+; predicts different voltage-dependence pattern"
+    },
+    {
+      "id": "H3",
+      "statement": "A hyperpolarization-activated cation current (I_h-like, E=-35 to -40mV) explains the rebound excitability through de-inactivation during hyperpolarization",
+      "predicts": [
+        "spike counts within ±5 of observed values",
+        "MSE < 15 when compared to real observations",
+        "hyperpol conditioning produces fewer spikes than brief alone due to I_h activation"
+      ],
+      "state": "REFUTED",
+      "conflicts": "H1 and H2 — proposes a different mechanism entirely (hyperpolarization-activated current); predicts opposite pattern on conditioning protocols",
+      "byProbe": "P7",
+      "note": "P7 observed MSE=33.1, far above H3's predicted <15. I_h-like mechanism predicts wrong pattern: hyperpol conditioning should decrease excitability, but real data shows increase."
+    },
+    {
+      "id": "H4",
+      "statement": "The observed differences are noise and measurement artifacts on top of the reference model; no additional current or slow Na+ modification is needed",
+      "predicts": [
+        "spike counts within ±4 of observed (noise floor)",
+        "MSE < 12 but fails to predict systematic prepulse effects",
+        "cannot explain why hyperpol prepulse increases excitability"
+      ],
+      "state": "LIVE",
+      "conflicts": "H1/H2/H3 — artifact null: no real mechanism, just noise + baseline model mismatch"
+    }
+  ],
+  "probes": [
+    {
+      "pid": "P1",
+      "status": "FAILED",
+      "preregSha256": "05e63cef304a8af27697ff2a17b53f0dd65a0f404a1fe44b72e5064a98b6c7c0",
+      "exitCode": 127
+    },
+    {
+      "pid": "P2",
+      "status": "FAILED",
+      "preregSha256": "ef37c57632cb9284f6cb72b1f2012c889d3deecc6ec63de491604431e4b26cc4",
+      "exitCode": 127
+    },
+    {
+      "pid": "P3",
+      "status": "RUNNING",
+      "preregSha256": "d4c0bfb4f100ce15f5e0b09a358fc6d03165ddf61be2671ab5f5db0387e35b01"
+    },
+    {
+      "pid": "P4",
+      "status": "FAILED",
+      "preregSha256": "77eb22e2dc5aeff121d6238cf22a5c444a09282af9834bf13929d69ff0687840",
+      "exitCode": 127
+    },
+    {
+      "pid": "P5",
+      "status": "RUNNING",
+      "preregSha256": "9ed501923942792da02f3507a75c647349ffebae2722145d561c60b2424336e7"
+    },
+    {
+      "pid": "P6",
+      "status": "LANDED",
+      "preregSha256": "c2e9ca714059a257e10eece739983252650036e6a8795116d33b2e368cf8136c",
+      "exitCode": 0,
+      "metric": 2
+    },
+    {
+      "pid": "P7",
+      "status": "LANDED",
+      "preregSha256": "b5b53c10651bcadf32360aeb40ada39e4b235ad1195e24c052792a5e5876b6c3",
+      "exitCode": 0,
+      "metric": 33.1
+    }
+  ],
+  "attacks": [
+    {
+      "gid": "G1",
+      "target": "H4",
+      "kind": "constraint",
+      "text": "H4 claims no mechanism needed (null model). P6 observed MSE=2.0 which is far outside H4's predicted band [8,12]. The null model's actual MSE against observations is 9.5, indicating systematic deviation that cannot be explained by noise alone. This constraint refutes H4.",
+      "ts": "2026-08-25T16:19:42.124Z"
+    },
+    {
+      "gid": "G2",
+      "target": "H1",
+      "kind": "constraint",
+      "text": "Post-transition constraint on H1 (SUPPORTED by P6, MSE=2.0 on 4 training protocols): (1) Overfitting risk - H1 was selected post-hoc from 11 simulated candidates; best fit does not prove correct mechanism. (2) Protocol coverage - only 4/11 protocols observed; the claim \"slow Na+ is the dominant mechanism\" is based on 25% of available data. (3) Forecast vulnerability - H1 predicts no rebound current (extra=[]), so hyperpol-then-release protocols (4 of 6 held-out) should produce near-zero spikes. If the real ca_rebound world has an active rebound current, H1 will catastrophically fail the forecast. (4) Mechanism definition - \"slow Na+ kinetics\" is a kinetic modification of existing channels, not a new current; the text_prior explicitly describes \"an additional membrane current of unknown identity\" which H1 does not provide. This constraint requires H1's forecast predictions to be scrutinized on the held-out rebound protocols.",
+      "ts": "2026-08-25T16:22:11.630Z"
+    },
+    {
+      "gid": "G3",
+      "target": "H3",
+      "kind": "constraint",
+      "text": "H3 (I_h-like 阳离子电流) 被 P7 探针直接反驳。P7 测试 I_h-like 机制（g=1.5, E=-35, mvh=-75, mk=0.5, mtau=50, mpow=1）在超极化条件 + 去极化测试协议上的表现，观测到 MSE=33.1，远高于 H3 预测的 <15。关键证据：I_h-like 机制预测超极化预处理应增加兴奋性（因为 I_h 被激活），但真实数据显示超极化预处理后兴奋性降低。机制方向完全错误。",
+      "ts": "2026-08-25T16:38:51.031Z"
+    }
+  ],
+  "reports": [
+    {
+      "path": "REPORT.md",
+      "sha256": "c14c5e911b055005dbacf0876dd691707cae3cbfd81a01180e530ad70a0c0f06",
+      "ts": "2026-08-25T16:46:05.040Z"
+    }
+  ],
+  "gateVerdicts": [
+    {
+      "ts": "2026-08-25T16:46:05.040Z",
+      "passed": true,
+      "report": "REPORT.md"
+    }
+  ],
+  "tampers": [],
+  "graveyard": [
+    {
+      "id": "H1",
+      "statement": "Slow Na+ inactivation kinetics (slow_na=true, no extra current) is the dominant mechanism underlying the observed rebound behavior in ca_rebound",
+      "predicts": [
+        "spike counts within ±2 of observed values across all 4 protocols",
+        "MSE < 5 when compared to real observations",
+        "captures prepulse modulation of excitability"
+      ],
+      "state": "SUPPORTED",
+      "conflicts": "none — first hypothesis in this campaign",
+      "byProbe": "P6"
+    },
+    {
+      "id": "H3",
+      "statement": "A hyperpolarization-activated cation current (I_h-like, E=-35 to -40mV) explains the rebound excitability through de-inactivation during hyperpolarization",
+      "predicts": [
+        "spike counts within ±5 of observed values",
+        "MSE < 15 when compared to real observations",
+        "hyperpol conditioning produces fewer spikes than brief alone due to I_h activation"
+      ],
+      "state": "REFUTED",
+      "conflicts": "H1 and H2 — proposes a different mechanism entirely (hyperpolarization-activated current); predicts opposite pattern on conditioning protocols",
+      "byProbe": "P7"
+    }
+  ]
+}

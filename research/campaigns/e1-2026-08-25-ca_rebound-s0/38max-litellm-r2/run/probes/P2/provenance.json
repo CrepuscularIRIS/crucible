@@ -1,0 +1,44 @@
+{
+  "pid": "P2",
+  "command": "bash -lc 'L=/root/.proma-dev/agent-workspaces/default/workspace-files/.proma-research/e1-ca_rebound-s0-38max-litellm-r2/world-ledger.jsonl; line=$(grep \"\\\"cmd\\\": \\\"observe\\\"\" \"$L\" | grep \"weak test\" | tail -1); if [ -z \"$line\" ]; then echo \"gap_test_spike_count=-1\"; else sc=$(echo \"$line\" | grep -o \"\\\"spike_count\\\": [0-9.-]*\" | grep -o \"[0-9.-]*$\"); echo \"gap_test_spike_count=$sc\"; fi'",
+  "exitCode": 0,
+  "startedAt": "2026-08-25T12:27:50.785Z",
+  "endedAt": "2026-08-25T12:27:50.799Z",
+  "landed": true,
+  "metric": 7.5,
+  "metricSource": {
+    "kind": "regex",
+    "spec": "gap_test_spike_count=(-?[0-9.]+)",
+    "raw": "raw/output.txt"
+  },
+  "sandbox": {
+    "engine": "bubblewrap",
+    "binary": "bwrap",
+    "isolation": [
+      "--ro-bind",
+      "/",
+      "/",
+      "--dev",
+      "/dev",
+      "--proc",
+      "/proc",
+      "--tmpfs",
+      "/tmp",
+      "--unshare-net",
+      "--unshare-pid",
+      "--die-with-parent",
+      "--clearenv",
+      "--setenv",
+      "PATH",
+      "/usr/local/bin:/usr/bin:/bin",
+      "--setenv",
+      "HOME",
+      "/tmp",
+      "--setenv",
+      "LANG",
+      "C.UTF-8",
+      "--tmpfs",
+      "/bench/neuronbench"
+    ]
+  }
+}

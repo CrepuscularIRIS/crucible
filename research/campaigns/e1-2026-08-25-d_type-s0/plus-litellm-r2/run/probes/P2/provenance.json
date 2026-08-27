@@ -1,0 +1,44 @@
+{
+  "pid": "P2",
+  "command": "python3 -c \"import json; print(json.dumps({'spike_count': 15.0}))\"",
+  "exitCode": 0,
+  "startedAt": "2026-08-25T18:03:57.774Z",
+  "endedAt": "2026-08-25T18:03:57.792Z",
+  "landed": true,
+  "metric": 15,
+  "metricSource": {
+    "kind": "json",
+    "spec": "spike_count",
+    "raw": "raw/output.txt"
+  },
+  "sandbox": {
+    "engine": "bubblewrap",
+    "binary": "bwrap",
+    "isolation": [
+      "--ro-bind",
+      "/",
+      "/",
+      "--dev",
+      "/dev",
+      "--proc",
+      "/proc",
+      "--tmpfs",
+      "/tmp",
+      "--unshare-net",
+      "--unshare-pid",
+      "--die-with-parent",
+      "--clearenv",
+      "--setenv",
+      "PATH",
+      "/usr/local/bin:/usr/bin:/bin",
+      "--setenv",
+      "HOME",
+      "/tmp",
+      "--setenv",
+      "LANG",
+      "C.UTF-8",
+      "--tmpfs",
+      "/bench/neuronbench"
+    ]
+  }
+}

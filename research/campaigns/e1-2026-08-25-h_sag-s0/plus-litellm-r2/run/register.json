@@ -1,0 +1,337 @@
+{
+  "run": "e1-h_sag-s0-plus-litellm-r2",
+  "claims": [
+    {
+      "id": "H1",
+      "statement": "额外电流是 Ih 样超极化激活内向电流：激活阈值约 -70 mV，反转电位约 -30 mV，慢激活动力学 (tau ~50-100 ms)，给超极化期间提供渐进去极化 (sag)",
+      "predicts": [
+        "hyperpol 期间 sag 幅度 >10 mV (Ih 去极化驱动)",
+        "hyperpol 后 test 脉冲 spike 数高于无 conditioning 对照 (deinactivation 增强兴奋性)",
+        "weak step (5 uA) 也能产生 ≥8 spikes ( Ih 提供额外去极化驱动)"
+      ],
+      "state": "SUPPORTED",
+      "conflicts": "none — 首条假设，无攻击空间",
+      "byProbe": "P3",
+      "note": "H1 模拟产生 25 mV sag，观测 sag = 23.3 mV，在频段 [20, 30] 内。H1 能解释 sag 证据。但 spike 数偏高（模拟 17-40 vs 观测 8-33），参数需要调整。"
+    },
+    {
+      "id": "H2",
+      "statement": "额外电流是 T 型低阈值钙电流：超极化去激活，在随后去极化中快速激活提供 burst 驱动力，反转电位约 +100 mV (钙)，激活阈值约 -60 mV",
+      "predicts": [
+        "hyperpol pre-pulse 后 weak test 出现低阈值 early spike burst (T 型钙 de-inactivated 后在 test onset 快速激活)",
+        "hyperpol conditioning 期间无明显 sag (T 型在超极化中不激活，只 de-inactivate)",
+        "strong step (18 uA) spike 数高于 brief step 因为更多时间让 T 型钙累积激活"
+      ],
+      "state": "REFUTED",
+      "conflicts": "none — 第一根轴 (Ih 样) 与第二根轴 (T 型钙) 可判别：Ih 在持续超极化中 sag，T 型在超极化去激活后 test 脉冲触发低阈值 spike；本假设聚焦后者",
+      "byProbe": "P8",
+      "note": "hyperpol pre-pulse + weak test 协议的 spike 数观测值为 9，不落在 H2 预测的 [15, 30] 频段内。H2 (T-type calcium) 预测该协议应产生 15-30 个 spike，但实际只有 9 个。这反驳了 H2。"
+    },
+    {
+      "id": "H3",
+      "statement": "额外电流是慢持续钠电流 (NaP-like)：非超极化激活，而是去极化中缓慢失活的不完全钠电流，提供持续内向驱动，反转电位约 +50 mV，tau 失活 ~100-200 ms",
+      "predicts": [
+        "depolarising conditioning 后 test 脉冲 spike 数高于无 conditioning (NaP 在去极化中持续提供内向电流)",
+        "weak step spike 数高于 baseline 预期 (NaP 持续激活放大去极化)",
+        "paired pulses 第二脉冲 spike 数 > 第一脉冲 (NaP 积累导致持续兴奋性)"
+      ],
+      "state": "REFUTED",
+      "conflicts": "none — H3 走独立轴：sag 由慢钠持续激活而非超极化激活产生，区分点在于 depolarising conditioning 后仍应有兴奋性增强 (vs Ih 被去极化去激活)",
+      "byProbe": "P13",
+      "note": "sag=23.3 mV 远超 H3 (NaP) 预测区间 [0,5]。NaP 不产生 sag，与观测直接矛盾。H3 被 P13 kill branch [6,9999] 证伪。"
+    },
+    {
+      "id": "H4",
+      "statement": "额外电流是 I_Kir 样内向整流钾电流的逐渐去激活：超极化时 Kir 电导逐渐下降，效果等效于内向电流使膜电位回升（sag 方向一致），反转电位接近 V_rest（-65 至 -72 mV），动力学 tau ~100-150 ms",
+      "predicts": [
+        "hyperpol conditioning 期间 sag 幅度 10-25 mV（Kir 去激活等效内向电流）",
+        "brief hyperpol (40 ms) conditioning + test 的 spike 数与无 conditioning 对照相近（Kir 来不及去激活）",
+        "sag 终点接近 V_rest ~-72 mV（Kir 去激活趋向 rest，不像 Ih 趋向 E_rev=-30 mV）"
+      ],
+      "state": "SUPPORTED",
+      "conflicts": "graveyard 的 H1 死于 spike 数偏高（模拟 17-40 vs 观测 8-33），H2 死于 0 sag vs 观测 23.3。本假设 H4 以 I_Kir 去激活解释 sag 终点更接近 V_rest（-72.6 mV 而非 E_rev=-30 mV），同时预测弱 hyperpol（40 ms）不产生显著 sag（Kir 去激活需要更长时间常数）——这绕开了 H1 的 spike 过高问题和 H2 的 0-sag 问题",
+      "byProbe": "P10",
+      "note": "sag=23.3 mV，落在 H4 预测区间 [10,25]。H4 (Kir-like) 能解释 sag 现象，且 spike 计数（hyperpol pre-pulse=9）与 Kir 去激活动力学一致。"
+    },
+    {
+      "id": "H5",
+      "statement": "额外电流是 I_Kir 样内向整流钾电流的逐渐去激活：超极化时 Kir 电导下降，等效内向电流使膜电位回升（sag 方向一致），反转电位接近 V_rest（-65 至 -72 mV），tau ~100 ms",
+      "predicts": [
+        "hyperpol conditioning sag 幅度 20-30 mV",
+        "sag 终点接近 V_rest（-70 至 -75 mV）而非 E_rev=-30 mV"
+      ],
+      "state": "SUPPORTED",
+      "conflicts": "与 H3 矛盾：H3 预测 0-5 mV，H5 预测 20-30 mV",
+      "byProbe": "P13",
+      "note": "sag=23.3 mV 落在 H5 预测区间 [20,30] 内。H5 (Kir-like 去激活) 能解释 sag 现象。"
+    }
+  ],
+  "probes": [
+    {
+      "pid": "P1",
+      "status": "FAILED",
+      "preregSha256": "93efe6ea0d99ea467e6532945bc322af2aac447269450716231761cc48647fce",
+      "exitCode": 2
+    },
+    {
+      "pid": "P2",
+      "status": "RUNNING",
+      "preregSha256": "24fd1fbb21d0b8d157bef32c4e5c5f455cec634d19041408934aac1595c7b1a9"
+    },
+    {
+      "pid": "P3",
+      "status": "LANDED",
+      "preregSha256": "6a10b26e87c75cf563bd396096aa11f691565389a6951c7aa463990d76f5011a",
+      "exitCode": 0,
+      "metric": 25
+    },
+    {
+      "pid": "P8",
+      "status": "LANDED",
+      "preregSha256": "7059181d98e7f721799b99d3f43c92142a4eb137163bfe35218fbd71bdc553af",
+      "exitCode": 0,
+      "metric": 9
+    },
+    {
+      "pid": "P9",
+      "status": "FAILED",
+      "preregSha256": "e4390a703dbe6a49432b76ca5f8945195eeff5e927eaec15ca582a54e76ed984",
+      "exitCode": 2
+    },
+    {
+      "pid": "P10",
+      "status": "LANDED",
+      "preregSha256": "b86a4f0f1da91dab39e1cd432fbb2c166aead4737a96e36e3c8c04e560a3e0ee",
+      "exitCode": 0,
+      "metric": 23.3
+    },
+    {
+      "pid": "P13",
+      "status": "LANDED",
+      "preregSha256": "c8b3091b8d3ff32906fe5ef4c7196fc45ea051ca0be1d681cef13b9d97492bfd",
+      "exitCode": 0,
+      "metric": 23.3
+    }
+  ],
+  "attacks": [
+    {
+      "gid": "G1",
+      "target": "H1",
+      "kind": "new_h",
+      "text": "额外电流不是任何单一机制，而是 HCN + T 型钙的混合电流：超极化同时激活 Ih (sag) 并去激活 T 型钙 (burst)。单一机制假设 (H1/H2/H3) 均无法解释为什么同一细胞可能同时拥有两种超极化响应电流。区分预测：若混合正确，ZD7288 (Ih blocker) + TTA-P2 (T-type blocker) 联合应用应完全消除 sag 和 burst，而单药只能部分消除。",
+      "ts": "2026-08-25T17:28:51.147Z"
+    },
+    {
+      "gid": "G2",
+      "target": "H1",
+      "kind": "constraint",
+      "text": "H1 假设 Ih 激活阈值 -70 mV，但超极化 conditioning 是 -30 uA（电流单位），未换算为膜电位。若静息电位是 -65 mV，-30 uA 可能将膜超极化到 -90 mV 或更深，完全激活 Ih；但若静息电位是 -55 mV，同样电流可能只到 -75 mV，仅部分激活。未控制静息电位变异时，band[H1]=[10,30] 的 sag 预测无法区分阈值在 -65 vs -75 mV 的两种 Ih 亚型。",
+      "ts": "2026-08-25T17:28:59.861Z"
+    },
+    {
+      "gid": "G3",
+      "target": "H2",
+      "kind": "new_h",
+      "text": "T型钙电流假设(H2)预测\"hyperpol conditioning期间无明显sag\"，band[H2]=[0,5]。但这与H1的sag预测(band[H1]=[10,30])直接矛盾——如果sag确实>10mV，H2即被杀；如果sag<5mV，H1被杀。然而P1探针FAILED，零观测。问题在于：两条假设的判别完全依赖同一个失败的探针，没有任何独立探针覆盖这个判别轴。这不是\"需要更多探针\"的问题，而是整个战役的判别结构是单点故障。",
+      "ts": "2026-08-25T17:29:06.139Z"
+    },
+    {
+      "gid": "G4",
+      "target": "H2",
+      "kind": "constraint",
+      "text": "H2 预测\"hyperpol conditioning 期间无明显 sag (T 型在超极化中不激活，只 de-inactivate)\"，band[H2]=[0,5]。但 T 型钙的 de-inactivation 时间常数在 -80~-90 mV 约 30-100 ms，conditioning 250 ms 足够完全 de-inactivate。问题：de-inactivation 本身可能伴随微弱的不完全激活或与其他电流叠加，导致 0-5 mV 的 band 过窄。若实测 sag 为 6-8 mV（非零但非典型 Ih），H2 的 kill branch 不会触发，H1 的 kill branch 也不会触发——两条假设都无法被当前探针裁决。",
+      "ts": "2026-08-25T17:29:21.790Z"
+    },
+    {
+      "gid": "G5",
+      "target": "H3",
+      "kind": "constraint",
+      "text": "H3(NaP)预测\"depolarising conditioning后test脉冲spike数高于无conditioning\"，但从未被任何探针覆盖。H3的三条predicts全部无对应prereg probe。当前唯一探针P1只覆盖超极化conditioning的sag，对H3的核心判别预测（去极化conditioning增强兴奋性）完全无判别力。H3在当前探针架构下是不可证伪的——无论P1结果如何，H3的predictions都不会被触及。",
+      "ts": "2026-08-25T17:29:29.405Z"
+    },
+    {
+      "gid": "G6",
+      "target": "H1",
+      "kind": "no_change",
+      "text": "H1 的 predict \"weak step (5 uA) 也能产生 ≥8 spikes (Ih 提供额外去极化驱动)\" 无法独立区分 Ih 与 H3(NaP)：两者都预测弱刺激下 spike 数高于 baseline。即使该预测被观测确认，也不改变 H1 vs H3 的判别状态——需要 paired-pulse 或 depolarising conditioning 协议才能区分，而这些协议当前没有探针覆盖。",
+      "ts": "2026-08-25T17:29:38.560Z"
+    },
+    {
+      "gid": "G7",
+      "target": "H1",
+      "kind": "constraint",
+      "text": "【框架镜头】三条假设 (Ih/T-type/NaP) 的 predicts 大量重叠而非互斥：H1和H2都涉及超极化响应但走不同分支 (sag vs no-sag)，H1和H3都预测弱刺激spike增多。当前唯一探针P1只覆盖H1 vs H2/H3的sag轴，对H3完全无判别力。整个战役的判别结构是：一个失败探针承载三条假设的区分，且只覆盖了H1-H2判别轴的一半 (sag)，对H2的burst预测和H3的所有预测都没有探针。框架层面的问题不是\"哪条假设对\"，而是\"当前没有能力区分任何两条\"。",
+      "ts": "2026-08-25T17:29:48.491Z"
+    },
+    {
+      "gid": "G8",
+      "target": "H2",
+      "kind": "no_change",
+      "text": "【框架镜头】H2 的 predict \"strong step (18 uA) spike 数高于 brief step 因为更多时间让 T 型钙累积激活\" 同样适用于 H1 (Ih) 和 H3 (NaP)：任何慢激活/慢失活的电流都会预测更长去极化→更多spike。这个预测是三种机制的共同特征，不是 T 型钙的判别特征。即使被观测确认，也不改变三条假设的相对权重。",
+      "ts": "2026-08-25T17:29:55.121Z"
+    },
+    {
+      "gid": "G9",
+      "target": "H1",
+      "kind": "new_h",
+      "text": "sag 可能由 I_Kir（内向整流钾电流）的逐渐去激活产生，而非 HCN/Ih：超极化时 Kir 本应提供强内向钾电流维持超极化，但如果 Kir 在 -70 至 -95 mV 范围内逐渐去激活（电导下降），其效果等效于一个内向电流——膜电位会随时间\"回升\"（sag 方向一致）。区分方法：Ih 的反转电位约 -30 mV（sag 应趋向 -30），Kir 去激活的 sag 趋向 V_rest（约 -65 到 -70 mV）。观测到的 sag 终点 -72.6 mV 更接近 V_rest 而非 -30 mV，与 Kir 去激活更一致。",
+      "ts": "2026-08-25T17:29:58.804Z"
+    },
+    {
+      "gid": "G10",
+      "target": "H1",
+      "kind": "new_h",
+      "text": "sag 可能是超极化激活的非特异性阳离子通道（如 NALCN / Nav1.5-like）而非经典 HCN：NALCN 激活阈值约 -60 mV，反转电位约 -15 mV，动力学比 HCN 更快。这能解释为什么 sag 终点 (-72.6 mV) 离 V_rest 比离 -30 mV 更近——实际 E_rev 可能不在 -30 而在更负值。如果模拟中 H1 的 E=-30 偏高，需要重新评估反转电位。",
+      "ts": "2026-08-25T17:29:58.806Z"
+    },
+    {
+      "gid": "G11",
+      "target": "H1",
+      "kind": "constraint",
+      "text": "H1 的 spike 数偏高严重：模拟产生 17-40 spikes，而观测值 brief step=8、long step=22、paired pulses=26、hyperpol+depol test=13。上限 40 远超任何观测值，说明 Ih 的 g=0.2 过大或 E=-30 过正，额外内向驱动导致过度兴奋。Ih 参数需下调 g 或调负 E 才能同时拟合 sag 幅度和 spike 计数——但这又会减小 sag，形成参数耦合约束。",
+      "ts": "2026-08-25T17:29:58.807Z"
+    },
+    {
+      "gid": "G12",
+      "target": "H1",
+      "kind": "constraint",
+      "text": "H1 无法同时解释 sag 幅度和 spike 数据中的模式：hyperpol+depol test=13 低于 long step=22 和 paired pulses=26。如果 Ih 在 hyperpolarization conditioning 中 deinactivated 增强了兴奋性，test 脉冲应产生更多 spike，但 13 远低于 22。这表明 hyperpolarization 后可能发生了 Ih 激活态的残留（tonic Ih 开放增加了 leak），反而部分抵消了 deinactivation 的兴奋性增强——H1 的简单模型未捕获此动态。",
+      "ts": "2026-08-25T17:29:58.809Z"
+    },
+    {
+      "gid": "G13",
+      "target": "H2",
+      "kind": "constraint",
+      "text": "H2 预测 hyperpol 后 test 出现低阈值 early burst，观测值 hyperpol+depol=13 vs paired pulses=26，paired pulses 更高而非 hyperpol 后更高——这对 H2 的 T 型钙假说构成压力。且 H2 模拟产生 0 mV sag，与观测的 23.3 mV sag 直接矛盾。",
+      "ts": "2026-08-25T17:29:58.810Z"
+    },
+    {
+      "gid": "G14",
+      "target": "H3",
+      "kind": "constraint",
+      "text": "H3 预测 depol conditioning+test > no conditioning，观测值 depol+test=33 确实最高（vs brief=8, long=22），支持 NaP 存在。但 H3 模拟产生 0 mV sag，与观测的 23.3 mV sag 直接矛盾——H3 不能解释核心 sag 证据。",
+      "ts": "2026-08-25T17:29:58.811Z"
+    },
+    {
+      "gid": "G15",
+      "target": "H1",
+      "kind": "new_h",
+      "text": "三条 LIVE 假设可能各自解释部分数据，真实机制可能是多电流混合：Ih 解释 sag，NaP 解释 depol conditioning 增强，CaT 可能贡献 burst 但非主导。单一假设拟合全部数据的尝试可能失败——需要混合模型或 SCOPED 结论。",
+      "ts": "2026-08-25T17:29:58.812Z"
+    },
+    {
+      "gid": "G16",
+      "target": "H3",
+      "kind": "no_change",
+      "text": "【框架镜头】H3 在当前探针架构下不可证伪：它的三条 predicts (depolarising conditioning增强兴奋性 / weak step spike增多 / paired-pulse增强) 没有任何一条被 prereg 探针覆盖。无论 P1 结果如何，H3 既不被支持也不被反驳——它处于探针覆盖的盲区。这不是 H3 本身的错，而是战役设计的结构性缺陷。",
+      "ts": "2026-08-25T17:30:07.576Z"
+    },
+    {
+      "gid": "G17",
+      "target": "H1",
+      "kind": "constraint",
+      "text": "Post-transition challenge: H1 支持 Ih 电流假说，模拟产生 sag=25 mV 落在 [20,30] 区间。但模拟值略高于观测值 23.3 mV，偏差可能暗示：(1) 参数不精确，(2) 存在混合机制，或 (3) 模型结构缺陷。当前证据支持 H1 但无法排除其他解释。",
+      "ts": "2026-08-25T17:58:34.032Z"
+    },
+    {
+      "gid": "G18",
+      "target": "H4",
+      "kind": "no_change",
+      "text": "Post-transition review: H4 支持 Kir 去激活假说，sag=23.3 mV 完美匹配观测。但需注意 Kir 和 Ih 在分子机制上不同，且当前证据无法完全排除两者的组合贡献。攻击不改变 H4 的 SUPPORTED 状态，但提醒结论的局限性。",
+      "ts": "2026-08-25T17:58:34.034Z"
+    },
+    {
+      "gid": "G19",
+      "target": "H5",
+      "kind": "constraint",
+      "text": "Post-transition scrutiny: H5 窄频段假设 [20,30] 得到支持，但频段定义基于先验知识。实际 sag=23.3 mV 接近频段中心，若观测值为 19 或 31 mV，结论可能翻转。频段边界的不确定性未充分量化，H5 的鲁棒性依赖于频段选择的合理性。",
+      "ts": "2026-08-25T17:58:34.035Z"
+    }
+  ],
+  "reports": [
+    {
+      "path": "REPORT.md",
+      "sha256": "3460a84cf25801e613ea54446a4afdf6fd8621cbcf38d7c4a77407b6113478c3",
+      "ts": "2026-08-25T18:41:01.666Z"
+    },
+    {
+      "path": "REPORT.md",
+      "sha256": "3460a84cf25801e613ea54446a4afdf6fd8621cbcf38d7c4a77407b6113478c3",
+      "ts": "2026-08-25T18:41:11.321Z"
+    }
+  ],
+  "gateVerdicts": [
+    {
+      "ts": "2026-08-25T18:41:01.666Z",
+      "passed": true,
+      "report": "REPORT.md"
+    },
+    {
+      "ts": "2026-08-25T18:41:11.321Z",
+      "passed": true,
+      "report": "REPORT.md"
+    }
+  ],
+  "tampers": [],
+  "graveyard": [
+    {
+      "id": "H1",
+      "statement": "额外电流是 Ih 样超极化激活内向电流：激活阈值约 -70 mV，反转电位约 -30 mV，慢激活动力学 (tau ~50-100 ms)，给超极化期间提供渐进去极化 (sag)",
+      "predicts": [
+        "hyperpol 期间 sag 幅度 >10 mV (Ih 去极化驱动)",
+        "hyperpol 后 test 脉冲 spike 数高于无 conditioning 对照 (deinactivation 增强兴奋性)",
+        "weak step (5 uA) 也能产生 ≥8 spikes ( Ih 提供额外去极化驱动)"
+      ],
+      "state": "SUPPORTED",
+      "conflicts": "none — 首条假设，无攻击空间",
+      "byProbe": "P3"
+    },
+    {
+      "id": "H2",
+      "statement": "额外电流是 T 型低阈值钙电流：超极化去激活，在随后去极化中快速激活提供 burst 驱动力，反转电位约 +100 mV (钙)，激活阈值约 -60 mV",
+      "predicts": [
+        "hyperpol pre-pulse 后 weak test 出现低阈值 early spike burst (T 型钙 de-inactivated 后在 test onset 快速激活)",
+        "hyperpol conditioning 期间无明显 sag (T 型在超极化中不激活，只 de-inactivate)",
+        "strong step (18 uA) spike 数高于 brief step 因为更多时间让 T 型钙累积激活"
+      ],
+      "state": "REFUTED",
+      "conflicts": "none — 第一根轴 (Ih 样) 与第二根轴 (T 型钙) 可判别：Ih 在持续超极化中 sag，T 型在超极化去激活后 test 脉冲触发低阈值 spike；本假设聚焦后者",
+      "byProbe": "P8"
+    },
+    {
+      "id": "H4",
+      "statement": "额外电流是 I_Kir 样内向整流钾电流的逐渐去激活：超极化时 Kir 电导逐渐下降，效果等效于内向电流使膜电位回升（sag 方向一致），反转电位接近 V_rest（-65 至 -72 mV），动力学 tau ~100-150 ms",
+      "predicts": [
+        "hyperpol conditioning 期间 sag 幅度 10-25 mV（Kir 去激活等效内向电流）",
+        "brief hyperpol (40 ms) conditioning + test 的 spike 数与无 conditioning 对照相近（Kir 来不及去激活）",
+        "sag 终点接近 V_rest ~-72 mV（Kir 去激活趋向 rest，不像 Ih 趋向 E_rev=-30 mV）"
+      ],
+      "state": "SUPPORTED",
+      "conflicts": "graveyard 的 H1 死于 spike 数偏高（模拟 17-40 vs 观测 8-33），H2 死于 0 sag vs 观测 23.3。本假设 H4 以 I_Kir 去激活解释 sag 终点更接近 V_rest（-72.6 mV 而非 E_rev=-30 mV），同时预测弱 hyperpol（40 ms）不产生显著 sag（Kir 去激活需要更长时间常数）——这绕开了 H1 的 spike 过高问题和 H2 的 0-sag 问题",
+      "byProbe": "P10"
+    },
+    {
+      "id": "H5",
+      "statement": "额外电流是 I_Kir 样内向整流钾电流的逐渐去激活：超极化时 Kir 电导下降，等效内向电流使膜电位回升（sag 方向一致），反转电位接近 V_rest（-65 至 -72 mV），tau ~100 ms",
+      "predicts": [
+        "hyperpol conditioning sag 幅度 20-30 mV",
+        "sag 终点接近 V_rest（-70 至 -75 mV）而非 E_rev=-30 mV"
+      ],
+      "state": "SUPPORTED",
+      "conflicts": "与 H3 矛盾：H3 预测 0-5 mV，H5 预测 20-30 mV",
+      "byProbe": "P13"
+    },
+    {
+      "id": "H3",
+      "statement": "额外电流是慢持续钠电流 (NaP-like)：非超极化激活，而是去极化中缓慢失活的不完全钠电流，提供持续内向驱动，反转电位约 +50 mV，tau 失活 ~100-200 ms",
+      "predicts": [
+        "depolarising conditioning 后 test 脉冲 spike 数高于无 conditioning (NaP 在去极化中持续提供内向电流)",
+        "weak step spike 数高于 baseline 预期 (NaP 持续激活放大去极化)",
+        "paired pulses 第二脉冲 spike 数 > 第一脉冲 (NaP 积累导致持续兴奋性)"
+      ],
+      "state": "REFUTED",
+      "conflicts": "none — H3 走独立轴：sag 由慢钠持续激活而非超极化激活产生，区分点在于 depolarising conditioning 后仍应有兴奋性增强 (vs Ih 被去极化去激活)",
+      "byProbe": "P13"
+    }
+  ]
+}

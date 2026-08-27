@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "entries": {
+    "prompt": {},
+    "memory": {
+      "probe_evalcommand_semantics": {
+        "id": "probe_evalcommand_semantics",
+        "kind": "memory",
+        "title": "research-probe evalCommand must generate evidence, not read pre-summarized data",
+        "content": "CRITICAL: The evalCommand in prereg_write must be a self-contained deterministic command that GENERATES discriminative evidence within the bwrap sandbox. It CANNOT simply read pre-summarized observation data (e.g., spike_count values saved to /tmp) and perform post-hoc calculations.\n\nCORRECT approaches:\n1. Run a candidate mechanism simulation: evalCommand implements the neuron model ODEs in pure Python, runs with specific mechanism parameters, and outputs spike counts from the simulation\n2. Parse raw experimental data: evalCommand reads raw voltage trace files (not pre-summarized JSON) and independently computes spike counts through threshold crossing detection\n\nWRONG approach (what the agent is doing):\n- Saving {\"depol_test\": 35.0, \"long_step\": 25.0} to /tmp/na_fatigue_obs.json\n- Having evalCommand read that file and compute 35.0/25.0 = 1.4\n- This is post-hoc math on already-collected data, not experimental evaluation\n\nThe probe system requires that evalCommand produces a metric value through actual experimental work (simulation or raw data analysis), not by reading pre-computed summaries. The bands then define what ranges each hypothesis predicts for that metric.\n\nFor the na_fatigue campaign: since observation budget is exhausted, design probes that run free world_simulate-equivalent simulations within the sandbox (implement simplified HH model in pure Python) to generate candidate predictions, then compare against the observed spike counts.",
+        "path": "general",
+        "scope": "local",
+        "reference": {},
+        "arguments": {},
+        "metadata": {
+          "scope": "local",
+          "stage": "PROBE",
+          "skill": "research-probe"
+        },
+        "source": "refine",
+        "created_at": "2026-08-25T10:54:52.829Z",
+        "updated_at": "2026-08-25T10:54:52.829Z",
+        "version": 1
+      }
+    },
+    "skill": {},
+    "subagent": {}
+  },
+  "refinements": [
+    {
+      "id": "refine_20260825105413027",
+      "trigger": "Clarify research-probe evalCommand semantics to prevent invalid probe design",
+      "changes": [
+        "create memory:probe_evalcommand_semantics"
+      ],
+      "evidence": "The agent is attempting to hardcode pre-summarized observation data into /tmp and compute static ratios in evalCommand, which violates the probe system's design. The evalCommand must generate discriminative evidence through actual experimental evaluation (e.g., running simulations or parsing raw trace data), not perform post-hoc math on already-collected summaries. This fundamental misunderstanding will cause probe registration failures and invalid evidence chains.",
+      "outcome": "Agent will design valid probes where evalCommand either (1) runs a candidate mechanism simulation within the sandbox to generate new predictions, or (2) reads raw voltage trace files and independently computes spike counts, rather than reading pre-summarized JSON files with hardcoded values.",
+      "created_at": "2026-08-25T10:54:52.829Z"
+    }
+  ]
+}

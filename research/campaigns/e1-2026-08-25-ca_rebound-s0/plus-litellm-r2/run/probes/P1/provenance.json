@@ -1,0 +1,38 @@
+{
+  "pid": "P1",
+  "command": "world_simulate(protocol=depolarising conditioning + test (+15 uA/250 ms, then +12 uA))",
+  "exitCode": 2,
+  "startedAt": "2026-08-25T09:27:52.210Z",
+  "endedAt": "2026-08-25T09:27:52.218Z",
+  "landed": false,
+  "sandbox": {
+    "engine": "bubblewrap",
+    "binary": "bwrap",
+    "isolation": [
+      "--ro-bind",
+      "/",
+      "/",
+      "--dev",
+      "/dev",
+      "--proc",
+      "/proc",
+      "--tmpfs",
+      "/tmp",
+      "--unshare-net",
+      "--unshare-pid",
+      "--die-with-parent",
+      "--clearenv",
+      "--setenv",
+      "PATH",
+      "/usr/local/bin:/usr/bin:/bin",
+      "--setenv",
+      "HOME",
+      "/tmp",
+      "--setenv",
+      "LANG",
+      "C.UTF-8",
+      "--tmpfs",
+      "/bench/neuronbench"
+    ]
+  }
+}

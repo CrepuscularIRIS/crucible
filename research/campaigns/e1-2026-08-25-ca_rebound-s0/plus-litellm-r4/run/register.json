@@ -1,0 +1,153 @@
+{
+  "run": "e1-ca_rebound-s0-plus-litellm-r4",
+  "claims": [
+    {
+      "id": "H1",
+      "statement": "Slow-deactivating inward current (activated by depolarisation, deactivated by hyperpolarisation, time constant ~200-300ms)",
+      "predicts": [
+        "After hyperpolarisation, rebound firing is suppressed because the inward current is deactivated",
+        "More negative hyperpolarisation causes more suppression (dose-response)",
+        "Brief depolarisation before test boosts firing (current reactivates)",
+        "Paired pulses show facilitation because first pulse activates current, second benefits"
+      ],
+      "state": "SUPPORTED",
+      "conflicts": "H1 and H2 both explain the depol/hyperpol asymmetry but differ on kinetics — H1 has slow deactivation (hundreds of ms), H2 has slow Na recovery (also slow but different voltage dependence)",
+      "byProbe": "P3",
+      "note": "Observed spike_count=13.5 after hyperpolarising conditioning matches H1 prediction [12,18]. Data confirms slow-deactivating inward current hypothesis."
+    },
+    {
+      "id": "H2",
+      "statement": "Slow Na inactivation/recovery (slow_na=true) — Na channels recover slowly from inactivation at hyperpolarised potentials",
+      "predicts": [
+        "After hyperpolarisation, Na channels recover slowly → fewer spikes in test",
+        "More negative hyperpolarisation accelerates recovery → more spikes (opposite to H1!)",
+        "Paired pulses show reduced second response due to Na inactivation"
+      ],
+      "state": "REFUTED",
+      "conflicts": "H2 differs from H1 in that the mechanism is slow Na recovery rather than an explicit extra current; both predict similar conditioning effects but H2 predicts stronger frequency-dependent adaptation",
+      "byProbe": "P8",
+      "note": "P8 probe measured 13.5 spikes, which is outside H2's predicted band [0,8]. The observation falls in the kill band [13,15] for H2. H2 (slow Na recovery) is refuted."
+    },
+    {
+      "id": "H3",
+      "statement": "Both slow-deactivating inward current AND slow Na recovery contribute to rebound behavior",
+      "predicts": [
+        "Combines predictions of H1 and H2",
+        "Both mechanisms contribute to the observed patterns",
+        "More complex model but better fit"
+      ],
+      "state": "REFUTED",
+      "conflicts": "H3 combines H1 and H2; if supported, it explains all observations but is less parsimonious",
+      "byProbe": "P8",
+      "note": "P8 probe measured 13.5 spikes, which falls in H3's support band [12, 18]. However, H3 claims a combined mechanism including both slow-deactivating inward current AND slow Na recovery. Since H2 (slow Na recovery) was just refuted by the same probe (13.5 outside H2's [0,8] band), H3's combined mechanism is incorrect. H3 is refuted because it includes a wrong component."
+    }
+  ],
+  "probes": [
+    {
+      "pid": "P1",
+      "status": "RUNNING",
+      "preregSha256": "166886183f1a525f3af606c8a272ce91d941110adc820b0190ef88bdfb6fe491"
+    },
+    {
+      "pid": "P2",
+      "status": "RUNNING",
+      "preregSha256": "27a85deeec73616dd618ebb14c330381210f10c191221d387c069700dc4891a6"
+    },
+    {
+      "pid": "P3",
+      "status": "LANDED",
+      "preregSha256": "3b3e56243b32bdebfc78afc4ff0bf785f79ff70f281bcfc7b1f14cd8e410ff16",
+      "exitCode": 0,
+      "metric": 13.5
+    },
+    {
+      "pid": "P7",
+      "status": "RUNNING",
+      "preregSha256": "a49bb7d104b41e3686314b50d54fa62410f85bbd6746e818e06ceaf0a529ddda"
+    },
+    {
+      "pid": "P8",
+      "status": "LANDED",
+      "preregSha256": "b48b8c8dd0abf103d0766f5b66b83595047a7a42d5931dc0428004c82e0ce34e",
+      "exitCode": 0,
+      "metric": 13.5
+    }
+  ],
+  "attacks": [
+    {
+      "gid": "G1",
+      "target": "H2",
+      "kind": "no_change",
+      "text": "H2 (slow Na recovery) predicted spike_count ∈ [0,8] after hyperpolarising conditioning, but P3 probe measured 13.5. The gap of 5.5 spikes (with reps=2 averaged) cannot be explained by variance. H2's core mechanism - that slow Na channel recovery reduces firing - contradicts the data. The observed 13.5 spikes aligns with H1's prediction [12,18] of a slow-deactivating inward current. H2 is refuted by this probe.",
+      "ts": "2026-08-25T13:24:27.118Z"
+    },
+    {
+      "gid": "G2",
+      "target": "H3",
+      "kind": "no_change",
+      "text": "H3 claims both slow-deactivating inward current AND slow Na recovery contribute. P3 probe refuted H2's slow Na recovery component (predicted [0,8], observed 13.5). Since one of H3's two proposed mechanisms is incorrect, H3's combined model is not supported. H1 alone explains the data without requiring the additional slow Na component.",
+      "ts": "2026-08-25T13:24:37.110Z"
+    },
+    {
+      "gid": "G3",
+      "target": "H1",
+      "kind": "constraint",
+      "text": "H1 SUPPORTED by P3/P8 probes (13.5 spikes in [12,18]), but the hypothesis ignores several constraints: (1) The 'slow-deactivating inward current' is not identified — could be HCN, persistent Na, or T-type Ca2+; the campaign only characterized kinetics, not molecular identity. (2) The forecast for held-out protocols assumed linear voltage-dependence of deactivation, but real currents may have non-monotonic I-V relationships. (3) Campaign only tested seed 0 of ca_rebound world; kinetics may vary across seeds. (4) No voltage-clamp data to directly measure the current's reversal potential or conductance. (5) The 40-spike response after depolarizing conditioning may saturate — H1 predicts enhancement but not ceiling effects. These are scope constraints, not refutations.",
+      "ts": "2026-08-25T13:44:46.928Z"
+    }
+  ],
+  "reports": [
+    {
+      "path": "REPORT.md",
+      "sha256": "a488f85ba92175c8f6b5f3f5efc765cc888d4ac0674bb2081571054ade47cf5a",
+      "ts": "2026-08-25T13:47:29.719Z"
+    }
+  ],
+  "gateVerdicts": [
+    {
+      "ts": "2026-08-25T13:47:29.719Z",
+      "passed": true,
+      "report": "REPORT.md"
+    }
+  ],
+  "tampers": [],
+  "graveyard": [
+    {
+      "id": "H1",
+      "statement": "Slow-deactivating inward current (activated by depolarisation, deactivated by hyperpolarisation, time constant ~200-300ms)",
+      "predicts": [
+        "After hyperpolarisation, rebound firing is suppressed because the inward current is deactivated",
+        "More negative hyperpolarisation causes more suppression (dose-response)",
+        "Brief depolarisation before test boosts firing (current reactivates)",
+        "Paired pulses show facilitation because first pulse activates current, second benefits"
+      ],
+      "state": "SUPPORTED",
+      "conflicts": "H1 and H2 both explain the depol/hyperpol asymmetry but differ on kinetics — H1 has slow deactivation (hundreds of ms), H2 has slow Na recovery (also slow but different voltage dependence)",
+      "byProbe": "P3"
+    },
+    {
+      "id": "H2",
+      "statement": "Slow Na inactivation/recovery (slow_na=true) — Na channels recover slowly from inactivation at hyperpolarised potentials",
+      "predicts": [
+        "After hyperpolarisation, Na channels recover slowly → fewer spikes in test",
+        "More negative hyperpolarisation accelerates recovery → more spikes (opposite to H1!)",
+        "Paired pulses show reduced second response due to Na inactivation"
+      ],
+      "state": "REFUTED",
+      "conflicts": "H2 differs from H1 in that the mechanism is slow Na recovery rather than an explicit extra current; both predict similar conditioning effects but H2 predicts stronger frequency-dependent adaptation",
+      "byProbe": "P8"
+    },
+    {
+      "id": "H3",
+      "statement": "Both slow-deactivating inward current AND slow Na recovery contribute to rebound behavior",
+      "predicts": [
+        "Combines predictions of H1 and H2",
+        "Both mechanisms contribute to the observed patterns",
+        "More complex model but better fit"
+      ],
+      "state": "REFUTED",
+      "conflicts": "H3 combines H1 and H2; if supported, it explains all observations but is less parsimonious",
+      "byProbe": "P8"
+    }
+  ]
+}

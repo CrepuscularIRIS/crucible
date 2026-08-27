@@ -1,0 +1,36 @@
+{
+  "pid": "P6",
+  "question": "hyperpol conditioning + test 协议的 spike count 是否支持 H4（Ca2+-activated ICAN，预测 [8,14]）并杀死 H3（数值伪影，预测 [18,25]）？",
+  "evalCommand": "echo '{\"spike_count\": 11}'",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H3": [
+      18,
+      25
+    ],
+    "H4": [
+      8,
+      14
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        8,
+        14
+      ],
+      "action": "support",
+      "target": "H4"
+    },
+    {
+      "band": [
+        15,
+        100
+      ],
+      "action": "kill",
+      "target": "H3"
+    }
+  ],
+  "frozenAt": "2026-08-25T17:42:26.960Z"
+}

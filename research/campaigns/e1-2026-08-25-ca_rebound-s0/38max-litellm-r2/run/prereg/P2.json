@@ -1,0 +1,105 @@
+{
+  "pid": "P2",
+  "question": "gap 弱测试判别探针：判别 H1(Ih 增强)/H2(IT 去失活爆发)/H4(外向电流抑制)对弱测试协议(-30 uA/250ms→120ms gap→+6 uA)测试窗计数的分歧预测。load-bearing variable=该协议最近一次真细胞观测的 spike_count（从 world-ledger.jsonl 读取）；对照=参考模型无附加电流免费模拟均值 6.75±1（reps20），以及 IT_tiny(g=0.02)=8.6、Ih_small(g=0.1)=7.7、IKout(g=0.1)=5.75 的免费签名。severity：若真细胞无附加电流（计数≈6-7），本探针会落带外或模糊区触发 triage，不会给所有假设都发通行证。观测动作将在本预登记冻结后执行（reps=2, seed=0）。",
+  "evalCommand": "bash -lc 'L=/root/.proma-dev/agent-workspaces/default/workspace-files/.proma-research/e1-ca_rebound-s0-38max-litellm-r2/world-ledger.jsonl; line=$(grep \"\\\"cmd\\\": \\\"observe\\\"\" \"$L\" | grep \"weak test\" | tail -1); if [ -z \"$line\" ]; then echo \"gap_test_spike_count=-1\"; else sc=$(echo \"$line\" | grep -o \"\\\"spike_count\\\": [0-9.-]*\" | grep -o \"[0-9.-]*$\"); echo \"gap_test_spike_count=$sc\"; fi'",
+  "metricKind": "regex",
+  "metricSpec": "gap_test_spike_count=(-?[0-9.]+)",
+  "bands": {
+    "H1": [
+      6,
+      10
+    ],
+    "H2": [
+      11,
+      18
+    ],
+    "H4": [
+      0,
+      5
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0,
+        5
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        0,
+        5
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        0,
+        5
+      ],
+      "action": "support",
+      "target": "H4"
+    },
+    {
+      "band": [
+        6,
+        10
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        6,
+        10
+      ],
+      "action": "kill",
+      "target": "H4"
+    },
+    {
+      "band": [
+        6,
+        10
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        11,
+        18
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        11,
+        18
+      ],
+      "action": "kill",
+      "target": "H4"
+    },
+    {
+      "band": [
+        11,
+        18
+      ],
+      "action": "support",
+      "target": "H2"
+    },
+    {
+      "band": [
+        0,
+        5
+      ],
+      "action": "scope",
+      "target": "H4",
+      "scopeNote": "gap 计数低于所有电流机制的免费模拟下限——未知电流若存在则其外向分量更强或动力学更慢，需新假设"
+    }
+  ],
+  "frozenAt": "2026-08-25T12:26:47.037Z"
+}

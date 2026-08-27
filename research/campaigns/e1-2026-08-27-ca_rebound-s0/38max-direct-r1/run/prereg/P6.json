@@ -1,0 +1,45 @@
+{
+  "pid": "P6",
+  "question": "H6 家族（超极化失活放大器，栅格 g∈{0.7,1.5,2.0}, hvh=-80, hk=+5, htau=30, E=20, mvh=-45）能否复现长步阶观测 32±2？load-bearing variable = H6 最佳成员（g=1.5，journal 长步阶模拟列表索引 5）的 mean_spike_count；对照 = 观测 32 与 H3 家族（索引 2 = 32）。判别 H6 的家族可行性声明。severity：若 H6 家族真能匹配，栅格内存在成员 ≥30，[30,45] 带会大概率通过；若最佳仅 28，说明失活门在步阶中同样拖累发放，家族无法定量复现。栅格有界性已声明。",
+  "evalCommand": "python3 -c \"import json; evs=[json.loads(l) for l in open('/root/.proma-research/e1-2026-08-27-ca_rebound-s0/journal.jsonl')]; sims=[e['mean_spike_count'] for e in evs if e.get('op')=='world.simulate' and e.get('protocol')=='long step (10 uA, 300 ms)']; assert len(sims)>5; print(json.dumps({'best_h6': sims[5]}))\"",
+  "metricKind": "json",
+  "metricSpec": "best_h6",
+  "bands": {
+    "H6": [
+      30,
+      45
+    ],
+    "H3": [
+      0,
+      29
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        30,
+        45
+      ],
+      "action": "support",
+      "target": "H6"
+    },
+    {
+      "band": [
+        0,
+        29
+      ],
+      "action": "kill",
+      "target": "H6",
+      "scopeNote": "有界栅格内 H6 最佳 28 < 30：超极化失活门在步阶振荡中周期性关闭，无法定量复现 +11 基线放大"
+    },
+    {
+      "band": [
+        0,
+        29
+      ],
+      "action": "support",
+      "target": "H3"
+    }
+  ],
+  "frozenAt": "2026-08-27T14:49:50.844Z"
+}

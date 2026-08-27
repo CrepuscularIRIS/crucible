@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "entries": {
+    "prompt": {},
+    "memory": {
+      "research_report_declare_gate_syntax": {
+        "id": "research_report_declare_gate_syntax",
+        "kind": "memory",
+        "title": "research-report-declare-gate-syntax",
+        "content": "report_declare reconcile gate enforces two strict syntax rules:\n1. NUMBER ATTRIBUTION: Every numerical value in REPORT.md must carry a (P#) tag referencing a metric_recompute output. Raw values from world_observe or world_simulate have no P# provenance and MUST be converted to prediction bands (e.g., [15, 22]) or qualitative statements. Only metric_recompute return values may appear as attributed numbers.\n2. CONCLUSION LINE FORMAT: Hypothesis status lines (typically in Section 5) must EXACTLY match the register format: '- H{N}: {STATUS}' with NO trailing text, em-dashes, parenthetical probe references, or descriptions. Extra text causes case-insensitive string mismatch against the register. Place explanatory context in surrounding prose, not on the status line itself.",
+        "path": "research/report-gates",
+        "scope": "local",
+        "reference": {},
+        "arguments": {},
+        "metadata": {
+          "scope": "local",
+          "source": "e1-textbookM-s0-max report_declare failures"
+        },
+        "source": "refine",
+        "created_at": "2026-08-24T18:25:26.798Z",
+        "updated_at": "2026-08-24T18:25:26.798Z",
+        "version": 1
+      }
+    },
+    "skill": {},
+    "subagent": {}
+  },
+  "refinements": [
+    {
+      "id": "refine_20260824182516533",
+      "trigger": "Capture report_declare gate syntax constraints to prevent recurring reconciliation failures in this research session.",
+      "changes": [
+        "create memory:research_report_declare_gate_syntax"
+      ],
+      "evidence": "The trajectory shows two failed report_declare attempts due to (1) unattributed numbers from world_observe/simulate and (2) hypothesis status lines with trailing descriptions not matching the register. These are strict, repeatable syntax rules for the research-report workflow that will apply to any subsequent report declarations in this session.",
+      "outcome": "Future REPORT.md drafts in this session will comply with reconcile gate on first attempt, avoiding wasted edit-declare cycles. Validate by checking that next report_declare passes reconcile without number-attribution or conclusion-format errors.",
+      "created_at": "2026-08-24T18:25:26.798Z"
+    }
+  ]
+}

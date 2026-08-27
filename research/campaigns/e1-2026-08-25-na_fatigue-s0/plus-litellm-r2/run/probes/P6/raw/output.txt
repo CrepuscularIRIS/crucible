@@ -1,0 +1,1 @@
+{"min_interspike_strong": -77.342}

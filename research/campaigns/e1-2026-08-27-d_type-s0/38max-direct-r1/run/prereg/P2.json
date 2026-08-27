@@ -1,0 +1,198 @@
+{
+  "pid": "P2",
+  "question": "超极化条件化(-30uA/250ms)+测试(+12uA/150ms)的测试窗计数判别：外向电流家族（H2≤13、H4≤14）vs 内向/中性家族（H1、H3、H5、16–20）vs H6（14–20）。load-bearing variable=测试窗尖峰计数；对照=参考同协议模拟=17.2（参考自身有快 h 恢复引起的 +2.4 条件化效应，频段已含）。severity：若被检假设为假（如真机制是 Ih），计数将停留 16–20，外向假设的≤ 13/14 判据不会通过——判据成立。",
+  "evalCommand": "python3 -c \"import json; evs=[json.loads(l) for l in open('/root/.proma-research/e1-2026-08-27-d_type-s0/journal.jsonl')]; ob=[e for e in evs if e.get('op')=='world.observe' and e.get('protocol')=='hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)']; print(json.dumps({'spike_count': ob[0]['spike_count']}))\"",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H1": [
+      15,
+      19
+    ],
+    "H2": [
+      7,
+      13
+    ],
+    "H3": [
+      16,
+      20
+    ],
+    "H4": [
+      8,
+      14
+    ],
+    "H5": [
+      16,
+      19
+    ],
+    "H6": [
+      14,
+      20
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0,
+        13
+      ],
+      "action": "support",
+      "target": "H2",
+      "scopeNote": "与慢外向电流抑制一致"
+    },
+    {
+      "band": [
+        0,
+        13
+      ],
+      "action": "support",
+      "target": "H4",
+      "scopeNote": "与 A 型去失活后增强外向电流一致"
+    },
+    {
+      "band": [
+        0,
+        13
+      ],
+      "action": "kill",
+      "target": "H1",
+      "scopeNote": "超极化条件化不应压低计数（恢复方向）"
+    },
+    {
+      "band": [
+        0,
+        13
+      ],
+      "action": "kill",
+      "target": "H3",
+      "scopeNote": "Ih 预测测试窗计数不降"
+    },
+    {
+      "band": [
+        0,
+        13
+      ],
+      "action": "kill",
+      "target": "H5",
+      "scopeNote": "持续内向电流预测不降"
+    },
+    {
+      "band": [
+        0,
+        13
+      ],
+      "action": "kill",
+      "target": "H6",
+      "scopeNote": "超出参考噪声带下界"
+    },
+    {
+      "band": [
+        14,
+        20
+      ],
+      "action": "scope",
+      "target": "H2",
+      "scopeNote": "若存在则电导低于可检出阈值，收窄为弱慢 K"
+    },
+    {
+      "band": [
+        14,
+        20
+      ],
+      "action": "scope",
+      "target": "H4",
+      "scopeNote": "若存在则去失活效应低于可检出阈值，收窄为弱 A 型"
+    },
+    {
+      "band": [
+        14,
+        20
+      ],
+      "action": "support",
+      "target": "H1",
+      "scopeNote": "与慢 Na/参考行为一致"
+    },
+    {
+      "band": [
+        14,
+        20
+      ],
+      "action": "support",
+      "target": "H3",
+      "scopeNote": "与 Ih 计数中性预测一致（sag 另作辅助证据）"
+    },
+    {
+      "band": [
+        14,
+        20
+      ],
+      "action": "support",
+      "target": "H5",
+      "scopeNote": "与增益预测一致"
+    },
+    {
+      "band": [
+        14,
+        20
+      ],
+      "action": "support",
+      "target": "H6",
+      "scopeNote": "落在参考噪声带内"
+    },
+    {
+      "band": [
+        21,
+        40
+      ],
+      "action": "scope",
+      "target": "H3",
+      "scopeNote": "放大强于模拟范围，若 sag 同时存在则强 Ih"
+    },
+    {
+      "band": [
+        21,
+        40
+      ],
+      "action": "scope",
+      "target": "H5",
+      "scopeNote": "增益强于模拟范围，强 NaP"
+    },
+    {
+      "band": [
+        21,
+        40
+      ],
+      "action": "kill",
+      "target": "H1",
+      "scopeNote": "无人预测超极化条件化显著增计数"
+    },
+    {
+      "band": [
+        21,
+        40
+      ],
+      "action": "kill",
+      "target": "H2",
+      "scopeNote": "外向电流假设被反向证伪"
+    },
+    {
+      "band": [
+        21,
+        40
+      ],
+      "action": "kill",
+      "target": "H4",
+      "scopeNote": "A 型假设被反向证伪"
+    },
+    {
+      "band": [
+        21,
+        40
+      ],
+      "action": "kill",
+      "target": "H6",
+      "scopeNote": "超出参考噪声带上界"
+    }
+  ],
+  "frozenAt": "2026-08-27T15:03:50.584Z"
+}

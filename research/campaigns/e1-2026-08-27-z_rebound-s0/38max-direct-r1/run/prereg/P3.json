@@ -1,0 +1,72 @@
+{
+  "pid": "P3",
+  "question": "静息基线兴奋性是否被额外电流改变（参考模型=7 spikes/40 ms）？load-bearing variable：无 conditioning 的裸 test；对照=参考模型计数 7。H2（I_h）预测静息去极化抬高基线（≥10）；H3 预测基线保持参考水平。severity：若 H2 的 I_h 不影响静息电位，计数落 [4,9]，H2 被判 scope——通过。",
+  "evalCommand": "python3 -c \"import json,statistics;P='brief step (12 uA, 40 ms)';vs=[e['spike_count'] for e in map(json.loads,open('/root/.proma-research/e1-2026-08-27-z_rebound-s0/journal.jsonl')) if e.get('op')=='world.observe' and e.get('protocol')==P and e.get('world')=='z_rebound' and e.get('seed')==0];print(json.dumps({'spikes':statistics.mean(vs) if vs else float('nan')}))\"",
+  "metricKind": "json",
+  "metricSpec": "spikes",
+  "bands": {
+    "H2": [
+      10,
+      100
+    ],
+    "H3": [
+      4,
+      9
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        4,
+        9
+      ],
+      "action": "support",
+      "target": "H3"
+    },
+    {
+      "band": [
+        4,
+        9
+      ],
+      "action": "scope",
+      "target": "H2",
+      "scopeNote": "静息基线未抬高：若 I_h 存在，其静息电导占比小，回弹增益需来自 conditioning 激活量而非静息紧张"
+    },
+    {
+      "band": [
+        10,
+        100
+      ],
+      "action": "support",
+      "target": "H2"
+    },
+    {
+      "band": [
+        10,
+        100
+      ],
+      "action": "scope",
+      "target": "H3",
+      "scopeNote": "基线抬高与零假设矛盾：H3 仅可在噪声解释下幸存，需重新审查"
+    },
+    {
+      "band": [
+        10,
+        100
+      ],
+      "action": "scope",
+      "target": "H1",
+      "scopeNote": "基线抬高提示静息内向电流：H1 需与静息效应叠加解读"
+    },
+    {
+      "band": [
+        10,
+        100
+      ],
+      "action": "scope",
+      "target": "H4",
+      "scopeNote": "基线抬高与纯瞬态外向电流预期不符，需重新审查"
+    }
+  ],
+  "frozenAt": "2026-08-27T14:26:16.347Z"
+}

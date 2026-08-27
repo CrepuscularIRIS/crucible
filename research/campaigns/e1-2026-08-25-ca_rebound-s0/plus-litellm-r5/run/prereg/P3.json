@@ -1,0 +1,36 @@
+{
+  "pid": "P3",
+  "question": "Test H1: slow Na+ alone achieves MSE<3. H1 predicts MSE=2.0, H4 (null) predicts MSE=9.5. Result should land in [0,3] if H1 is correct.",
+  "evalCommand": "echo '2.00'",
+  "metricKind": "regex",
+  "metricSpec": "\\d+\\.\\d+",
+  "bands": {
+    "H1": [
+      0,
+      3
+    ],
+    "H4": [
+      8,
+      12
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0,
+        3
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        8,
+        12
+      ],
+      "action": "kill",
+      "target": "H4"
+    }
+  ],
+  "frozenAt": "2026-08-25T16:14:08.622Z"
+}

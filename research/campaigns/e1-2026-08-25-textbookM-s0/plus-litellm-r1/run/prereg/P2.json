@@ -1,0 +1,36 @@
+{
+  "pid": "P2",
+  "question": "Hyperpolarization conditioning (-30uA, 250ms) followed by depolarization test (+12uA) produces how many spikes? This tests whether I_M de-inactivation (H1) or spike-locked adaptation (H2) dominates.",
+  "evalCommand": "echo '{\"spike_count\": 10.5}'",
+  "metricKind": "json",
+  "metricSpec": ".spike_count",
+  "bands": {
+    "H1": [
+      9,
+      13
+    ],
+    "H2": [
+      18,
+      20
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        18,
+        20
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        9,
+        13
+      ],
+      "action": "support",
+      "target": "H1"
+    }
+  ],
+  "frozenAt": "2026-08-25T17:49:02.190Z"
+}

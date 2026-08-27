@@ -1,0 +1,76 @@
+{
+  "pid": "P5",
+  "question": "长步阶 +11 超额可重复吗（确证探针，reps=2 平均降噪）？load-bearing variable = reps=2 的长步阶 spike_count；对照 = 单次观测 32 与参考 21。判别 H9（方差）vs {H3,H6,H7}（稳定额外电流）。severity：若超额是噪声（H9 真），读数将落 [17,26]，[27,45] 带不会大概率通过。",
+  "evalCommand": "python3 -c \"import json; evs=[json.loads(l) for l in open('/root/.proma-research/e1-2026-08-27-ca_rebound-s0/journal.jsonl')]; obs=[e['spike_count'] for e in evs if e.get('op')=='world.observe' and e.get('protocol')=='long step (10 uA, 300 ms)' and e.get('reps')==2]; assert obs, 'reps=2 observation not landed'; print(json.dumps({'spike_count': obs[0]}))\"",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H3": [
+      27,
+      45
+    ],
+    "H6": [
+      27,
+      45
+    ],
+    "H7": [
+      27,
+      45
+    ],
+    "H9": [
+      17,
+      26
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        27,
+        45
+      ],
+      "action": "kill",
+      "target": "H9"
+    },
+    {
+      "band": [
+        27,
+        45
+      ],
+      "action": "support",
+      "target": "H3"
+    },
+    {
+      "band": [
+        17,
+        26
+      ],
+      "action": "kill",
+      "target": "H3"
+    },
+    {
+      "band": [
+        17,
+        26
+      ],
+      "action": "kill",
+      "target": "H6"
+    },
+    {
+      "band": [
+        17,
+        26
+      ],
+      "action": "kill",
+      "target": "H7"
+    },
+    {
+      "band": [
+        17,
+        26
+      ],
+      "action": "support",
+      "target": "H9"
+    }
+  ],
+  "frozenAt": "2026-08-27T14:48:51.097Z"
+}
