@@ -166,6 +166,26 @@ qwen3.7-plus(E1)+ qwen3.8-max(E1M,百炼直连);上下文六层(静态契约→
 - **过程指标(确定性)**:declare 真调率 12/12;催促:欠费/重启类中性唤醒
   ×8+内容提示 ×1(E1M 事故台账);回显探针率 0(结构闸生效后无登记尝试
   通过;带内轨迹见 ARFT C.1 回落)。【证据】
+- **确定性审计脚本(评委可一行复算)**:`research/eval/journal_metrics.py`
+  纯本地解析六臂 journal,零 LLM 调用。六臂结果(表存
+  `Race/report-work/figures/T-metrics-6arm.txt`):
+
+  | 臂 | gate | prereg重哈希 | REPORT sha | MSE引用一致 | heldout协议 | 外部催促 |
+  |---|---|---|---|---|---:|---:|
+  | ca_rebound | ✅ | 8/8 | ✅ | ✅ | 4 | 0 |
+  | d_type | ✅ | 7/7 | ✅ | ✅ | 4 | 0 |
+  | h_sag | ✅ | 5/5 | ✅ | ✅ | 4 | 0 |
+  | na_fatigue | ✅ | 5/5 | ✅ | ✅ | 6 | 0 |
+  | textbook_M | ✅ | 9/9 | ✅ | ✅ | 6 | 0 |
+  | z_rebound | ✅ | 6/6 | ✅ | ✅ | 6 | 0 |
+
+  三层链条全通:journal 冻结的 `spec_sha256` 与磁盘 prereg 文件**重哈希
+  逐一致**(stableStringify 移植,与运行时 `gates/prereg.ts` 同构造);
+  `report.declare` 的 sha256 = 当前 REPORT.md 字节;REPORT 引用的 MSE =
+  journal 声明值的舍入。heldout 协议列=预报中从未模拟过的协议数——分数
+  来自真泛化而非插值。session.jsonl 内全部 user 消息均为运行时上下文注入,
+  **外部催促 0**(无人工干预的可验证证据)。复跑:
+  `python3 research/eval/journal_metrics.py research/campaigns/e1-2026-08-27-*-s0`
 - **消融阶梯(预登记候选,跑前预测已写死)**:(a)裸→(e)完整;
   预测 (b)≈(a) 于 F.4/D.7;(c) 动 R1 与 R2 判断半;(d) 动 R2 认识限半。
   跑完前只称「预登记的候选实验」。边界引用:Recovering Wasted Compute
