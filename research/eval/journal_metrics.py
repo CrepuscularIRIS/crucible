@@ -77,21 +77,21 @@ def nudge_count(session_path: Path) -> tuple[int, int]:
     return nudges, total
 
 
-def find_run_dir(bundle: Path) -> Path | None:
-    """Accept either BUNDLE/run or BUNDLE/ARM/run (campaign glob friendly)."""
+def find_run_dirs(bundle: Path) -> list[Path]:
+    """Expand a campaign dir to every arm dir holding run/journal.jsonl
+    (corpus layout: CAMPAIGN/ARM/run — plus-litellm-r2, 38max-direct-r1, …)."""
     if (bundle / "run" / "journal.jsonl").is_file():
-        return bundle / "run"
-    for child in sorted(bundle.iterdir()) if bundle.is_dir() else []:
-        if (child / "run" / "journal.jsonl").is_file():
-            return child / "run"
-    return None
+        return [bundle]
+    if not bundle.is_dir():
+        return []
+    return [c for c in sorted(bundle.iterdir()) if (c / "run" / "journal.jsonl").is_file()]
 
 
 def bundle_metrics(bundle: Path) -> dict:
-    run = find_run_dir(bundle)
-    if run is None:
-        return {"bundle": bundle.name, "error": "run/journal.jsonl missing"}
-    arm = run.parent.name
+    """bundle here is the ARM dir (has run/ inside); label = campaign/arm."""
+    run = bundle / "run"
+    campaign = bundle.parent.name.replace("-s0", "")
+    arm = bundle.name
     ops: list[dict] = []
     jp = run / "journal.jsonl"
     for line in open(jp, encoding="utf-8", errors="replace"):
@@ -176,7 +176,7 @@ def bundle_metrics(bundle: Path) -> dict:
     nudges, user_msgs = nudge_count(run.parent / "session.jsonl")
 
     return {
-        "bundle": f"{bundle.name.replace('-s0', '')}/{arm}",
+        "bundle": f"{campaign}/{arm}",
         "sim_calls": total_sims,
         "unique_protocols": unique_protos,
         "repl_rate": round(dup_rate, 3),
@@ -213,7 +213,7 @@ def main(argv: list[str]) -> int:
     if len(argv) < 2:
         print(__doc__)
         return 2
-    rows = [bundle_metrics(Path(a)) for a in argv[1:]]
+    rows = [bundle_metrics(arm) for a in argv[1:] for arm in find_run_dirs(Path(a))]
     widths = {c: max(len(c), *(len(str(r.get(c, ""))) for r in rows)) for c, _ in COLS}
     print(" | ".join(c.ljust(widths[c]) for c, _ in COLS))
     print("-|-".join("-" * widths[c] for c, _ in COLS))
