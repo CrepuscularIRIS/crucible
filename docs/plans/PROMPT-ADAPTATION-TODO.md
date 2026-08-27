@@ -124,6 +124,11 @@ benchmark 臂或改写 journal/gate 状态。
   nature-figure + nature-shared;上游 Yuan1z0825/nature-skills@1562ab7,
   Apache-2.0,LICENSE 与 SOURCE 随附;nature-figure 后端已钉 python/matplotlib)。
   仅作为比赛技术报告的宿主写作/绘图层,仍不得进入 benchmark 容器或公开镜像。
+- **2026-08-26 追加:两套写作技能已 vendored 进 crucible 内置**
+  (`apps/electron/default-skills/`:nature 三件 Apache-2.0 + CCFA 18 件 MIT,共 127M;
+  270M 论文语料排除,见各 SOURCE.md)。**评测边界**:21 条 description ≈3k token
+  会进每个新建工作区会话的技能清单——任务#5/#6 的 benchmark 臂必须在当前
+  (pre-vendor)镜像上跑完;之后重建的镜像用于 demo/论文工作区。
 - 缺失的不是一句 prompt，而是只读交付编译层：evidence → section/figure-slot contract →
   Matplotlib PDF/SVG → caption/manifest → 技术报告 DOCX/PDF → 全页渲染 QA。
 

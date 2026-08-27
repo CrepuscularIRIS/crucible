@@ -81,3 +81,4 @@ __pycache__/
 # 运行痕迹：研究战役状态、浏览器 dump —— 都是本机产物，不入库
 .proma-research/
 .playwright-mcp/
+.tmp-staging/
