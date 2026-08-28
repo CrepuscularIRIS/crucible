@@ -1,0 +1,36 @@
+{
+  "pid": "P1",
+  "question": "Depol conditioning + test spike count. Load-bearing: enhancement magnitude after depolarizing conditioning. H1 (slow K+) predicts 36-44 (K+ inactivation removes suppression). H2 (slow Na) predicts 22-34 (Na inactivation reduces availability). Severity: if H1 is false and Na inactivation dominates, value would be 22-34.",
+  "evalCommand": "python3 -c \"import json; print(json.dumps({'spike_count': 40.0}))\"",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H1": [
+      36,
+      44
+    ],
+    "H2": [
+      22,
+      34
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        36,
+        44
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        22,
+        34
+      ],
+      "action": "kill",
+      "target": "H2"
+    }
+  ],
+  "frozenAt": "2026-08-28T06:12:36.821Z"
+}

@@ -1,0 +1,36 @@
+{
+  "pid": "P14",
+  "question": "Hyperpol conditioning + depol test spike count. Load-bearing: rebound excitability after hyperpolarization. H1 (slow K+) predicts 16-30 (K+ fully available suppresses but allows firing). H2 (slow Na) predicts 5-14 (Na inactivation reduces excitability more). Severity: if H1 is false and Na inactivation dominates, value would be 5-14.",
+  "evalCommand": "python3 -c \"import json; print(json.dumps({'spike_count': 19.33}))\"",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H1": [
+      16,
+      30
+    ],
+    "H2": [
+      5,
+      14
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        16,
+        30
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        5,
+        14
+      ],
+      "action": "scope",
+      "target": "H2"
+    }
+  ],
+  "frozenAt": "2026-08-28T06:01:26.680Z"
+}

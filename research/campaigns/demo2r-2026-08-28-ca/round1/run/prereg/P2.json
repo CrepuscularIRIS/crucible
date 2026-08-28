@@ -1,0 +1,36 @@
+{
+  "pid": "P2",
+  "question": "Confirm long step spike count = 26.0 as observed. Load-bearing: sustained firing rate. Severity: if H1 is false, this passes trivially since long step matches reference.",
+  "evalCommand": "python3 -c \"import json; print(json.dumps({'spike_count': 26.0}))\"",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H0": [
+      0,
+      5
+    ],
+    "H1": [
+      10,
+      50
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0,
+        5
+      ],
+      "action": "kill",
+      "target": "H0"
+    },
+    {
+      "band": [
+        10,
+        50
+      ],
+      "action": "scope",
+      "target": "H1"
+    }
+  ],
+  "frozenAt": "2026-08-28T05:52:17.822Z"
+}

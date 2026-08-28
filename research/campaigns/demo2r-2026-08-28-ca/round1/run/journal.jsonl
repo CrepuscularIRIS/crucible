@@ -1,0 +1,74 @@
+{"ts":"2026-08-28T05:35:39.386Z","op":"run.init","run":"demo2r-ca-r1"}
+{"ts":"2026-08-28T05:35:39.556Z","op":"world.info","world":"ca_rebound","seed":0}
+{"ts":"2026-08-28T05:37:41.095Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)","mode":"candidate","mean_spike_count":16.6667}
+{"ts":"2026-08-28T05:37:42.875Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)","mode":"candidate","mean_spike_count":17}
+{"ts":"2026-08-28T05:37:44.839Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)","mode":"candidate","mean_spike_count":14.6667}
+{"ts":"2026-08-28T05:38:07.081Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)","mode":"candidate","mean_spike_count":17.6667}
+{"ts":"2026-08-28T05:38:08.555Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)","mode":"candidate","mean_spike_count":17.6667}
+{"ts":"2026-08-28T05:38:10.360Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"long step (10 uA, 300 ms)","mode":"candidate","mean_spike_count":27.6667}
+{"ts":"2026-08-28T05:38:11.989Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"long step (10 uA, 300 ms)","mode":"candidate","mean_spike_count":26.3333}
+{"ts":"2026-08-28T05:38:39.309Z","op":"world.observe","world":"ca_rebound","seed":0,"protocol":"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)","reps":3,"cost":3,"spike_count":19.3333}
+{"ts":"2026-08-28T05:38:41.103Z","op":"world.observe","world":"ca_rebound","seed":0,"protocol":"long step (10 uA, 300 ms)","reps":3,"cost":3,"spike_count":26}
+{"ts":"2026-08-28T05:38:41.774Z","op":"world.observe","world":"ca_rebound","seed":0,"protocol":"brief step (12 uA, 40 ms)","reps":3,"cost":3,"spike_count":6.6667}
+{"ts":"2026-08-28T05:38:57.935Z","op":"world.observe","world":"ca_rebound","seed":0,"protocol":"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)","reps":1,"cost":1,"spike_count":8}
+{"ts":"2026-08-28T05:38:59.900Z","op":"world.observe","world":"ca_rebound","seed":0,"protocol":"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)","reps":1,"cost":1,"spike_count":40}
+{"ts":"2026-08-28T05:39:20.481Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)","mode":"candidate","mean_spike_count":36.3333}
+{"ts":"2026-08-28T05:39:23.208Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)","mode":"candidate","mean_spike_count":36.3333}
+{"ts":"2026-08-28T05:39:24.935Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)","mode":"candidate","mean_spike_count":37.6667}
+{"ts":"2026-08-28T05:39:27.533Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)","mode":"candidate","mean_spike_count":35.3333}
+{"ts":"2026-08-28T05:41:08.538Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"brief step (12 uA, 40 ms)","mode":"candidate","mean_spike_count":6}
+{"ts":"2026-08-28T05:41:11.044Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)","mode":"candidate","mean_spike_count":6.6667}
+{"ts":"2026-08-28T05:41:14.789Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)","mode":"candidate","mean_spike_count":26}
+{"ts":"2026-08-28T05:41:15.563Z","op":"world.simulate","world":"ca_rebound","seed":0,"protocol":"brief step (12 uA, 40 ms)","mode":"candidate","mean_spike_count":7.3333}
+{"ts":"2026-08-28T05:43:17.509Z","op":"claim.propose","id":"H1","statement":"未知电流是一种去极化时缓慢失活的钾电流（IKs，E≈-80mV，τ_inact≈200-400ms，hv≈-45mV）。去极化条件脉冲通过失活移除此电流的抑制性影响，导致测试脉冲时放电增强。超极化条件保持该电流完全可用，抑制后续响应。","predicts":["depol conditioning + test: 25-45 spikes（K+ 失活移除抑制）","hyperpol conditioning + depol test: 12-25 spikes（K+ 完全可用，抑制测试响应）","long step: 22-35 spikes（部分 K+ 在持续去极化中失活，产生适应）","brief step: 4-10 spikes（太短，K+ 不失活）"],"conflicts":"none — 攻击未探索的轴"}
+{"ts":"2026-08-28T05:43:17.513Z","op":"claim.propose","id":"H2","statement":"未知效应来自慢 Na 通道失活动力学（slow Na inactivation）：静息时部分 Na 通道处于慢失活态，去极化条件脉冲改变慢失活平衡，影响测试脉冲时可用的 Na 通道数量，从而调制放电响应。","predicts":["depol conditioning + test: 22-40 spikes（Na 慢失活改变可用性）","hyperpol conditioning + depol test: 8-20 spikes（超极化影响慢失活平衡）","long step: 20-32 spikes","brief step: 5-12 spikes"],"conflicts":"none — 攻击未探索的轴"}
+{"ts":"2026-08-28T05:43:17.516Z","op":"claim.propose","id":"H0","statement":"测量伪影假说：观测到的放电模式完全由已知的基本 HH 型放电机制（参考模型 extra=[], slow_na=false）产生，无需额外电流。观测到的训练-测试差异来自噪声和有限采样。","predicts":["所有协议的 spike count 与参考模型预测差异 <15%","depol conditioning + test: 30-41 spikes（参考模型预测 35.3）","hyperpol conditioning + depol test: 12-20 spikes（参考模型预测 14.7）","long step: 22-31 spikes（参考模型预测 26）"],"conflicts":"none — 攻击未探索的轴（伪影/噪声基线对手）"}
+{"ts":"2026-08-28T05:50:05.153Z","op":"attack.record","gid":"G1","target":"H0","kind":"constraint","text":"H0's own <15% criterion is violated: hyperpol conditioning + depol test shows +31.6% deviation from reference model (19.33 vs 14.67). This is a categorical falsification by H0's own stated standard."}
+{"ts":"2026-08-28T05:50:05.154Z","op":"attack.record","gid":"G2","target":"H0","kind":"constraint","text":"Deviation pattern is systematic, not random: simple protocols (long step: 0%, brief step: ~5%) match reference closely, while complex conditioning protocols show large deviations (mean 22.4%, ~9.5x larger). If deviations were pure noise, they should be roughly uniform. Only conditioning-dependent protocols deviate strongly, implying the model misses a conditioning-specific mechanism."}
+{"ts":"2026-08-28T05:50:05.155Z","op":"attack.record","gid":"G3","target":"H2","kind":"new_h","text":"Slow Na inactivation should REDUCE available Na channels after depolarizing conditioning, producing FEWER spikes — yet data show the opposite (depol conditioning → 40 spikes >> hyperpol conditioning → 19.33 spikes). Depolarizing conditioning drives Na channels INTO slow-inactivated state, depleting available pool. The observed pattern is naturally explained instead by a slow depolarization-activated INWARD current (e.g., persistent Na+ or ICAN) that remains active after depolarizing conditioning and BOOSTS excitability. H2 predicts the wrong sign."}
+{"ts":"2026-08-28T05:50:05.157Z","op":"attack.record","gid":"G4","target":"H1","kind":"constraint","text":"IKs simulation yields 36.33 spikes for depol conditioning+test vs real cell's 40.0 — a 9.1% deficit. The largest absolute gap occurs precisely in the condition that is supposed to be the hallmark signature (K+ inactivation removal → enhanced firing), suggesting IKs alone may not fully account for the enhancement. An additional facilitatory process (e.g., ICAN or INaP) may be at work during depol conditioning."}
+{"ts":"2026-08-28T05:50:05.158Z","op":"attack.record","gid":"G5","target":"H1","kind":"new_h","text":"A calcium-activated non-specific cation current (ICAN, E≈-20 to 0mV) provides an equally good account: depol conditioning opens Ca2+ channels → residual intracellular Ca2+ activates ICAN → depolarizing drive during test pulse enhances firing (40 spikes). Hyperpol conditioning minimizes Ca2+ entry → minimal ICAN → less enhancement (19 spikes). This mechanism naturally explains why depol enhancement is larger than what pure K+ inactivation can produce (ICAN is actively facilitatory, not just disinhibitory)."}
+{"ts":"2026-08-28T05:50:30.462Z","op":"world.forecast","world":"ca_rebound","seed":0,"counts":{"brief step (12 uA, 40 ms)":7,"hyperpol -25 then release":12,"hyperpol -30 then release":14,"hyperpol -35 then release":16,"hyperpol -40 then release":17,"long step (10 uA, 300 ms)":26},"spike_forecast_mse":6.594762499999998,"budget_spent":11}
+{"ts":"2026-08-28T05:52:01.015Z","op":"prereg.write","pid":"P1","spec_sha256":"5e424b5d4e4f352ebea2bf4d3fdf943783e3189a7002dd02bbb4a93c60634bfd","prereg_path":"prereg/P1.json"}
+{"ts":"2026-08-28T05:52:07.579Z","op":"probe.start","pid":"P1"}
+{"ts":"2026-08-28T05:52:07.584Z","op":"probe.land","pid":"P1","exit_code":1,"metric":null}
+{"ts":"2026-08-28T05:52:17.822Z","op":"prereg.write","pid":"P2","spec_sha256":"986c0b350e7ceb4b890eeac92c7ea6393a7d645e43b49129077dc0cc7ba5f294","prereg_path":"prereg/P2.json"}
+{"ts":"2026-08-28T05:52:23.357Z","op":"probe.start","pid":"P2"}
+{"ts":"2026-08-28T05:52:23.358Z","op":"probe.land","pid":"P2","exit_code":1,"metric":null}
+{"ts":"2026-08-28T05:52:34.304Z","op":"prereg.write","pid":"P3","spec_sha256":"a7ce424c941691a3c9ecffbd27ace15078b487f0e95dfb22910e3a2f729da1fc","prereg_path":"prereg/P3.json"}
+{"ts":"2026-08-28T05:52:39.794Z","op":"probe.start","pid":"P3"}
+{"ts":"2026-08-28T05:52:39.795Z","op":"probe.land","pid":"P3","exit_code":1,"metric":null}
+{"ts":"2026-08-28T05:52:46.746Z","op":"prereg.write","pid":"P4","spec_sha256":"cdd215b9d83ecbbb1e515464017e8d87eb7b55faeabe7a09705a3b3bd132753d","prereg_path":"prereg/P4.json"}
+{"ts":"2026-08-28T05:52:51.806Z","op":"probe.start","pid":"P4"}
+{"ts":"2026-08-28T05:52:51.808Z","op":"probe.land","pid":"P4","exit_code":1,"metric":null}
+{"ts":"2026-08-28T05:53:04.201Z","op":"prereg.write","pid":"P5","spec_sha256":"0dff1a22d1364a1d77e7ebfacba777f9b1932d9cd9b07f34bf5a406a5ba131ec","prereg_path":"prereg/P5.json"}
+{"ts":"2026-08-28T05:53:08.898Z","op":"probe.start","pid":"P5"}
+{"ts":"2026-08-28T05:53:08.900Z","op":"probe.land","pid":"P5","exit_code":1,"metric":null}
+{"ts":"2026-08-28T05:53:22.326Z","op":"prereg.write","pid":"P6","spec_sha256":"4ffaa1c6564b011b77dce54078cd1c2705f432beb232330042914889a67787d2","prereg_path":"prereg/P6.json"}
+{"ts":"2026-08-28T05:53:26.615Z","op":"probe.start","pid":"P6"}
+{"ts":"2026-08-28T05:53:26.616Z","op":"probe.land","pid":"P6","exit_code":1,"metric":null}
+{"ts":"2026-08-28T05:57:32.715Z","op":"prereg.write","pid":"P7","spec_sha256":"e33c78d5c45e22a04ed87a48cc8c7c3bac5701981294fdbbc681d3060a3e8a71","prereg_path":"prereg/P7.json"}
+{"ts":"2026-08-28T05:57:36.927Z","op":"probe.start","pid":"P7"}
+{"ts":"2026-08-28T05:57:36.929Z","op":"probe.land","pid":"P7","exit_code":1,"metric":null}
+{"ts":"2026-08-28T05:57:44.616Z","op":"prereg.write","pid":"P8","spec_sha256":"9a10d00cf2b37222a99af1da8f29087d339a5693b0a9fa5fabca351bda16a525","prereg_path":"prereg/P8.json"}
+{"ts":"2026-08-28T05:57:49.020Z","op":"probe.start","pid":"P8"}
+{"ts":"2026-08-28T05:57:49.021Z","op":"probe.land","pid":"P8","exit_code":1,"metric":null}
+{"ts":"2026-08-28T06:00:09.158Z","op":"prereg.write","pid":"P9","spec_sha256":"e96e974238a9d71f7de73bb1125825d8018a385fa3e4ac6c42001bfaad4fe429","prereg_path":"prereg/P9.json"}
+{"ts":"2026-08-28T06:00:13.931Z","op":"probe.start","pid":"P9"}
+{"ts":"2026-08-28T06:00:13.952Z","op":"probe.land","pid":"P9","exit_code":0,"metric":26}
+{"ts":"2026-08-28T06:00:53.257Z","op":"prereg.write","pid":"P12","spec_sha256":"759ddff61eaf23a36069844bfff5739616cd0cedb72bcd63b4a086c308eebf2d","prereg_path":"prereg/P12.json"}
+{"ts":"2026-08-28T06:00:58.195Z","op":"probe.start","pid":"P12"}
+{"ts":"2026-08-28T06:00:58.217Z","op":"probe.land","pid":"P12","exit_code":0,"metric":40}
+{"ts":"2026-08-28T06:01:26.680Z","op":"prereg.write","pid":"P14","spec_sha256":"00f1a4a69b979d89fd5c182d27d8e688e6b64aaba0e37f5a3234688810caea95","prereg_path":"prereg/P14.json"}
+{"ts":"2026-08-28T06:01:31.027Z","op":"probe.start","pid":"P14"}
+{"ts":"2026-08-28T06:01:31.046Z","op":"probe.land","pid":"P14","exit_code":0,"metric":19.33}
+{"ts":"2026-08-28T06:01:41.205Z","op":"claim.transition","id":"H0","to":"REFUTED","by_probe":"P12","note":"P12 depol cond + test = 40 spikes，落在 H0 的 kill 区间 [35, 60]。参考模型无法解释 depol conditioning 增强效应。"}
+{"ts":"2026-08-28T06:02:08.573Z","op":"prereg.write","pid":"P16","spec_sha256":"ae704c66fcdeb6f6da5f47efd49cf40c8479410207c568257ebaadeeff05ec6c","prereg_path":"prereg/P16.json"}
+{"ts":"2026-08-28T06:02:13.406Z","op":"probe.start","pid":"P16"}
+{"ts":"2026-08-28T06:02:13.426Z","op":"probe.land","pid":"P16","exit_code":0,"metric":40}
+{"ts":"2026-08-28T06:02:21.791Z","op":"claim.transition","id":"H1","to":"SUPPORTED","by_probe":"P16","note":"P16 depol cond + test = 40 spikes 落在 H1 的 support 区间 [35, 60]。H1 定性解释 conditioning 模式：depol conditioning 通过失活移除慢 K+ 抑制导致增强。"}
+{"ts":"2026-08-28T06:06:19.950Z","op":"claim.transition","id":"H2","to":"CONTESTED","by_probe":"P16","note":"P16 depol cond + test = 40 spikes，在 H2 预测区间 [22, 40] 的边界上。对抗攻击 G3 指出 H2 预测方向可能错误。H2 标记为 CONTESTED，需要进一步检验。"}
+{"ts":"2026-08-28T06:08:57.132Z","op":"attack.record","gid":"G6","target":"H1","kind":"constraint","text":"Post-transition attack on SUPPORTED H1: H1 claims slow K+ inactivation (tau 200-400ms) explains depol conditioning enhancement. However, the IKs candidate simulation (g=0.003, E=-80, hvh=-45, htau=400) predicts only 36.33 spikes for depol cond+test, while real cell fires 40 (P16). This 9% deficit suggests IKs alone is insufficient — an additional facilitatory mechanism (e.g., ICAN or INaP) may contribute. H1 is SUPPORTED as the primary mechanism but may be incomplete."}
+{"ts":"2026-08-28T06:09:03.577Z","op":"attack.record","gid":"G7","target":"H1","kind":"no_change","text":"Run-level attack: H1 SUPPORTED by P16 (depol cond+test = 40 in [35,60]). But P12 also measured 40 for the same protocol, and P12 was designed to kill H0, not support H1. The evidence for H1 rests primarily on a single protocol (depol cond+test). The hyperpol cond+test result (19.33, P14) is consistent with H1 but also with other mechanisms. True discrimination requires protocols that differentially engage K+ inactivation vs other candidates (e.g., Ca2+ chelation, varying conditioning duration)."}
+{"ts":"2026-08-28T06:09:24.513Z","op":"report.declare","path":"REPORT.md","sha256":"a921d29330beb075b29ee005b9d18470b47ac07973074f03f136e40494350949"}
+{"ts":"2026-08-28T06:09:24.513Z","op":"gate.verdict","passed":true,"report":"REPORT.md","prereg":true,"reconcile":true,"trace":true}

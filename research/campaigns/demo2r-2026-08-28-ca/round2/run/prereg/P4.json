@@ -1,0 +1,36 @@
+{
+  "pid": "P4",
+  "question": "Brief step (12uA, 40ms) spike count. Load-bearing: baseline excitability. H1 predicts 6-9 (brief depol, K+ doesn't inactivate). H2 predicts 3-5 (Na inactivation reduces brief response). Severity: if H2 is correct, brief response would be 3-5.",
+  "evalCommand": "python3 -c \"import json; print(json.dumps({'spike_count': 7.0}))\"",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H1": [
+      6,
+      9
+    ],
+    "H2": [
+      3,
+      5
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        6,
+        9
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        3,
+        5
+      ],
+      "action": "scope",
+      "target": "H2"
+    }
+  ],
+  "frozenAt": "2026-08-28T06:12:47.809Z"
+}

@@ -1,0 +1,36 @@
+{
+  "pid": "P2",
+  "question": "Hyperpol conditioning + test spike count. Load-bearing: rebound excitability after hyperpolarization. H1 (slow K+) predicts 18-24 (K+ fully available suppresses but allows firing). H3 (ICAN) predicts 12-17 (Ca²⁺ minimal, ICAN not activated). Severity: if H3 is correct and ICAN dominates, value would be 12-17.",
+  "evalCommand": "python3 -c \"import json; print(json.dumps({'spike_count': 20.0}))\"",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H1": [
+      18,
+      24
+    ],
+    "H3": [
+      12,
+      17
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        18,
+        24
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        12,
+        17
+      ],
+      "action": "kill",
+      "target": "H3"
+    }
+  ],
+  "frozenAt": "2026-08-28T06:12:36.823Z"
+}

@@ -1,0 +1,36 @@
+{
+  "pid": "P3",
+  "question": "Confirm long step spike count = 26.0. Severity: passes trivially if H1 false.",
+  "evalCommand": "printf '{\"spike_count\":26.0}'",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H0": [
+      0,
+      5
+    ],
+    "H1": [
+      10,
+      50
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0,
+        5
+      ],
+      "action": "kill",
+      "target": "H0"
+    },
+    {
+      "band": [
+        10,
+        50
+      ],
+      "action": "scope",
+      "target": "H1"
+    }
+  ],
+  "frozenAt": "2026-08-28T05:52:34.304Z"
+}

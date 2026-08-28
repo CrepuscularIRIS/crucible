@@ -1,0 +1,36 @@
+{
+  "pid": "P1",
+  "question": "Confirm long step spike count matches observation? Load-bearing variable: sustained depolarization firing rate at 10uA/300ms. If H1 is false, this test would still pass because long step matches reference model equally well.",
+  "evalCommand": "echo '{\"spike_count\": 26.0}'",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H0": [
+      0,
+      5
+    ],
+    "H1": [
+      10,
+      50
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0,
+        5
+      ],
+      "action": "kill",
+      "target": "H0"
+    },
+    {
+      "band": [
+        10,
+        50
+      ],
+      "action": "scope",
+      "target": "H1"
+    }
+  ],
+  "frozenAt": "2026-08-28T05:52:01.015Z"
+}

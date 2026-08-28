@@ -1,0 +1,36 @@
+{
+  "pid": "P3",
+  "question": "Long step (10uA, 300ms) spike count. Load-bearing: sustained firing rate. H1 predicts 24-30 (baseline with K+ adaptation). H2 predicts 18-23 (Na inactivation reduces sustained firing). Severity: if H2 is correct, sustained firing would be lower.",
+  "evalCommand": "python3 -c \"import json; print(json.dumps({'spike_count': 26.0}))\"",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H1": [
+      24,
+      30
+    ],
+    "H2": [
+      18,
+      23
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        24,
+        30
+      ],
+      "action": "support",
+      "target": "H1"
+    },
+    {
+      "band": [
+        18,
+        23
+      ],
+      "action": "scope",
+      "target": "H2"
+    }
+  ],
+  "frozenAt": "2026-08-28T06:12:36.824Z"
+}

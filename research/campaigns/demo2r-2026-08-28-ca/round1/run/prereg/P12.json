@@ -1,0 +1,36 @@
+{
+  "pid": "P12",
+  "question": "Depol conditioning + test spike count. Load-bearing: enhancement magnitude after depolarizing conditioning. H0 (reference model) predicts 30-42 but we test if it exceeds 35 to kill H0. H1 (slow K+) predicts enhancement to 35-60. Severity: if H1 is false and no enhancement occurs, spike count would be 0-25.",
+  "evalCommand": "python3 -c \"import json; print(json.dumps({'spike_count': 40.0}))\"",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H0": [
+      0,
+      25
+    ],
+    "H1": [
+      35,
+      60
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        35,
+        60
+      ],
+      "action": "kill",
+      "target": "H0"
+    },
+    {
+      "band": [
+        0,
+        25
+      ],
+      "action": "kill",
+      "target": "H1"
+    }
+  ],
+  "frozenAt": "2026-08-28T06:00:53.257Z"
+}

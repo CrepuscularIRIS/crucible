@@ -1,0 +1,36 @@
+{
+  "pid": "P4",
+  "question": "Diagnostic probe to test sandbox. Severity: trivial.",
+  "evalCommand": "cat /etc/hostname",
+  "metricKind": "regex",
+  "metricSpec": "(.*)",
+  "bands": {
+    "H0": [
+      0,
+      5
+    ],
+    "H1": [
+      10,
+      50
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0,
+        5
+      ],
+      "action": "kill",
+      "target": "H0"
+    },
+    {
+      "band": [
+        10,
+        50
+      ],
+      "action": "scope",
+      "target": "H1"
+    }
+  ],
+  "frozenAt": "2026-08-28T05:52:46.745Z"
+}

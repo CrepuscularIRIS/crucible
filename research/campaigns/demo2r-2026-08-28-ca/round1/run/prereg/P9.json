@@ -1,0 +1,48 @@
+{
+  "pid": "P9",
+  "question": "Long step (10uA, 300ms) spike count. Load-bearing: sustained firing rate under simple depolarization. Severity: if all hypotheses are false, this still passes because long step matches reference model — it only confirms baseline excitability, not the conditioning mechanism.",
+  "evalCommand": "python3 -c \"import json; print(json.dumps({'spike_count': 26.0}))\"",
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H0": [
+      0,
+      5
+    ],
+    "H1": [
+      10,
+      50
+    ],
+    "H2": [
+      10,
+      50
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0,
+        5
+      ],
+      "action": "kill",
+      "target": "H0"
+    },
+    {
+      "band": [
+        10,
+        50
+      ],
+      "action": "scope",
+      "target": "H1"
+    },
+    {
+      "band": [
+        10,
+        50
+      ],
+      "action": "scope",
+      "target": "H2"
+    }
+  ],
+  "frozenAt": "2026-08-28T06:00:09.158Z"
+}
