@@ -103,6 +103,7 @@ F3 不可证伪观测/F4 单假设/F5 预算错配/F6 状态失忆;F1/F2/F3 同�
 
 ## P6|系统总体架构与技术闭环
 
+**图1**(`figures/fig1-architecture.png`,可编辑源 `fig1-architecture.drawio`):
 五层(Proma→Prime→research-mcp 唯一认知 owner→bwrap 沙箱→外部 meter)。
 **闭合论证**:闭合不来自「模型发代码」;来自模型不能绕过的 owner/类型迁移/
 oracle/提交边界。RLM 是程序化状态操纵的 substrate(锚跨压缩、子代理即函数
@@ -113,6 +114,7 @@ oracle/提交边界。RLM 是程序化状态操纵的 substrate(锚跨压缩、�
 
 ## P7|Qwen 使用方式与上下文工程
 
+**图2**(`figures/fig2-context-layers.png`):真实一回合的六层注入结构。
 qwen3.7-plus(E1)+ qwen3.8-max(E1M,百炼直连);上下文六层(静态契约→
 终局契约→环境→状态推导 skills→内核锚→轨迹);对话可丢 journal 不可丢;
 页面文本不可信。百炼直连臂即赛题要求的调用凭证来源。
@@ -194,6 +196,8 @@ qwen3.7-plus(E1)+ qwen3.8-max(E1M,百炼直连);上下文六层(静态契约→
 
 ## P19|总体结果、失败分析与适用边界
 
+图3(`figures/fig3-mse-12arm.png`,12 臂 MSE)·图4(`figures/fig4-stability.png`,
+稳定性纵向)·图5(`figures/fig5-arft-pillars.png`,ARFT 四支柱对比)。
 E1+E1M 全表(上);稳定性纵向;E2/E2b 双列审计(同判官):诚信簇
 93-100%→0-33%,支柱 P3 38% 居首→P1/P2/P3 拉平(24/23/22/7);zreb 4 hits
 最干净;**判官敏感性实测**(opus-5 vs glm-5.3 同批:15.6 vs 12.7、诚信簇
