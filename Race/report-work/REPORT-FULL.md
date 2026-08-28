@@ -236,6 +236,22 @@ claim 状态与 journal 真值漂移(H1 实为 SUPPORTED 复确证而非"降级"
   跑完前只称「预登记的候选实验」。边界引用:Recovering Wasted Compute
   (固定模型改 agentic design 已有)/Hypothesis Graph(coding 域)/
   ECT(并行工作)。
+- **定位声明与后续实验(最小集成路线)**:本作品刻意选择**最小集成**——
+  不引入学习式 controller,只把科研诚信编译为少量不可绕过的运行时结构
+  (承诺装置:预登记冻结/类型化迁移/三道 gate/终局契约),可全部确定性地
+  审计与复跑。**后续实验**(预登记的四假设计划,均可在本系统上单变量拆解):
+  ①Metacognition——固定 reflection 文本量、只改 server refusal,测强制因果边;
+  ②Belief-revision——逐条删除 prereg/evidence-ownership/reconcile/graveyard,
+  看哪条边断则 failure 暴涨;③Meta-control——把 control actions(retry/branch/
+  retain/verify/terminate 等)形式化为 typed 状态上的 semi-MDP,以
+  **artifact 级不一致残差**为单位 token 目标(带 coverage 约束防"沉默最优"),
+  在公开 800 轨迹语料上离线拟合、推理期一步策略改进——其中
+  **信号反转预测**可先验证:artifact 不一致与 grader-fitting 负相关、
+  task score 与其正相关(E0 不过则该路线不成立);④Representation——
+  模型内部是否存在可预测"该 reframe/stop/challenge"的稳定方向并跨任务迁移。
+  已核实的边界条件:该后续依赖公开语料含**完整 artifacts**(当前代码 repo
+  不含 800 条语料,数据另行发布,artifact 完整性尚未证实)。近期工程项:
+  把 claim 状态叙事表纳入 reconcile(demo2r 实测的 gate 覆盖边界)。
 
 ## P19|总体结果、失败分析与适用边界
 
