@@ -58,7 +58,10 @@ def first_text(content) -> str:
 
 
 def nudge_count(session_path: Path) -> tuple[int, int]:
-    """(external nudges, total non-context user messages) from agent session."""
+    """(external nudges, total non-context user messages) from the UI-level
+    session log (proma-session.jsonl: type=='user' text messages; tool_result
+    entries excluded). The runtime view (session.jsonl) shows wakes only as
+    context refreshes — it must not be used for this count."""
     nudges = total = 0
     if not session_path.is_file():
         return -1, -1
@@ -67,10 +70,15 @@ def nudge_count(session_path: Path) -> tuple[int, int]:
             e = json.loads(line)
         except json.JSONDecodeError:
             continue
-        msg = e.get("message") if e.get("type") == "message" else None
-        if not msg or msg.get("role") != "user":
+        if e.get("type") != "user":
             continue
-        if is_context_msg(first_text(msg.get("content"))):
+        msg = e.get("message") or {}
+        content = msg.get("content")
+        if not isinstance(content, list) or not content:
+            continue
+        if content[0].get("type") != "text":  # tool_result turns excluded
+            continue
+        if is_context_msg(content[0].get("text", "")):
             continue
         total += 1
         nudges += 1 if total > 1 else 0  # first non-context msg = the task itself
@@ -173,7 +181,7 @@ def bundle_metrics(bundle: Path) -> dict:
         report_ok = got == report_sha if got else None
 
     states = Counter(v or "OPEN" for v in claims.values())
-    nudges, user_msgs = nudge_count(run.parent / "session.jsonl")
+    nudges, user_msgs = nudge_count(run.parent / "proma-session.jsonl")
 
     return {
         "bundle": f"{campaign}/{arm}",

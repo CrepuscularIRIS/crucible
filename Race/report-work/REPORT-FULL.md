@@ -174,19 +174,22 @@ qwen3.7-plus(E1)+ qwen3.8-max(E1M,百炼直连);上下文六层(静态契约→
 
   | 臂 | gate | prereg重哈希 | REPORT sha | MSE引用一致 | heldout协议 | 外部催促 |
   |---|---|---|---|---|---:|---:|
-  | ca_rebound | ✅ | 8/8 | ✅ | ✅ | 4 | 0 |
-  | d_type | ✅ | 7/7 | ✅ | ✅ | 4 | 0 |
+  | ca_rebound | ✅ | 8/8 | ✅ | ✅ | 4 | 2 |
+  | d_type | ✅ | 7/7 | ✅ | ✅ | 4 | 4 |
   | h_sag | ✅ | 5/5 | ✅ | ✅ | 4 | 0 |
-  | na_fatigue | ✅ | 5/5 | ✅ | ✅ | 6 | 0 |
-  | textbook_M | ✅ | 9/9 | ✅ | ✅ | 6 | 0 |
+  | na_fatigue | ✅ | 5/5 | ✅ | ✅ | 6 | 2 |
+  | textbook_M | ✅ | 9/9 | ✅ | ✅ | 6 | 2 |
   | z_rebound | ✅ | 6/6 | ✅ | ✅ | 6 | 0 |
 
   三层链条全通:journal 冻结的 `spec_sha256` 与磁盘 prereg 文件**重哈希
   逐一致**(stableStringify 移植,与运行时 `gates/prereg.ts` 同构造);
   `report.declare` 的 sha256 = 当前 REPORT.md 字节;REPORT 引用的 MSE =
   journal 声明值的舍入。heldout 协议列=预报中从未模拟过的协议数——分数
-  来自真泛化而非插值。session.jsonl 内全部 user 消息均为运行时上下文注入,
-  **外部催促 0**(无人工干预的可验证证据)。复跑:
+  来自真泛化而非插值。**外部催促计数如实为 10 次/六臂**(UI 层
+  proma-session.jsonl 的非任务 user 消息;z_rebound/h_sag 全程零干预),
+  全部对应欠费停摆与容器重启后的中性唤醒「继续」,与事故台账逐条对账;
+  运行时视角(session.jsonl)里 wake 只留下上下文刷新痕迹,不单独成消息
+  ——计数以 UI 层日志为准。复跑:
   `python3 research/eval/journal_metrics.py research/campaigns/e1-2026-08-27-*-s0`
 - **消融阶梯(预登记候选,跑前预测已写死)**:(a)裸→(e)完整;
   预测 (b)≈(a) 于 F.4/D.7;(c) 动 R1 与 R2 判断半;(d) 动 R2 认识限半。
