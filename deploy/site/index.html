@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XH-202619 · 方向1B 在线演示</title>
+<style>
+:root{--blue:#1d4ed8;--ink:#1f2937;--mut:#475569;--line:#cbd5e1;--bg:#f8fafc}
+*{box-sizing:border-box}
+body{font-family:"Noto Sans CJK SC",system-ui,sans-serif;color:var(--ink);margin:0;background:var(--bg);line-height:1.6}
+.wrap{max-width:1000px;margin:0 auto;padding:28px 20px 60px}
+header{border-bottom:3px solid var(--blue);padding-bottom:14px;margin-bottom:22px}
+h1{font-size:22px;margin:0 0 6px}
+.sub{color:var(--mut);font-size:13px}
+h2{font-size:17px;color:var(--blue);margin:34px 0 10px;border-left:4px solid var(--blue);padding-left:10px}
+table{border-collapse:collapse;width:100%;background:#fff;font-size:13px;margin:10px 0}
+td,th{border:1px solid var(--line);padding:6px 9px;text-align:left;vertical-align:top}
+th{background:#eff6ff}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:14px 0}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.kpi b{display:block;font-size:20px;color:var(--blue)}
+.kpi span{font-size:12px;color:var(--mut)}
+img{max-width:100%;border:1px solid var(--line);border-radius:6px;display:block;margin:8px 0}
+.tl{list-style:none;padding:0;margin:0}
+.tl li{display:flex;gap:12px;padding:8px 0;border-bottom:1px dashed var(--line);font-size:13.5px}
+.tl time{flex:0 0 92px;color:var(--blue);font-family:ui-monospace,monospace;font-size:12px}
+.badge{display:inline-block;background:#dcfce7;color:#166534;border-radius:4px;padding:1px 7px;font-size:12px}
+.badge.bad{background:#fee2e2;color:#991b1b}
+pre{background:#0f172a;color:#e2e8f0;padding:12px 14px;border-radius:8px;overflow-x:auto;font-size:12.5px}
+input,select,textarea,button{font:inherit;padding:7px 10px;border:1px solid var(--line);border-radius:6px}
+button{background:var(--blue);color:#fff;border:none;cursor:pointer}
+button:hover{filter:brightness(1.1)}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0;align-items:center}
+#resp{white-space:pre-wrap;background:#fff;border:1px solid var(--line);border-radius:6px;padding:10px;min-height:60px;font-size:12.5px;font-family:ui-monospace,monospace}
+footer{margin-top:40px;color:var(--mut);font-size:12px;border-top:1px solid var(--line);padding-top:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<h1>科学实验任务规划与反馈迭代 · 运行时化</h1>
+<div class="sub">XH-202619 · 赛道一 · 方向 1B|Proma(桌面 Agent 产品)× Prime Agent 运行时 × research-mcp(确定性认识论底座)|基座:Qwen(qwen3.7-plus / qwen3.8-max,阿里云百炼)</div>
+</header>
+
+<div class="kpis">
+<div class="kpi"><b>12/12</b><span>臂 declare 真调·三道 gate 全绿</span></div>
+<div class="kpi"><b>6.59</b><span>两轮案例第一轮 MSE(qwen3.8-max 同世界 35.53)</span></div>
+<div class="kpi"><b>93%→0-33%</b><span>ARFT 诚信簇失败率坍缩(同判官)</span></div>
+<div class="kpi"><b>17.6s</b><span>容器冷启到 UI 可用(复现包实测)</span></div>
+</div>
+
+<h2>① 总体思路:journal 驱动的两轮闭环</h2>
+<img src="fig0-loop-strip.png" alt="闭环示意">
+<p style="font-size:13.5px">科研诚信从提示词纪律<b>编译成运行时结构</b>:预登记 sha256 冻结、类型化假设迁移(互斥频段/kill 分支/回显拒绝)、指标服务端重算、终局唯一合法收口是当庭过三道 gate 的声明。元认知不由 meta-agent 承担,由 journal 未清偿的 epistemic debts + server 拒绝实现。</p>
+
+<h2>② 两轮闭环实录(ca_rebound,qwen3.7-plus)</h2>
+<table>
+<tr><th>维度</th><th>第一轮(seed 0)</th><th>第二轮(seed 1,以债务清单为唯一起点)</th></tr>
+<tr><td>gate</td><td><span class="badge bad">两拒后过门</span>(reconcile 拒数字无出处 → prereg 拒空 run)</td><td><span class="badge">一次过门</span></td></tr>
+<tr><td>预算</td><td>11/8 超支</td><td><b>4/8</b>(债务清偿)</td></tr>
+<tr><td>prereg 时序</td><td>0 先行(12 个后补)</td><td><b>4/4 先行</b></td></tr>
+<tr><td>MSE</td><td>6.595</td><td>14.333(跨 seed 不可直比)</td></tr>
+<tr><td>假设终态</td><td>H1✓ H2? H3✗</td><td>H1 以收紧带 [36,44] 复确证;ICAN 登记为 H3</td></tr>
+</table>
+<p style="font-size:12.5px;color:var(--mut)">关键片段:第一轮 declare 被 gate 两次拒绝的修复回路、第二轮以「遗留与债务」段开局的完整 UI 实况,见录屏与报告 P13–P17(截图 16 张 + bundle 可复算)。</p>
+<img src="shot-declared.png" alt="第二轮一次过门" style="max-width:720px">
+
+<h2>③ 评委可调用测试 API</h2>
+<p style="font-size:13.5px">下面表单直连本站 gateway(白名单通道 + token 认证 + 每日限额);也可用 curl(token 见报告 P20):</p>
+<pre>curl -s -H "Authorization: Bearer &lt;token&gt;" https://&lt;本站&gt;/api/sessions
+curl -s -H "Authorization: Bearer &lt;token&gt;" https://&lt;本站&gt;/api/session/&lt;id&gt;/messages | tail -40
+curl -X POST -H "Authorization: Bearer &lt;token&gt;" -H "Content-Type: application/json" \
+     -d '{"message":"你的问题"}' https://&lt;本站&gt;/api/session/&lt;id&gt;/message</pre>
+
+<div class="row">
+<input id="tok" type="password" placeholder="token(报告 P20)" style="flex:1;min-width:200px">
+<select id="ep"><option value="sessions">GET /api/sessions</option></select>
+<button id="go">调用</button>
+</div>
+<div class="row">
+<input id="sid" placeholder="会话 id(从上方 sessions 拿)" style="flex:1;min-width:220px">
+<button id="msgs">拉取该会话消息</button>
+</div>
+<div class="row">
+<input id="msg" placeholder="发一条消息给 Qwen(≤500 字,每日限额 40 次/IP)" style="flex:1;min-width:220px">
+<button id="send">发送</button>
+</div>
+<div id="resp">响应将显示在这里。消息发送后等 1-2 分钟再「拉取该会话消息」可见模型回复。</div>
+
+<h2>④ 交付与复现</h2>
+<table>
+<tr><th>材料</th><th>入口</th></tr>
+<tr><td>技术报告 PDF(12 页,官方模板)</td><td>提交附件</td></tr>
+<tr><td>源码(提交记录=时间戳证据)</td><td>github.com/CrepuscularIRIS/crucible</td></tr>
+<tr><td>复现包(冷启 17.6s/驱动脚本/API 文档)</td><td>仓库 Race/report-work/repro/</td></tr>
+<tr><td>两轮闭环 bundle + 12 臂 bundle</td><td>research/campaigns/(journal_metrics.py 一行复算)</td></tr>
+<tr><td>百炼调用凭证</td><td>报告 P20(6,143 次调用/3.96 亿 token/7 模型全 Qwen 族)</td></tr>
+</table>
+
+<footer>
+初赛评估期内本服务保持在线。仿真世界结果不表述为已完成真实科学实验;判官敏感性与叙事漂移等边界见报告 P17/P19。
+</footer>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+async function call(path, opts) {
+  $('resp').textContent = '请求中…';
+  try {
+    const r = await fetch(path, {
+      ...opts,
+      headers: { authorization: 'Bearer ' + $('tok').value.trim(), 'content-type': 'application/json', ...(opts?.headers||{}) },
+    });
+    $('resp').textContent = `HTTP ${r.status}\n` + JSON.stringify(await r.json(), null, 2);
+  } catch (e) { $('resp').textContent = '错误:' + e.message + '(先填 token)' }
+}
+$('go').onclick = () => call('/api/sessions');
+$('msgs').onclick = () => { const id=$('sid').value.trim(); if(!id){$('resp').textContent='先填会话 id';return} call('/api/session/'+id+'/messages') };
+$('send').onclick = () => {
+  const id=$('sid').value.trim(), m=$('msg').value.trim();
+  if(!id||!m){$('resp').textContent='先填会话 id 和消息';return}
+  call('/api/session/'+id+'/message', { method:'POST', body: JSON.stringify({ message: m }) });
+};
+</script>
+</body>
+</html>
