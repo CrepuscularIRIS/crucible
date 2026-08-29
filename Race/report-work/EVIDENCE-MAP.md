@@ -31,13 +31,13 @@
 
 ## 图槽(matplotlib,数值一律由 evidence 渲染,红线 7)
 
-1. **F1 架构图**(P6):五模块 + 数据流(手绘 draw.io,无数值)
-2. **F2 上下文结构示意**(P7):真实一回合的注入结构(终局契约/skills/锚)
-3. **F3 六 world MSE 条形图**(P1/P19):0.17.76 干净基线,误差=跨轮方差标注
-4. **F4 稳定性时间线**(P12):0.17.73→0.17.77 人工干预次数/重启/超支→0
-5. **F5 ARFT 支柱图**(P19):P1-P4 HIT 分布 + 高频模式 top9
-6. **F6 两轮对照**(P17):round-1 vs round-2 关键指标(等任务#5)
-7. **F7 干预前后**(P18):declare 真调率/催促/回显探针 确定性计数(等任务#6)
+1. **fig1 架构图**(P6):✅ figures/fig1-architecture.png(+.drawio 源)
+2. **fig2 上下文结构**(P7):✅ figures/fig2-context-layers.png(+.drawio 源)
+3. **fig3 六 world MSE**(P1/P19):✅ figures/fig3-mse-12arm.png
+4. **fig4 稳定性时间线**(P12):✅ figures/fig4-stability.png
+5. **fig5 ARFT 支柱图**(P19):✅ figures/fig5-arft-pillars.png
+6. **fig6 两轮对照**(P17):✅ 已交付 figures/fig6-two-rounds.png(demo2r)
+7. **fig7 干预前后**(P18):✅ 已交付 figures/fig7-interventions.png(E1 未归档项如实标注)
 
 ## 确定性指标脚本(P5/P10/P18 共用,评委可重跑)
 

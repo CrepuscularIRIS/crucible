@@ -209,7 +209,10 @@ claim 状态与 journal 真值漂移(H1 实为 SUPPORTED 复确证而非"降级"
   ×8+内容提示 ×1(E1M 事故台账);回显探针率 0(结构闸生效后无登记尝试
   通过;带内轨迹见 ARFT C.1 回落)。【证据】
 - **确定性审计脚本(评委可一行复算)**:`research/eval/journal_metrics.py`
-  纯本地解析六臂 journal,零 LLM 调用。六臂结果(表存
+  纯本地解析六臂 journal,零 LLM 调用。**图7**(`figures/fig7-interventions.png`)
+  三联:declare 自主收口 E1 9/15(欠费中断)→ E1M 6/6(中断后自愈);
+  prereg 重哈希 62/62 与 40/40(跨版本完整性不变量);外部催促逐臂如实计数
+  (E1 UI 层日志未随 bundle 归档,不造数)。六臂明细(表存
   `Race/report-work/figures/T-metrics-6arm.txt`):
 
   | 臂 | gate | prereg重哈希 | REPORT sha | MSE引用一致 | heldout协议 | 外部催促 |
