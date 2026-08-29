@@ -29,15 +29,38 @@ const listeners = new Map<string, Set<Listener>>()
 /** 连接就绪前发起的调用先排队，连上后按序补发 —— 否则应用启动瞬间的调用会丢。 */
 const queued: string[] = []
 
+/** 断线自动重连（指数退避）。桥重启（如容器重建）后 UI 不必刷新即可恢复。 */
+let reconnectAttempts = 0
+let reconnectTimer: ReturnType<typeof setTimeout> | undefined
+
+function scheduleReconnect(): void {
+  if (reconnectTimer !== undefined) return
+  const delay = Math.min(15_000, 1_000 * 2 ** reconnectAttempts)
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = undefined
+    reconnectAttempts += 1
+    connectBridge().catch(() => {
+      /* 失败由下一次 onclose/onerror 继续调度 */
+    })
+  }, delay)
+}
+
 function flush(): void {
   if (socket?.readyState !== WebSocket.OPEN) return
   while (queued.length) socket.send(queued.shift() as string)
 }
 
+function socketIsDead(): boolean {
+  return socket !== undefined && (socket.readyState === WebSocket.CLOSING || socket.readyState === WebSocket.CLOSED)
+}
+
 function send(payload: unknown): void {
   const text = serializeWebBridgeMessage(payload)
   if (socket?.readyState === WebSocket.OPEN) socket.send(text)
-  else queued.push(text)
+  else if (socketIsDead()) {
+    // 死连接上排队 = 永远不 flush（无重连时），调用方宁愿立刻拿到失败。
+    throw new Error('web-bridge 连接已断开，正在自动重连；请稍后重试')
+  } else queued.push(text)
 }
 
 export function connectBridge(): Promise<void> {
@@ -45,6 +68,7 @@ export function connectBridge(): Promise<void> {
     socket = new WebSocket(WS_URL)
 
     socket.onopen = () => {
+      reconnectAttempts = 0
       flush()
       resolve()
     }
@@ -78,11 +102,15 @@ export function connectBridge(): Promise<void> {
       }
     }
 
-    socket.onerror = () => reject(new Error(`无法连接 web-bridge (${WS_URL})，主进程是否在运行？`))
+    socket.onerror = () => {
+      reject(new Error(`无法连接 web-bridge (${WS_URL})，主进程是否在运行？`))
+      scheduleReconnect()
+    }
     socket.onclose = () => {
       // 主进程退出时，所有在途调用必须失败，否则界面会永远转圈。
       for (const [, slot] of pending) slot.reject(new Error('web-bridge 连接已断开'))
       pending.clear()
+      scheduleReconnect()
     }
   })
 }
