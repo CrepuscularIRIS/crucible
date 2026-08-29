@@ -46,8 +46,11 @@ env:`PROMA_EVAL_BUDGET=8`、`PROMA_RESEARCH_DENY=/bench/neuronbench`、**无 `PR
 ## 与 E1M 的纪律差异(如实记录)
 
 - 本轮 **0 prereg 先行**:全部观测走 `world.observe`(计量细胞)而非 prereg→probe_run 沙箱路径;
-  首个 prereg.write 出现在 forecast 之后(05:52)。P14「计划先于执行」的证据因此退回
-  prereg 时间戳 + journal 顺序,而非 PLAN-v1.md——**PLAN-v1.md 未写**(目标里有要求,模型未执行)。
+  首个 prereg.write 出现在 forecast 之后(05:52)。**更正(08-29 复核)**:PLAN 文件两轮
+  均写了——落在 workspace 根且文件名带 run 后缀(`PLAN-v1-demo2r-ca-r1.md` 05:42:56 /
+  `PLAN-v2-demo2r-ca-r2.md` 06:11:40,已补入本 bundle),非 run 目录内故初次盘点漏计。
+  PLAN-v1 先于 forecast(05:50:30)与全部 prereg;prereg 时序分两层:先于各自执行 ✓,
+  先于预报 ✗(回填)。
 - `budget_spent=11 > EVAL_BUDGET=8`:候选 world.simulate 的 reps 是否计费待查 meter 语义;
   E1M ca 为 6/8。不构成 gate 违规(计量器未拒),记录在案。
 
@@ -55,8 +58,8 @@ env:`PROMA_EVAL_BUDGET=8`、`PROMA_RESEARCH_DENY=/bench/neuronbench`、**无 `PR
 
 - 06:10:23 反馈消息投递(同会话):seed 1、run `demo2r-ca-r2`、以债务清单为唯一起点、
   观测前强制 prereg、预算硬顶 8、「两轮对比」段。
-- 06:11–06:14 **plan-v2 仍未写**(两轮一致:该模型不写计划文件,P14 证据=prereg 时间戳),
-  但纪律完成迁移:3 claim 提案(H1 收紧频段/H2 继承/H3=ICAN 正式登记)→
+- 06:11–06:14 **PLAN-v2 已落盘**(06:11:40,含信念迁移清单+债务清偿计划;初判"未写"系
+  盘点漏计,见上方更正),纪律完成迁移:3 claim 提案(H1 收紧频段/H2 继承/H3=ICAN 正式登记)→
   4 prereg 全部**先于观测**冻结 → 4 observe + 4 probe 全落地(0 失败)。
 - 06:14:14 **world.forecast**(seed 1):MSE 14.333,`budget_spent=4`(预算债清偿:11→4)。
   梯度反跳结构 12/14/16/17 原样迁移;long step 26→33(新 seed 重校准;报告归因
@@ -70,8 +73,10 @@ env:`PROMA_EVAL_BUDGET=8`、`PROMA_RESEARCH_DENY=/bench/neuronbench`、**无 `PR
   这既是本轮的诚实披露,也是 gate 覆盖面的实测边界(候选改进:claim 状态表纳入 reconcile)。
 - 双轮审计(journal_metrics,评委可复算):r1 gate✓/prereg 重哈希 12/12/MSE 引用一致✓;
   r2 gate✓/prereg 4/4/REPORT sha✓(r2 报告引用了 forecast 事件但未写数值字面量,
-  mse_in_report=False 如实记录);催促计数:全会话 3 条非上下文 user 消息
-  = 2 条任务指令(r1/r2 各一)+1 条沙箱修复通知,真实"干预"仅最后者。
+  mse_in_report=False 如实记录);催促计数(08-29 更新):全会话 4 条非上下文 user 消息
+  = 2 条任务指令(r1/r2 各一)+ 1 条沙箱修复通知 + 1 条事后审计反馈
+  (08-29 09:52,重复措辞的 R2 指令——agent 读取两轮锚/claims/REPORT/PLAN 后无新 journal
+  事件,反馈所列事项 r2 已在前夜完成),真实"干预"= 后两者。
 
 ## 交付物
 

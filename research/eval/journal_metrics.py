@@ -78,6 +78,8 @@ def nudge_count(session_path: Path) -> tuple[int, int]:
             continue
         if content[0].get("type") != "text":  # tool_result turns excluded
             continue
+        if not content[0].get("text", "").strip():  # UI streaming artifacts
+            continue
         if is_context_msg(content[0].get("text", "")):
             continue
         total += 1
@@ -181,7 +183,10 @@ def bundle_metrics(bundle: Path) -> dict:
         report_ok = got == report_sha if got else None
 
     states = Counter(v or "OPEN" for v in claims.values())
-    nudges, user_msgs = nudge_count(run.parent / "proma-session.jsonl")
+    proma_sess = run.parent / "proma-session.jsonl"
+    if not proma_sess.is_file():  # demo-style bundles keep sessions at campaign root
+        proma_sess = run.parent.parent / "proma-session.jsonl"
+    nudges, user_msgs = nudge_count(proma_sess)
 
     return {
         "bundle": f"{campaign}/{arm}",
