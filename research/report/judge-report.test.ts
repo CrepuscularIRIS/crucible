@@ -73,4 +73,8 @@ describe('确定性', () => {
     )
     expect(new Set(shas).size).toBe(1)
   })
+
+  it('页面里不允许留下未填的 {{键}}（"仍不能确定"一节曾漏插值）', () => {
+    for (const dir of [ONE]) expect(buildReport(dir)).not.toMatch(/\{\{[^}]*\}\}/)
+  })
 })

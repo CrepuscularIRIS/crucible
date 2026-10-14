@@ -15,6 +15,7 @@ import {
   feedbackChange,
   fmtNum,
   hname,
+  interpolate,
   judgeNodes,
   JudgeError,
   parseBundle,
@@ -83,9 +84,9 @@ export function buildReport(dir: string, opts: { archive?: string; nav?: ReportM
       .map((pid): [string, string] => [`prereg/${pid}.json`, rec.preregs[pid]!.fileSha256]),
     ...Object.entries(rec.fileSha256).filter(([k]) => k !== 'register.json'),
   ]
-  return renderReport({
+  const html = renderReport({
     rec,
-    ann,
+    ann: { ...ann, unknowns: ann.unknowns.map((u) => interpolate(u, rc)) },
     archive: opts.archive ?? dir,
     answers: caseAnswers(rec, ann, rc),
     nodes,
@@ -96,6 +97,10 @@ export function buildReport(dir: string, opts: { archive?: string; nav?: ReportM
     nav: opts.nav ?? [],
     scriptRef: rc?.script ?? '',
   })
+  // 兜底：任何没填上的 {{键}} 都拒绝出页（"仍不能确定"一节曾漏插值，页面带着占位符上线）。
+  const left = html.match(/\{\{[^}]*\}\}/)
+  if (left) throw new JudgeError(`页面里还有未填的占位符 ${left[0]}`)
+  return html
 }
 
 if (import.meta.main) {
