@@ -92,7 +92,7 @@ import {
   seedManagedResearchSubagents,
 } from '../managed-research-subagents'
 import { MANAGED_RESEARCH_SUBAGENT_ROLES, buildResearchRlmSubagentSpec } from '../research-subagent-roles'
-import { getDefaultSkillsDir } from '../config-paths'
+import { getBundledResearchSkillsDir } from '../config-paths'
 import type { ResearchIsolationConfig } from '../research-isolation-guard'
 import { mergeRuntimeEnv, type AgentRuntimeEnv } from '../agent-runtime-env'
 import { sanitizePiMessageImageContent, sanitizeToolResultImageContent } from '../image-content-validation'
@@ -2211,7 +2211,7 @@ export class PiAgentAdapter implements AgentProviderAdapter {
           arm: researchArm,
           globalHarnessPath,
           skillDirs: researchSkills?.paths,
-          referenceSkillsDir: getDefaultSkillsDir(),
+          referenceSkillsDir: getBundledResearchSkillsDir(),
           unknownSkills: researchSkills?.unknown,
         })
         : undefined

@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
 import { describe, expect, it } from 'bun:test'
@@ -7,6 +7,7 @@ import {
   mergePromaManagedSkillPaths,
   narrowResearchSkillPaths,
   resolvePrimeNativeSkillPaths,
+  resolveSessionSkillRoots,
 } from './pi-managed-skills'
 import { createPromaManagedResourceLoaderOptions } from './pi-resource-loader-overrides'
 
@@ -60,7 +61,7 @@ describe('Prime 原生 Skills 受管接线', () => {
     } finally {
       rmSync(root, { recursive: true, force: true })
     }
-  })
+  }, 30_000)
 
   it('SE7b：研究会话的 native skill 路径里没有 refine（跳过 reviewer 的显式路径），非研究会话照旧', () => {
     const research = resolvePrimeNativeSkillPaths(undefined, { research: true }).map((path) => basename(path))
@@ -85,5 +86,42 @@ describe('Prime 原生 Skills 受管接线', () => {
     } finally {
       rmSync(root, { recursive: true, force: true })
     }
-  })
+  }, 30_000)
+  it('无工作区的研究会话：skill 根回退到 default-skills，Prime 把 research-kit 认成 python skill（kernel 据此装包）', async () => {
+    // 复现：容器里的验收会话 workspaceId 为空，旧逻辑只在有工作区时传 additionalSkillPaths，
+    // Prime 的 pythonSkills 只剩 compact/edit/goal，kernel 里 `import research_kit` 失败。
+    const root = mkdtempSync(join(tmpdir(), 'proma-research-default-skills-'))
+    try {
+      const defaultSkillsDir = join(root, 'default-skills')
+      cpSync(join(__dirname, '..', '..', '..', '..', '..', '..', 'research', 'skills', 'research-kit'), join(defaultSkillsDir, 'research-kit'), { recursive: true })
+      mkdirSync(join(defaultSkillsDir, 'pdf'), { recursive: true })
+      writeFileSync(join(defaultSkillsDir, 'pdf', 'SKILL.md'), '---\nname: pdf\ndescription: x\n---\n')
+
+      expect(resolveSessionSkillRoots(undefined, false, defaultSkillsDir)).toEqual([])
+      expect(resolveSessionSkillRoots('/ws/skills', true, defaultSkillsDir)).toEqual(['/ws/skills'])
+      const roots = resolveSessionSkillRoots(undefined, true, defaultSkillsDir)
+      expect(roots).toEqual([defaultSkillsDir])
+
+      const packageRoot = new URL('.', import.meta.resolve('@earendil-works/pi-coding-agent'))
+      const [{ DefaultResourceLoader }, { SettingsManager }, { getPythonSkillRuntimeInfo }] = await Promise.all([
+        import(new URL('./core/resource-loader.js', packageRoot).href),
+        import(new URL('./core/settings-manager.js', packageRoot).href),
+        import(new URL('./core/skills.js', packageRoot).href),
+      ])
+      const loader = new DefaultResourceLoader({
+        cwd: root,
+        agentDir: join(root, 'agent'),
+        settingsManager: SettingsManager.inMemory(),
+        ...createPromaManagedResourceLoaderOptions(),
+        additionalSkillPaths: narrowResearchSkillPaths(roots).paths,
+      })
+      await loader.reload()
+
+      const python = getPythonSkillRuntimeInfo(loader.getSkills().skills)
+      expect(python.map((skill: { importName: string }) => skill.importName)).toEqual(['research_kit'])
+      expect(python[0].packagePath).toBe(join(defaultSkillsDir, 'research-kit'))
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  }, 30_000)
 })

@@ -601,6 +601,24 @@ export function seedDefaultSkillsFromDirectory(
   }
 }
 
+/**
+ * 只读的 bundled 研究 skills 源目录（打包时 resources/research-skills，开发时仓库 research/skills）。
+ * K0 用它作"未被改动"的参照：无工作区研究会话直接从 default-skills 加载，拿 default-skills 自比永远相等。
+ * utility 进程里没有 electron app 时退回 default-skills（等于不比对，与旧行为一致）。
+ */
+export function getBundledResearchSkillsDir(): string {
+  try {
+    const { app } = require('electron')
+    return resolveResearchDefaultSkillsSource({
+      isPackaged: app.isPackaged,
+      appPath: app.getAppPath(),
+      resourcesPath: process.resourcesPath,
+    })
+  } catch {
+    return getDefaultSkillsDir()
+  }
+}
+
 export function seedDefaultSkills(): void {
   const { app } = require('electron')
   const bundledDir = app.isPackaged

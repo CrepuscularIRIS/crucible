@@ -78,3 +78,17 @@ export function narrowResearchSkillPaths(paths: string[]): { paths: string[]; un
   }
   return { paths: kept, unknown }
 }
+
+/**
+ * 会话交给 Prime 的 skill 根。研究会话不依赖工作区：research-kit 是 python skill，Prime 只给
+ * 模型可见的 skill 装包（editable 进 kernel venv），而研究隔离禁止模型自己装包——无工作区时
+ * 回退到 default-skills（启动时已从 bundled 研究 skills 同步），再由 narrowResearchSkillPaths 收窄。
+ */
+export function resolveSessionSkillRoots(
+  workspaceSkillsDir: string | undefined,
+  research: boolean,
+  defaultSkillsDir: string,
+): string[] {
+  if (workspaceSkillsDir) return [workspaceSkillsDir]
+  return research ? [defaultSkillsDir] : []
+}

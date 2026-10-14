@@ -51,12 +51,13 @@ import { getFetchFn } from './proxy-fetch'
 import { getEffectiveProxyUrl } from './proxy-settings-service'
 import { appendSDKMessages, updateAgentSessionMeta, getAgentSessionMeta, getAgentSessionMessages, removeSDKErrorMessage, updateSDKUserMessageSkillActivations, rewindPiAgentSession, resolveAgentCwd, getActiveWorktreePath, getAgentCwdMode, getSessionWorkbenchLayout } from './agent-session-manager'
 import { getAgentWorkspace, getLocalProjectRootStatus, getProjectFilesPath, getWorkspaceMcpConfig, getWorkspaceAttachedDirectories, getWorkspaceAttachedFiles, getWorkspaceAgentsMdPath, readWorkspaceAgentsMd, getWorkspaceMemoryGuidance, isWorkspaceProjectKnowledgeMaintenanceApproved } from './agent-workspace-manager'
-import { getAgentWorkspacePath, getAgentSessionWorkspacePath, getSdkConfigDir, getWorkspaceSkillsDir } from './config-paths'
+import { getAgentWorkspacePath, getAgentSessionWorkspacePath, getDefaultSkillsDir, getSdkConfigDir, getWorkspaceSkillsDir } from './config-paths'
 import { getRuntimeStatus } from './runtime-init'
 import { getSettings } from './settings-service'
 import { buildSystemPrompt, buildDynamicContext, buildResearchTerminalContext } from './agent-prompt-builder'
 import { resolveProjectInstructions } from './project-instruction-resolver'
 import { combinePromaInstructionFiles } from './adapters/pi-resource-loader-overrides'
+import { resolveSessionSkillRoots } from './adapters/pi-managed-skills'
 import { MAX_CONTEXT_MESSAGES, buildContextPrompt, buildRecoveryPrompt, buildReferencedSessionsPrompt } from './agent-session-context-prompt'
 import { buildReferencedPlanningPrompt } from './planning-reference-context'
 import { permissionService } from './agent-permission-service'
@@ -1027,7 +1028,14 @@ export class AgentOrchestrator {
         dirname(getManagedResearchSubagentHarnessPath()),
         ...(kernelVenvDir ? [kernelVenvDir] : []),
         ...(workspaceSlug ? [getWorkspaceSkillsDir(workspaceSlug)] : []),
+        // 无工作区的研究会话从这里 editable 安装 research-kit：模型改它就等于改 kernel 代码。
+        getDefaultSkillsDir(),
       ])
+      const skillRoots = resolveSessionSkillRoots(
+        workspaceSlug ? getWorkspaceSkillsDir(workspaceSlug) : undefined,
+        Boolean(researchIsolation),
+        getDefaultSkillsDir(),
+      )
       let piBuiltinTools: unknown[] = []
       let piMcpTools: unknown[] = []
       const piSdk = await import('@earendil-works/pi-coding-agent')
@@ -1528,10 +1536,8 @@ export class AgentOrchestrator {
         piAgentDir: getSdkConfigDir(),
         piSessionDir: join(getSdkConfigDir(), 'sessions'),
         ...(allAdditionalDirectories.length > 0 && { additionalDirectories: allAdditionalDirectories }),
-        ...(workspaceSlug ? {
-          additionalSkillPaths: [getWorkspaceSkillsDir(workspaceSlug)],
-          skillWorkspaceSlug: workspaceSlug,
-        } : {}),
+        ...(skillRoots.length > 0 && { additionalSkillPaths: skillRoots }),
+        ...(workspaceSlug && { skillWorkspaceSlug: workspaceSlug }),
         ...(mentionedSkills?.length ? { skillMentions: mentionedSkills } : {}),
         onSkillActivated: recordSkillActivation,
         ...(isCompactCommand ? { compactRequest: true } : {}),
