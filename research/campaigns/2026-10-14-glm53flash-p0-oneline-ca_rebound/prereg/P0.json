@@ -1,0 +1,53 @@
+{
+  "pid": "P0",
+  "question": "真细胞 brief step 基线是否与无附加电流参考锚（8，免费模拟在案）一致？",
+  "observe": {
+    "world": "ca_rebound",
+    "seed": 0,
+    "protocol": "brief step (12 uA, 40 ms)",
+    "reps": 1,
+    "blockers": "无；本探针仅校准，不判别 H1/H2"
+  },
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H3": [
+      0,
+      5
+    ],
+    "H4": [
+      6,
+      10
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        6,
+        10
+      ],
+      "action": "scope",
+      "target": "H4",
+      "scopeNote": "brief 基线与无附加电流参考（8，免费模拟在案）一致 → REF 锚有效，P1/P2 频段判定可执行；同时构成 H4 校准侧面证据"
+    },
+    {
+      "band": [
+        0,
+        5
+      ],
+      "action": "kill",
+      "target": "H4",
+      "scopeNote": "基线被显著压低，符合 K_sub 样外向电流的基线抑制签名 → H4 零假设（基线不变）死亡"
+    },
+    {
+      "band": [
+        0,
+        5
+      ],
+      "action": "scope",
+      "target": "H3",
+      "scopeNote": "brief ≤ 5 与 H3（外向附加电流压低基线）一致，但不足以单独支持 H3，转 P1 频段定夺"
+    }
+  ],
+  "frozenAt": "2026-10-14T15:42:50.496Z"
+}

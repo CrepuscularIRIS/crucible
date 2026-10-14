@@ -1,0 +1,84 @@
+{
+  "pid": "P1",
+  "question": "真细胞在 hyperpol -40 then release 的 spike_count 均值落入哪个家族频段？（H1 内向反跳 ≥21 / H4 零假设 14–20 / H3 外向 ≤13）",
+  "observe": {
+    "world": "ca_rebound",
+    "seed": 0,
+    "protocol": "hyperpol -40 then release",
+    "reps": 4,
+    "blockers": "依赖 P0 通过（brief∈[6,10]）；若 P0 越界则本探针频段作废、走 anchor-异常分诊"
+  },
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H1": [
+      21,
+      30
+    ],
+    "H3": [
+      0,
+      13
+    ],
+    "H4": [
+      14,
+      20
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        21,
+        30
+      ],
+      "action": "support",
+      "target": "H1",
+      "scopeNote": "n40≥21 显著高于零假设带且达到内向窗电流家族模拟值域（CaT/SHIFT 19–27）→ H1（低阈值持续内向电流）成立；H4 零假设（n40≈17±3）死亡"
+    },
+    {
+      "band": [
+        21,
+        30
+      ],
+      "action": "kill",
+      "target": "H4",
+      "scopeNote": "n40 落入内向家族频段，平坦零假设死亡"
+    },
+    {
+      "band": [
+        14,
+        20
+      ],
+      "action": "support",
+      "target": "H4",
+      "scopeNote": "n40∈[14,20] 与零假设预测（附加电流不可见，模拟中心 17，脉冲噪声 SD≈1.5，4 reps 均值 SD≈0.75）一致 → H4 零假设成立；H1（要求 ≥21）死亡"
+    },
+    {
+      "band": [
+        14,
+        20
+      ],
+      "action": "kill",
+      "target": "H1",
+      "scopeNote": "n40 落入零假设带，单调不饱和窗电流假说死亡"
+    },
+    {
+      "band": [
+        0,
+        13
+      ],
+      "action": "scope",
+      "target": "H3",
+      "scopeNote": "n40≤13 与外向电流家族模拟值域（K_sub/KM 10–13）一致，但外向假象的完整签名还需深度反相（n40<n25）→ P1 只 scoped H3，终局由 P2 的 n25 频段定夺；H1 在本频段死亡"
+    },
+    {
+      "band": [
+        0,
+        13
+      ],
+      "action": "kill",
+      "target": "H1",
+      "scopeNote": "n40 过低，不在内向窗电流家族值域 → H1 死亡"
+    }
+  ],
+  "frozenAt": "2026-10-14T15:43:37.364Z"
+}

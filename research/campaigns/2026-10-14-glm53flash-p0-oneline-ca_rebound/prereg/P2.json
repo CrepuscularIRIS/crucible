@@ -1,0 +1,93 @@
+{
+  "pid": "P2",
+  "question": "真细胞在 hyperpol conditioning + depol test（250ms 释放后 +12uA）的 spike_count 均值落入哪个家族频段？（H1 内向反跳 20–28 / H4 零假设 14–19 / H3 外向 ≤13）",
+  "observe": {
+    "world": "ca_rebound",
+    "seed": 0,
+    "protocol": "hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",
+    "reps": 4,
+    "blockers": "依赖 P0 已通过（brief=7∈[6,10]，journal 在案）；协议标签为 meter 可达的标准池协议（held-out 释放深度标签不可达，见 G1）"
+  },
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H1": [
+      20,
+      28
+    ],
+    "H3": [
+      0,
+      13
+    ],
+    "H4": [
+      14,
+      19
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        20,
+        28
+      ],
+      "action": "support",
+      "target": "H1",
+      "scopeNote": "n250≥20：非条件化 12uA/150ms 测试放电 8.7（模拟 REF），仅有低阈值持续内向电流能把释放期推入发放区（模拟家族值 19–27）→ H1 支持（范围收窄至家族级，深度剖面悬置见 G1）；H4/H3 死亡"
+    },
+    {
+      "band": [
+        20,
+        28
+      ],
+      "action": "kill",
+      "target": "H4",
+      "scopeNote": "n250 落入内向家族频段 → 零假设（附加电流不可见）死亡"
+    },
+    {
+      "band": [
+        20,
+        28
+      ],
+      "action": "kill",
+      "target": "H3",
+      "scopeNote": "n250 落入内向家族频段 → 外向假象假说死亡"
+    },
+    {
+      "band": [
+        14,
+        19
+      ],
+      "action": "support",
+      "target": "H4",
+      "scopeNote": "n250∈[14,19]：释放期贡献近零（14.9≈8.7+漂移），附加电流在探针轴上不可见 → H4 零假设支持；H1（要求 ≥20）死亡"
+    },
+    {
+      "band": [
+        14,
+        19
+      ],
+      "action": "kill",
+      "target": "H1",
+      "scopeNote": "n250 落入零假设带 → 内向窗电流反跳假说死亡"
+    },
+    {
+      "band": [
+        0,
+        13
+      ],
+      "action": "scope",
+      "target": "H3",
+      "scopeNote": "n250≤13 与外向家族模拟值域（K_sub 8、KM 11）一致，但完整外向签名（基线同步压低）需终局合并 P0；P1b 单独不足以支持，故 scoped；H1 在本频段死亡"
+    },
+    {
+      "band": [
+        0,
+        13
+      ],
+      "action": "kill",
+      "target": "H1",
+      "scopeNote": "n250 过低，不在内向窗电流家族值域 → H1 死亡"
+    }
+  ],
+  "frozenAt": "2026-10-14T15:47:10.703Z"
+}

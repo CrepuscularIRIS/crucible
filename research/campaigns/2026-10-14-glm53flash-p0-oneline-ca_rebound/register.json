@@ -1,0 +1,192 @@
+{
+  "run": "ca_rebound",
+  "claims": [
+    {
+      "id": "H1",
+      "statement": "H1 反跳阳性·低阈值持续内向电流（T 型/Ih 窗电流家族）：未知附加电流是一个低阈值内向电流，快激活门位于阈下（mvh≈−60~−45），超极化期间其失活门（或激活门）发生深度依赖的状态变化，释放时产生窗电流/尾电流驱动的反跳放电。模拟证据：匹配 REF 后 hyper250 +9、hyper40 +10、depol +8、weak +4（双侧均衡增强）。核心可判别预测：反跳幅度随条件化深度单调增长，至 −40 mV 仍未饱和。",
+      "predicts": [
+        "S4025 = spikes('hyperpol -40 then release') - spikes('hyperpol -25 then release') ≥ +3（深度单调递增）",
+        "S4035 = spikes('hyperpol -40 then release') - spikes('hyperpol -35 then release') ≥ +2（到 −40 仍未饱和）",
+        "brief step ≈ 参考基线 6–10 尖峰；long step ≈ 参考基线 24–32 尖峰（附加电流静息态不改变基础兴奋性）"
+      ],
+      "state": "REFUTED",
+      "conflicts": "none — 攻击未探索的轴：反跳深度剖面与释放协议基线的判别空间，此前无任何 LIVE 假设占据",
+      "byProbe": "P2",
+      "note": "n250=16 未落入 P2 为 H1 预注册频段 [20,28]（内向家族模拟值域 19–27），按 [14,19] 频段的 kill 分支死亡：真细胞释放期没有可检测的低阈值持续内向反跳。"
+    },
+    {
+      "id": "H2",
+      "statement": "H2 反跳阳性·低阈值钙 T 型样亚型（浅层失活）：与 H1 同族但失活曲线更浅/恢复更快（模拟中 CaT_shift 型），超极化条件化深度效应在 −35 mV 附近饱和：比 −25 更深的释放只带来边际增益。可判别预测：n40 − n35 ≤ +1，而 n35 − n25 仍有明显增长（≥ +2）。",
+      "predicts": [
+        "S4025 = n40 - n25 ≥ +3 且 S4035 = n40 - n35 ≤ +1（ −35→−40 饱和，浅层失活已近完成）",
+        "释放后基线抬升不显著：brief step ≈ 6–10 尖峰（失活门恢复 τ 短，静息态基础兴奋性不变）"
+      ],
+      "state": "REFUTED",
+      "conflicts": "none — 攻击未探索的轴：H1 预测深度单调不饱和，H2 预测 −25→−35 增长但 −40 饱和，两者在 {hyperpol -40 then release} 与 {hyperpol -35 then release} 上给出互斥数值频段",
+      "note": "P4 同轴复测 n250=16∈[14,19]，与 P2 独立重复一致；H2 的内向反跳预测带 [20,28]（浅层失活亚型，模拟 22–25）未命中 → 按预注册 kill 分支 REFUTED。真细胞释放轴上不存在任何低阈值持续内向反跳。",
+      "byProbe": "P4"
+    },
+    {
+      "id": "H3",
+      "statement": "H3 反跳阴性·外向电流假象（慢激活钾家族）：未知附加电流是慢激活外向钾电流（M/K_sub 型），无任何内向反跳。模拟显示匹配 REF 后 K_sub −7、KM −4（K_sub 甚至压低基线放电率）。\"反跳\"表型（若有）将表现为条件化后放电低于 REF，且释放深度越深、外向门去激活越多、放电越少。可判别预测：释放协议放电不随深度增加而增加，反而下降；绝对值低于 brief 基线。",
+      "predicts": [
+        "n40 < n25（S4025 ≤ −1：释放越深放电越少）",
+        "n25 ≤ REF brief 基线（≤ 8）：任何深度释放都不高于无条件化短步",
+        "long step 仍在 24–32 尖峰区间（外向附加电流不改变去极化维持）"
+      ],
+      "state": "REFUTED",
+      "conflicts": "none — 攻击未探索的轴：H1/H2 预测内向反跳（n40 > n25 ≥ 6），H3 预测外向电流缺失型反跳（n40 < n25，且两释放标签均低于 REF 短步基线 8）",
+      "byProbe": "P3",
+      "note": "P3 落在 H4 参考频段 [32,40]（ndep=40），H3 为自身预注册频段 [0,31] 未命中 → 按 [32,40] 频段的 kill 分支死亡：真细胞不存在可检测的去极化激活外向适应签名。"
+    },
+    {
+      "id": "H4",
+      "statement": "H4 零假设·附加电流对可观测标签无贡献：真细胞的附加电流参数（电导/电压窗）未落入可观测协议的敏感区，或题面的\"附加电流\"在 held-out 标签的统计量上不可见。可判别预测：4 个释放深度的放电数互差 ≤1，brief/long 与参考基线一致（6–10 / 24–32）。",
+      "predicts": [
+        "max(n25,n35,n30,n40) - min(n25,n35,n30,n40) ≤ 1（四标签互差在噪声内）",
+        "brief step ∈ 6–10 且 long step ∈ 24–32（与无附加电流参考一致）"
+      ],
+      "state": "SUPPORTED",
+      "conflicts": "none — 攻击未探索的轴：三假设均预测释放标签间存在非零差异（±1 以上），H4 预测四深度释放标签在噪声内相等（全零判别频段），且 brief/long 校准与 REF 完全一致",
+      "byProbe": "P2",
+      "note": "n250=16 落入 P2 为 H4 预注册频段 [14,19]：真细胞对 250ms 超极化条件化+12uA 测试的响应与无附加电流参考（模拟 15）一致，释放期额外放电贡献近零；P0 校准（brief=7∈[6,10]）同向。零假设（附加电流在可观测轴上不可见）在释放轴成立。"
+    }
+  ],
+  "probes": [
+    {
+      "pid": "P0",
+      "status": "LANDED",
+      "preregSha256": "f3a038f1ebf6422beadaca4c13a4f5c5d8d4a4f3a1dd3fafbb4b17e353e1f802",
+      "exitCode": 0,
+      "metric": 7
+    },
+    {
+      "pid": "P1",
+      "status": "FAILED",
+      "preregSha256": "0d67e3afbe0750b4d1d4c97c3a60456f4b0a567c0ce21fbee283303efb9e1345",
+      "exitCode": 1
+    },
+    {
+      "pid": "P2",
+      "status": "LANDED",
+      "preregSha256": "6c2d98f2c4feadeb8a6bf540c3032879fc6f19f5750dcbfd4ef93bac4b064aee",
+      "exitCode": 0,
+      "metric": 16
+    },
+    {
+      "pid": "P3",
+      "status": "LANDED",
+      "preregSha256": "9a3fd4869344cf86a4e68097187e9df21a9d57340168007ebe48664b160755ee",
+      "exitCode": 0,
+      "metric": 40
+    },
+    {
+      "pid": "P4",
+      "status": "LANDED",
+      "preregSha256": "453f83dcc075ccbb8680e3319fa83096f786425eab07d09ab19575db4f8fc8a7",
+      "exitCode": 0,
+      "metric": 16
+    }
+  ],
+  "attacks": [
+    {
+      "gid": "G1",
+      "target": "H1",
+      "kind": "constraint",
+      "text": "被忽略的约束：held-out 释放深度标签（'hyperpol -25/-35/-40 then release'）在 meter 协议注册表中不可解析——probe_run(P1) 实测 KeyError: \"unknown protocol label 'hyperpol -40 then release'\"（未落地、未扣预算；world_simulate 侧同批标签也返回未知协议）。因此 H1 的核心预测 S4025/S4035（深度单调性/饱和性）不可检验，H1 只能以家族级频段（hyperpol conditioning + depol test 的 n250）受试；支持范围相应收窄为\"低阈值持续内向电流家族\"，深度剖面细节悬置。",
+      "ts": "2026-10-14T15:46:30.340Z"
+    },
+    {
+      "gid": "G2",
+      "target": "H2",
+      "kind": "no_change",
+      "text": "判别轴消失：H2 与 H1 的唯一判别差在释放深度饱和性（S4035≤1 vs ≥2），该轴因 held-out 标签不可达而消失；在全部 meter 可达协议上二者的模拟预测频段重合（hyper250 同落 22–25），当前证据无法改变 H2 与 H1 的相对信念——H2 迁 CONTESTED 挂起，不参与 P1b 终局判别。",
+      "ts": "2026-10-14T15:46:30.343Z"
+    },
+    {
+      "gid": "G3",
+      "target": "H4",
+      "kind": "new_h",
+      "text": "混合替代解释 H4'（错窗电流）：附加电流真实存在，但其激活/失活窗完全避开三次探针的电压轨——-30uA 条件化轨（约 -95mV 深超极化）与 +15uA 条件化轨（约阈上去极化）之间的中间区间（约 -75~-60mV 或仅强电流 >18uA 才激活）。P0/P2/P3 的频段只证明附加电流在【这三个测试轴】上不可见，不能排除该类电流；因此 H4 的正确范围是\"在已测轴与已测频段内附加电流不可见\"，而非\"附加电流不存在\"。悬置轴：paired pulses、strong/weak step、hyper_gap、40ms 短条件化。",
+      "ts": "2026-10-14T15:53:43.385Z"
+    },
+    {
+      "gid": "G4",
+      "target": "H4",
+      "kind": "constraint",
+      "text": "被忽略的约束：P3 仅有 reps=1（预算 6/8 受限），脉冲噪声单次 SD≈1.5 尖峰，对 7 尖峰模拟效应差的判别力足够，但对 ≤2 尖峰的弱残差不敏感；且 P2/P3 的模拟 REF 锚（15/36）来自 seed=0 免费模拟，模型形式误差未量化——H4 的支持强度受限于\"参考模型自洽\"这一前提。",
+      "ts": "2026-10-14T15:53:43.387Z"
+    },
+    {
+      "gid": "G5",
+      "target": "H4",
+      "kind": "constraint",
+      "text": "终局审计（终态迁移后）：三条支持轴（P0 brief / P2、P4 hyper250 / P3 depol）共享同一结构性局限——全部以 spike_count 为度量、以 +12uA 测试窗为读出。一个只改变阈下电压轨迹、不产生额外尖峰的附加电流（弱电导窗电流、纯电容/漏电导修饰）对本度量系统不可见。因此 H4 SUPPORTED 的准确范围是：在 meter 可达协议 × spike_count 统计量的交集内，附加电流不可见且三大反跳/适应家族（内向窗电流、浅失活亚型、外向适应）均被 3σ 判别排除；不排除尖峰时刻/阈下波形层面的残差。",
+      "ts": "2026-10-14T16:00:35.741Z"
+    }
+  ],
+  "reports": [
+    {
+      "path": "REPORT.md",
+      "sha256": "9733f57548637d6e00de4887f396e432bfebccbe37676bcdbef236e2bc6cc828",
+      "ts": "2026-10-14T16:02:44.607Z"
+    }
+  ],
+  "gateVerdicts": [
+    {
+      "ts": "2026-10-14T16:02:44.607Z",
+      "passed": true,
+      "report": "REPORT.md"
+    }
+  ],
+  "tampers": [],
+  "graveyard": [
+    {
+      "id": "H4",
+      "statement": "H4 零假设·附加电流对可观测标签无贡献：真细胞的附加电流参数（电导/电压窗）未落入可观测协议的敏感区，或题面的\"附加电流\"在 held-out 标签的统计量上不可见。可判别预测：4 个释放深度的放电数互差 ≤1，brief/long 与参考基线一致（6–10 / 24–32）。",
+      "predicts": [
+        "max(n25,n35,n30,n40) - min(n25,n35,n30,n40) ≤ 1（四标签互差在噪声内）",
+        "brief step ∈ 6–10 且 long step ∈ 24–32（与无附加电流参考一致）"
+      ],
+      "state": "SUPPORTED",
+      "conflicts": "none — 攻击未探索的轴：三假设均预测释放标签间存在非零差异（±1 以上），H4 预测四深度释放标签在噪声内相等（全零判别频段），且 brief/long 校准与 REF 完全一致",
+      "byProbe": "P2"
+    },
+    {
+      "id": "H1",
+      "statement": "H1 反跳阳性·低阈值持续内向电流（T 型/Ih 窗电流家族）：未知附加电流是一个低阈值内向电流，快激活门位于阈下（mvh≈−60~−45），超极化期间其失活门（或激活门）发生深度依赖的状态变化，释放时产生窗电流/尾电流驱动的反跳放电。模拟证据：匹配 REF 后 hyper250 +9、hyper40 +10、depol +8、weak +4（双侧均衡增强）。核心可判别预测：反跳幅度随条件化深度单调增长，至 −40 mV 仍未饱和。",
+      "predicts": [
+        "S4025 = spikes('hyperpol -40 then release') - spikes('hyperpol -25 then release') ≥ +3（深度单调递增）",
+        "S4035 = spikes('hyperpol -40 then release') - spikes('hyperpol -35 then release') ≥ +2（到 −40 仍未饱和）",
+        "brief step ≈ 参考基线 6–10 尖峰；long step ≈ 参考基线 24–32 尖峰（附加电流静息态不改变基础兴奋性）"
+      ],
+      "state": "REFUTED",
+      "conflicts": "none — 攻击未探索的轴：反跳深度剖面与释放协议基线的判别空间，此前无任何 LIVE 假设占据",
+      "byProbe": "P2"
+    },
+    {
+      "id": "H3",
+      "statement": "H3 反跳阴性·外向电流假象（慢激活钾家族）：未知附加电流是慢激活外向钾电流（M/K_sub 型），无任何内向反跳。模拟显示匹配 REF 后 K_sub −7、KM −4（K_sub 甚至压低基线放电率）。\"反跳\"表型（若有）将表现为条件化后放电低于 REF，且释放深度越深、外向门去激活越多、放电越少。可判别预测：释放协议放电不随深度增加而增加，反而下降；绝对值低于 brief 基线。",
+      "predicts": [
+        "n40 < n25（S4025 ≤ −1：释放越深放电越少）",
+        "n25 ≤ REF brief 基线（≤ 8）：任何深度释放都不高于无条件化短步",
+        "long step 仍在 24–32 尖峰区间（外向附加电流不改变去极化维持）"
+      ],
+      "state": "REFUTED",
+      "conflicts": "none — 攻击未探索的轴：H1/H2 预测内向反跳（n40 > n25 ≥ 6），H3 预测外向电流缺失型反跳（n40 < n25，且两释放标签均低于 REF 短步基线 8）",
+      "byProbe": "P3"
+    },
+    {
+      "id": "H2",
+      "statement": "H2 反跳阳性·低阈值钙 T 型样亚型（浅层失活）：与 H1 同族但失活曲线更浅/恢复更快（模拟中 CaT_shift 型），超极化条件化深度效应在 −35 mV 附近饱和：比 −25 更深的释放只带来边际增益。可判别预测：n40 − n35 ≤ +1，而 n35 − n25 仍有明显增长（≥ +2）。",
+      "predicts": [
+        "S4025 = n40 - n25 ≥ +3 且 S4035 = n40 - n35 ≤ +1（ −35→−40 饱和，浅层失活已近完成）",
+        "释放后基线抬升不显著：brief step ≈ 6–10 尖峰（失活门恢复 τ 短，静息态基础兴奋性不变）"
+      ],
+      "state": "REFUTED",
+      "conflicts": "none — 攻击未探索的轴：H1 预测深度单调不饱和，H2 预测 −25→−35 增长但 −40 饱和，两者在 {hyperpol -40 then release} 与 {hyperpol -35 then release} 上给出互斥数值频段",
+      "note": "scooped-by-infra：其专属判别轴（-35 释放饱和性）不可达（G2），与 H1 在全部 meter 可达协议上频段重合；挂起等待新判别轴，不进入 P1b。",
+      "byProbe": "P4"
+    }
+  ]
+}

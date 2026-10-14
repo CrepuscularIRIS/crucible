@@ -1,0 +1,80 @@
+{
+  "pid": "P4",
+  "question": "同轴复测：真细胞 hyperpol conditioning + depol test 的 spike_count 是否再次落在参考带 [14,19]（→点名杀掉 H2 的内向反跳预测），还是落入 H2 预测带 [20,28]？",
+  "observe": {
+    "world": "ca_rebound",
+    "seed": 0,
+    "protocol": "hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",
+    "reps": 1,
+    "blockers": "预算账目：P0=1+P2=4+P3=1+P4=1=7/8，余 1 备用；同轴复测（reps=1）专门补上 P2 预登记未点名 H2 的缺口（该 gate 拒绝已记录在案）"
+  },
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H2": [
+      20,
+      28
+    ],
+    "H4": [
+      14,
+      19
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        20,
+        28
+      ],
+      "action": "support",
+      "target": "H2",
+      "scopeNote": "复测落入内向反跳带 → H2（浅层失活亚型）成立，且与 P2=16 矛盾，须同时分诊 P2 为模型形式噪声/漂移"
+    },
+    {
+      "band": [
+        20,
+        28
+      ],
+      "action": "scope",
+      "target": "H4",
+      "scopeNote": "与 P2=16 矛盾 → H4 已有支持重审，按探针间不一致分诊，不自动推翻"
+    },
+    {
+      "band": [
+        14,
+        19
+      ],
+      "action": "support",
+      "target": "H4",
+      "scopeNote": "复测与 P2=16 一致，再次落在参考带 → H4 支持第三次复现（P0=7 校准/P2=16/P4）"
+    },
+    {
+      "band": [
+        14,
+        19
+      ],
+      "action": "kill",
+      "target": "H2",
+      "scopeNote": "n250∈[14,19] 再次确认释放期无反跳放电 → H2（与已死的 H1 共享的超极化释放轴内向反跳预测带 22–25）未命中自身频段，REFUTED"
+    },
+    {
+      "band": [
+        0,
+        13
+      ],
+      "action": "kill",
+      "target": "H2",
+      "scopeNote": "外向带：无反跳，与 P2 同向 → H2 同样未命中自身预测带 [20,28]，REFUTED；该低值同时与 P0/P2 矛盾，探针间不一致转分诊"
+    },
+    {
+      "band": [
+        0,
+        13
+      ],
+      "action": "scope",
+      "target": "H4",
+      "scopeNote": "与 P2=16 矛盾 → H4 支持范围收窄待分诊，不自动推翻"
+    }
+  ],
+  "frozenAt": "2026-10-14T15:55:03.432Z"
+}

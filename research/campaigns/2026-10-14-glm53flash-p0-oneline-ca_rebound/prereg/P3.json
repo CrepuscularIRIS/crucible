@@ -1,0 +1,62 @@
+{
+  "pid": "P3",
+  "question": "真细胞在去极化条件化+测试（+15uA/250ms 后 +12uA）的 spike_count 是落在 H3 去极化适应频段（≤31）还是 H4 参考频段（32–40）？",
+  "observe": {
+    "world": "ca_rebound",
+    "seed": 0,
+    "protocol": "depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",
+    "reps": 1,
+    "blockers": "预算账目：P0=1 + P2=4 + P3=1 = 6/8；P3 的单个观测是剩余预算内对 H3 唯一可执行的终局判别（模拟家族间效应差 7 尖峰，1 rep 噪声 SD≈1.5 足以分辨）"
+  },
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H3": [
+      0,
+      31
+    ],
+    "H4": [
+      32,
+      40
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0,
+        31
+      ],
+      "action": "scope",
+      "target": "H3",
+      "scopeNote": "ndep≤31 与去极化激活外向电流（KM 模拟 29=REF36−7）一致；但外向签名三联（基线低+释放低+适应）在 P0=7、P2=16 均未出现，且 reps=1 噪声大 → H3 只能限定为“残差存在于去极化轴”，不能 SUPPORTED"
+    },
+    {
+      "band": [
+        0,
+        31
+      ],
+      "action": "scope",
+      "target": "H4",
+      "scopeNote": "出界不动摇 H4 已有 SUPPORTED（其注册预测仅覆盖释放轴与基线校准），但“附加电流全局不可见”的解读收窄为释放轴，并把去极化轴残差记入账本"
+    },
+    {
+      "band": [
+        32,
+        40
+      ],
+      "action": "support",
+      "target": "H4",
+      "scopeNote": "ndep∈[32,40] 与参考（模拟 36）一致，复现 P0/P2 的 H4 签名 → H4 在去极化轴上再获独立支持（同一 SUPPORTED 状态内的范围强化）"
+    },
+    {
+      "band": [
+        32,
+        40
+      ],
+      "action": "kill",
+      "target": "H3",
+      "scopeNote": "H3 预测频段 [0,31] 未命中 → H3 死亡（去极化适应签名不存在）"
+    }
+  ],
+  "frozenAt": "2026-10-14T15:49:38.306Z"
+}
