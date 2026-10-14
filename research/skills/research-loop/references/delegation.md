@@ -70,7 +70,7 @@ research_kit.field(job, "verdict")                             # 按字段取，
 
 - **作业目录在 `.proma-research/` 之外**：`<cwd>/.rlm-jobs/<run>/…`（cwd = 研究工作目录）。
   研究隔离守卫拦一切写 `.proma-research/` 的 ipython，所以 child 写 out.md、父会话写
-  `-self/out.md` 都只能在这里。`run` 传 run 名（如 `"r1"`）：同一 cell 里出现含
+  `-self/out.md` 都只能在这里（父会话的 REPORT.md、lessons.md 同理写在 `<cwd>/research-work/<run>/`）。`run` 传 run 名（如 `"r1"`）：同一 cell 里出现含
   `.proma-research` 的字面路径，守卫会把由它算出的 `job` 也视为状态路径，写 brief.md 被拦。
 - **STATUS 行（唯一写法）**：`STATUS: <ok|blocked|failed>[ SELF_REVIEWED] PATH: <相对作业根的路径>`，
   作业根 = 含 `.rlm-jobs/` 的工作目录，所以 PATH 以 `.rlm-jobs/` 开头，

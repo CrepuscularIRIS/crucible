@@ -1,7 +1,7 @@
 ---
 name: research-loop
 description: 研究工作的第一动作。Use when 接到研究问题、想执行评测命令、开始或继续任何研究战役、会话刚启动、压缩刚发生、或不确定当前该做什么时。
-version: 0.5.6
+version: 0.5.7
 ---
 
 # research-loop —— 研究战役主路由
@@ -18,14 +18,15 @@ version: 0.5.6
 ```
 
 **违反字面就是违反精神。** 手改 server 拥有的状态文件（journal/register/
-prereg/probes）= 造假，trace gate 逐字重放当场抓——run 目录里你只写
-`REPORT.md` 这一个文件；预登记前用 Bash/kernel"看一眼"将被登记的命令 =
+prereg/probes）= 造假，trace gate 逐字重放当场抓——run 目录 `.proma-research/<run>/`
+里你一个文件都不写：报告与教训写在 `research-work/<run>/REPORT.md`、`lessons.md`，
+REPORT 由 `report_declare` 复制进 run 目录；预登记前用 Bash/kernel"看一眼"将被登记的命令 =
 把预测变成回忆，且这条违规发生在 journal 之外，三道 gate 一道都拦不住；
 gate 是裁决不是续命。
 
 ## 完成定义（DoD）
 
-**战役完成 = `mcp__research__report_declare` 收到三道 gate 裁决事件。** 写完 REPORT.md、
+**战役完成 = `mcp__research__report_declare` 收到三道 gate 裁决事件。** 写完 `research-work/<run>/REPORT.md`、
 自评"全绿"、或声称"工具不可用"都不构成完成——journal 里没有 declare 事件，
 战役永远是未完成态，会话不得停止。
 

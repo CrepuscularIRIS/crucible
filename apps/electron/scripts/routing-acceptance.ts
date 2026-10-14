@@ -3,7 +3,7 @@
  *   node apps/electron/scripts/routing-acceptance.ts
  *
  * 干净会话 + 单条"研究一下 X"提示词，一个回合后按夹具观察点核查：
- * 立锚（research_kit.anchor 而非只有 research_state）· 宣告等级 ·
+ * 立锚（research_kit.anchor 而非只有 research_state）· K0 落账（写 RULINGS.md）·
  * 宣告阶段 · 单技能加载 · 无预览（prereg 之前不执行评测命令）。
  * 不驱动完整战役——routing 是唯一被测对象。
  */
@@ -181,18 +181,21 @@ const stateUsed = calls.some((c) => c.name.includes('research_state'))
 const execPattern = /subprocess|%%bash|os\.system|Popen|check_output|python3?\s|!\s*python/
 const firstEvalExecIdx = calls.findIndex((c) => (c.name === 'ipython' || c.name === 'bash') && c.args.includes('eval.py') && execPattern.test(c.args))
 const preregIdx = calls.findIndex((c) => c.name.includes('prereg_write'))
+// 02 SE7c：原先用卡片原文正则（/遭遇战|会战/）判"宣告等级"，P2 删棘轮措辞后会误报。改为 trace 谓词：
+// 开局决策落进 RULINGS.md（任何一次工具调用的参数里写到它）。
+const rulingWritten = calls.some((c) => c.args.includes('RULINGS.md'))
 const checks = {
   // 顺序加载语义：阶段卡按阶段先后读入合法（一个长回合跨阶段时会有多张），
   // 病态是"loop 没读 / 阶段卡没读就动手 / 预读全量"。P5.1 实测校准。
   loop先读: loopReadIdx !== -1 && loopReadIdx < firstMcpIdx,
   立锚: anchorUsed || (stateUsed && anchorUsed),
-  宣告等级: /\[战役\].*等级|遭遇战|会战/.test(assistantText),
+  K0落账: rulingWritten,
   宣告阶段: /\[阶段\].*正在用 research-|正在用 research-/.test(assistantText),
   阶段卡先于实质动作: stageReadIdx.length > 0 && firstClaimIdx !== -1 && stageReadIdx[0] < firstClaimIdx,
   无预览: firstEvalExecIdx === -1 || (preregIdx !== -1 && preregIdx < firstEvalExecIdx),
   已加载技能: [...loadedSkills].join(', ') || '(无)',
 }
-const pass = checks.loop先读 && checks.立锚 && checks.宣告等级 && checks.宣告阶段 && checks.阶段卡先于实质动作 && checks.无预览
+const pass = checks.loop先读 && checks.立锚 && checks.K0落账 && checks.宣告阶段 && checks.阶段卡先于实质动作 && checks.无预览
 console.log(`[routing] ${pass ? 'ACCEPT' : 'DEVIATION'} ${JSON.stringify(checks)}`)
 
 await session.disposeAsync()

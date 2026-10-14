@@ -1,17 +1,23 @@
 ---
 name: research-report
 description: Use when 用户要结论，或坟场与 SUPPORTED 已足以回答战役问题、且每个进结论的主张都已挨过攻击时。
-version: 0.4.3
+version: 0.4.4
 ---
 
 # research-report —— 报告纪律
 
 ## 你在做什么
 
-把战役结果写成 `.proma-research/<run>/REPORT.md`——这是 run 目录里**唯一
-由你写入**的文件（journal/register/prereg/probes 只有 server 能写），声明时
-调 `mcp__research__report_declare(run, path="REPORT.md")`（MCP 内部短名
-`report_declare`；path 相对 run 目录，越界被拒）。
+把战役结果写成 `research-work/<run>/REPORT.md`（相对研究工作目录，即
+`PROMA_RESEARCH_CWD`；和 nbsim、`.rlm-jobs/` 一样在状态根之外）。run 目录
+`.proma-research/<run>/` 里你**一个文件都不写**（journal/register/prereg/probes
+只有 server 能写，隔离守卫拦一切写入）。声明时调
+`mcp__research__report_declare(run, path="REPORT.md")`（MCP 内部短名
+`report_declare`；path 相对 `research-work/<run>/`，越界被拒）：宿主把它复制进
+run 目录、记 sha256，gate 跑在这份副本上。报告必须是普通文件——符号链接或
+硬链接被拒绝跟随，且本 run 之后的声明一律按 `lead` 封顶。
+写报告用字面路径 `research-work/<run>/REPORT.md`，不要从 `.proma-research`
+路径拼出来。
 报告的可信度不来自文采，来自**每个数字都能被重算对账**——gate 2 逐行检查，
 写的时候就按对账契约写。
 
@@ -38,9 +44,9 @@ gate 红了改报告或补实验，绝不动 journal 与 register
    LIVE 且未检验照写 LIVE——这不丢人；把 LIVE 写成 SUPPORTED 才丢人。
 4. **假设引用**：正文 `H#` 必须存在（`据H99的分析` 会被抓）。
 5. **declare 即裁决**：`report_declare` 当庭跑三道 gate，任何一道红 → 声明被拒
-   并逐条给理由。全绿才写入 journal。**写完 REPORT.md 后同一回合内必须调用
-   `mcp__research__report_declare`**；被拒按理由逐条修复后重调。停在"报告已写"未 declare =
-   战役未完成（research-loop 的 DoD）。用户/CI 可独立复跑同一份实现：
+   并逐条给理由。全绿才写入 journal。**写完 `research-work/<run>/REPORT.md` 后同一回合内必须调用
+   `mcp__research__report_declare`**；被拒按理由逐条修复这份源文件后重调。停在"报告已写"未 declare =
+   战役未完成（research-loop 的 DoD）。用户/CI 可对 run 目录里声明过的副本独立复跑同一份实现：
 
    ```bash
    bun <repo>/packages/research-mcp/gates/prereg.ts     <run-dir>

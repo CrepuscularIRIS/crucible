@@ -169,7 +169,7 @@ Trivial one-line fixes in an already-understood file may skip research/grill; wh
 When a development slice is ready to call done:
 
 1. Self-verify (tests / typecheck / real path as applicable).
-2. **Grok review (required):** Grok subagent(s) on the diff **and** Grok CLI when available.
+2. **Opus review (required):** an Opus `code-reviewer` subagent on the diff. Do not use Grok (user decision 2026-10-14).
 3. Fix accepted findings; re-check. Do not claim done without this step.
 
 Human owns: secrets, spend, public deploy, force-push, and `git push` unless asked.

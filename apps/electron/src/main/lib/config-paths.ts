@@ -483,9 +483,16 @@ export function isRetiredDefaultSkill(slug: string): boolean {
  * 用户仍可在 Skills 面板手动启用；已启用的不迁移（不覆盖用户选择）。
  * ponytail: 单独启用某个 ccf-* / nature-writing 时，它引用的 ../ccf-common、../nature-shared
  * 仍在 skills-inactive/ 里，相对路径会落空——需一并启用 shared 目录；要自动联动时再加。
+ *
+ * skill-creator / find-skills / tool-builder（02§4.8、§10 Q5）：研究 skill 的创建与修改只走
+ * 02§4.4 的提议路径；skill-creator 的子代理基线会被 skill 继承污染，find-skills 会执行
+ * `npx skills add … -g -y`。同样可在 Skills 面板手动启用。
+ * ponytail: Proma 没有"研究工作区"类型，对所有新工作区生效；已启用的不迁移。
  */
+const DEFAULT_INACTIVE_SKILL_SLUGS = new Set(['skill-creator', 'find-skills', 'tool-builder'])
+
 export function isDefaultInactiveSkill(slug: string): boolean {
-  return slug.startsWith('ccf-') || slug.startsWith('nature-')
+  return slug.startsWith('ccf-') || slug.startsWith('nature-') || DEFAULT_INACTIVE_SKILL_SLUGS.has(slug)
 }
 
 /** 清理 ~/.proma/default-skills/ 中已退役的内置 Skill 缓存。 */

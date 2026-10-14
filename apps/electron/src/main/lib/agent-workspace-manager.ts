@@ -84,37 +84,12 @@ function readIndex(): AgentWorkspacesIndex {
 function migrateIndex(index: AgentWorkspacesIndex): void {
   const oldVersion = index.version ?? 1
 
-  // v1 → v2: 为所有工作区默认启用 skill-creator
-  if (oldVersion < 2) {
-    activateSkillCreatorInAllWorkspaces(index)
-  }
+  // v1 → v2 曾为所有工作区启用 skill-creator；02 SE7c 起它默认停用（config-paths isDefaultInactiveSkill），
+  // 迁移只升版本号，不再把它从 skills-inactive/ 搬回来。
 
   index.version = INDEX_VERSION
   writeIndex(index)
   console.log(`[Agent 工作区] 索引已迁移: v${oldVersion} → v${INDEX_VERSION}`)
-}
-
-/** v1→v2 迁移：将 skills-inactive/skill-creator 移到 skills/ */
-function activateSkillCreatorInAllWorkspaces(index: AgentWorkspacesIndex): void {
-  for (const workspace of index.workspaces) {
-    const activeDir = getWorkspaceSkillsDir(workspace.slug)
-    const inactiveDir = getInactiveSkillsDir(workspace.slug)
-
-    const inactivePath = join(inactiveDir, 'skill-creator')
-    const activePath = join(activeDir, 'skill-creator')
-
-    if (existsSync(activePath) || !existsSync(inactivePath)) continue
-
-    try {
-      if (!existsSync(activeDir)) {
-        mkdirSync(activeDir, { recursive: true })
-      }
-      renameWithRetry(inactivePath, activePath)
-      console.log(`[Agent 工作区] 已为 ${workspace.slug} 启用 skill-creator`)
-    } catch (err) {
-      console.warn(`[Agent 工作区] 启用 skill-creator 失败 (${workspace.slug}):`, err)
-    }
-  }
 }
 
 function writeIndex(index: AgentWorkspacesIndex): void {

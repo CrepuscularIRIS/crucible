@@ -16,7 +16,8 @@ is pinned: do not read earlier REPORTs.** A rerun or a same-condition comparison
 form its own prereg without the earlier verdicts. Ruling: `prior campaigns = not read
 (independent run)`.
 
-Otherwise list `.proma-research/*/REPORT.md` under the project root
+Otherwise list the declared reports `.proma-research/*/REPORT.md` (read-only copies made by
+`report_declare`) under the project root
 (`PROMA_RESEARCH_CWD`) and read only those whose question overlaps this one. Reading an
 old report is reading a source, not observing this run's commands.
 
