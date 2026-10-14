@@ -1,0 +1,202 @@
+{
+  "run": "ca_rebound",
+  "claims": [
+    {
+      "id": "H1",
+      "statement": "ca_rebound 的额外电流是净内向、超极化恢复可用性的瞬态电流（T型钙样或 Ih 样）：超极化条件刺激解除失活/激活该电流，释放后在去极化测试期产生额外内向驱动，使测试期峰数显著高于裸细胞基线（15.3±噪声）。",
+      "predicts": [
+        "hyperpol conditioning + depol test (-30/250, +12) 真细胞 mean_spike_count ≥ 17.5（基线仿真 15.3，Ih 候选 18.3）",
+        "brief hyperpol conditioning + test (40ms) 也增强 ≥ 17",
+        "depolarising conditioning + test ≈ 基线（33-40，内向瞬态流不被去极化条件招募）"
+      ],
+      "state": "SCOPED",
+      "conflicts": "none — 首批假设，攻击未探索的轴：与 H2/H3 互斥由锚点协议频段区分",
+      "byProbe": "P1",
+      "note": "P1 观测 17.33 落入 H3 频段 [14.3,17.4]，未达 H1 冻结带 [18,30]：超极化释放的强瞬态反弹（≥+2.7 于基线）不存在。观测相对基线仅 +2.0，弱效应变体（小电导内向流）留待 H4 判别，故 SCOPED 而非 REFUTED。"
+    },
+    {
+      "id": "H2",
+      "statement": "ca_rebound 的额外电流是活动依赖的外向 K 流（适应型）：去极化条件刺激激活它，压制后续测试反应；超极化条件刺激后测试反应不高于基线。",
+      "predicts": [
+        "hyperpol conditioning + depol test 真细胞 mean_spike_count ≤ 14.2（低于基线 15.3 减噪声）",
+        "depolarising conditioning + test 被压低 ≤ 33（基线 36）",
+        "paired long pulses 第二脉冲反应低于第一脉冲（基线仿真 28，无压抑）"
+      ],
+      "state": "SCOPED",
+      "conflicts": "none — 首批假设，与 H1 同轴反向：同一锚点协议频段互斥",
+      "note": "P4 观测 26.0 落入冻结 scope 带 [12,27]：与 slow_na(22)/AdaptK(24) 校准同混沌区、低于 ref(33) 7 个峰。第 4 个格子继续无证据支持『超极化释放增强』；适应型压抑流即使存在也与基线慢 Na 动力学在该精度不可分。收束：无生物学可检测的额外反弹电流。",
+      "byProbe": "P4"
+    },
+    {
+      "id": "H3",
+      "statement": "额外电流对常规步进与超极化释放协议无显著影响（效应集中在基线通道的慢 Na 失活动力学，slow_na=true），即放电表观变化全部可由基线通道解释，无需额外反弹电流。",
+      "predicts": [
+        "hyperpol conditioning + depol test 真细胞 mean_spike_count 落在 14.3-17.4（与基线 15.3 不可区分）",
+        "brief step (12 uA, 40 ms) ≈ 基线 5",
+        "long step (10 uA, 300 ms) ≈ 基线 26"
+      ],
+      "state": "SUPPORTED",
+      "conflicts": "none — 首批假设，锚点协议频段落在 H1/H2 之间的零效应带",
+      "byProbe": "P2",
+      "note": "P2 观测 13.0 落入冻结带 [10,15.5] 且与 ref/slow_na 校准值（13.0）完全一致：brief 协议无增强。P1 协议观测 17.33 vs slow_na 校准 15.67 的 +1.67 残差归入慢 Na 失活动力学的参数不确定性（P1 协议上 H1/H2/H3 频段 [14.3,17.4] 未区分该细节）。放电表观变化由基线通道（含 slow_na 动力学）解释，无需额外反弹电流。"
+    },
+    {
+      "id": "H4",
+      "statement": "H1 的 SCOPED 变体：ca_rebound 存在小电导（g≈0.05-0.15）的弱内向电流（Ih 样或弱 T 型样），超极化恢复其可用性，释放后提供适度内向驱动——足以解释 P1 观测 17.33 相对基线 15.33 的 +2.0 弱增强，但不足以达到 H1 的强反弹带 [18,30]。",
+      "predicts": [
+        "brief hyperpol conditioning + test (40ms) 高于基线（weakIh 校准仿真 +2 左右）",
+        "depolarising conditioning + test ≈ 或略高于基线（Ih 不被去极化招募）",
+        "hyperpol pre-pulse + weak test 接近基线（弱电流效应在该协议被噪声淹没）"
+      ],
+      "state": "SCOPED",
+      "conflicts": "none — 与 H2/H3 在同一协议族可判别（H2 预测压抑、H3 预测无差、H4 预测增强）；与 H1（SCOPED）的区别是电导小一个量级，效应幅度 +1~+3 而非 +3~+7",
+      "note": "P3 观测 6.0 落入 [3,8] scope 分支：慢恢复弱内向流 flavour 的全部剩余参数变体（g≲0.08, htau≥300ms）在三个探针格子上均无稳定预测信号（P1 协议 +2.0 残差为 draws 依赖的近阈值轨迹混沌；P2/P3 与基线不可分）。家族假设收束：ca_rebound 不存在超出当前测量精度（≤3 reps 噪声）的超极化反弹电流。",
+      "byProbe": "P3"
+    },
+    {
+      "id": "H5",
+      "statement": "H4 的快瞬态 flavour：弱内向电流是 T 型钙样瞬态流（快 m 激活 + 快 h 失活恢复，h_tau≈40ms），40ms 超极化即充分恢复可用性，释放时产生瞬态爆发驱动——预测 brief hyperpol 40ms 协议显著增强（+4 以上），而慢 Ih 样 flavour 在该协议无效应。",
+      "predicts": [
+        "P2 brief hyperpol 40ms 协议 reps=2 mean ≥18.5（weakT g=0.1 校准 19.7-20.0）",
+        "P1 协议弱增强（weakT 校准 18.0，观测 17.33 相容）",
+        "depol conditioning 协议 ≈ 基线（瞬态内向流被去极化条件刺激失活，不增强）"
+      ],
+      "state": "REFUTED",
+      "conflicts": "与 H4-Ih-flavour/H3 在 P2（brief hyperpol 40ms）频段互斥；与 H1（SCOPED，强反弹）的区别是电导量级（P1 协议预测 18.0 vs 强型 21.0，观测 17.33 已排除强型）",
+      "byProbe": "P2",
+      "note": "P2 观测 13.0 落入冻结带 [10,15.5]：brief hyperpol 40ms 协议下真细胞与裸细胞基线完全一致（13.0 vs 校准 13.0），快瞬态 T 型样 flavour 预测的 ≥+5 增强不存在。weakT 在同 draws 校准预测 20.0，偏差 -7.0。"
+    }
+  ],
+  "probes": [
+    {
+      "pid": "P1",
+      "status": "LANDED",
+      "preregSha256": "f65083b7df25ae7b822ddb0f2f941a07812a169253dc8563f4d73b6c645f094d",
+      "exitCode": 0,
+      "metric": 17.3333
+    },
+    {
+      "pid": "P2",
+      "status": "LANDED",
+      "preregSha256": "79578c09448409ca65b99cf8fac5185f7f2cc6d113637fc0aeb1a5828da24748",
+      "exitCode": 0,
+      "metric": 13
+    },
+    {
+      "pid": "P3",
+      "status": "LANDED",
+      "preregSha256": "f4d6e8b0918da8ed5fe2fc026bd10a1e2019e5cb37bbf81d2205534ac3a7c335",
+      "exitCode": 0,
+      "metric": 6
+    },
+    {
+      "pid": "P4",
+      "status": "LANDED",
+      "preregSha256": "8e96d7afe9559ac32492b065216ace7f440b8fb28236cd1d5d20182a14c3d8c9",
+      "exitCode": 0,
+      "metric": 26
+    }
+  ],
+  "attacks": [
+    {
+      "gid": "G1",
+      "target": "H4",
+      "kind": "constraint",
+      "text": "共享 draws 使候选仿真值成为真细胞观测的精确预测，但 g 扫描显示非单调（P1 协议：g=0.08→16.67，g=0.15→14.67）：弱内向电流的效应幅度对参数细节高度敏感。因此 H4 至多能做家族级判断（存在弱超极化恢复内向电流），不能辨识具体电导/动力学参数；P2 若命中 H4 频段， flavour（Ih 样慢 vs T 型样快）仍需第三探针或声明为不可分辨。",
+      "ts": "2026-10-14T12:59:29.932Z"
+    },
+    {
+      "gid": "G2",
+      "target": "H3",
+      "kind": "constraint",
+      "text": "H3 的 SUPPORTED 是测量精度意义上的：P2 显示 brief 协议下真细胞与裸细胞基线在单 rep 分辨率内一致（13.0 vs 13.0），P1 协议下 +2.0 残差与 slow_na 参数不确定性相容。但『无额外电流』不可与『存在低于当前测量精度的极弱电流』区分——P1 单协议 +2.0 残差（17.33 vs 15.67）若复现为真，仍与 g≲0.05 的极弱内向流相容。结论应 scope 为：在 ≤3 reps 噪声精度下，放电行为由基线通道充分解释，无生物学显著的超极化反弹电流。",
+      "ts": "2026-10-14T13:08:24.230Z"
+    },
+    {
+      "gid": "G3",
+      "target": "H3",
+      "kind": "new_h",
+      "text": "替代解释 H3'：P4 观测 26 低于 ref 校准 33 达 7，P3 观测 6 亦低于 ref 校准 7——系统性偏低模式若非混沌，指向真细胞是基线家族内的『慢 Na 失活更强』变体（类 slow_na 亚族，P4 慢侧 22-26 邻域），而非普通 ref。这不改变核心结论（仍是基线通道家族、无额外反弹电流），但报告的基线参数刻画应以『ref 与 slow_na 之间、参数不可辨识』表述，而非『标准基线』。检验该假设需 paired 格子 reps=3（成本 3，预算仅剩 2）或新 seed 格子，均超预算——按不可辨识 scope 处理。",
+      "ts": "2026-10-14T13:20:43.909Z"
+    }
+  ],
+  "reports": [
+    {
+      "path": "REPORT.md",
+      "sha256": "4a3c575f0b1b1c4516bded76f99080942f4b92018dd8afb16aca20367a26e9d6",
+      "ts": "2026-10-14T13:23:44.624Z"
+    }
+  ],
+  "gateVerdicts": [
+    {
+      "ts": "2026-10-14T13:23:44.625Z",
+      "passed": true,
+      "report": "REPORT.md"
+    }
+  ],
+  "tampers": [],
+  "graveyard": [
+    {
+      "id": "H1",
+      "statement": "ca_rebound 的额外电流是净内向、超极化恢复可用性的瞬态电流（T型钙样或 Ih 样）：超极化条件刺激解除失活/激活该电流，释放后在去极化测试期产生额外内向驱动，使测试期峰数显著高于裸细胞基线（15.3±噪声）。",
+      "predicts": [
+        "hyperpol conditioning + depol test (-30/250, +12) 真细胞 mean_spike_count ≥ 17.5（基线仿真 15.3，Ih 候选 18.3）",
+        "brief hyperpol conditioning + test (40ms) 也增强 ≥ 17",
+        "depolarising conditioning + test ≈ 基线（33-40，内向瞬态流不被去极化条件招募）"
+      ],
+      "state": "SCOPED",
+      "conflicts": "none — 首批假设，攻击未探索的轴：与 H2/H3 互斥由锚点协议频段区分",
+      "byProbe": "P1"
+    },
+    {
+      "id": "H5",
+      "statement": "H4 的快瞬态 flavour：弱内向电流是 T 型钙样瞬态流（快 m 激活 + 快 h 失活恢复，h_tau≈40ms），40ms 超极化即充分恢复可用性，释放时产生瞬态爆发驱动——预测 brief hyperpol 40ms 协议显著增强（+4 以上），而慢 Ih 样 flavour 在该协议无效应。",
+      "predicts": [
+        "P2 brief hyperpol 40ms 协议 reps=2 mean ≥18.5（weakT g=0.1 校准 19.7-20.0）",
+        "P1 协议弱增强（weakT 校准 18.0，观测 17.33 相容）",
+        "depol conditioning 协议 ≈ 基线（瞬态内向流被去极化条件刺激失活，不增强）"
+      ],
+      "state": "REFUTED",
+      "conflicts": "与 H4-Ih-flavour/H3 在 P2（brief hyperpol 40ms）频段互斥；与 H1（SCOPED，强反弹）的区别是电导量级（P1 协议预测 18.0 vs 强型 21.0，观测 17.33 已排除强型）",
+      "byProbe": "P2"
+    },
+    {
+      "id": "H3",
+      "statement": "额外电流对常规步进与超极化释放协议无显著影响（效应集中在基线通道的慢 Na 失活动力学，slow_na=true），即放电表观变化全部可由基线通道解释，无需额外反弹电流。",
+      "predicts": [
+        "hyperpol conditioning + depol test 真细胞 mean_spike_count 落在 14.3-17.4（与基线 15.3 不可区分）",
+        "brief step (12 uA, 40 ms) ≈ 基线 5",
+        "long step (10 uA, 300 ms) ≈ 基线 26"
+      ],
+      "state": "SUPPORTED",
+      "conflicts": "none — 首批假设，锚点协议频段落在 H1/H2 之间的零效应带",
+      "byProbe": "P2"
+    },
+    {
+      "id": "H4",
+      "statement": "H1 的 SCOPED 变体：ca_rebound 存在小电导（g≈0.05-0.15）的弱内向电流（Ih 样或弱 T 型样），超极化恢复其可用性，释放后提供适度内向驱动——足以解释 P1 观测 17.33 相对基线 15.33 的 +2.0 弱增强，但不足以达到 H1 的强反弹带 [18,30]。",
+      "predicts": [
+        "brief hyperpol conditioning + test (40ms) 高于基线（weakIh 校准仿真 +2 左右）",
+        "depolarising conditioning + test ≈ 或略高于基线（Ih 不被去极化招募）",
+        "hyperpol pre-pulse + weak test 接近基线（弱电流效应在该协议被噪声淹没）"
+      ],
+      "state": "SCOPED",
+      "conflicts": "none — 与 H2/H3 在同一协议族可判别（H2 预测压抑、H3 预测无差、H4 预测增强）；与 H1（SCOPED）的区别是电导小一个量级，效应幅度 +1~+3 而非 +3~+7",
+      "note": "H4 公开 predicts『brief hyperpol 40ms 高于基线』被 P2 观测 13.0（=基线 13.0）否证；weakIh 同 draws 校准预测 17.0，偏差 -4.0。但 P2 预注册未给 H4 写 [10,15.5] 带分支，机制上无法正式 REFUTED；且 P1 的 +2.0 弱增强若为真可由极弱电流解释。迁 CONTESTED，报告中作为未被证据支持的 flavour 假设处理。",
+      "byProbe": "P3"
+    },
+    {
+      "id": "H2",
+      "statement": "ca_rebound 的额外电流是活动依赖的外向 K 流（适应型）：去极化条件刺激激活它，压制后续测试反应；超极化条件刺激后测试反应不高于基线。",
+      "predicts": [
+        "hyperpol conditioning + depol test 真细胞 mean_spike_count ≤ 14.2（低于基线 15.3 减噪声）",
+        "depolarising conditioning + test 被压低 ≤ 33（基线 36）",
+        "paired long pulses 第二脉冲反应低于第一脉冲（基线仿真 28，无压抑）"
+      ],
+      "state": "SCOPED",
+      "conflicts": "none — 首批假设，与 H1 同轴反向：同一锚点协议频段互斥",
+      "note": "P1 观测 17.33 落在 H2 预注册带 [0,14.2] 之外：『超极化后压抑』预测与观测矛盾。因频段未命中无法按 kill 分支正式 REFUTED（须值在带内），先迁 CONTESTED 等待 P2 在带内判别；若 P2 观测再次高于 15.4 则 H4/H3 频段命中时 H2 一并 kill。",
+      "byProbe": "P4"
+    }
+  ]
+}

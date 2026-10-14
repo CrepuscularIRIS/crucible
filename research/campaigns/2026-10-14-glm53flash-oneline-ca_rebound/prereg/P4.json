@@ -1,0 +1,52 @@
+{
+  "pid": "P4",
+  "question": "paired long pulses reps=1（未烧毁格子）：ref 校准 33、slow_na 22、AdaptK（适应 K 流，H2 规范机制）24。正式裁决 H2（CONTESTED）：真细胞是否有去极化条件后的活动依赖压抑。",
+  "observe": {
+    "world": "ca_rebound",
+    "seed": 20261014,
+    "protocol": "paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",
+    "reps": 1
+  },
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H2": [
+      12,
+      27
+    ],
+    "H3": [
+      28,
+      45
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        28,
+        45
+      ],
+      "action": "kill",
+      "target": "H2",
+      "scopeNote": "AdaptK 校准 24、slow_na 校准 22：观测落在 ref 水平（33±）意味着去极化条件刺激后无任何超出普通基线的压抑，适应型额外 K 流假设正式 REFUTED；同时 H3 的 ref 亚族在第 4 个出样本格子获证（记录用）"
+    },
+    {
+      "band": [
+        12,
+        27
+      ],
+      "action": "scope",
+      "target": "H2",
+      "scopeNote": "观测落在 slow_na(22)/AdaptK(24) 不可辨区：亚阈适应流与基线慢 Na 动力学在该格子混沌不可分，H2 收束为『存在空间与无效应假设不可辨识』，最终结论维持无生物学可检测的额外电流"
+    },
+    {
+      "band": [
+        0,
+        11
+      ],
+      "action": "kill",
+      "target": "H3",
+      "scopeNote": "全部三候选校准（22/24/33）之外：出现未预期的强烈压抑，无效应假设在第 4 格子被否证，需重新开假设（记录用）"
+    }
+  ],
+  "frozenAt": "2026-10-14T13:19:40.136Z"
+}

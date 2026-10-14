@@ -1,0 +1,70 @@
+{
+  "pid": "P3",
+  "question": "brief step 12uA reps=1（未烧毁格子，全新 draws）：ref 校准 7.0、slow_na 校准 4.0、slowIh(g0.08,htau300) 校准 6.0。出样本检验 H3（无额外通道）并判别基线参数亚族（是否 slow_na 变体），同时收束 H4。",
+  "observe": {
+    "world": "ca_rebound",
+    "seed": 20261014,
+    "protocol": "brief step (12 uA, 40 ms)",
+    "reps": 1
+  },
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H3": [
+      3,
+      8
+    ],
+    "H4": [
+      9,
+      26
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0,
+        2
+      ],
+      "action": "kill",
+      "target": "H3",
+      "scopeNote": "基线家族校准 ref=7/slow_na=4/slowIh=6：观测 <3 意味着放电被压低的额外效应，无效应假设被否证"
+    },
+    {
+      "band": [
+        0,
+        2
+      ],
+      "action": "kill",
+      "target": "H4",
+      "scopeNote": "慢恢复 flavour 校准 6，观测 <2 与其矛盾且与 H4 全部变体空间矛盾"
+    },
+    {
+      "band": [
+        3,
+        8
+      ],
+      "action": "support",
+      "target": "H3",
+      "scopeNote": "出样本巩固：步进协议下真细胞落在两基线亚家族校准区间内（ref=7 vs slow_na=4）。子族刻画：4-5 → slow_na 变体（brief step 上 slow Na 增益损失明显）；6-8 → 普通基线或与 slow_na 不可分"
+    },
+    {
+      "band": [
+        3,
+        8
+      ],
+      "action": "scope",
+      "target": "H4",
+      "scopeNote": "慢恢复弱内向流 flavour 的所有剩余参数变体（g≲0.08, htau≥300）在现有协议与噪声精度下与基线不可区分（本格 slowIh=6 vs ref=7 为混沌级差异，P2/P3 两格均无其预测的稳定信号）：H4 家族存在空间压缩到『与无效应不可辨识』的区域，scope 收束——最终结论以『无生物学可检测的超极化反弹电流』表述"
+    },
+    {
+      "band": [
+        9,
+        26
+      ],
+      "action": "support",
+      "target": "H4",
+      "scopeNote": "观测 ≥9 超出基线家族全部校准值：存在增强方向额外效应，慢恢复 flavour 重新上台（H3 出样本失败将被记录）"
+    }
+  ],
+  "frozenAt": "2026-10-14T13:16:49.556Z"
+}

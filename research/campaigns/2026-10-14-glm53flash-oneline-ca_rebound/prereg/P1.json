@@ -1,0 +1,56 @@
+{
+  "pid": "P1",
+  "question": "真细胞在超极化条件+去极化测试协议下的 mean spike_count（reps=3 均值）相对裸细胞基线（15.3, n=3）是增强、压低还是无差？三分 H1（瞬态内向）/ H2（适应压抑）/ H3（无额外效应）。",
+  "observe": {
+    "world": "ca_rebound",
+    "seed": 20261014,
+    "protocol": "hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",
+    "reps": 3
+  },
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H1": [
+      18,
+      30
+    ],
+    "H2": [
+      0,
+      14.2
+    ],
+    "H3": [
+      14.3,
+      17.4
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0,
+        14.2
+      ],
+      "action": "kill",
+      "target": "H1",
+      "scopeNote": "落入此带同时使 H3 的『无增强』半边被否证，须将 H2 升级审查或新增假设再判别"
+    },
+    {
+      "band": [
+        18,
+        30
+      ],
+      "action": "support",
+      "target": "H1",
+      "scopeNote": "H1 迁 SUPPORTED；随后用 P2（brief hyperpol 40ms 协议）切分快瞬态 vs 慢持续亚家族"
+    },
+    {
+      "band": [
+        14.3,
+        17.4
+      ],
+      "action": "scope",
+      "target": "H1",
+      "scopeNote": "H1 死于『超极化释放无增强』；H2/H3 需新探针（如 paired pulses 压抑比）才能判别"
+    }
+  ],
+  "frozenAt": "2026-10-14T12:51:13.514Z"
+}

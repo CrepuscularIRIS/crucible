@@ -1,0 +1,92 @@
+{
+  "pid": "P2",
+  "question": "brief hyperpol 40ms 协议下真细胞 spike_count（reps=1）：ref/slow_na 校准 13.0、weakIh 校准 17.0、weakT 校准 20.0——三分 H3（无额外效应）/ H4（弱内向，慢 Ih flavour）/ H5（弱内向，快 T flavour）。",
+  "observe": {
+    "world": "ca_rebound",
+    "seed": 20261014,
+    "protocol": "brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",
+    "reps": 1
+  },
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H3": [
+      10,
+      15.5
+    ],
+    "H4": [
+      15.6,
+      18.4
+    ],
+    "H5": [
+      18.5,
+      26
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        10,
+        15.5
+      ],
+      "action": "kill",
+      "target": "H5",
+      "scopeNote": "H5 死于『brief 无增强』；H4 同观测一并 kill（家族预测『高于基线』失败）；H3 获支持（P1 +2.0 弱增强归入 slow_na 动力学参数不确定性）"
+    },
+    {
+      "band": [
+        10,
+        15.5
+      ],
+      "action": "support",
+      "target": "H3",
+      "scopeNote": "无额外效应假设获支持；P1 观测 17.33 vs slow_na 预测 15.67 的残差记为参数不确定性"
+    },
+    {
+      "band": [
+        15.6,
+        18.4
+      ],
+      "action": "support",
+      "target": "H4",
+      "scopeNote": "H4（Ih 样慢 flavour）支持；H5 死于同观测（幅度不足）；H3 死于同观测（brief 协议出现真实增强）"
+    },
+    {
+      "band": [
+        15.6,
+        18.4
+      ],
+      "action": "kill",
+      "target": "H5",
+      "scopeNote": "H5 的快瞬态频段未达，死于同观测"
+    },
+    {
+      "band": [
+        18.5,
+        26
+      ],
+      "action": "support",
+      "target": "H5",
+      "scopeNote": "H5（T 型样快 flavour）支持，H4 家族由其承接；H3 死于同观测"
+    },
+    {
+      "band": [
+        18.5,
+        26
+      ],
+      "action": "kill",
+      "target": "H3",
+      "scopeNote": "brief 协议出现 ≥+5 增强，『无额外效应』被否证"
+    },
+    {
+      "band": [
+        18.5,
+        26
+      ],
+      "action": "scope",
+      "target": "H4",
+      "scopeNote": "H4 作为 flavour-中性家族假设被 H5 的支持吸收，SCOPED 而非 kill（其『存在弱超极化恢复内向流』的家族断言仍成立）"
+    }
+  ],
+  "frozenAt": "2026-10-14T13:04:14.282Z"
+}
