@@ -92,11 +92,20 @@ def _mechanism(raw: dict) -> dict:
     }
 
 
-def _protocol(label: str):
-    proto = nb.protocols.by_label(label)
-    if proto is None:
-        raise SystemExit(f"unknown protocol label: {label}")
-    return proto
+def _protocol(label: str, world: str, *, held_out_ok: bool):
+    """observe 只认共享池（problem() 公开的那份，语义不变）；simulate 另认该 world 的 held-out。
+
+    原先 simulate 也只查共享池，held-out 标签抛 KeyError，agent 无法用候选机制模拟预报协议，
+    只能外推（一句话 run 审计 D10：MSE 8.99，直接模拟基线模型 0.61）。
+    held-out 与共享池同名的标签本就可 observe（problem() 同时列出），不受影响。
+    """
+    try:
+        return nb.protocols.by_label(label, world=world if held_out_ok else None)
+    except KeyError:
+        held_out = {lab for lab, _ in nb.protocols.WORLDS[world]["test"]}
+        if label in held_out:
+            raise SystemExit(f"held-out protocol {label!r} 只能 simulate / forecast，不能 observe（会泄漏预报答案）")
+        raise SystemExit(f"unknown protocol label: {label} (world {world})；可用标签见 info 的 protocols 与 test_protocol_labels")
 
 
 def _subsample(values) -> list[float]:
@@ -155,7 +164,7 @@ def main() -> None:
                     "下一步：用已落地的观测收窄假设，或 report_declare 终局"
                 )
             world = nb.load_world(args.world, seed=args.seed)
-            obs = world.run(_protocol(args.label), reps=reps, block=tuple(
+            obs = world.run(_protocol(args.label, args.world, held_out_ok=False), reps=reps, block=tuple(
                 b for b in args.blockers.split(",") if b))
             _append(args.ledger, base | {"protocol": args.label, "reps": reps, "cost": obs.cost,
                                          "budget_before": spent, "budget_after": spent + obs.cost,
@@ -176,7 +185,7 @@ def main() -> None:
         # stochastic 模式 simulate 返回 (reps, T) 电压数组——按 observe 同一口径
         # （features.spike_count 于 test 窗）归约成可比的尖峰数。
         world = nb.load_world(args.world, seed=args.seed)
-        proto = _protocol(args.label)
+        proto = _protocol(args.label, args.world, held_out_ok=True)
         mech = _mechanism(json.loads(args.mechanism))
         reps = max(1, args.reps)
         volts = world.simulate(mech, proto, reps=reps,

@@ -115,6 +115,26 @@ describe('计量接口（EVAL-PLAN §1.3）', () => {
     expect(over.stderr).toContain('budget exhausted')
   })
 
+  it.skipIf(!meterAvailable)('held-out 协议：可以 simulate（预报要用），不能 observe（否则泄漏预报答案）', () => {
+    // 一句话 run 审计 D10：meter 查协议时不带 world，held-out 标签 simulate 抛 KeyError，
+    // agent 只能外推预报（MSE 8.99；直接模拟基线模型可到 0.61）。
+    const ledger = join(researchCwd, 'ledger-heldout.jsonl')
+    const info = meter(ledger, 2, ['info', 'ca_rebound', '0'])
+    expect(info.status).toBe(0)
+    const parsed = JSON.parse(info.stdout) as { test_protocol_labels: string[]; protocols: Array<[string, unknown]> }
+    const pool = new Set(parsed.protocols.map(([label]) => label))
+    // 只有不在共享池里的 held-out 标签受限；与池同名的本就公开可观测。
+    const heldOut = parsed.test_protocol_labels.find((label) => !pool.has(label))!
+    const plain = JSON.stringify({ extra: [], slow_na: false })
+    const sim = meter(ledger, 2, ['simulate', 'ca_rebound', '0', heldOut, '--mechanism', plain, '--reps', '2'])
+    expect(sim.status).toBe(0)
+    expect(JSON.parse(sim.stdout).protocol_label).toBe(heldOut)
+    const obs = meter(ledger, 2, ['observe', 'ca_rebound', '0', heldOut, '--reps', '1'])
+    expect(obs.status).not.toBe(0)
+    expect(obs.stderr).toContain('held-out')
+    expect(readFileSync(ledger, 'utf-8')).not.toContain('"budget_after"')
+  }, 120_000)
+
   it.skipIf(!meterAvailable)('meter forecast 只做确定性计算：终局唯一性由 MCP journal 负责', () => {
     const ledger = join(researchCwd, 'ledger-b.jsonl')
     const info = meter(ledger, 2, ['info', 'h_sag', '0'])

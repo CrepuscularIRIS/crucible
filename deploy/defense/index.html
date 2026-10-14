@@ -374,11 +374,11 @@ footer code{font-size:.95em}
       <p class="fix">报告已按攻击弱化 H5；H5 vs H7 目前靠拟合简洁性裁决，没有落地测量。</p>
       <p class="src">journal G1 G2 · REPORT §5</p>
     </div>
-    <div class="brick open">
-      <h4>预报标签 KeyError<span class="st none">如实</span></h4>
-      <p>held-out 释放族 <span class="num">4/6</span> 个标签被模拟器注册表拒绝，预报值 6 是 H5 的结构外推，没有锚定。</p>
-      <p class="fix">这是 MSE <span class="num">30.883</span> 的主要不确定来源。</p>
-      <p class="src">REPORT §6</p>
+    <div class="brick fixed">
+      <h4>预报协议模拟不了：是我们的 bug<span class="st done">已修</span></h4>
+      <p>held-out 释放族 <span class="num">4/6</span> 个标签模拟时报 KeyError。原因是我们的计量器查协议时没带 world，不是模型的边界。模型只能外推，MSE <span class="num">30.883</span>。</p>
+      <p class="fix">修复后 simulate 认得 held-out，observe 仍只认公开池（不泄漏预报答案）。复算：一句话 run 若直接模拟基线模型，MSE 可从 <span class="num">8.99</span> 降到 <span class="num">0.61</span>。</p>
+      <p class="src">research/eval/world-meter.py · 轨迹偏离审计 D10</p>
     </div>
     <div class="brick open">
       <h4>只有一个 seed<span class="st none">如实</span></h4>
