@@ -60,9 +60,9 @@ function feedback(rec: ResearchRecord, ann: Annotations): ReportModel['feedback'
     prediction: Object.entries(p.bands)
       .map(([h, [lo, hi]]) => `${hname(ann, h)} 预计 ${fmtNum(lo)}–${fmtNum(hi)}`)
       .join('；'),
-    observed: `测 ${fc.reps} 次平均 ${fmtNum(fc.observed)}，落在 ${fc.landedIn.map((h) => hname(ann, h)).join('、') || '没有任何假设'} 的预测区间；随后 ${fc.transitions
-      .map((t) => `${t.id} ${STATE_WORD[t.to] ?? t.to}`)
-      .join('、')}。`,
+    observed: `测 ${fc.reps} 次平均 ${fmtNum(fc.observed)}，落在 ${fc.landedIn.map((h) => hname(ann, h)).join('、') || '没有任何假设'} 的预测区间；${fc.transitions.length
+      ? `随后 ${fc.transitions.map((t) => `${t.id} ${STATE_WORD[t.to] ?? t.to}`).join('、')}`
+      : '这次测量没有改变任何判断'}。`,
     why: fc.toQuestion,
     raw: rawSeqs.filter((s): s is number => s !== undefined).map((s) => `${s}: ${rec.events[s - 1]!.raw}`),
   }

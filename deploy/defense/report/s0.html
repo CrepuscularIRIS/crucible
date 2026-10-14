@@ -109,7 +109,7 @@ blockquote.orig .src{display:block;font-size:.8rem;color:var(--muted)}
 <article class="card" data-kind="feedback">
 <p><b>原来的实验</b>（P1）：<span class="from">long step (10 uA, 300 ms)</span></p>
 <p><b>原预测</b>：H1（T 型钙电流（登记参数）） 预计 27–44；H2（无额外电流） 预计 14–32；H3（超极化激活的 Ih 电流） 预计 26–42；H4（测量伪影） 预计 0–13</p>
-<p><b>实测</b>：测 1 次平均 32，落在 H1（T 型钙电流（登记参数））、H2（无额外电流）、H3（超极化激活的 Ih 电流） 的预测区间；随后 。</p>
+<p><b>实测</b>：测 1 次平均 32，落在 H1（T 型钙电流（登记参数））、H2（无额外电流）、H3（超极化激活的 Ih 电流） 的预测区间；这次测量没有改变任何判断。</p>
 <p><b>下一组实验</b>（P2）改为：<span class="to">depolarising conditioning + test (+15 uA/250 ms, then +12 uA)</span></p>
 <p class="why"><b>改变理由</b>（P2 事先写下的问题，逐字）：真细胞在去极化条件+测试 (+15/250ms then +12uA) 的 metered spike_count（reps=2 平均）判别去极化步内持续内向流强度：H1(T型钙,持续激活,候选43.2) vs H3(真Ih,去极化期静默但E=-30仍有弱持续分量,候选39.0) vs H5(持续非失活内向流,候选38.6) vs H2(无附加电流,候选33.7) vs H4(测量伪影对手,预测≤26)。load-bearing variable：+15uA 条件期内附加电流的持续内向净流幅度；对照：参考基线候选 34 / slow_na 候选 33.7（免费模拟）。severity 检查：若 H1 为假（真细胞是 H3/H5），本测试会把它误判为 H1 吗？——中心差 4.2-4.6 ≈ 1.7σ_reps2，存在误判风险，故 41-45 区间只 scope H1 不 support；仅 46-50 才支持 H1。H4 为假时其带 [0,26] 以高概率不被命中（本探针对 H4 的杀伤是强判别的）。</p>
 <details><summary>证据（原始记录）</summary><pre>34: {&quot;ts&quot;:&quot;2026-10-14T10:26:08.175Z&quot;,&quot;op&quot;:&quot;prereg.write&quot;,&quot;pid&quot;:&quot;P1&quot;,&quot;spec_sha256&quot;:&quot;ec1e10dfc435762218475e87c86588241b802b18663e698c708e6c983a3efa00&quot;,&quot;prereg_path&quot;:&quot;prereg/P1.json&quot;,&quot;prev&quot;:&quot;6b73303b3e4fef5aaa62ebc9f73201fd71096d4235d9086f16b6742b77ab0ff8&quot;}
