@@ -22,11 +22,13 @@ export interface ResidentSessionEntry<T extends DisposableSession> {
   idleTimer?: NodeJS.Timeout
 }
 
-export interface ResidencyOptions {
+export interface ResidencyOptions<T = unknown> {
   /** 空闲多久后 dispose；<=0 表示常驻直到 disposeAll */
   idleMs: number
   /** dispose 完成后的回调（日志/观测） */
   onDispose?: (key: string, reason: 'idle' | 'replaced' | 'shutdown') => void
+  /** 到期时仍为真（如 rlm child 在跑）则不释放、再等一个 idleMs；dispose 会连带杀掉 child。 */
+  isBusy?: (session: T) => boolean
 }
 
 export class ResidentSessionRegistry<T extends DisposableSession> {
@@ -35,7 +37,7 @@ export class ResidentSessionRegistry<T extends DisposableSession> {
   private disposals = new Map<string, Promise<void>>()
   private shutDown = false
 
-  constructor(private readonly options: ResidencyOptions) {}
+  constructor(private readonly options: ResidencyOptions<T>) {}
 
   get(key: string): ResidentSessionEntry<T> | undefined {
     return this.entries.get(key)
@@ -73,16 +75,23 @@ export class ResidentSessionRegistry<T extends DisposableSession> {
     if (!entry) return 'not-found'
     if (entry.owner !== owner) return 'owner-mismatch'
     entry.owner = undefined
-    if (this.options.idleMs > 0 && !this.shutDown) {
-      entry.idleTimer = setTimeout(() => {
-        void this.disposeEntry(entry, 'idle').catch((error) => {
-          console.error(`[Pi SDK] 常驻会话空闲释放失败: ${error instanceof Error ? error.message : String(error)}`)
-        })
-      }, this.options.idleMs)
-      // 计时器不阻止进程退出
-      entry.idleTimer.unref?.()
-    }
+    if (this.options.idleMs > 0 && !this.shutDown) this.armIdleTimer(entry)
     return 'released'
+  }
+
+  private armIdleTimer(entry: ResidentSessionEntry<T>): void {
+    entry.idleTimer = setTimeout(() => {
+      entry.idleTimer = undefined
+      if (this.options.isBusy?.(entry.session)) {
+        this.armIdleTimer(entry)
+        return
+      }
+      void this.disposeEntry(entry, 'idle').catch((error) => {
+        console.error(`[Pi SDK] 常驻会话空闲释放失败: ${error instanceof Error ? error.message : String(error)}`)
+      })
+    }, this.options.idleMs)
+    // 计时器不阻止进程退出
+    entry.idleTimer.unref?.()
   }
 
   /** 主动丢弃（外部发现指纹变化时用；语义等同 install 替换）。 */

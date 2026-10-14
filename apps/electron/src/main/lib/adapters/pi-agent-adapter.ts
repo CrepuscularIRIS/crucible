@@ -63,7 +63,7 @@ import type { ProjectInstructionSource } from '../project-instruction-resolver'
 import { createCodexFastModeExtension, withCodexFastModeServiceTier } from './pi-codex-request-settings'
 import { createDeepSeekReasoningRequestExtension } from './pi-deepseek-reasoning-request-settings'
 import { createOpenAIReasoningRequestExtension } from './pi-openai-reasoning-request-settings'
-import { createResearchIsolationExtension } from './pi-research-isolation-extension'
+import { createResearchIsolationExtension, createRlmChildToolGuardExtension } from './pi-research-isolation-extension'
 import {
   createResearchRefineRuntime,
   installResearchRefineToolTap,
@@ -94,6 +94,8 @@ import {
   installSessionIpythonPermission,
 } from './pi-ipython-rlm'
 import { installPostCompactionRlmGate } from './pi-post-compaction-rlm'
+import { installRlmChildWatchdog } from './pi-rlm-child-watchdog'
+import { installIdleChildNoticePolicy } from './pi-idle-child-notice'
 import { mergePromaManagedSkillPaths, resolvePrimeNativeSkillPaths } from './pi-managed-skills'
 import { summarizePrimeRefineArtifacts } from './pi-refine-state'
 import type { AgentRefineEntrySummary, AgentRefineNowResult, AgentRefineState } from '@proma/shared'
@@ -133,6 +135,8 @@ export interface PiResidentSession {
   researchRefineRuntime?: ResearchRefineRuntime
   /** research refine 实验臂；refineNow 按 臂 放行/拒绝。 */
   researchRefineMode?: ResearchRefineMode
+  /** query 结束后 child 完成通知只进 UI、不开新轮（§12 Q2 c）；RLM 未启用时为 undefined。 */
+  idleChildNotice?: ReturnType<typeof installIdleChildNoticePolicy>
   dispose(): Promise<void>
 }
 
@@ -1455,6 +1459,8 @@ export class PiAgentAdapter implements AgentProviderAdapter {
   private activeSessions = new Map<string, ActivePiSession>()
   private residentSessions = new ResidentSessionRegistry<PiResidentSession>({
     idleMs: PI_RESIDENT_SESSION_IDLE_MS,
+    // dispose 会连带杀掉仍在跑的 rlm child（PA :3929-3945）；有 child 就延后，卡死的 child 由 watchdog 取消。
+    isBusy: (resident) => resident.session.hasRunningRlmChildren(),
     onDispose: (key, reason) => console.log(`[Pi SDK] 常驻会话释放: ${key} (${reason})`),
   })
 
@@ -1487,6 +1493,8 @@ export class PiAgentAdapter implements AgentProviderAdapter {
           rejectPendingInterruptPrompts(active, createAbortError())
           active.pendingSkillActivations.clear()
           // 会话驻留：不 dispose，交还登记表排空闲计时（owner 校验防误清新占有者）
+          const ownedEntry = this.residentSessions.get(input.sessionId)
+          if (ownedEntry?.owner === active) ownedEntry.session.idleChildNotice?.queryEnded()
           this.residentSessions.release(input.sessionId, active)
         }
         if (this.activeSessions.get(input.sessionId) === active) {
@@ -1920,6 +1928,8 @@ export class PiAgentAdapter implements AgentProviderAdapter {
               }
               currentInterrupt?.resolveAccepted()
               pendingRecoverableEmptyStop = undefined
+              // 必须与 session.prompt 同一同步段：用户 prompt 先占 Prime 准入 FIFO，停住的 child 通知随后排进本轮。
+              resident.idleChildNotice?.beforePrompt()
               await session.prompt(shieldPrimeSessionCommands(prompt), { source: 'rpc' })
               const emptyStopRecovery = await recoverPiEmptyStops({
                 takePending: () => {
@@ -2159,6 +2169,8 @@ export class PiAgentAdapter implements AgentProviderAdapter {
       : undefined
     const extensionFactories = [
       ...(projectInstructionScope ? [projectInstructionScope.createExtension()] : []),
+      // 先于配置门控的隔离 guard：Prime 的 tool_call 链首个 block 即返回。
+      ...(rlmSupply.available ? [createRlmChildToolGuardExtension()] : []),
       ...(input.researchIsolation
         ? [createResearchIsolationExtension(
           input.researchIsolation,
@@ -2327,7 +2339,17 @@ export class PiAgentAdapter implements AgentProviderAdapter {
     }
     installRuntimeGuardHooks(session, () => hooks.runtimeGuard)
     installCurrentSessionCompactionHooks(session)
-    if (rlmSupply.available) installPostCompactionRlmGate(session)
+    let disposeRlmChildWatchdog: (() => void) | undefined
+    let idleChildNotice: PiResidentSession['idleChildNotice']
+    if (rlmSupply.available) {
+      installPostCompactionRlmGate(session)
+      disposeRlmChildWatchdog = installRlmChildWatchdog(session)
+      // ponytail: renderer 还没有 rlm_child_update（P2）；先进主进程日志，通知本体停在 Prime 里，下一条消息消费。
+      idleChildNotice = installIdleChildNoticePolicy(session, (notice) => console.log(
+        `[Pi SDK] 空闲时 rlm child 结束（不开新轮）: ${notice.sessionName ?? notice.id} ${notice.status}`
+        + (notice.statusLine ? ` · ${notice.statusLine}` : ''),
+      ))
+    }
 
     // Prime 的 session artifacts 与 sessions 目录同级：…/session-artifacts/<sdkSessionId>/harness
     const harnessDir = join(dirname(input.piSessionDir), 'session-artifacts', session.sessionId, 'harness')
@@ -2343,6 +2365,7 @@ export class PiAgentAdapter implements AgentProviderAdapter {
       autoRefine: readAutoRefineSettings(settingsManager as unknown as { getSettings?: () => unknown }),
       ...(researchRefineRuntime?.mode === 'learning' && { researchRefineRuntime }),
       ...(researchRefineMode && { researchRefineMode }),
+      idleChildNotice,
       // 审计 F2：learning 臂 dispose 前先排空 C5 promotion（VALIDATED → global），
       // 再交 Prime 销毁会话；失败也要 dispose，promotion 结果以事件流为准。
       dispose: async () => {
@@ -2351,6 +2374,7 @@ export class PiAgentAdapter implements AgentProviderAdapter {
         } catch (error) {
           console.error('[Pi SDK] research refine promotion 失败:', error)
         } finally {
+          disposeRlmChildWatchdog?.()
           session.dispose()
         }
       },

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent'
-import { createResearchIsolationExtension } from './pi-research-isolation-extension'
+import { createResearchIsolationExtension, createRlmChildToolGuardExtension } from './pi-research-isolation-extension'
 
 describe('Pi research 隔离扩展', () => {
   it('注册 execution-before tool_call 守卫并返回 block', async () => {
@@ -61,5 +61,28 @@ describe('Pi research 隔离扩展', () => {
     expect(denied).toHaveLength(1)
     expect(denied[0]?.tool).toBe('bash')
     expect(allowed).toEqual(['ipython'])
+  })
+})
+
+describe('rlm child 的 MCP 只读守卫（P0 检查 ②，与 PROMA_RESEARCH_DENY 无关）', () => {
+  type Handler = (event: { toolName: string; input: Record<string, unknown> }, ctx: unknown) => unknown
+  const ctxAt = (rlmDepth: number | undefined) => ({ sessionManager: { getHeader: () => ({ rlmDepth }) } })
+
+  it('从 ctx 的 session header 取 rlmDepth：depth 1 拒绝研究写工具，depth 0 放行', async () => {
+    let handler: Handler | undefined
+    const pi = {
+      on(event: string, next: Handler) {
+        expect(event).toBe('tool_call')
+        handler = next
+      },
+    } as unknown as ExtensionAPI
+    createRlmChildToolGuardExtension()(pi)
+
+    const call = { toolName: 'mcp__research__attack_record', input: {} }
+    expect(await handler?.(call, ctxAt(1))).toMatchObject({ block: true, reason: expect.stringContaining('out.md') })
+    expect(await handler?.(call, ctxAt(0))).toBeUndefined()
+    expect(await handler?.(call, ctxAt(undefined))).toBeUndefined()
+    expect(await handler?.(call, { sessionManager: { getHeader: () => null } })).toBeUndefined()
+    expect(await handler?.({ toolName: 'ipython', input: { code: 'x = 1' } }, ctxAt(1))).toBeUndefined()
   })
 })

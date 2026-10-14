@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, jest, test } from 'bun:test'
 
 import {
   computeResidencyKey,
@@ -100,6 +100,33 @@ describe('ResidentSessionRegistry', () => {
     await reg.disposeAll()
     expect(session.disposed).toBe(true)
     expect(reg.acquire('c1', {})).toBeUndefined()
+  })
+
+  test('③ 有 rlm child 在跑时空闲 10 min 不 dispose，child 结束后的下一次到期才释放', async () => {
+    jest.useFakeTimers()
+    try {
+      const session = { ...makeSession(), childRunning: true }
+      const reg = new ResidentSessionRegistry<typeof session>({
+        idleMs: 10 * 60_000,
+        isBusy: (s) => s.childRunning,
+      })
+      const owner = {}
+      await reg.install('c1', session, owner)
+      reg.release('c1', owner)
+
+      jest.advanceTimersByTime(10 * 60_000 + 1)
+      await Promise.resolve()
+      expect(session.disposed).toBe(false)
+      expect(reg.size).toBe(1)
+
+      session.childRunning = false
+      jest.advanceTimersByTime(10 * 60_000 + 1)
+      await Promise.resolve()
+      expect(session.disposed).toBe(true)
+      expect(reg.size).toBe(0)
+    } finally {
+      jest.useRealTimers()
+    }
   })
 
   test('idleMs<=0 表示常驻（释放不排计时）', async () => {

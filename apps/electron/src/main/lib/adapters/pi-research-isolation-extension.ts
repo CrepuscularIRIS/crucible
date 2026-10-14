@@ -1,6 +1,7 @@
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent'
 import {
   classifyResearchToolCall,
+  classifyRlmChildToolCall,
   type ResearchIsolationConfig,
 } from '../research-isolation-guard'
 
@@ -40,5 +41,17 @@ export function createResearchIsolationExtension(
       }
       return decision
     })
+  }
+}
+
+/**
+ * rlm child 的 MCP 只读守卫（01-统一架构 §4.5 / §9.4，P0 检查 ②）。
+ * 只要 RLM 可用就装，不依赖 PROMA_RESEARCH_DENY：父会话是唯一的研究状态写入者。
+ * 同一 ResourceLoader 供父/子会话构建 ExtensionRunner，depth 取自各自的 session header。
+ */
+export function createRlmChildToolGuardExtension(): (pi: ExtensionAPI) => void {
+  return (pi) => {
+    pi.on('tool_call', (event, ctx) =>
+      classifyRlmChildToolCall(event.toolName, ctx.sessionManager.getHeader()?.rlmDepth))
   }
 }
