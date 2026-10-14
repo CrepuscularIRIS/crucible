@@ -1,0 +1,497 @@
+{
+ "run": "ca_rebound",
+ "stage": "K1-abduce",
+ "generated_by": "analyst child (out-of-band fallback)",
+ "seeds": {
+  "all_final_evidence": 0,
+  "tuning_scans": 7,
+  "reps_final": 64
+ },
+ "candidates": {
+  "C1_CaT": {
+   "extra": [
+    {
+     "name": "CaT",
+     "g": 0.7,
+     "E": 120.0,
+     "mvh": -38.0,
+     "mk": 6.0,
+     "mtau": 6.0,
+     "mpow": 1,
+     "hvh": -65.0,
+     "hk": 6.0,
+     "htau": 130.0,
+     "hpow": 1
+    }
+   ],
+   "slow_na": false
+  },
+  "C2_Ih": {
+   "extra": [
+    {
+     "name": "Ih",
+     "g": 0.16,
+     "E": -35.0,
+     "mvh": -88.0,
+     "mk": 7.0,
+     "mtau": 180.0,
+     "mpow": 1,
+     "hvh": -60.0,
+     "hk": 8.0,
+     "htau": 150.0,
+     "hpow": 1
+    }
+   ],
+   "slow_na": false
+  },
+  "C3_M": {
+   "extra": [
+    {
+     "name": "M",
+     "g": 0.55,
+     "E": -90.0,
+     "mvh": -35.0,
+     "mk": 6.0,
+     "mtau": 80.0,
+     "mpow": 1,
+     "hvh": null,
+     "hk": 4.0,
+     "htau": 1000000000.0,
+     "hpow": 1
+    }
+   ],
+   "slow_na": false
+  },
+  "C4_SNa": {
+   "extra": [],
+   "slow_na": true
+  },
+  "C5_KA": {
+   "extra": [
+    {
+     "name": "KA",
+     "g": 0.8,
+     "E": -77.0,
+     "mvh": -50.0,
+     "mk": 8.0,
+     "mtau": 3.0,
+     "mpow": 1,
+     "hvh": -60.0,
+     "hk": 8.0,
+     "htau": 80.0,
+     "hpow": 1
+    }
+   ],
+   "slow_na": false
+  }
+ },
+ "H0": {
+  "extra": [],
+  "slow_na": false
+ },
+ "discrimination_matrix": {
+  "H0|C1_CaT": {
+   "best_protocol": "hyperpol -40 then release",
+   "best_blockers": "XE991",
+   "d": 1.36,
+   "mean_a": 10.92,
+   "mean_b": 13.94,
+   "sd_max": 2.21,
+   "sim_a": "sim-0265",
+   "sim_b": "sim-0266"
+  },
+  "H0|C2_Ih": {
+   "best_protocol": "hyperpol -40 then release",
+   "best_blockers": "XE991",
+   "d": 1.61,
+   "mean_a": 10.92,
+   "mean_b": 13.77,
+   "sd_max": 1.77,
+   "sim_a": "sim-0265",
+   "sim_b": "sim-0267"
+  },
+  "H0|C3_M": {
+   "best_protocol": "depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",
+   "best_blockers": "Cd",
+   "d": 1.16,
+   "mean_a": 36.36,
+   "mean_b": 33.48,
+   "sd_max": 2.48,
+   "sim_a": "sim-0307",
+   "sim_b": "sim-0310"
+  },
+  "H0|C4_SNa": {
+   "best_protocol": "paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",
+   "best_blockers": "XE991",
+   "d": 1.02,
+   "mean_a": 27.39,
+   "mean_b": 24.75,
+   "sd_max": 2.59,
+   "sim_a": "sim-0295",
+   "sim_b": "sim-0299"
+  },
+  "H0|C5_KA": {
+   "best_protocol": "hyperpol -25 then release",
+   "best_blockers": "none",
+   "d": 1.39,
+   "mean_a": 11.33,
+   "mean_b": 8.8,
+   "sd_max": 1.82,
+   "sim_a": "sim-0010",
+   "sim_b": "sim-0085"
+  },
+  "C1_CaT|C2_Ih": {
+   "best_protocol": "hyperpol -40 then release",
+   "best_blockers": "Cd",
+   "d": 1.61,
+   "mean_a": 10.92,
+   "mean_b": 13.77,
+   "sd_max": 1.77,
+   "sim_a": "sim-0260",
+   "sim_b": "sim-0261"
+  },
+  "C1_CaT|C3_M": {
+   "best_protocol": "hyperpol -30 then release",
+   "best_blockers": "none",
+   "d": 1.92,
+   "mean_a": 13.69,
+   "mean_b": 9.77,
+   "sd_max": 2.05,
+   "sim_a": "sim-0240",
+   "sim_b": "sim-0171"
+  },
+  "C1_CaT|C4_SNa": {
+   "best_protocol": "paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",
+   "best_blockers": "XE991",
+   "d": 1.89,
+   "mean_a": 29.05,
+   "mean_b": 24.75,
+   "sd_max": 2.27,
+   "sim_a": "sim-0296",
+   "sim_b": "sim-0299"
+  },
+  "C1_CaT|C5_KA": {
+   "best_protocol": "hyperpol -40 then release",
+   "best_blockers": "XE991",
+   "d": 2.35,
+   "mean_a": 13.94,
+   "mean_b": 8.73,
+   "sd_max": 2.21,
+   "sim_a": "sim-0266",
+   "sim_b": "sim-0270"
+  },
+  "C2_Ih|C3_M": {
+   "best_protocol": "hyperpol -40 then release",
+   "best_blockers": "Cd",
+   "d": 2.11,
+   "mean_a": 13.77,
+   "mean_b": 9.92,
+   "sd_max": 1.82,
+   "sim_a": "sim-0261",
+   "sim_b": "sim-0262"
+  },
+  "C2_Ih|C4_SNa": {
+   "best_protocol": "paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",
+   "best_blockers": "XE991",
+   "d": 1.94,
+   "mean_a": 29.14,
+   "mean_b": 24.75,
+   "sd_max": 2.27,
+   "sim_a": "sim-0297",
+   "sim_b": "sim-0299"
+  },
+  "C2_Ih|C5_KA": {
+   "best_protocol": "hyperpol -35 then release",
+   "best_blockers": "none",
+   "d": 2.91,
+   "mean_a": 13.73,
+   "mean_b": 8.73,
+   "sd_max": 1.72,
+   "sim_a": "sim-0254",
+   "sim_b": "sim-0086"
+  },
+  "C3_M|C4_SNa": {
+   "best_protocol": "paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",
+   "best_blockers": "XE991",
+   "d": 1.02,
+   "mean_a": 27.39,
+   "mean_b": 24.75,
+   "sd_max": 2.59,
+   "sim_a": "sim-0298",
+   "sim_b": "sim-0299"
+  },
+  "C3_M|C5_KA": {
+   "best_protocol": "hyperpol -40 then release",
+   "best_blockers": "XE991",
+   "d": 1.24,
+   "mean_a": 10.92,
+   "mean_b": 8.73,
+   "sd_max": 1.77,
+   "sim_a": "sim-0268",
+   "sim_b": "sim-0270"
+  },
+  "C4_SNa|C5_KA": {
+   "best_protocol": "hyperpol -40 then release",
+   "best_blockers": "XE991",
+   "d": 1.03,
+   "mean_a": 11.0,
+   "mean_b": 8.73,
+   "sd_max": 2.2,
+   "sim_a": "sim-0269",
+   "sim_b": "sim-0270"
+  }
+ },
+ "min_cell_set": [
+  {
+   "tag": "A",
+   "protocol": "hyperpol -40 then release",
+   "blockers": [
+    "XE991"
+   ],
+   "expected": {
+    "H0": {
+     "mean": 10.92,
+     "sd": 1.77,
+     "p5_p95": [
+      8.0,
+      13.85
+     ],
+     "sim": "sim-0265"
+    },
+    "C1_CaT": {
+     "mean": 13.94,
+     "sd": 2.21,
+     "p5_p95": [
+      10.15,
+      18.0
+     ],
+     "sim": "sim-0266"
+    },
+    "C2_Ih": {
+     "mean": 13.77,
+     "sd": 1.74,
+     "p5_p95": [
+      11.0,
+      16.85
+     ],
+     "sim": "sim-0267"
+    },
+    "C3_M": {
+     "mean": 10.92,
+     "sd": 1.77,
+     "p5_p95": [
+      8.0,
+      13.85
+     ],
+     "sim": "sim-0268"
+    },
+    "C4_SNa": {
+     "mean": 11.0,
+     "sd": 2.2,
+     "p5_p95": [
+      8.0,
+      14.0
+     ],
+     "sim": "sim-0269"
+    },
+    "C5_KA": {
+     "mean": 8.73,
+     "sd": 1.66,
+     "p5_p95": [
+      6.0,
+      11.0
+     ],
+     "sim": "sim-0270"
+    }
+   }
+  },
+  {
+   "tag": "B",
+   "protocol": "paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",
+   "blockers": [
+    "XE991"
+   ],
+   "expected": {
+    "H0": {
+     "mean": 27.39,
+     "sd": 2.59,
+     "p5_p95": [
+      24.0,
+      32.7
+     ],
+     "sim": "sim-0295"
+    },
+    "C1_CaT": {
+     "mean": 29.05,
+     "sd": 1.93,
+     "p5_p95": [
+      26.15,
+      32.85
+     ],
+     "sim": "sim-0296"
+    },
+    "C2_Ih": {
+     "mean": 29.14,
+     "sd": 2.25,
+     "p5_p95": [
+      26.0,
+      32.85
+     ],
+     "sim": "sim-0297"
+    },
+    "C3_M": {
+     "mean": 27.39,
+     "sd": 2.59,
+     "p5_p95": [
+      24.0,
+      32.7
+     ],
+     "sim": "sim-0298"
+    },
+    "C4_SNa": {
+     "mean": 24.75,
+     "sd": 2.27,
+     "p5_p95": [
+      21.15,
+      27.0
+     ],
+     "sim": "sim-0299"
+    },
+    "C5_KA": {
+     "mean": 25.7,
+     "sd": 1.92,
+     "p5_p95": [
+      23.0,
+      28.85
+     ],
+     "sim": "sim-0300"
+    }
+   }
+  },
+  {
+   "tag": "C",
+   "protocol": "depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",
+   "blockers": [],
+   "expected": {
+    "H0": {
+     "mean": 36.36,
+     "sd": 2.4,
+     "p5_p95": [
+      33.0,
+      40.85
+     ],
+     "sim": "sim-0008"
+    },
+    "C1_CaT": {
+     "mean": 38.84,
+     "sd": 2.84,
+     "p5_p95": [
+      35.0,
+      43.85
+     ],
+     "sim": "sim-0236"
+    },
+    "C2_Ih": {
+     "mean": 37.98,
+     "sd": 2.98,
+     "p5_p95": [
+      34.0,
+      43.85
+     ],
+     "sim": "sim-0251"
+    },
+    "C3_M": {
+     "mean": 33.48,
+     "sd": 2.48,
+     "p5_p95": [
+      30.0,
+      38.0
+     ],
+     "sim": "sim-0167"
+    },
+    "C4_SNa": {
+     "mean": 34.72,
+     "sd": 2.52,
+     "p5_p95": [
+      31.0,
+      40.0
+     ],
+     "sim": "sim-0068"
+    },
+    "C5_KA": {
+     "mean": 34.61,
+     "sd": 2.79,
+     "p5_p95": [
+      31.0,
+      39.85
+     ],
+     "sim": "sim-0083"
+    }
+   }
+  },
+  {
+   "tag": "D",
+   "protocol": "hyperpol -40 then release",
+   "blockers": [
+    "Cd"
+   ],
+   "expected": {
+    "H0": {
+     "mean": 10.92,
+     "sd": 1.77,
+     "p5_p95": [
+      8.0,
+      13.85
+     ],
+     "sim": "sim-0259"
+    },
+    "C1_CaT": {
+     "mean": 10.92,
+     "sd": 1.77,
+     "p5_p95": [
+      8.0,
+      13.85
+     ],
+     "sim": "sim-0260"
+    },
+    "C2_Ih": {
+     "mean": 13.77,
+     "sd": 1.74,
+     "p5_p95": [
+      11.0,
+      16.85
+     ],
+     "sim": "sim-0261"
+    },
+    "C3_M": {
+     "mean": 9.92,
+     "sd": 1.82,
+     "p5_p95": [
+      7.0,
+      12.0
+     ],
+     "sim": "sim-0262"
+    },
+    "C4_SNa": {
+     "mean": 11.0,
+     "sd": 2.2,
+     "p5_p95": [
+      8.0,
+      14.0
+     ],
+     "sim": "sim-0263"
+    },
+    "C5_KA": {
+     "mean": 8.73,
+     "sd": 1.66,
+     "p5_p95": [
+      6.0,
+      11.0
+     ],
+     "sim": "sim-0264"
+    }
+   }
+  }
+ ],
+ "notes": "stale sim-*.json from design revs 1-2 were deleted; ids non-contiguous. TTX sanity arm all-zero."
+}

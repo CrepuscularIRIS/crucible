@@ -1,0 +1,82 @@
+{
+ "H0": {
+  "extra": [],
+  "slow_na": false
+ },
+ "C1_CaT": {
+  "extra": [
+   {
+    "name": "CaT",
+    "g": 0.7,
+    "E": 120.0,
+    "mvh": -38.0,
+    "mk": 6.0,
+    "mtau": 6.0,
+    "mpow": 1,
+    "hvh": -65.0,
+    "hk": 6.0,
+    "htau": 130.0,
+    "hpow": 1
+   }
+  ],
+  "slow_na": false
+ },
+ "C2_Ih": {
+  "extra": [
+   {
+    "name": "Ih",
+    "g": 0.16,
+    "E": -35.0,
+    "mvh": -88.0,
+    "mk": 7.0,
+    "mtau": 180.0,
+    "mpow": 1,
+    "hvh": -60.0,
+    "hk": 8.0,
+    "htau": 150.0,
+    "hpow": 1
+   }
+  ],
+  "slow_na": false
+ },
+ "C3_M": {
+  "extra": [
+   {
+    "name": "M",
+    "g": 0.55,
+    "E": -90.0,
+    "mvh": -35.0,
+    "mk": 6.0,
+    "mtau": 80.0,
+    "mpow": 1,
+    "hvh": null,
+    "hk": 4.0,
+    "htau": 1000000000.0,
+    "hpow": 1
+   }
+  ],
+  "slow_na": false
+ },
+ "C4_SNa": {
+  "extra": [],
+  "slow_na": true
+ },
+ "C5_KA": {
+  "extra": [
+   {
+    "name": "KA",
+    "g": 0.8,
+    "E": -77.0,
+    "mvh": -50.0,
+    "mk": 8.0,
+    "mtau": 3.0,
+    "mpow": 1,
+    "hvh": -60.0,
+    "hk": 8.0,
+    "htau": 80.0,
+    "hpow": 1
+   }
+  ],
+  "slow_na": false
+ }
+}

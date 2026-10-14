@@ -1,0 +1,185 @@
+{
+  "pid": "P1",
+  "question": "去极化条件化+测试（无药）真细胞 spike count 落入高组 {H0≈36.4, H1≈38.8, H2≈38.0} 还是低组 {H3≈33.5, H4≈34.7, H5≈34.6}？",
+  "observe": {
+    "world": "ca_rebound",
+    "seed": 101,
+    "protocol": "depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",
+    "reps": 2,
+    "blockers": ""
+  },
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H0": [
+      33,
+      42
+    ],
+    "H1": [
+      37,
+      45
+    ],
+    "H2": [
+      36.5,
+      45
+    ],
+    "H3": [
+      30,
+      35.2
+    ],
+    "H4": [
+      30,
+      36.2
+    ],
+    "H5": [
+      30,
+      36.2
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        33,
+        42
+      ],
+      "action": "support",
+      "target": "H0",
+      "headline": "无药去极化条件化响应落在参考模型带内：无全局增益/压制签名"
+    },
+    {
+      "band": [
+        30,
+        32.9
+      ],
+      "action": "kill",
+      "target": "H0",
+      "headline": "显著低于参考带，纯 HH 基线被排除"
+    },
+    {
+      "band": [
+        37,
+        45
+      ],
+      "action": "support",
+      "target": "H1",
+      "headline": "高组最强签名：接近 CaT 代表点 38.8"
+    },
+    {
+      "band": [
+        30,
+        34.4
+      ],
+      "action": "kill",
+      "target": "H1",
+      "headline": "低于 CaT 族可达区间，强 CaT 放大器排除"
+    },
+    {
+      "band": [
+        36.5,
+        45
+      ],
+      "action": "support",
+      "target": "H2",
+      "headline": "高组签名：接近 Ih 代表点 38.0"
+    },
+    {
+      "band": [
+        30,
+        34
+      ],
+      "action": "kill",
+      "target": "H2",
+      "headline": "低于 Ih 族可达区间，强 Ih 张力排除"
+    },
+    {
+      "band": [
+        30,
+        35.2
+      ],
+      "action": "support",
+      "target": "H3",
+      "headline": "低组签名：接近 M 代表点 33.5"
+    },
+    {
+      "band": [
+        37,
+        45
+      ],
+      "action": "kill",
+      "target": "H3",
+      "headline": "高于 M 族可达区间，强 M 压制排除"
+    },
+    {
+      "band": [
+        30,
+        36.2
+      ],
+      "action": "support",
+      "target": "H4",
+      "headline": "低组签名：接近 SNa 代表点 34.7"
+    },
+    {
+      "band": [
+        38.3,
+        45
+      ],
+      "action": "kill",
+      "target": "H4",
+      "headline": "高于 SNa 族可达区间，强慢失活钝化排除"
+    },
+    {
+      "band": [
+        30,
+        36.2
+      ],
+      "action": "support",
+      "target": "H5",
+      "headline": "低组签名：接近 KA 代表点 34.6"
+    },
+    {
+      "band": [
+        38.3,
+        45
+      ],
+      "action": "kill",
+      "target": "H5",
+      "headline": "高于 KA 族可达区间，强 A 型钾压制排除"
+    }
+  ],
+  "discrimination": "互斥对：H1[37,45] 与 H3[30,35.2]/H4/H5[30,36.2] 不相交；d(H1|H3)≈2.7（reps=2 噪声平均）。死区 (36.2,37) 内观测不改变信念，交由 P3(+Cd 仲裁) 与 P4(+XE991) 裁决",
+  "provenance": {
+    "H0": "sim:dry-P1-H0",
+    "H1": "sim:dry-P1-C1_CaT",
+    "H2": "sim:dry-P1-C2_Ih",
+    "H3": "sim:dry-P1-C3_M",
+    "H4": "sim:dry-P1-C4_SNa",
+    "H5": "sim:dry-P1-C5_KA"
+  },
+  "sims": [
+    {
+      "path": "research-work/ca_rebound/sim/dry-P1-H0.json",
+      "sha256": "a05e0a28c3322a8a8baa1c3a8da63acb1a92285ee033d12fcf6b47ef16a76557"
+    },
+    {
+      "path": "research-work/ca_rebound/sim/dry-P1-C1_CaT.json",
+      "sha256": "e4b7d71ad6760d37f4a70001ca51695cc0ca46b2c41e56d28bc6696ae2bc58c4"
+    },
+    {
+      "path": "research-work/ca_rebound/sim/dry-P1-C2_Ih.json",
+      "sha256": "7b917638ddea49bb1500b73eaccccdf3eff2f1e89cad0847b921d20c803331c2"
+    },
+    {
+      "path": "research-work/ca_rebound/sim/dry-P1-C3_M.json",
+      "sha256": "3c134e83c12b3e66e0a1e6921af002c90002d7a1d0c7b63f518f2700a054cc55"
+    },
+    {
+      "path": "research-work/ca_rebound/sim/dry-P1-C4_SNa.json",
+      "sha256": "5df9105e55b213182e8a8abea828da705764d09e1d0979dac8d73fbf4672d61e"
+    },
+    {
+      "path": "research-work/ca_rebound/sim/dry-P1-C5_KA.json",
+      "sha256": "a3efc0e1dd38c23c67923b06ff12bdfa60d67fffd411b4e3be4c061f6b55e0fb"
+    }
+  ],
+  "frozenAt": "2026-10-14T21:04:24.189Z"
+}
