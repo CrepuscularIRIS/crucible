@@ -1,0 +1,112 @@
+{
+  "schema": "crucible.annotations/2",
+  "journal_sha256": "33e03ef880424a77f4f9ec904576206ce09b2411363c4428256148a18da82b4f",
+  "report_sha256": "9733f57548637d6e00de4887f396e432bfebccbe37676bcdbef236e2bc6cc828",
+  "case": {
+    "title": "新镜像上的一句话：“看不到额外电流”",
+    "model": "GLM 5.3 Flash（镜像 5533e6a）",
+    "task_plain": "同一个神经元、同一句话，换成新镜像：被压低后为什么多放电？用 8 次真实测量分清几种解释。",
+    "changed_plain": "一组实验因工具不认协议而失败，它改测标准的超极化实验，4 次测量后否定了 T 型这一整类解释。",
+    "next_plain": "否定一整类解释前，先在仿真里扫参数、算清要测几次；分不开就换阻断剂实验。",
+    "headline_plain": "这次 agent 开了子任务窗口，但结论“看不到额外电流”与真相相反：用来否定 T 型家族的实验分不开真相与无额外电流。",
+    "background": "与详细指令案例同一个模拟神经元（seed 0），换成 P0 镜像。父会话开了子任务窗口做仿真，子任务被隔离规则拦下、只交回计划，仿真全由父会话自己跑。",
+    "prompt": "帮我研究一下 ca_rebound 这个神经元的放电机制。",
+    "prompt_source": "逐字，与一句话案例同一句提示词（提交 c55e023 的说明）",
+    "budget_total": 8,
+    "truth": {
+      "text": "T 型钙电流：超极化让它解除失活，松开时产生反弹爆发（电导 3.2，失活时间常数 22 ms）",
+      "source": "neuronbench/worlds.py:196（描述）、:128（参数 MT）",
+      "markers": [
+        "T型钙",
+        "T 型钙"
+      ]
+    }
+  },
+  "names": {
+    "H1": "T 型 / Ih 窗电流家族",
+    "H2": "T 型浅失活亚型",
+    "H3": "外向钾电流",
+    "H4": "额外电流不可见（零假设）"
+  },
+  "nodes": [
+    {
+      "id": "N1",
+      "seq": [
+        51,
+        56
+      ],
+      "kind": "refute",
+      "layer": "推理层",
+      "key": true,
+      "title_plain": "4 次测量否定整个 T 型 / Ih 家族",
+      "at_time": {
+        "mark": "no",
+        "text": "家族的预测区间只按一组参数的仿真画出；4 次测量分不开相差不到 1 个峰的真相与基线，却据此否定了整个家族。"
+      },
+      "hindsight": {
+        "mark": "no",
+        "text": "真相均值 {{p0.P2.truth_mean}} 本身就落在否定 H1 的区间 {{p0.P2.kill_lo}}–{{p0.P2.kill_hi}} 里（4 次测量平均落入的概率约 {{p0.P2.truth_p_kill}}，正态近似）；分开真相与基线约需 {{p0.P2.r_star}} 次。"
+      },
+      "basis": [
+        {
+          "text": "复算：同 world、同 seed、同协议，基线 {{p0.P2.base_mean}}±{{p0.P2.base_sd}} 对真相 {{p0.P2.truth_mean}}±{{p0.P2.truth_sd}}",
+          "ref": "mindset/轨迹偏离审计-s0-复算.py cell_keys(p0.P2)"
+        },
+        {
+          "text": "s0 审计同协议行（hyperpol cond + depol test）",
+          "ref": "mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §1 P3 行"
+        }
+      ],
+      "options_at_time": [
+        "按预登记分支否定整个家族（若真相是弱 T 型，这一步就是误判）",
+        "只收窄为“这组参数在 250 ms 超极化下未见增强”，保留家族",
+        "先在仿真里扫家族参数并估所需次数，超预算就换阻断剂实验"
+      ]
+    },
+    {
+      "id": "N2",
+      "seq": [
+        64,
+        68
+      ],
+      "kind": "refute",
+      "layer": "推理层",
+      "key": true,
+      "title_plain": "补测 1 次，否定 T 型浅失活亚型",
+      "at_time": {
+        "mark": "no",
+        "text": "为满足“终态迁移须有点名分支”的规则补了一次同协议测量，只测 1 次就否定了一个亚型；这一格同样分不开真相与基线。"
+      },
+      "hindsight": {
+        "mark": "no",
+        "text": "浅失活亚型与真相同属 T 型家族。重放显示这次补测不是 P2 的第一次重复（P2 四次为 {{p0.replay.P2_reps}}），40 个 seed 上两格相关 {{p0.replay.corr_r4_r1}}，所以“独立重复”的说法本身成立；错在 1 次测量够不着这个判别。"
+      },
+      "basis": [
+        {
+          "text": "重放：P2 = {{p0.replay.P2}}、P4 = {{p0.replay.P4}}、P4 是否等于 P2 第一次重复：{{p0.replay.P4_equals_P2_rep1}}；再跑一次 P4 仍得 {{p0.replay.rerun_P4}}（计量格冻结）",
+          "ref": "mindset/轨迹偏离审计-s0-复算.py replay_p0()"
+        }
+      ]
+    }
+  ],
+  "corrections": [
+    {
+      "quote_ref": "REPORT.md:53",
+      "quote": "三轴独立支持 H4",
+      "later": "释放轴上真相与无额外电流平均只差 {{p0.P2.delta}} 个峰，约需 {{p0.P2.r_star}} 次才分得开；四次观测与两者都相容。",
+      "correction": "这些测量只说明“在已测实验上分不开有无额外电流”，不能写成“独立支持零假设”；同一 seed 下不同实验的误差是否独立，也没有核实。",
+      "basis": [
+        {
+          "text": "复算 cell_keys(p0.P2)；s0 审计关于共用噪声流的说明",
+          "ref": "mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §1"
+        }
+      ]
+    }
+  ],
+  "unknowns": [
+    "校准实验与去极化实验没有单独复算，本页对它们不下判定（附录标“未审”）。",
+    "子任务被隔离规则拦下后只交回计划；如果子任务能跑仿真，结论会不会不同，没有证据。",
+    "子任务的结束行不合约定格式，宿主无法自动判断它们是否完成。",
+    "同一 seed 下不同实验之间的噪声相关，只对少数实验量过。"
+  ]
+}

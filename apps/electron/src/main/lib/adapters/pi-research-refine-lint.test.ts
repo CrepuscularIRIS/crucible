@@ -181,7 +181,7 @@ describe('SE1 · F1–F9', () => {
   })
 
   it('预期通过，已知上限：散文形式的领域结论、不点名工具的"重新解释纪律"', () => {
-    expect(hits([memory('反跳由 T 型钙通道主导；超极化越深反跳越强，优先选 -40mV 协议')])).toEqual([])
+    expect(hits([memory('反跳由 X 通道主导；超极化越深反跳越强，优先选 -40mV 协议')])).toEqual([])
     expect(hits([memory('budget exhaustion is permitted when the forecast serves as confirmation')])).toEqual([])
   })
 })

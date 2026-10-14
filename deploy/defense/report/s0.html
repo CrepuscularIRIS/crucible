@@ -1,0 +1,288 @@
+<title>详细指令：写出了正确机制，又被少量测量否掉</title>
+<style>
+/* tokens · layout: one reading column (max 880px), sticky case bar; cards are bordered blocks, no shadows */
+:root{
+  --bg:#eef0f3; --surface:#ffffff; --ink:#14181e; --muted:#59616d; --line:#d3d8df; --accent:#1d4e94;
+  --yes:#16794a; --no:#b42318; --warn:#8a5a00;
+  --f-display:"PingFang SC","Noto Sans SC","Microsoft YaHei","Source Han Sans SC",system-ui,sans-serif;
+  --f-body:"PingFang SC","Noto Sans SC","Microsoft YaHei","Source Han Sans SC",system-ui,sans-serif;
+  --f-mono:ui-monospace,"SFMono-Regular","Cascadia Mono",Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1217; --surface:#171b22; --ink:#e5e8ed; --muted:#9aa3af; --line:#2b313b; --accent:#86aefc;
+  --yes:#4cc38a; --no:#ff7b6b; --warn:#e2a64b; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1217; --surface:#171b22; --ink:#e5e8ed; --muted:#9aa3af; --line:#2b313b; --accent:#86aefc;
+  --yes:#4cc38a; --no:#ff7b6b; --warn:#e2a64b; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 var(--f-body);padding-inline:16px;-webkit-text-size-adjust:100%}
+main,.bar-in{max-width:880px;margin-inline:auto;min-width:0}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3{font-family:var(--f-display);line-height:1.3}
+h1{font-size:clamp(1.5rem,1.1rem + 1.8vw,2.2rem);margin:0 0 12px}
+h2{font-size:1.3rem;margin:0 0 14px}
+h3{font-size:1.05rem;margin:0}
+section{padding-block:32px;border-bottom:1px solid var(--line);scroll-margin-top:56px}
+p{margin:.45em 0}
+.muted{color:var(--muted)}.small{font-size:.86rem}
+.num,td,.mono{font-variant-numeric:tabular-nums}
+code,.mono,pre{font-family:var(--f-mono);font-size:.86em}
+.bar{position:sticky;top:0;z-index:3;background:var(--bg);border-bottom:1px solid var(--line);margin-inline:-16px;padding:8px 16px}
+.bar-in{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+.bar b{margin-right:auto;font-family:var(--f-display)}
+.bar ul{display:flex;flex-wrap:wrap;gap:6px;list-style:none;margin:0;padding:0}
+.bar a{display:inline-block;padding:2px 10px;border:1px solid var(--line);border-radius:4px;background:var(--surface);text-decoration:none;color:var(--muted);font-size:.86rem}
+.bar a[aria-current="page"]{color:var(--ink);border-color:var(--accent)}
+.headline{font-size:1.12rem;font-weight:600;margin:0 0 18px}
+.qa{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden;margin:0}
+.qa>div{background:var(--surface);padding:12px 14px;min-width:0}
+.qa dt{font-weight:700;font-size:.9rem;color:var(--accent)}
+.qa dd{margin:2px 0 0}
+pre{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 12px;overflow-x:auto;white-space:pre-wrap;overflow-wrap:anywhere}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px;margin:14px 0;min-width:0;scroll-margin-top:56px}
+.card header{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;margin-bottom:10px}
+.nid{font-family:var(--f-mono);color:var(--accent);font-weight:600}
+.meta{color:var(--muted);font-size:.85rem}
+.five{margin:0;display:grid;gap:6px}
+.five>div{display:grid;grid-template-columns:6.5em 1fr;gap:8px}
+.five dt{font-weight:700;color:var(--muted);font-size:.9rem}
+.five dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.aud{color:var(--warn);font-size:.8rem;white-space:nowrap}
+@media (max-width:520px){.five>div{grid-template-columns:1fr;gap:0}}
+.verdicts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:10px;margin:14px 0 6px}
+.verdict{border:1px solid var(--line);border-radius:6px;padding:10px 12px;min-width:0}
+.verdict h4{margin:0 0 4px;font-size:.82rem;color:var(--muted);font-weight:600}
+.verdict p{margin:0}
+.icon{font-weight:700;display:inline-block;min-width:1.2em}
+.m-yes{color:var(--yes)}.m-no{color:var(--no)}.m-partial{color:var(--warn)}
+.basis{font-size:.88rem;color:var(--muted)}
+.basis code{color:var(--ink)}
+details{margin-top:10px;border-top:1px dashed var(--line);padding-top:8px}
+summary{cursor:pointer;color:var(--accent);font-size:.9rem}
+details h5{margin:10px 0 4px;font-size:.85rem}
+details pre{font-size:.78rem;max-height:22em;overflow:auto}
+details ul{margin:0;padding-left:1.2em;font-size:.88rem}
+.tl{list-style:none;padding:0;margin:0 0 16px;display:grid;gap:4px}
+.tl a{display:flex;gap:10px;align-items:baseline;text-decoration:none;color:var(--ink);padding:4px 8px;border-radius:4px;border:1px solid transparent}
+.tl a[aria-current="true"]{border-color:var(--accent);background:var(--surface)}
+.tl .icons{font-weight:700;white-space:nowrap}
+.layers{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:8px;margin:0 0 10px;padding:0;list-style:none}
+.layers li{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px 10px;font-size:.9rem}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.88rem;min-width:620px}
+th,td{text-align:left;vertical-align:top;padding:8px 10px;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:600;font-size:.8rem}
+tr:last-child td{border-bottom:0}
+blockquote.orig{margin:14px 0 0;padding:10px 14px;border-left:3px solid var(--no);background:var(--surface)}
+blockquote.orig .src{display:block;font-size:.8rem;color:var(--muted)}
+.correction{padding:8px 14px 12px;border-left:3px solid var(--yes);background:var(--surface);margin-bottom:12px}
+.truth{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);padding:10px 14px;border-radius:0 6px 6px 0}
+.tag{display:inline-block;font-size:.75rem;border:1px solid currentColor;border-radius:3px;padding:0 5px;color:var(--muted)}
+.tag.todo{color:var(--warn)}
+.ver dl{display:grid;grid-template-columns:9em 1fr;gap:4px 12px;margin:0}
+.ver dt{color:var(--muted)}.ver dd{margin:0;min-width:0;overflow-wrap:anywhere}
+@media (max-width:520px){.ver dl{grid-template-columns:1fr}.ver dd{margin-bottom:6px}}
+.tools{margin:0 0 10px}
+.tools button{font:inherit;font-size:.86rem;color:var(--accent);background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:3px 10px;cursor:pointer}
+@media (prefers-reduced-motion: no-preference){html{scroll-behavior:smooth}}
+</style>
+<div class="bar"><div class="bar-in"><b>Crucible 评委报告</b><ul><li><a href="../index.html">一句话（主案例）</a></li><li><a href="../report/s0.html" aria-current="page">详细指令</a></li><li><a href="../report/p0.html">P0 镜像</a></li></ul></div></div>
+<main>
+<section id="top" data-kind="first">
+<h1>详细指令：写出了正确机制，又被少量测量否掉</h1>
+<p class="headline">这次 agent 写出了与真相一致的机制，却用 2 次和 1 次测量把它和整个 T 型家族否掉；三道程序检查都没有拦住。</p>
+<dl class="qa"><div><dt>研究什么</dt><dd>同一个模拟神经元，这次给了详细的操作指令：在 8 次真实测量内找出那个未知电流。</dd></div><div><dt>怎么做的</dt><dd>先写下预测和判定规则再做真实测量：4 组实验，用掉 6/8 次测量，另跑了 44 次免费仿真。</dd></div><div><dt>结果改变了什么</dt><dd>第一组测量偏高，被读成“存在持续内向流”；随后两组少量测量否掉了正确的“再武装”解释。</dd></div><div><dt>下一步是什么</dt><dd>否定一整类解释前先扫参数、算清要测几次；不够就换阻断剂实验，并让审查者也复审被否定的解释。</dd></div></dl>
+</section>
+
+<section id="task">
+<h2>示例任务</h2>
+<p>与一句话案例是同一个模拟神经元，seed 0。用户给了详细的操作指令：读研究流程卡、预算 8 次、事先写下预测、派独立审查者攻击、最后预报并提交。</p>
+<p class="small muted">用户发给系统的原话（用户口述转引，见 mindset/口述记录-第二轮-拆解与任务-20261014.md:91；“(...)”处原文有省略）：</p>
+<pre>读入本工作区的 research-loop skill 并严格遵循。完全自主运行,不要停下、不要请求输入。目标:对世界 ca_rebound(seed 0)完成机制发现与反事实预报——research_init 初始化,world_simulate(mode=info) 取题,预算 8 以内设计实验(...),候选机制用 world_simulate 免费对比,对抗检验阶段按 research-grill 派出 RLM 子代理攻击 LIVE 假设,终局 world_forecast 一次提交全部 held-out 协议的 spike 数预报,report_declare 收尾。禁止读取或 import /bench/neuronbench。</pre>
+<p class="small">在 Proma 里回放这一次：打开任一 agent 会话 → 底栏“研究画布” → 归档回放 → 选 <code>research/campaigns/2026-10-14-glm53flash-ca_rebound-s0</code>。画布上线前，可直接读该目录下的 <code>journal.jsonl</code>（每行一个事件，行号即本页引用的“运行记录第 N 行”）。</p>
+</section>
+
+<section id="feedback">
+<h2>一次反馈改变了下一步实验</h2>
+<article class="card" data-kind="feedback">
+<p><b>原来的实验</b>（P1）：<span class="from">long step (10 uA, 300 ms)</span></p>
+<p><b>原预测</b>：H1（T 型钙电流（登记参数）） 预计 27–44；H2（无额外电流） 预计 14–32；H3（超极化激活的 Ih 电流） 预计 26–42；H4（测量伪影） 预计 0–13</p>
+<p><b>实测</b>：测 1 次平均 32，落在 H1（T 型钙电流（登记参数））、H2（无额外电流）、H3（超极化激活的 Ih 电流） 的预测区间；随后 。</p>
+<p><b>下一组实验</b>（P2）改为：<span class="to">depolarising conditioning + test (+15 uA/250 ms, then +12 uA)</span></p>
+<p class="why"><b>改变理由</b>（P2 事先写下的问题，逐字）：真细胞在去极化条件+测试 (+15/250ms then +12uA) 的 metered spike_count（reps=2 平均）判别去极化步内持续内向流强度：H1(T型钙,持续激活,候选43.2) vs H3(真Ih,去极化期静默但E=-30仍有弱持续分量,候选39.0) vs H5(持续非失活内向流,候选38.6) vs H2(无附加电流,候选33.7) vs H4(测量伪影对手,预测≤26)。load-bearing variable：+15uA 条件期内附加电流的持续内向净流幅度；对照：参考基线候选 34 / slow_na 候选 33.7（免费模拟）。severity 检查：若 H1 为假（真细胞是 H3/H5），本测试会把它误判为 H1 吗？——中心差 4.2-4.6 ≈ 1.7σ_reps2，存在误判风险，故 41-45 区间只 scope H1 不 support；仅 46-50 才支持 H1。H4 为假时其带 [0,26] 以高概率不被命中（本探针对 H4 的杀伤是强判别的）。</p>
+<details><summary>证据（原始记录）</summary><pre>34: {&quot;ts&quot;:&quot;2026-10-14T10:26:08.175Z&quot;,&quot;op&quot;:&quot;prereg.write&quot;,&quot;pid&quot;:&quot;P1&quot;,&quot;spec_sha256&quot;:&quot;ec1e10dfc435762218475e87c86588241b802b18663e698c708e6c983a3efa00&quot;,&quot;prereg_path&quot;:&quot;prereg/P1.json&quot;,&quot;prev&quot;:&quot;6b73303b3e4fef5aaa62ebc9f73201fd71096d4235d9086f16b6742b77ab0ff8&quot;}
+36: {&quot;ts&quot;:&quot;2026-10-14T10:26:16.211Z&quot;,&quot;op&quot;:&quot;world.observe&quot;,&quot;world&quot;:&quot;ca_rebound&quot;,&quot;seed&quot;:0,&quot;protocol&quot;:&quot;long step (10 uA, 300 ms)&quot;,&quot;reps&quot;:1,&quot;blockers&quot;:&quot;&quot;,&quot;cost&quot;:1,&quot;spike_count&quot;:32,&quot;pid&quot;:&quot;P1&quot;,&quot;prev&quot;:&quot;52c791891e269ec2a781725e044e0f90f308cbba957e8b4bc1ab24921120d781&quot;}
+39: {&quot;ts&quot;:&quot;2026-10-14T10:35:11.226Z&quot;,&quot;op&quot;:&quot;prereg.write&quot;,&quot;pid&quot;:&quot;P2&quot;,&quot;spec_sha256&quot;:&quot;e1d90f087f90347b39b5128276eda22ee4caf1eefcdc41edc01d946f3dd1e523&quot;,&quot;prereg_path&quot;:&quot;prereg/P2.json&quot;,&quot;prev&quot;:&quot;b480513eafa0f00d154ca73ef5cdee77e48ebeaf9130253a5c10199afd0b5225&quot;}</pre></details>
+</article>
+</section>
+
+<section id="nodes">
+<h2>关键节点</h2>
+<p class="small muted">每个节点两栏判定：左栏只看当时 agent 能知道的信息，右栏对照真相。按 ← / → 在节点间跳转。</p>
+<div class="tools"></div>
+<ol class="tl"><li><a href="#D7"><span class="mono">D7</span><span class="icons"><span class="m-yes" title="当时合理">✓</span> <span class="m-yes" title="事后正确">✓</span></span><span>提出“超极化再武装、松开回弹”的机制</span></a></li><li><a href="#D8"><span class="mono">D8</span><span class="icons"><span class="m-no" title="当时不合理">✕</span> <span class="m-no" title="事后错误">✕</span></span><span>用 2 次测量否掉正确的“再武装”机制</span></a></li><li><a href="#D9"><span class="mono">D9</span><span class="icons"><span class="m-no" title="当时不合理">✕</span> <span class="m-no" title="事后错误">✕</span></span><span>用 1 次测量和一条无仿真来源的区间否掉整个 T 型家族</span></a></li><li><a href="#D11"><span class="mono">D11</span><span class="icons"><span class="m-yes" title="当时合理">✓</span> <span class="m-yes" title="事后正确">✓</span></span><span>独立审查者的 11 条攻击</span></a></li></ol>
+<h3>问题出在哪</h3>
+<ul class="layers"><li><b>接入层</b>：<a href="#D13">D13</a>、<a href="#D14">D14</a></li><li><b>推理层</b>：<a href="#D1">D1</a>、<a href="#D4">D4</a>、<a href="#D5">D5</a>、<a href="#D9">D9</a>、<a href="#D10">D10</a>、<a href="#D15">D15</a></li><li><b>实例化层</b>：<a href="#D2">D2</a>、<a href="#D8">D8</a></li><li><b>设计层</b>：<a href="#D6">D6</a>、<a href="#D12">D12</a></li></ul>
+<article class="card node" data-kind="node" data-key id="D7">
+<header><span class="nid">D7</span><h3>提出“超极化再武装、松开回弹”的机制</h3><span class="meta">运行记录第 52 行 · 推理层</span></header>
+<dl class="five"><div><dt>当时知道</dt><dd>第一组长步进测得 32，高于基线的单次仿真；第二组去极化条件测得 34，与基线的单次仿真相同。 <span class="aud">（审计补写）</span></dd></div><div><dt>为什么这样选</dt><dd>要一个能同时解释“直接步进时多放电”和“强去极化之后不多放电”的机制。 <span class="aud">（审计补写）</span></dd></div><div><dt>期待看到</dt><dd>静息时有可用性储备，强去极化把它清空，超极化让它恢复，松开时出现回弹放电。 <span class="aud">（审计补写）</span></dd></div><div><dt>实际发生</dt><dd>登记为 H6，随后专门为它设计了第三组实验。 <span class="aud">（审计补写）</span></dd></div><div><dt>因此调整</dt><dd>第三组实验改测超极化条件，直接检验“再武装”。 <span class="aud">（审计补写）</span></dd></div></dl>
+<div class="verdicts"><div class="verdict" data-col="at-time"><h4>当时是否合理</h4><p><span class="icon m-yes" aria-hidden="true">✓</span><b class="word m-yes">合理</b>。好的溯因：一个机制同时解释前两组实验。</p></div><div class="verdict" data-col="hindsight"><h4>事后对照真相</h4><p><span class="icon m-yes" aria-hidden="true">✓</span><b class="word m-yes">正确</b>。这段文字就是真相的机制：超极化去失活，松开时反弹。</p></div></div>
+<p class="basis">依据：真相描述（<code>neuronbench/worlds.py:196</code>）；s0 审计 D7（<code>mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §3 D7</code>）</p>
+
+<details><summary>证据（原始记录 1 行 · 推导值 · 复算 · 审查者 · 干预）</summary>
+<h5>① 原始记录</h5><pre>52: {&quot;ts&quot;:&quot;2026-10-14T10:53:19.545Z&quot;,&quot;op&quot;:&quot;claim.propose&quot;,&quot;id&quot;:&quot;H6&quot;,&quot;statement&quot;:&quot;真细胞的附加电流是具有可用性状态依赖的瞬变内向流（快失活 T 型样）：静息态携带高可用性储备，步进初期提供瞬变内向净流（+10 uA 步 +5~9 spikes）；强去极化在数十 ms 内清空可用性且短间隙（0–150 ms）内不恢复，故 +15 uA 条件期与紧跟的测试期无增量；超极化条件解除失活（再武装），释放/测试期产生随条件时长与深度增长的回弹放大。&quot;,&quot;predicts&quot;:[&quot;P1 观测 long step (10 uA, 300 ms) = 32 落在本假设中心带（该机制从静息可用性储备出发，步进初期瞬变内向流 +5~9，复现 +9 残差）&quot;,&quot;P2 观测 depolarising conditioning + test = 34 落在本假设中心带（+15 uA 条件在 ~60ms 内清空可用性且 0 间隙不恢复，条件期增量被清除，恰好回落基线）&quot;,&quot;hyperpol conditioning + depol test (-30/250 then +12) spike_count ∈ [16, 27]（-95 mV 强力再武装可用性 → 释放/测试期回弹，快失活变体候选模拟 19.0）&quot;,&quot;brief hyperpol conditioning + test (-30/40ms then +12) spike_count ∈ [11, 20]（40 ms 条件部分再武装，显著弱于 250 ms 条件——动力学签名；同族变体模拟 18.0，慢失活变体 17.4，均落带内）&quot;,&quot;held-out 超极化释放族随条件幅度单调上升（-25 &lt; -30 &lt; -35 &lt; -40，可用性恢复随超极化深度增强）&quot;],&quot;conflicts&quot;:&quot;point名 H1/H3/H5/H2：P2 观测 34 落在它们全部频段外（H1[37,50]/H3[36,49]/H5[33,48] 均预测去极化条件期有持续增量、H2[22,41] 中心亦无法解释 long-step +9 残差）；H6 以“条件态清空可用性”的结构反驳三者的无状态/慢失活假设，并吸收 H1 的 T 型家族为特例（H1 参数化变体将由 P3 动力学探针裁决）&quot;,&quot;prev&quot;:&quot;ab196d185b5787fb2f9aba97319a7bd6b219660798718208d159b329ae6f7efc&quot;}</pre>
+<h5>② 推导值（由记录推出）</h5><p class="small muted">无。</p>
+<h5>③ 复算</h5><p class="small muted">本节点没有引用复算数字。</p>
+<h5>④ 审查者</h5><ul><li>无（本节点没有对应的攻击记录）</li></ul>
+<h5>⑤ 人的干预</h5><p class="small muted">本归档没有干预文件。</p>
+</details>
+</article>
+<article class="card node" data-kind="node" data-key id="D8">
+<header><span class="nid">D8</span><h3>用 2 次测量否掉正确的“再武装”机制</h3><span class="meta">运行记录第 55–60 行 · 实例化层</span></header>
+<dl class="five"><div><dt>当时知道</dt><dd>登记时仍在考虑：H1（T 型钙电流（登记参数））、H4（测量伪影）、H5（持续去极化内向流）、H6（可再武装的瞬变内向流）。之前的真实测量：P1 得 32（1 次）；P2 得 34（2 次）。上次登记之后没有同协议仿真；全程同协议候选仿真值 15–19（6 次；候选参数未记录，含参数差异）。</dd></div><div><dt>为什么这样选</dt><dd>检验 H6 的核心签名：250 ms 超极化之后，测试期放电是否被放大；同一次测量也给测量伪影假设一个正式的否定分支。 <span class="aud">（审计补写）</span></dd></div><div><dt>期待看到</dt><dd>若结果落在 0–8：收窄 H6；9–10：否定 H6；11–15：否定 H4、否定 H6、收窄 H1、收窄 H5；16–22：否定 H4、收窄 H5、收窄 H6、收窄 H1；23–24：否定 H4、否定 H5、支持 H6、收窄 H1；25–27：否定 H4、否定 H5、否定 H1、支持 H6；28–200：否定 H4、否定 H5、否定 H1、否定 H6。</dd></div><div><dt>实际发生</dt><dd>测了 2 次，平均得 13.5，落在 H1、H5 的预测区间。</dd></div><div><dt>因此调整</dt><dd>H4 被否定、H6 被否定。下一组实验 P4 改用「hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)」。</dd></div></dl>
+<div class="verdicts"><div class="verdict" data-col="at-time"><h4>当时是否合理</h4><p><span class="icon m-no" aria-hidden="true">✕</span><b class="word m-no">不合理</b>。只仿真过一组参数，而且那组参数的失活门符号写反，被仿真的并不是陈述的机制；2 次测量就否定了整个机制。</p></div><div class="verdict" data-col="hindsight"><h4>事后对照真相</h4><p><span class="icon m-no" aria-hidden="true">✕</span><b class="word m-no">错误</b>。真相在这组实验上均值 16.09；否定 H6 的区间（9–15）在真相下被命中的概率约 0.19，基线约 0.35（正态近似），几乎没有判别力，却杀掉了正确的机制描述。</p></div></div>
+<p class="basis">依据：复算：基线 15.52±1.94 对真相 16.09±1.8，分开约需 42 次（<code>mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §1、§2、§3 D8</code>）</p>
+<p class="small"><b>当时本可以选：</b>按预登记分支否定 H6（若候选参数不代表这个机制，这一步就是误判）；先核对候选的失活门：在 −95 / −65 / −40 mV 打印失活稳态，确认超极化确实恢复可用性；只收窄为“这组参数在 250 ms 超极化下未见放大”，保留再武装机制</p>
+<details><summary>证据（原始记录 6 行 · 推导值 · 复算 · 审查者 · 干预）</summary>
+<h5>① 原始记录</h5><pre>55: {&quot;ts&quot;:&quot;2026-10-14T11:03:37.033Z&quot;,&quot;op&quot;:&quot;prereg.write&quot;,&quot;pid&quot;:&quot;P3&quot;,&quot;spec_sha256&quot;:&quot;f8ba4027f696cdf132f6ded9747a729cc1612cbeedf5c8184ac7a4e5d0b30172&quot;,&quot;prereg_path&quot;:&quot;prereg/P3.json&quot;,&quot;prev&quot;:&quot;154f96df90241c6977639ee74b50876638c45437099682e8ed4fcf0ad9d3799c&quot;}
+56: {&quot;ts&quot;:&quot;2026-10-14T11:03:42.455Z&quot;,&quot;op&quot;:&quot;probe.start&quot;,&quot;pid&quot;:&quot;P3&quot;,&quot;prev&quot;:&quot;f14586c555f6afe55e2e91637a201f7a9e43a44f40f34b59a83540431574615a&quot;}
+57: {&quot;ts&quot;:&quot;2026-10-14T11:03:45.763Z&quot;,&quot;op&quot;:&quot;world.observe&quot;,&quot;world&quot;:&quot;ca_rebound&quot;,&quot;seed&quot;:0,&quot;protocol&quot;:&quot;hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)&quot;,&quot;reps&quot;:2,&quot;blockers&quot;:&quot;&quot;,&quot;cost&quot;:2,&quot;spike_count&quot;:13.5,&quot;pid&quot;:&quot;P3&quot;,&quot;prev&quot;:&quot;cab798543bbb4c039f0e3c796c5905169d27ae54613fbd4cb6a5f20d619301e1&quot;}
+58: {&quot;ts&quot;:&quot;2026-10-14T11:03:45.763Z&quot;,&quot;op&quot;:&quot;probe.land&quot;,&quot;pid&quot;:&quot;P3&quot;,&quot;exit_code&quot;:0,&quot;metric&quot;:13.5,&quot;prev&quot;:&quot;1c5691d1bc008300e09206c843043421f054c6641fc88f941210ee279446c7ff&quot;}
+59: {&quot;ts&quot;:&quot;2026-10-14T11:05:54.225Z&quot;,&quot;op&quot;:&quot;claim.transition&quot;,&quot;id&quot;:&quot;H4&quot;,&quot;to&quot;:&quot;REFUTED&quot;,&quot;by_probe&quot;:&quot;P3&quot;,&quot;note&quot;:&quot;P3 metered hyperpol-cond+test = 13.5（2 reps 均值）落在预登记 kill 频段 [11,15]：观测远高于 H4 的强负偏置预测（≤10，其带上缘之上 3.5 单位 ≈ 2σ_reps2）。三个独立格点（P1=32, P2=34, P3=13.5）均无 -10 级负向跳变迹象，\&quot;计量噪声单向大负偏置、全部真实−候选差异由伪影产生\&quot;的主张被否证。&quot;,&quot;prev&quot;:&quot;487ba988ccaf1e0b33353d26d7c33bdef6ec11226dd47f376bd39695b04f132f&quot;}
+60: {&quot;ts&quot;:&quot;2026-10-14T11:06:02.791Z&quot;,&quot;op&quot;:&quot;claim.transition&quot;,&quot;id&quot;:&quot;H6&quot;,&quot;to&quot;:&quot;REFUTED&quot;,&quot;by_probe&quot;:&quot;P3&quot;,&quot;note&quot;:&quot;P3 metered hyperpol-cond+test = 13.5（2 reps 均值）落在预登记 kill 频段 [11,15]，低于 H6 带下缘 16 达 2.5 单位：250 ms 超极化条件未产生可用性再武装放大（观测 ≈ 基线候选 15.2）。H6 的\&quot;超极化再武装→释放/测试回弹放大\&quot;核心签名失败——其只解释了 P1/P2 残差模式（成立的部分：depol 条件期清空机制仍与 P2=34 一致），但整个假设作为机制主张被否证。&quot;,&quot;prev&quot;:&quot;54bb9cbd4206413e163ce131feb7bf2cbe7b8188aa2a3b389cc927b78a4b89cd&quot;}</pre>
+<h5>② 推导值（由记录推出）</h5><ul><li>同协议候选仿真值（全程）15–19，6 次</li><li>观测 13.5（2 次）对各预测区间：H1 [11, 24] ← 观测落在此；H4 [0, 10]；H5 [9, 22] ← 观测落在此；H6 [16, 27]</li></ul>
+<h5>③ 复算</h5><p class="small">键 <code>s0.P3.base_mean</code>、<code>s0.P3.base_p_kill</code>、<code>s0.P3.base_sd</code>、<code>s0.P3.kill_hi</code>、<code>s0.P3.kill_lo</code>、<code>s0.P3.r_star</code>、<code>s0.P3.truth_mean</code>、<code>s0.P3.truth_p_kill</code>、<code>s0.P3.truth_sd</code>，来自 <code>recompute.json</code>，脚本 <code>mindset/轨迹偏离审计-s0-复算.py</code></p>
+<h5>④ 审查者</h5><ul><li>无（本节点没有对应的攻击记录）</li></ul>
+<h5>⑤ 人的干预</h5><p class="small muted">本归档没有干预文件。</p>
+</details>
+</article>
+<article class="card node" data-kind="node" data-key id="D9">
+<header><span class="nid">D9</span><h3>用 1 次测量和一条无仿真来源的区间否掉整个 T 型家族</h3><span class="meta">运行记录第 61–65 行 · 推理层</span></header>
+<dl class="five"><div><dt>当时知道</dt><dd>登记时仍在考虑：H1（T 型钙电流（登记参数））、H5（持续去极化内向流）。之前的真实测量：P1 得 32（1 次）；P2 得 34（2 次）；P3 得 13.5（2 次）。上次登记之后没有同协议仿真；全程同协议候选仿真值 6–9.33（3 次；候选参数未记录，含参数差异）。</dd></div><div><dt>为什么这样选</dt><dd>想用一次弱测试分清两种解释：超极化再武装后弱刺激就能点燃 T 型窗（H1），还是一条与超极化无关的持续内向流（H5）。 <span class="aud">（审计补写）</span></dd></div><div><dt>期待看到</dt><dd>若结果落在 3–8：否定 H1、支持 H5；9–10：否定 H5、收窄 H1；11–11：收窄 H1；12–19：否定 H5、支持 H1；20–200：否定 H5、否定 H1。</dd></div><div><dt>实际发生</dt><dd>测了 1 次，平均得 8，落在 H5 的预测区间。</dd></div><div><dt>因此调整</dt><dd>H1 被否定、H5 得到支持。</dd></div></dl>
+<div class="verdicts"><div class="verdict" data-col="at-time"><h4>当时是否合理</h4><p><span class="icon m-no" aria-hidden="true">✕</span><b class="word m-no">不合理</b>。H1 的预测区间没有仿真来源：它自己的 T 型候选在这个实验上的仿真值都落在区间外（见证据②）；单次测量否定整个家族。</p></div><div class="verdict" data-col="hindsight"><h4>事后对照真相</h4><p><span class="icon m-no" aria-hidden="true">✕</span><b class="word m-no">错误</b>。真相（T 型）在这组实验上均值 7.42，本身就落在否定 H1 的区间 3–8 里（命中概率约 0.72）；该实验上真相与基线只差 -0.08 个峰，分开约需 758 次。</p></div></div>
+<p class="basis">依据：复算：基线 7.5 对真相 7.42，分开约需 758 次（<code>mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §1、§3 D9、§4</code>）</p>
+
+<details><summary>证据（原始记录 5 行 · 推导值 · 复算 · 审查者 · 干预）</summary>
+<h5>① 原始记录</h5><pre>61: {&quot;ts&quot;:&quot;2026-10-14T11:10:58.135Z&quot;,&quot;op&quot;:&quot;prereg.write&quot;,&quot;pid&quot;:&quot;P4&quot;,&quot;spec_sha256&quot;:&quot;7c8c69eb55289432d85779cbdbd64e1b8867ba31bd7b043da69e1432626ad6e0&quot;,&quot;prereg_path&quot;:&quot;prereg/P4.json&quot;,&quot;prev&quot;:&quot;6455b8910d8cac0664964c41e867fcf805b931f20f7c8715dbbc308fdad43b90&quot;}
+62: {&quot;ts&quot;:&quot;2026-10-14T11:11:03.683Z&quot;,&quot;op&quot;:&quot;probe.start&quot;,&quot;pid&quot;:&quot;P4&quot;,&quot;prev&quot;:&quot;7193f2c3705420cd3094cdf293ec78108c6041fea7e24c1824d889ebcf3dc147&quot;}
+63: {&quot;ts&quot;:&quot;2026-10-14T11:11:07.105Z&quot;,&quot;op&quot;:&quot;world.observe&quot;,&quot;world&quot;:&quot;ca_rebound&quot;,&quot;seed&quot;:0,&quot;protocol&quot;:&quot;hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)&quot;,&quot;reps&quot;:1,&quot;blockers&quot;:&quot;&quot;,&quot;cost&quot;:1,&quot;spike_count&quot;:8,&quot;pid&quot;:&quot;P4&quot;,&quot;prev&quot;:&quot;439a5261c4466e8f6116bfc615029464c6912d3da4d2f720d15edb11034da88e&quot;}
+64: {&quot;ts&quot;:&quot;2026-10-14T11:11:07.105Z&quot;,&quot;op&quot;:&quot;probe.land&quot;,&quot;pid&quot;:&quot;P4&quot;,&quot;exit_code&quot;:0,&quot;metric&quot;:8,&quot;prev&quot;:&quot;070817a48f3361b876078175473c9f25e831339b43b8adbce7c8aa32ed1592af&quot;}
+65: {&quot;ts&quot;:&quot;2026-10-14T11:11:59.929Z&quot;,&quot;op&quot;:&quot;claim.transition&quot;,&quot;id&quot;:&quot;H1&quot;,&quot;to&quot;:&quot;REFUTED&quot;,&quot;by_probe&quot;:&quot;P4&quot;,&quot;note&quot;:&quot;P4 metered weak-test = 8（reps=1）落在预登记 kill 频段 [3,8]：250ms 超极化条件再武装后，+6uA 弱测试期未出现纯 T 型窗点燃（8 仅比基线候选 6 高 2，且低于 H1 带下缘 12 达 4 单位）。结合 P2（depol-cond 34 &lt; H1 带 [40,53]）与 P3（hyperpol-cond 13.5 &lt; H1 带 [16.5,26]）：H1 登记参数化（慢失活 T 型、条件期持续激活）的三个可检验签名全部反向——慢失活 h 门若在世，250ms 强去极化条件应留增量、超极化条件应产生回弹放大，两者均未观测到。&quot;,&quot;prev&quot;:&quot;48f3be34fd353154e5398ec167928a69690ee6176b5e4772d2021ffeb5a74f55&quot;}</pre>
+<h5>② 推导值（由记录推出）</h5><ul><li>同协议候选仿真值（全程）6–9.33，3 次</li><li>观测 8（1 次）对各预测区间：H1 [12, 19]；H5 [3, 10] ← 观测落在此</li></ul>
+<h5>③ 复算</h5><p class="small">键 <code>s0.P4.base_mean</code>、<code>s0.P4.delta</code>、<code>s0.P4.kill_hi</code>、<code>s0.P4.kill_lo</code>、<code>s0.P4.r_star</code>、<code>s0.P4.truth_mean</code>、<code>s0.P4.truth_p_kill</code>，来自 <code>recompute.json</code>，脚本 <code>mindset/轨迹偏离审计-s0-复算.py</code></p>
+<h5>④ 审查者</h5><ul><li>无（本节点没有对应的攻击记录）</li></ul>
+<h5>⑤ 人的干预</h5><p class="small muted">本归档没有干预文件。</p>
+</details>
+</article>
+<article class="card node" data-kind="node" data-key id="D11">
+<header><span class="nid">D11</span><h3>独立审查者的 11 条攻击</h3><span class="meta">运行记录第 71–81 行 · 推理层</span></header>
+<dl class="five"><div><dt>当时知道</dt><dd>H5 刚得到支持；H1、H6 已被否定。 <span class="aud">（审计补写）</span></dd></div><div><dt>为什么这样选</dt><dd>研究流程要求对得到支持的结论派独立审查者攻击。 <span class="aud">（审计补写）</span></dd></div><div><dt>期待看到</dt><dd>找出 H5 证据里的漏洞。 <span class="aud">（审计补写）</span></dd></div><div><dt>实际发生</dt><dd>独立子任务 grill-H5 写下 11 条攻击：似然比约为 1、存在性只挂在一次测量上、噪声没有独立计量、账目不实，全部入账。 <span class="aud">（审计补写）</span></dd></div><div><dt>因此调整</dt><dd>H5 在报告里降为“支持弱”；被否定的 H1、H6 没有被复审，因为规则只审得到支持的结论。 <span class="aud">（审计补写）</span></dd></div></dl>
+<div class="verdicts"><div class="verdict" data-col="at-time"><h4>当时是否合理</h4><p><span class="icon m-yes" aria-hidden="true">✓</span><b class="word m-yes">合理</b>。本次运行最好的部分：攻击准确，全部入账。</p></div><div class="verdict" data-col="hindsight"><h4>事后对照真相</h4><p><span class="icon m-yes" aria-hidden="true">✓</span><b class="word m-yes">正确</b>。攻击 G3 指出“无额外电流”未被排除，比 H5 更接近真相；不足是没人复审被否定的 H1、H6。</p></div></div>
+<p class="basis">依据：s0 审计 D11（<code>mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §3 D11</code>）</p>
+
+<details><summary>证据（原始记录 11 行 · 推导值 · 复算 · 审查者 · 干预）</summary>
+<h5>① 原始记录</h5><pre>71: {&quot;ts&quot;:&quot;2026-10-14T11:35:54.663Z&quot;,&quot;op&quot;:&quot;attack.record&quot;,&quot;gid&quot;:&quot;G1&quot;,&quot;target&quot;:&quot;H5&quot;,&quot;kind&quot;:&quot;no_change&quot;,&quot;text&quot;:&quot;no_change | H5 | [占据度] 按 P2 预登记分支表，观测 34 对 H5 的正式动作是\&quot;无\&quot;：34 落在 H5 带 [33,45]（prereg P2）内但没有任何 branch 覆盖 [31,36]——相邻 [33,36] 的 scopeNote 原文即\&quot;落在H3/H5带下缘与H2带上缘的重叠区，无一支持或杀伤，判别失败\&quot;；P2 的 [37,40] support 带未被命中（H5 登记候选 38.6，观测低 4.6≈1.8σ_reps2，且 34 精确等于无附加电流基线点值 34.0）。SUPPORTED note 把\&quot;与 predicts [33,48] 相容（带内下段）\&quot;计为支持，是把该探针预登记的判别失败区重新计为相容性证据——P2 对 H5 的信念更新应为零。&quot;,&quot;prev&quot;:&quot;cafa01eb82923cd0edd655da35dff02ef625febca89c485576d77fabd05b83f3&quot;}
+72: {&quot;ts&quot;:&quot;2026-10-14T11:36:02.077Z&quot;,&quot;op&quot;:&quot;attack.record&quot;,&quot;gid&quot;:&quot;G2&quot;,&quot;target&quot;:&quot;H5&quot;,&quot;kind&quot;:&quot;no_change&quot;,&quot;text&quot;:&quot;no_change | H5 | [占据度] P4=8 对\&quot;H5 vs H2/基线\&quot;判别力为零：+2 spikes = 0.55σ_rep1（σ_rep1≈3.7，由 P2 severity 自述\&quot;中心差 4.2–4.6 ≈ 1.7σ_reps2\&quot;反推），似然比≈1；P4 prereg 自己写明\&quot;[3,8] 的 support 对 H5 是弱支持\&quot;。同一观测对 H1 按\&quot;带外 4 单位\&quot;计 kill（余量仅≈1.1σ_rep1、单 rep），对 H5 按带内计 support——两个判定共享一个 ±1σ 级宽带的两个侧翼，任一侧都不构成独立证据。&quot;,&quot;prev&quot;:&quot;05a755f96a9ec94b725d9258924dcab6b5a43ae1c7110afd9e19a742863ce270&quot;}
+73: {&quot;ts&quot;:&quot;2026-10-14T11:36:10.519Z&quot;,&quot;op&quot;:&quot;attack.record&quot;,&quot;gid&quot;:&quot;G3&quot;,&quot;target&quot;:&quot;H5&quot;,&quot;kind&quot;:&quot;constraint&quot;,&quot;text&quot;:&quot;constraint | H5 | [占据度] H5 的存在性前提（\&quot;存在附加电流\&quot;）实际只挂在 P1=32 单 rep 高于无电流基线 23 的 +9（≈2.5σ_rep1）上，而 graveyard 中 H2 仅被 SCOPED 未被 REFUTED：无附加电流/slow_na 解释对四格点的拟合为 P1 +2.4σ、P2 0σ（34=34.0）、P3 ≈−0.6σ、P4 +0.5σ；H6 的 REFUTED note 亦自承 P1 残差\&quot;与静息态瞬变相容\&quot;。且\&quot;附加电流是一条…\&quot;预设单一通道，四格点至多约束三个标量（静息步增量/条件期增量/释放差），无法排除\&quot;基线误设+小修正\&quot;的混合构成。falsifier（若 H2 类无附加电流解释成立）：用剩余预算 2（已用 6/8）把 P1 加测至 reps=2，mean 应回落 ≤26；若 ≥29 则该解释死、\&quot;存在附加内向修正\&quot;才成立——这是唯一能了结 H2/H5 存在性分界的观测，其缺位时 SUPPORTED 对存在性前提是超额声明。&quot;,&quot;prev&quot;:&quot;7d61d4a831b1b5d1152fb83bf848a7c0140b096f5817b176f6bd7a5b25faeda5&quot;}
+74: {&quot;ts&quot;:&quot;2026-10-14T11:36:18.090Z&quot;,&quot;op&quot;:&quot;attack.record&quot;,&quot;gid&quot;:&quot;G4&quot;,&quot;target&quot;:&quot;H5&quot;,&quot;kind&quot;:&quot;constraint&quot;,&quot;text&quot;:&quot;constraint | H5 | [占据度] \&quot;在去极化步全程持续提供内向净流\&quot;与\&quot;步进起始瞬变\&quot;的判别协议 paired long pulses (12uA/300ms, 60ms gap, 12uA/300ms) 在主协议表内（非 held-out）、基线候选 26、候选模拟已在 ledger（10:23：32 与 30.33，H5 框架侧 ≈30–32），成本 1——但真细胞从未在该协议被计量。falsifier：meter 该协议 reps=1：总 count ≥30 且第二/第一脉冲计数比≈基线比值，则\&quot;持续\&quot;获直接支持；总 count ≤28（第二脉冲塌回基线水平）则 +9 残差应归因起始瞬变，\&quot;全程持续\&quot;条款被否证（graveyard H6 的\&quot;静息储备\&quot;成分据此以瞬变形式部分复活）。&quot;,&quot;prev&quot;:&quot;be335639ddb5be058487e2cb11db00f051aa09832eef11d21a8dfb1341fc18cb&quot;}
+75: {&quot;ts&quot;:&quot;2026-10-14T11:36:23.177Z&quot;,&quot;op&quot;:&quot;attack.record&quot;,&quot;gid&quot;:&quot;G5&quot;,&quot;target&quot;:&quot;H5&quot;,&quot;kind&quot;:&quot;constraint&quot;,&quot;text&quot;:&quot;constraint | H5 | [占据度] graveyard H3 的 SCOPED 存活分支（\&quot;去极化条件期贡献≈0、靠脉冲间 AHP 期激活在步内累积贡献 +9 的 Ih 变体\&quot;）从未被任何落地探针压死：它对 P1 的门控方向与 H5 相反（超极化激活 vs 去极化激活），对 P3 的判别取决于 τ——τ≈100ms 变体已被 P3=13.5&lt;16 压制，但 τ∈[200,400]ms 的中段参数化在 P1（步内 300ms 有贡献）与 P3（250ms 条件不足以蓄积）之间存在未扫描存活窗。falsifier：held-out \&quot;hyperpol -25 then release\&quot; 与 \&quot;hyperpol -40 then release\&quot; 两点 forecast——两点评测均 ≤基线+1.5 则 AHP-Ih 分支死、H5 的机制唯一性成立；两点呈深度单调上升则 H3 分支复活、H5 非唯一。&quot;,&quot;prev&quot;:&quot;b2cb03d02d598290029171a931f44bfd64f0a5ada74114373dc8b822c1f466bb&quot;}
+76: {&quot;ts&quot;:&quot;2026-10-14T11:36:31.887Z&quot;,&quot;op&quot;:&quot;attack.record&quot;,&quot;gid&quot;:&quot;G6&quot;,&quot;target&quot;:&quot;H5&quot;,&quot;kind&quot;:&quot;new_h&quot;,&quot;text&quot;:&quot;new_h | H5 | [机制/混合解释] 去极化累积-时间恢复失活的持续 Na 型流（m-gate 同 H5：V1/2≈-60、τ≈10ms、pow 1、E=-30；另加去极化驱动失活 τ_inact≈150–300ms，恢复为时间依赖、静息或超极化下 120–250ms 内近完全恢复）：预测 P1 +7~9（起始足量、步内部分衰减）、P2 增量≈0（250ms +15uA 条件期已基本失活，test 无增量——精确匹配观测 34=基线 34.0，而 H5 登记候选预测 +4.9≈1.8σ_reps2 偏高）、P3≈15.2（test 前可用性已恢复至新鲜水平，无放大）、P4≈8.5——四格点拟合不劣于 H5 且在 P2 上严格更优，又不触发 H1/H6 的超极化再武装放大（其被否证的机制不同）。判别观测：条件时长阶梯 \&quot;depolarising conditioning + test (+15 uA/500 ms, then +12 uA)\&quot;（meter 若拒新标签则退为 P2 加测 reps=3）：H5 预测条件时长不敏感（mean ≥36.5），本变体预测单调衰减（≤35.5）——\&quot;无失活/全程持续\&quot;核心条款的正反在此一举。&quot;,&quot;prev&quot;:&quot;8d4265ad8497fce2f8d752ad3a56a4748610fa965203bcb76c88b8df75e75a17&quot;}
+77: {&quot;ts&quot;:&quot;2026-10-14T11:36:39.286Z&quot;,&quot;op&quot;:&quot;attack.record&quot;,&quot;gid&quot;:&quot;G7&quot;,&quot;target&quot;:&quot;H5&quot;,&quot;kind&quot;:&quot;constraint&quot;,&quot;text&quot;:&quot;constraint | H5 | [机制] \&quot;超极化不产生任何解除失活/激活蓄积、无额外回弹放大\&quot;是对全部 (深度×时长) 的全称否定，但只在 (−30uA→约−95mV, 250ms) 单点（P3）及其加 gap 变体（P4）被检验；graveyard H6 的 REFUTED 只针对其登记参数化（快失活、-95mV 有效再武装），H6 自含的深度单调 predicts（-25&lt;-30&lt;-35&lt;-40）从未被检验——再武装阈值深于 -95mV 或 τ_rearm&gt;250ms 的机制与 H5 在全部已落地探针下不可区分。falsifier：held-out \&quot;hyperpol -40 then release\&quot; forecast：H5 预测 ≈基线水平（count ≤15.5，无深度依赖）；若 ≥19 则\&quot;任何超极化\&quot;全称句被否证且 H6 族复活。&quot;,&quot;prev&quot;:&quot;f3e0ff6d89926b402876668ab461adcbad92a7bef6b3307ad5b8c9be68592711&quot;}
+78: {&quot;ts&quot;:&quot;2026-10-14T11:36:44.599Z&quot;,&quot;op&quot;:&quot;attack.record&quot;,&quot;gid&quot;:&quot;G8&quot;,&quot;target&quot;:&quot;H5&quot;,&quot;kind&quot;:&quot;constraint&quot;,&quot;text&quot;:&quot;constraint | H5 | [测量] H4 被否证的只是\&quot;单向大负偏置\&quot;变体，不能反向担保噪声模型：全部 band 宽度（含 H5 的 P4 support 带 [3,8]）建立在由候选中心差反推的事后 σ（σ_reps2≈2.6）上，run 内没有任何独立噪声计量；若真实 σ_rep1≈5，则 P1=32 仅 1.8σ、P4=8 仅 0.4σ，H5 全部证据退化为噪声级，H1 的 P4 kill（余量 4 单位≈1.1σ、单 rep）同样失效。falsifier（若 σ 被低估）：对 P2 追加 reps=2，跨批均值漂移应 ≤2.6；若两批均值差 ≥4，σ 系统性低估，P2/P3/P4 全部频段需重开，H5 的 SUPPORTED 失去频段地基。&quot;,&quot;prev&quot;:&quot;9c435d9b88f3cdba25dfa1f4eae815c54affffa61d9850cb335bffe6de47d984&quot;}
+79: {&quot;ts&quot;:&quot;2026-10-14T11:36:53.838Z&quot;,&quot;op&quot;:&quot;attack.record&quot;,&quot;gid&quot;:&quot;G9&quot;,&quot;target&quot;:&quot;H5&quot;,&quot;kind&quot;:&quot;constraint&quot;,&quot;text&quot;:&quot;constraint | H5 | [测量] SUPPORTED transition note 的两处定量支柱账目不实：(a) \&quot;H5 候选 8.7 与观测 8 几乎重合\&quot;——P4 prereg 自列对照为\&quot;ca_t 候选 8.7、ca_t_fast 8.7\&quot;（T 型钙族变体的模拟值），H5 登记参数化在 P4 协议上的候选模拟在转 SUPPORTED（11:12）时刻不存在（11:14 才落 8.6667，属事后补）；(b) \&quot;27.7+4.3=32.0 精确复现\&quot;中 27.7 与 4.3 在 ledger/register 均无来源条目，且把阈值化、非线性的 spike_count 按\&quot;+uA 内向流\&quot;线性分解违反指标语义。falsifier：免费模拟 H5 登记参数 (m-gate V1/2=-60、E=-30) 在 P4 协议的 spike_count——若 ≠8.7（如 ≈11–13），note 的\&quot;几乎重合\&quot;系误引 T 型族数值、SUPPORTED 依据需重写；若 =8.7，则 P4 prereg 的\&quot;ca_t\&quot;标注错误——两份在案文件必有其一失实。&quot;,&quot;prev&quot;:&quot;d62e41d42c5023c47b40b0cf6a2486a58af956001b29d9854ff40502a1d2d56b&quot;}
+80: {&quot;ts&quot;:&quot;2026-10-14T11:36:59.278Z&quot;,&quot;op&quot;:&quot;attack.record&quot;,&quot;gid&quot;:&quot;G10&quot;,&quot;target&quot;:&quot;H5&quot;,&quot;kind&quot;:&quot;constraint&quot;,&quot;text&quot;:&quot;constraint | H5 | [框架] H5 第三条 predict（held-out 超极化释放族候选≈基线）与 P4 prereg 明文的裁决程序（\&quot;最终定序由 held-out 释放族预报的全体一致性裁决\&quot;）均未执行即转 SUPPORTED：ledger 无任何 \&quot;hyperpol -25/-30/-35/-40 then release\&quot; 的真细胞观测或候选模拟，run 的 world_forecast（唯一一次终局评分）未使用，而预算尚余 2。falsifier：先免费模拟 H5 候选 \&quot;hyperpol -30 then release\&quot; 并提交 world_forecast——真值 ≥基线+3（≥18）则\&quot;超极化不产生额外放大\&quot;核心句被否证；≤15.5 才构成对 SUPPORTED 的实际执行。&quot;,&quot;prev&quot;:&quot;2eb3e9f0fbc9079c2efa0c5fa0dd8a11fa131ead9ea828a97abcf5e547bd07f8&quot;}
+81: {&quot;ts&quot;:&quot;2026-10-14T11:37:04.894Z&quot;,&quot;op&quot;:&quot;attack.record&quot;,&quot;gid&quot;:&quot;G11&quot;,&quot;target&quot;:&quot;H5&quot;,&quot;kind&quot;:&quot;constraint&quot;,&quot;text&quot;:&quot;constraint | H5 | [框架] 第三 predict 的免费代理检验按其自登容差已经失败：\&quot;候选 brief-step ≈ 基线 6±2\&quot;——H5 提出（10:31）后、转 SUPPORTED（11:12）前唯一一次 brief-step 候选模拟（10:48）=8.33，|8.33−6|=2.33 越出 ±2；若该条目不属于 H5 变体，则该 predict 连候选侧都从未实例化。两种读法均未通过：候选读法越界，真细胞读法（metered brief-step ≈6±2）从未观测。falsifier：meter \&quot;brief step (12 uA, 40 ms)\&quot; reps=1（成本 1）：≤8 则 H5 参数化须收窄为弱 g 变体；≥10 则真细胞在\&quot;无状态依赖\&quot;机制下仍高出基线 ≥4，\&quot;≈基线行为\&quot;表述被否证、仅定性框架残存。&quot;,&quot;prev&quot;:&quot;370811d5869e19c5ccc22107c42c94f4e15fba904890d26f0681049abfa8a887&quot;}</pre>
+<h5>② 推导值（由记录推出）</h5><p class="small muted">无。</p>
+<h5>③ 复算</h5><p class="small muted">本节点没有引用复算数字。</p>
+<h5>④ 审查者</h5><ul><li>G1 → H5：真实子任务 grill-H5（独立窗口）</li><li>G2 → H5：真实子任务 grill-H5（独立窗口）</li><li>G3 → H5：真实子任务 grill-H5（独立窗口）</li><li>G4 → H5：真实子任务 grill-H5（独立窗口）</li><li>G5 → H5：真实子任务 grill-H5（独立窗口）</li><li>G6 → H5：真实子任务 grill-H5（独立窗口）</li><li>G7 → H5：真实子任务 grill-H5（独立窗口）</li><li>G8 → H5：真实子任务 grill-H5（独立窗口）</li><li>G9 → H5：真实子任务 grill-H5（独立窗口）</li><li>G10 → H5：真实子任务 grill-H5（独立窗口）</li><li>G11 → H5：真实子任务 grill-H5（独立窗口）</li></ul>
+<h5>⑤ 人的干预</h5><p class="small muted">本归档没有干预文件。</p>
+</details>
+</article>
+<h3>其余决策</h3><div class="tbl"><table><thead><tr><th>#</th><th>决策</th><th>当时是否合理</th><th>事后对照真相</th><th>依据</th></tr></thead><tbody><tr id="D1"><td class="mono">D1</td><td>基线模型每个实验只仿真 1 次当参考值<br><span class="small muted">运行记录第 3–11 行 · 推理层</span></td><td><span class="icon m-no" aria-hidden="true">✕</span><b class="m-no">不合理</b>。仿真免费，仍取单次；之后多次重复的候选仿真已显示约 3 个峰的散布。</td><td><span class="icon m-no" aria-hidden="true">✕</span><b class="m-no">错误</b>。基线真均值：长步进 25.83、去极化条件 36.81、超极化条件 15.52、弱测试 7.5。</td><td class="small">s0 审计 D1；复算 table()（<code>mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §3 D1</code>）</td></tr><tr id="D2"><td class="mono">D2</td><td>候选模型里失活门的符号写反<br><span class="small muted">运行记录第 12–27 行 · 实例化层</span></td><td><span class="icon m-partial" aria-hidden="true">⚠</span><b class="m-partial">部分合理</b>。工具说明不给门控公式（接入层）；agent 自述不知道符号约定，看到异常后没有用一次免费仿真核对（推理层）。</td><td><span class="icon m-no" aria-hidden="true">✕</span><b class="m-no">错误</b>。会话里从未仿真过一个会被超极化去失活的通道；叫“T 型”的候选在仿真里并不是 T 型。</td><td class="small">s0 审计第 2 节：候选参数逐字取自会话（<code>mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §2</code>）</td></tr><tr id="D3"><td class="mono">D3</td><td>提出 T 型、测量伪影、Ih、无额外电流四种解释<br><span class="small muted">运行记录第 28–31 行 · 推理层</span></td><td><span class="icon m-yes" aria-hidden="true">✓</span><b class="m-yes">合理</b>。覆盖面好，把测量伪影当作“无聊对手”也是好做法。</td><td><span class="icon m-yes" aria-hidden="true">✓</span><b class="m-yes">正确</b>。T 型家族就是真相。</td><td class="small">s0 审计 D3（<code>mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §3 D3</code>）</td></tr><tr id="D4"><td class="mono">D4</td><td>第一组实验：长步进只测 1 次<br><span class="small muted">运行记录第 34–37 行 · 推理层</span></td><td><span class="icon m-partial" aria-hidden="true">⚠</span><b class="m-partial">部分合理</b>。事先写明单次判别力有限，克制；但这一格真相与基线只差 0.78 个峰，约需 37 次才分得开。</td><td><span class="icon m-partial" aria-hidden="true">⚠</span><b class="m-partial">部分正确</b>。观测在真相下是 2.08 个标准误的高抽样，却成了“存在额外电流”的唯一证据。</td><td class="small">复算 table()（<code>mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §1、§3 D4</code>）</td></tr><tr id="D5"><td class="mono">D5</td><td>据第一组的偏高提出“持续去极化内向流”<br><span class="small muted">运行记录第 38 行 · 推理层</span></td><td><span class="icon m-partial" aria-hidden="true">⚠</span><b class="m-partial">部分合理</b>。在单次仿真的错误基准下顺理成章。</td><td><span class="icon m-no" aria-hidden="true">✕</span><b class="m-no">错误</b>。立在一次噪声上。</td><td class="small">s0 审计 D5（<code>mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §3 D5</code>）</td></tr><tr id="D6"><td class="mono">D6</td><td>第二组实验落进“判别失败”区间，没有硬判<br><span class="small muted">运行记录第 39–54 行 · 设计层</span></td><td><span class="icon m-yes" aria-hidden="true">✓</span><b class="m-yes">合理</b>。分支表事先写明这一段是判别失败，结果落进来就只收窄。</td><td><span class="icon m-partial" aria-hidden="true">⚠</span><b class="m-partial">部分正确</b>。把最接近真相的“无额外电流”移出了待定，让它之后失去当对手的资格。</td><td class="small">s0 审计 D6 与第 6 节设计层（<code>mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §3 D6、§6</code>）</td></tr><tr id="D10"><td class="mono">D10</td><td>同一观测把“持续去极化内向流”判为得到支持<br><span class="small muted">运行记录第 66 行 · 推理层</span></td><td><span class="icon m-no" aria-hidden="true">✕</span><b class="m-no">不合理</b>。同一宽区间的两侧分别算作否定与支持（G2）；迁移说明里的两处数字没有出处（G9）。</td><td><span class="icon m-no" aria-hidden="true">✕</span><b class="m-no">错误</b>。基线、真相与 H5 在这一格几乎一样，观测不区分任何一个。</td><td class="small">s0 审计 D10（<code>mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §3 D10</code>）</td></tr><tr id="D12"><td class="mono">D12</td><td>我们自己的规则挡住了后两组实验，剩 2 次预算没花<br><span class="small muted">全程 / 会话外 · 设计层</span></td><td><span class="icon m-partial" aria-hidden="true">⚠</span><b class="m-partial">部分合理</b>。旧规则不许已支持或已收窄的假设当对手（之后已修）；agent 也没考虑不登记的探索性测量。</td><td><span class="icon m-partial" aria-hidden="true">⚠</span><b class="m-partial">部分正确</b>。重放显示按当时的债务规则去测，反而会进一步“支持”错误结论；能纠正它的是所需次数封顶和阻断剂可发现。</td><td class="small">s0 审计 D12 与第 5 节重放（<code>mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §3 D12、§5</code>）</td></tr><tr id="D13"><td class="mono">D13</td><td>从没用过阻断剂<br><span class="small muted">全程 / 会话外 · 接入层</span></td><td><span class="icon m-partial" aria-hidden="true">⚠</span><b class="m-partial">部分合理</b>。阻断剂无从发现；早期计划里写过“试试阻断剂参数”，却没有执行。</td><td><span class="icon m-no" aria-hidden="true">✕</span><b class="m-no">错误</b>。与一句话案例相同：预算内唯一可能决定性的实验没做。</td><td class="small">s0 审计 D13（<code>mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §3 D13、§5</code>）</td></tr><tr id="D14"><td class="mono">D14</td><td>预报：释放族四个实验都填 6<br><span class="small muted">运行记录第 88 行 · 接入层</span></td><td><span class="icon m-no" aria-hidden="true">✕</span><b class="m-no">不合理</b>。长步进用单次观测当期望值；释放族先填了更接近的值，随后自行改成 6。当时预报用的实验无法仿真（接入层）。</td><td><span class="icon m-no" aria-hidden="true">✕</span><b class="m-no">错误</b>。释放族目标约 12，四项各贡献大部分误差。</td><td class="small">s0 审计 D14；复算 forecast()（<code>mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §3 D14</code>）</td></tr><tr id="D15"><td class="mono">D15</td><td>结论：存在持续去极化内向流，T 型被否定<br><span class="small muted">运行记录第 89 行 · 推理层</span></td><td><span class="icon m-partial" aria-hidden="true">⚠</span><b class="m-partial">部分合理</b>。比一句话案例诚实（承认 H5 支持弱、H7 未检验）；但一句话结论仍断言电流存在、家族被否。</td><td><span class="icon m-no" aria-hidden="true">✕</span><b class="m-no">错误</b>。家族判断与真相相反。</td><td class="small">s0 审计 D15（<code>mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §3 D15</code>）</td></tr></tbody></table></div>
+</section>
+
+<section id="corrections">
+<h2>原结论与修正</h2>
+<div class="truth"><p><b>对照的真相</b>：T 型钙电流：超极化让它解除失活，松开时产生反弹爆发（电导 3.2，失活时间常数 22 ms）（来源 <code class="src">neuronbench/worlds.py:196（描述）、:128（参数 MT）</code>；真相只存在归档里，运行中的 agent 读不到）</p></div>
+<blockquote class="orig" data-ref="REPORT.md:5"><span class="src">报告原句（REPORT.md:5，逐字）</span>T 型低阈值钙（H1）、可用性再武装瞬变流（H6）、强负偏置测量伪影（H4）被计量探针 REFUTED</blockquote>
+<div class="correction"><p><b>后来发现</b>：真相正是 T 型钙电流，H6 的文字就是真相的机制。</p><p><b>修正</b>：否定 H6 与 T 型家族的两组实验都分不开真相与基线（分别约需 42 与 758 次）；可辩护的写法是“在 1–2 次重复下未检出，家族未被排除”。</p><p class="basis">依据：复算 table()（<code>mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §1、§4</code>）</p></div>
+<blockquote class="orig" data-ref="REPORT.md:5"><span class="src">报告原句（REPORT.md:5，逐字）</span>去极化激活、无慢失活门/无超极化再武装状态依赖的持续内向流</blockquote>
+<div class="correction"><p><b>后来发现</b>：“存在额外电流”只挂在第一组实验一次偏高的测量上（G3）；该观测在真相下是 2.08 个标准误的高抽样。</p><p><b>修正</b>：H5 只能停在“领先但未定”，不能写成机制已确定。</p><p class="basis">依据：复算 table()；攻击 G3（运行记录第 73 行）（<code>mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §1、§3 D4–D5</code>）</p></div>
+</section>
+
+<section id="unknowns">
+<h2>仍不能确定</h2>
+<ul><li>四组实验都分不开真相与基线；预算内只有阻断剂实验可能给出决定性证据，而且要在第二、三组实验之前就留出预算。</li><li>失活门符号错误对数值的影响只在四组实验上复算过。</li><li>H7（带累积失活的持续内向流）一直没被检验。</li><li>所有实验共用同一条噪声流，各组误差并不独立；这对预测区间的系统影响没有量化。</li></ul>
+</section>
+
+<section id="version" class="ver">
+<h2>运行版本卡</h2>
+<dl>
+<dt>会话 ID</dt><dd class="mono">857f75fc-a484-49a7-bc87-e594402ccf82</dd>
+<dt>run</dt><dd class="mono">ca-rebound-s0 · research/campaigns/2026-10-14-glm53flash-ca_rebound-s0</dd>
+<dt>模型</dt><dd>GLM 5.3 Flash（glm-5.3-flash / high）</dd>
+<dt>world / seed</dt><dd class="mono">ca_rebound / 0</dd>
+<dt>时间</dt><dd>2026-10-14 17:42（UTC+08:00） – 2026-10-14 19:54（UTC+08:00）</dd>
+<dt>程序检查</dt><dd>程序检查通过（预登记 ✓ · 对账 ✓ · 溯源 ✓）。程序检查通过只说明记录前后一致，不说明结论正确。</dd>
+<dt>人工干预</dt><dd>未记录（本归档无干预文件）</dd>
+<dt>运行记录链</dt><dd>完整（90 行，逐行哈希相连）</dd>
+<dt>sha256</dt><dd><ul class="small mono"><li>journal.jsonl cb9dd51c509650995c645b69130a11a95f6ded917d9e6d2bcebd61c1eefc4c4a</li><li>REPORT.md 08dc30d39579ca3f3e79a83ae52ec918bf68818eb2e1bcc0e05f353802bf1400</li><li>prereg/P1.json 19b93d9ba51d364f5c7f16285a17f0717a52ba397ad3004a5b9ac3dbe433e4b6</li><li>prereg/P2.json f232c9b0eb37d8e465d29695b17b0c9df1c5091b998644d6ee719d79314f9f0f</li><li>prereg/P3.json 84aedc6b09ff843a0e6b2b6dd8b49646caac656fb3a0aca9a5136864c2694584</li><li>prereg/P4.json 920d48f634c43c4f33aa993c132cab6d4d1bf87eff17ed942f71c155a44431f4</li><li>annotations.json 72f32a031704ee9b3c8af8fbd978b0101780c59eaea2ae5011697cf17ebfbe6b</li><li>recompute.json aefe5acf5538855fef96663611b47f46777e12ce14478a055ec45f5a6fdf9280</li></ul></dd>
+<dt>生成器</dt><dd class="mono">judge-report/1</dd>
+</dl>
+</section>
+
+<section id="appendix">
+<h2>附录：每次实验的五句话</h2>
+<p class="small muted">由运行记录自动推出；没有审计节点覆盖的标“未审”，不带判定。</p>
+<article class="card cycle" id="cyc-P1"><header><span class="nid">P1</span><h3>long step (10 uA, 300 ms)</h3><span class="meta">运行记录第 34–37 行</span><span class="tag">已审：<a href="#D4">D4</a></span></header>
+<dl class="five"><div><dt>当时知道</dt><dd>登记时仍在考虑：H1（T 型钙电流（登记参数））、H4（测量伪影）、H3（超极化激活的 Ih 电流）、H2（无额外电流）。之前还没有真实测量。上次登记之后没有同协议仿真；全程同协议候选仿真值 23–33（4 次；候选参数未记录，含参数差异）。</dd></div><div><dt>为什么这样选</dt><dd>真细胞在 long step (10 uA, 300 ms) 的 metered spike_count 判别 H1(T型钙) vs H3(真Ih) vs H2(无附加电流/slow_na) vs H4(测量伪影对手)。load-bearing variable：附加电流在 +10 uA 去极化步内的持续内向贡献（T型持续激活 vs Ih静默 vs 无）；对照：参考基线候选 mean 23（免费 world_simulate）。若被检假设为假，本测试大概率仍通过吗？——H4 为假时（无偏置伪影）其带[0,13]以高概率不被命中，判别有效；H1/H3 中心仅差2.3，单 rep 判别该两主假设的效力有限，预期主要杀伤 H4/H2，H1 vs H3 由 P2 裁决。</dd></div><div><dt>期待看到</dt><dd>若结果落在 0–13：否定 H4；14–32：否定 H2；27–42：支持 H1、支持 H3；43–44：收窄 H1；45–400：否定 H2、否定 H3、收窄 H1。</dd></div><div><dt>实际发生</dt><dd>测了 1 次，平均得 32，落在 H1、H2、H3 的预测区间。</dd></div><div><dt>因此调整</dt><dd>没有据此改变任何判断。下一组实验 P2 改用「depolarising conditioning + test (+15 uA/250 ms, then +12 uA)」。</dd></div></dl></article>
+<article class="card cycle" id="cyc-P2"><header><span class="nid">P2</span><h3>depolarising conditioning + test (+15 uA/250 ms, then +12 uA)</h3><span class="meta">运行记录第 39–54 行</span><span class="tag">已审：<a href="#D6">D6</a></span></header>
+<dl class="five"><div><dt>当时知道</dt><dd>登记时仍在考虑：H1（T 型钙电流（登记参数））、H4（测量伪影）、H3（超极化激活的 Ih 电流）、H2（无额外电流）、H5（持续去极化内向流）。之前的真实测量：P1 得 32（1 次）。上次登记之后没有同协议仿真；全程同协议候选仿真值 33.67–43.2（6 次；候选参数未记录，含参数差异）。</dd></div><div><dt>为什么这样选</dt><dd>真细胞在去极化条件+测试 (+15/250ms then +12uA) 的 metered spike_count（reps=2 平均）判别去极化步内持续内向流强度：H1(T型钙,持续激活,候选43.2) vs H3(真Ih,去极化期静默但E=-30仍有弱持续分量,候选39.0) vs H5(持续非失活内向流,候选38.6) vs H2(无附加电流,候选33.7) vs H4(测量伪影对手,预测≤26)。load-bearing variable：+15uA 条件期内附加电流的持续内向净流幅度；对照：参考基线候选 34 / slow_na 候选 33.7（免费模拟）。severity 检查：若 H1 为假（真细胞是 H3/H5），本测试会把它误判为 H1 吗？——中心差 4.2-4.6 ≈ 1.7σ_reps2，存在误判风险，故 41-45 区间只 scope H1 不 support；仅 46-50 才支持 H1。H4 为假时其带 [0,26] 以高概率不被命中（本探针对 H4 的杀伤是强判别的）。</dd></div><div><dt>期待看到</dt><dd>若结果落在 0–26：否定 H4；27–30：否定 H4、否定 H5；46–200：否定 H3、否定 H5、否定 H2、收窄 H1；41–45：收窄 H1；37–40：支持 H3、支持 H5；33–36：收窄 H3、收窄 H2；31–32：收窄 H3。</dd></div><div><dt>实际发生</dt><dd>测了 2 次，平均得 34，落在 H2、H3、H5 的预测区间。</dd></div><div><dt>因此调整</dt><dd>H3 收窄到更小的说法、H2 收窄到更小的说法。下一组实验 P3 改用「hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)」。</dd></div></dl></article>
+<article class="card cycle" id="cyc-P3"><header><span class="nid">P3</span><h3>hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)</h3><span class="meta">运行记录第 55–60 行</span><span class="tag">已审：<a href="#D8">D8</a></span></header>
+<dl class="five"><div><dt>当时知道</dt><dd>登记时仍在考虑：H1（T 型钙电流（登记参数））、H4（测量伪影）、H5（持续去极化内向流）、H6（可再武装的瞬变内向流）。之前的真实测量：P1 得 32（1 次）；P2 得 34（2 次）。上次登记之后没有同协议仿真；全程同协议候选仿真值 15–19（6 次；候选参数未记录，含参数差异）。</dd></div><div><dt>为什么这样选</dt><dd>真细胞在超极化条件+去极化测试 (-30uA/250ms then +12uA) 的 metered spike_count（reps=2 平均）判别可用性再武装放大（H6：条件解除失活→释放/测试期额外回弹，候选中心 19.0）vs 无放大（H5/H2：基线候选 15.2）vs 慢失活 T 型（H1：候选 17.4）vs 强负偏置测量伪影（H4：预测 ≤10；本探针提供 H4 的正式 kill 分支，修正 P1 写反的取向）。load-bearing variable：-95 mV 钳制 250ms 期间附加电流可用性（h 门/恢复变量）的再武装量；对照：参考基线 15.0 与 slow_na 15.33（免费模拟）。severity 检查：若 H6 为假（真细胞为 H5/H2 类无放大机制），观测仍可能落入 H6 带内下段 [16,22]（重叠区宽 7）——故该区间只 scope 不 support，H6 的支持签名收窄到 [23,27]（H5 带外），杀伤翼在 &lt;16；主要判别力在两翼，重叠区由 held-out 释放族预报另行定序。</dd></div><div><dt>期待看到</dt><dd>若结果落在 0–8：收窄 H6；9–10：否定 H6；11–15：否定 H4、否定 H6、收窄 H1、收窄 H5；16–22：否定 H4、收窄 H5、收窄 H6、收窄 H1；23–24：否定 H4、否定 H5、支持 H6、收窄 H1；25–27：否定 H4、否定 H5、否定 H1、支持 H6；28–200：否定 H4、否定 H5、否定 H1、否定 H6。</dd></div><div><dt>实际发生</dt><dd>测了 2 次，平均得 13.5，落在 H1、H5 的预测区间。</dd></div><div><dt>因此调整</dt><dd>H4 被否定、H6 被否定。下一组实验 P4 改用「hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)」。</dd></div></dl></article>
+<article class="card cycle" id="cyc-P4"><header><span class="nid">P4</span><h3>hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)</h3><span class="meta">运行记录第 61–66 行</span><span class="tag">已审：<a href="#D9">D9</a>、<a href="#D10">D10</a></span></header>
+<dl class="five"><div><dt>当时知道</dt><dd>登记时仍在考虑：H1（T 型钙电流（登记参数））、H5（持续去极化内向流）。之前的真实测量：P1 得 32（1 次）；P2 得 34（2 次）；P3 得 13.5（2 次）。上次登记之后没有同协议仿真；全程同协议候选仿真值 6–9.33（3 次；候选参数未记录，含参数差异）。</dd></div><div><dt>为什么这样选</dt><dd>真细胞在 hyperpol pre-pulse + weak test (-30/250ms, gap, +6uA) 的 metered spike_count（reps=1）判别状态依赖内向流（H1/H6 家族：超极化再武装后 +6uA 弱测试期纯 T 型窗点燃，弱刺激即可爆发→高计数；H1 候选 10.7 因钠窗残留而偏低）vs 无状态依赖持续流（H5：+6uA 测试与是否超极化条件无关，≈基线 6）vs H2 剩余子命题（无附加电流：≈基线 6）。load-bearing variable：+6uA 弱测试期电压窗（约 -60~-45mV，T 型窗但低于钠窗）内向净流；对照：基线候选 6.0、ca_t 候选 8.7、ca_t_fast 8.7（免费模拟）。severity 检查：若 H5 为假（真细胞有状态依赖电流），单 rep 观测仍可能落 [3,8]（基线带与 H5 带重叠宽 6）——故 [3,8] 的 support 对 H5 是弱支持，最终定序由 held-out 释放族预报的全体一致性裁决；但 [3,8] 对 H1 是强杀伤（其带下缘 12 之下 3 个单位）。</dd></div><div><dt>期待看到</dt><dd>若结果落在 3–8：否定 H1、支持 H5；9–10：否定 H5、收窄 H1；11–11：收窄 H1；12–19：否定 H5、支持 H1；20–200：否定 H5、否定 H1。</dd></div><div><dt>实际发生</dt><dd>测了 1 次，平均得 8，落在 H5 的预测区间。</dd></div><div><dt>因此调整</dt><dd>H1 被否定、H5 得到支持。</dd></div></dl></article>
+</section>
+</main>
+<script>
+(() => {
+  const cards = [...document.querySelectorAll('article[data-key]')];
+  const links = new Map([...document.querySelectorAll('.tl a')].map((a) => [a.getAttribute('href').slice(1), a]));
+  const mark = (id) => links.forEach((a, k) => a.setAttribute('aria-current', String(k === id)));
+  const current = () => {
+    let i = -1;
+    cards.forEach((c, k) => { if (c.getBoundingClientRect().top < 120) i = k; });
+    return i;
+  };
+  document.addEventListener('keydown', (e) => {
+    if (e.altKey || e.ctrlKey || e.metaKey || /input|textarea/i.test(e.target.tagName)) return;
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    const i = current();
+    const next = cards[e.key === 'ArrowRight' ? Math.min(i + 1, cards.length - 1) : Math.max(i - 1, 0)];
+    if (!next) return;
+    e.preventDefault();
+    next.scrollIntoView({ block: 'start' });
+    history.replaceState(null, '', '#' + next.id);
+    mark(next.id);
+  });
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((es) => es.forEach((x) => x.isIntersecting && mark(x.target.id)), { rootMargin: '0px 0px -70% 0px' });
+    cards.forEach((c) => io.observe(c));
+  }
+  const host = document.querySelector('.tools');
+  if (host) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = '展开全部证据';
+    b.addEventListener('click', () => {
+      const all = [...document.querySelectorAll('article details')];
+      const open = all.some((d) => !d.open);
+      all.forEach((d) => { d.open = open; });
+      b.textContent = open ? '收起全部证据' : '展开全部证据';
+    });
+    host.append(b);
+  }
+})();
+</script>

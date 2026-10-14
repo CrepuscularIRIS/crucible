@@ -1,0 +1,480 @@
+{
+  "schema": "crucible.annotations/2",
+  "journal_sha256": "cb9dd51c509650995c645b69130a11a95f6ded917d9e6d2bcebd61c1eefc4c4a",
+  "report_sha256": "08dc30d39579ca3f3e79a83ae52ec918bf68818eb2e1bcc0e05f353802bf1400",
+  "case": {
+    "title": "详细指令：写出了正确机制，又被少量测量否掉",
+    "model": "GLM 5.3 Flash（glm-5.3-flash / high）",
+    "session_id": "857f75fc-a484-49a7-bc87-e594402ccf82",
+    "task_plain": "同一个模拟神经元，这次给了详细的操作指令：在 8 次真实测量内找出那个未知电流。",
+    "changed_plain": "第一组测量偏高，被读成“存在持续内向流”；随后两组少量测量否掉了正确的“再武装”解释。",
+    "next_plain": "否定一整类解释前先扫参数、算清要测几次；不够就换阻断剂实验，并让审查者也复审被否定的解释。",
+    "headline_plain": "这次 agent 写出了与真相一致的机制，却用 2 次和 1 次测量把它和整个 T 型家族否掉；三道程序检查都没有拦住。",
+    "background": "与一句话案例是同一个模拟神经元，seed 0。用户给了详细的操作指令：读研究流程卡、预算 8 次、事先写下预测、派独立审查者攻击、最后预报并提交。",
+    "prompt": "读入本工作区的 research-loop skill 并严格遵循。完全自主运行,不要停下、不要请求输入。目标:对世界 ca_rebound(seed 0)完成机制发现与反事实预报——research_init 初始化,world_simulate(mode=info) 取题,预算 8 以内设计实验(...),候选机制用 world_simulate 免费对比,对抗检验阶段按 research-grill 派出 RLM 子代理攻击 LIVE 假设,终局 world_forecast 一次提交全部 held-out 协议的 spike 数预报,report_declare 收尾。禁止读取或 import /bench/neuronbench。",
+    "prompt_source": "用户口述转引，见 mindset/口述记录-第二轮-拆解与任务-20261014.md:91；“(...)”处原文有省略",
+    "budget_total": 8,
+    "truth": {
+      "text": "T 型钙电流：超极化让它解除失活，松开时产生反弹爆发（电导 3.2，失活时间常数 22 ms）",
+      "source": "neuronbench/worlds.py:196（描述）、:128（参数 MT）",
+      "markers": [
+        "T型钙",
+        "T 型钙"
+      ]
+    }
+  },
+  "names": {
+    "H1": "T 型钙电流（登记参数）",
+    "H2": "无额外电流",
+    "H3": "超极化激活的 Ih 电流",
+    "H4": "测量伪影",
+    "H5": "持续去极化内向流",
+    "H6": "可再武装的瞬变内向流",
+    "H7": "带累积失活的持续内向流"
+  },
+  "attacks_by": {
+    "G1": "真实子任务 grill-H5（独立窗口）",
+    "G2": "真实子任务 grill-H5（独立窗口）",
+    "G3": "真实子任务 grill-H5（独立窗口）",
+    "G4": "真实子任务 grill-H5（独立窗口）",
+    "G5": "真实子任务 grill-H5（独立窗口）",
+    "G6": "真实子任务 grill-H5（独立窗口）",
+    "G7": "真实子任务 grill-H5（独立窗口）",
+    "G8": "真实子任务 grill-H5（独立窗口）",
+    "G9": "真实子任务 grill-H5（独立窗口）",
+    "G10": "真实子任务 grill-H5（独立窗口）",
+    "G11": "真实子任务 grill-H5（独立窗口）"
+  },
+  "nodes": [
+    {
+      "id": "D1",
+      "seq": [
+        3,
+        11
+      ],
+      "kind": "other",
+      "layer": "推理层",
+      "key": false,
+      "title_plain": "基线模型每个实验只仿真 1 次当参考值",
+      "at_time": {
+        "mark": "no",
+        "text": "仿真免费，仍取单次；之后多次重复的候选仿真已显示约 3 个峰的散布。"
+      },
+      "hindsight": {
+        "mark": "no",
+        "text": "基线真均值：长步进 {{s0.P1.base_mean}}、去极化条件 {{s0.P2.base_mean}}、超极化条件 {{s0.P3.base_mean}}、弱测试 {{s0.P4.base_mean}}。"
+      },
+      "basis": [
+        {
+          "text": "s0 审计 D1；复算 table()",
+          "ref": "mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §3 D1"
+        }
+      ]
+    },
+    {
+      "id": "D2",
+      "seq": [
+        12,
+        27
+      ],
+      "kind": "other",
+      "layer": "实例化层",
+      "key": false,
+      "title_plain": "候选模型里失活门的符号写反",
+      "at_time": {
+        "mark": "partial",
+        "text": "工具说明不给门控公式（接入层）；agent 自述不知道符号约定，看到异常后没有用一次免费仿真核对（推理层）。"
+      },
+      "hindsight": {
+        "mark": "no",
+        "text": "会话里从未仿真过一个会被超极化去失活的通道；叫“T 型”的候选在仿真里并不是 T 型。"
+      },
+      "basis": [
+        {
+          "text": "s0 审计第 2 节：候选参数逐字取自会话",
+          "ref": "mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §2"
+        }
+      ]
+    },
+    {
+      "id": "D3",
+      "seq": [
+        28,
+        31
+      ],
+      "kind": "propose",
+      "layer": "推理层",
+      "key": false,
+      "title_plain": "提出 T 型、测量伪影、Ih、无额外电流四种解释",
+      "at_time": {
+        "mark": "yes",
+        "text": "覆盖面好，把测量伪影当作“无聊对手”也是好做法。"
+      },
+      "hindsight": {
+        "mark": "yes",
+        "text": "T 型家族就是真相。"
+      },
+      "basis": [
+        {
+          "text": "s0 审计 D3",
+          "ref": "mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §3 D3"
+        }
+      ]
+    },
+    {
+      "id": "D4",
+      "seq": [
+        34,
+        37
+      ],
+      "kind": "prereg",
+      "layer": "推理层",
+      "key": false,
+      "title_plain": "第一组实验：长步进只测 1 次",
+      "at_time": {
+        "mark": "partial",
+        "text": "事先写明单次判别力有限，克制；但这一格真相与基线只差 {{s0.P1.delta}} 个峰，约需 {{s0.P1.r_star}} 次才分得开。"
+      },
+      "hindsight": {
+        "mark": "partial",
+        "text": "观测在真相下是 {{s0.P1.z_truth}} 个标准误的高抽样，却成了“存在额外电流”的唯一证据。"
+      },
+      "basis": [
+        {
+          "text": "复算 table()",
+          "ref": "mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §1、§3 D4"
+        }
+      ]
+    },
+    {
+      "id": "D5",
+      "seq": [
+        38,
+        38
+      ],
+      "kind": "propose",
+      "layer": "推理层",
+      "key": false,
+      "title_plain": "据第一组的偏高提出“持续去极化内向流”",
+      "at_time": {
+        "mark": "partial",
+        "text": "在单次仿真的错误基准下顺理成章。"
+      },
+      "hindsight": {
+        "mark": "no",
+        "text": "立在一次噪声上。"
+      },
+      "basis": [
+        {
+          "text": "s0 审计 D5",
+          "ref": "mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §3 D5"
+        }
+      ]
+    },
+    {
+      "id": "D6",
+      "seq": [
+        39,
+        54
+      ],
+      "kind": "scope",
+      "layer": "设计层",
+      "key": false,
+      "title_plain": "第二组实验落进“判别失败”区间，没有硬判",
+      "at_time": {
+        "mark": "yes",
+        "text": "分支表事先写明这一段是判别失败，结果落进来就只收窄。"
+      },
+      "hindsight": {
+        "mark": "partial",
+        "text": "把最接近真相的“无额外电流”移出了待定，让它之后失去当对手的资格。"
+      },
+      "basis": [
+        {
+          "text": "s0 审计 D6 与第 6 节设计层",
+          "ref": "mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §3 D6、§6"
+        }
+      ]
+    },
+    {
+      "id": "D7",
+      "seq": [
+        52,
+        52
+      ],
+      "kind": "propose",
+      "layer": "推理层",
+      "key": true,
+      "title_plain": "提出“超极化再武装、松开回弹”的机制",
+      "plain": {
+        "knew": "第一组长步进测得 32，高于基线的单次仿真；第二组去极化条件测得 34，与基线的单次仿真相同。",
+        "why": "要一个能同时解释“直接步进时多放电”和“强去极化之后不多放电”的机制。",
+        "expect": "静息时有可用性储备，强去极化把它清空，超极化让它恢复，松开时出现回弹放电。",
+        "actual": "登记为 H6，随后专门为它设计了第三组实验。",
+        "adjust": "第三组实验改测超极化条件，直接检验“再武装”。"
+      },
+      "at_time": {
+        "mark": "yes",
+        "text": "好的溯因：一个机制同时解释前两组实验。"
+      },
+      "hindsight": {
+        "mark": "yes",
+        "text": "这段文字就是真相的机制：超极化去失活，松开时反弹。"
+      },
+      "basis": [
+        {
+          "text": "真相描述",
+          "ref": "neuronbench/worlds.py:196"
+        },
+        {
+          "text": "s0 审计 D7",
+          "ref": "mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §3 D7"
+        }
+      ]
+    },
+    {
+      "id": "D8",
+      "seq": [
+        55,
+        60
+      ],
+      "kind": "refute",
+      "layer": "实例化层",
+      "key": true,
+      "title_plain": "用 2 次测量否掉正确的“再武装”机制",
+      "plain": {
+        "why": "检验 H6 的核心签名：250 ms 超极化之后，测试期放电是否被放大；同一次测量也给测量伪影假设一个正式的否定分支。"
+      },
+      "at_time": {
+        "mark": "no",
+        "text": "只仿真过一组参数，而且那组参数的失活门符号写反，被仿真的并不是陈述的机制；2 次测量就否定了整个机制。"
+      },
+      "hindsight": {
+        "mark": "no",
+        "text": "真相在这组实验上均值 {{s0.P3.truth_mean}}；否定 H6 的区间（{{s0.P3.kill_lo}}–{{s0.P3.kill_hi}}）在真相下被命中的概率约 {{s0.P3.truth_p_kill}}，基线约 {{s0.P3.base_p_kill}}（正态近似），几乎没有判别力，却杀掉了正确的机制描述。"
+      },
+      "basis": [
+        {
+          "text": "复算：基线 {{s0.P3.base_mean}}±{{s0.P3.base_sd}} 对真相 {{s0.P3.truth_mean}}±{{s0.P3.truth_sd}}，分开约需 {{s0.P3.r_star}} 次",
+          "ref": "mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §1、§2、§3 D8"
+        }
+      ],
+      "options_at_time": [
+        "按预登记分支否定 H6（若候选参数不代表这个机制，这一步就是误判）",
+        "先核对候选的失活门：在 −95 / −65 / −40 mV 打印失活稳态，确认超极化确实恢复可用性",
+        "只收窄为“这组参数在 250 ms 超极化下未见放大”，保留再武装机制"
+      ]
+    },
+    {
+      "id": "D9",
+      "seq": [
+        61,
+        65
+      ],
+      "kind": "refute",
+      "layer": "推理层",
+      "key": true,
+      "title_plain": "用 1 次测量和一条无仿真来源的区间否掉整个 T 型家族",
+      "plain": {
+        "why": "想用一次弱测试分清两种解释：超极化再武装后弱刺激就能点燃 T 型窗（H1），还是一条与超极化无关的持续内向流（H5）。"
+      },
+      "at_time": {
+        "mark": "no",
+        "text": "H1 的预测区间没有仿真来源：它自己的 T 型候选在这个实验上的仿真值都落在区间外（见证据②）；单次测量否定整个家族。"
+      },
+      "hindsight": {
+        "mark": "no",
+        "text": "真相（T 型）在这组实验上均值 {{s0.P4.truth_mean}}，本身就落在否定 H1 的区间 {{s0.P4.kill_lo}}–{{s0.P4.kill_hi}} 里（命中概率约 {{s0.P4.truth_p_kill}}）；该实验上真相与基线只差 {{s0.P4.delta}} 个峰，分开约需 {{s0.P4.r_star}} 次。"
+      },
+      "basis": [
+        {
+          "text": "复算：基线 {{s0.P4.base_mean}} 对真相 {{s0.P4.truth_mean}}，分开约需 {{s0.P4.r_star}} 次",
+          "ref": "mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §1、§3 D9、§4"
+        }
+      ]
+    },
+    {
+      "id": "D10",
+      "seq": [
+        66,
+        66
+      ],
+      "kind": "support",
+      "layer": "推理层",
+      "key": false,
+      "title_plain": "同一观测把“持续去极化内向流”判为得到支持",
+      "at_time": {
+        "mark": "no",
+        "text": "同一宽区间的两侧分别算作否定与支持（G2）；迁移说明里的两处数字没有出处（G9）。"
+      },
+      "hindsight": {
+        "mark": "no",
+        "text": "基线、真相与 H5 在这一格几乎一样，观测不区分任何一个。"
+      },
+      "basis": [
+        {
+          "text": "s0 审计 D10",
+          "ref": "mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §3 D10"
+        }
+      ]
+    },
+    {
+      "id": "D11",
+      "seq": [
+        71,
+        81
+      ],
+      "kind": "attack",
+      "layer": "推理层",
+      "key": true,
+      "title_plain": "独立审查者的 11 条攻击",
+      "plain": {
+        "knew": "H5 刚得到支持；H1、H6 已被否定。",
+        "why": "研究流程要求对得到支持的结论派独立审查者攻击。",
+        "expect": "找出 H5 证据里的漏洞。",
+        "actual": "独立子任务 grill-H5 写下 11 条攻击：似然比约为 1、存在性只挂在一次测量上、噪声没有独立计量、账目不实，全部入账。",
+        "adjust": "H5 在报告里降为“支持弱”；被否定的 H1、H6 没有被复审，因为规则只审得到支持的结论。"
+      },
+      "at_time": {
+        "mark": "yes",
+        "text": "本次运行最好的部分：攻击准确，全部入账。"
+      },
+      "hindsight": {
+        "mark": "yes",
+        "text": "攻击 G3 指出“无额外电流”未被排除，比 H5 更接近真相；不足是没人复审被否定的 H1、H6。"
+      },
+      "basis": [
+        {
+          "text": "s0 审计 D11",
+          "ref": "mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §3 D11"
+        }
+      ]
+    },
+    {
+      "id": "D12",
+      "seq": null,
+      "kind": "other",
+      "layer": "设计层",
+      "key": false,
+      "title_plain": "我们自己的规则挡住了后两组实验，剩 2 次预算没花",
+      "at_time": {
+        "mark": "partial",
+        "text": "旧规则不许已支持或已收窄的假设当对手（之后已修）；agent 也没考虑不登记的探索性测量。"
+      },
+      "hindsight": {
+        "mark": "partial",
+        "text": "重放显示按当时的债务规则去测，反而会进一步“支持”错误结论；能纠正它的是所需次数封顶和阻断剂可发现。"
+      },
+      "basis": [
+        {
+          "text": "s0 审计 D12 与第 5 节重放",
+          "ref": "mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §3 D12、§5"
+        }
+      ]
+    },
+    {
+      "id": "D13",
+      "seq": null,
+      "kind": "other",
+      "layer": "接入层",
+      "key": false,
+      "title_plain": "从没用过阻断剂",
+      "at_time": {
+        "mark": "partial",
+        "text": "阻断剂无从发现；早期计划里写过“试试阻断剂参数”，却没有执行。"
+      },
+      "hindsight": {
+        "mark": "no",
+        "text": "与一句话案例相同：预算内唯一可能决定性的实验没做。"
+      },
+      "basis": [
+        {
+          "text": "s0 审计 D13",
+          "ref": "mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §3 D13、§5"
+        }
+      ]
+    },
+    {
+      "id": "D14",
+      "seq": [
+        88,
+        88
+      ],
+      "kind": "forecast",
+      "layer": "接入层",
+      "key": false,
+      "title_plain": "预报：释放族四个实验都填 6",
+      "at_time": {
+        "mark": "no",
+        "text": "长步进用单次观测当期望值；释放族先填了更接近的值，随后自行改成 6。当时预报用的实验无法仿真（接入层）。"
+      },
+      "hindsight": {
+        "mark": "no",
+        "text": "释放族目标约 12，四项各贡献大部分误差。"
+      },
+      "basis": [
+        {
+          "text": "s0 审计 D14；复算 forecast()",
+          "ref": "mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §3 D14"
+        }
+      ]
+    },
+    {
+      "id": "D15",
+      "seq": [
+        89,
+        89
+      ],
+      "kind": "report",
+      "layer": "推理层",
+      "key": false,
+      "title_plain": "结论：存在持续去极化内向流，T 型被否定",
+      "at_time": {
+        "mark": "partial",
+        "text": "比一句话案例诚实（承认 H5 支持弱、H7 未检验）；但一句话结论仍断言电流存在、家族被否。"
+      },
+      "hindsight": {
+        "mark": "no",
+        "text": "家族判断与真相相反。"
+      },
+      "basis": [
+        {
+          "text": "s0 审计 D15",
+          "ref": "mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §3 D15"
+        }
+      ]
+    }
+  ],
+  "corrections": [
+    {
+      "quote_ref": "REPORT.md:5",
+      "quote": "T 型低阈值钙（H1）、可用性再武装瞬变流（H6）、强负偏置测量伪影（H4）被计量探针 REFUTED",
+      "later": "真相正是 T 型钙电流，H6 的文字就是真相的机制。",
+      "correction": "否定 H6 与 T 型家族的两组实验都分不开真相与基线（分别约需 {{s0.P3.r_star}} 与 {{s0.P4.r_star}} 次）；可辩护的写法是“在 1–2 次重复下未检出，家族未被排除”。",
+      "basis": [
+        {
+          "text": "复算 table()",
+          "ref": "mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §1、§4"
+        }
+      ]
+    },
+    {
+      "quote_ref": "REPORT.md:5",
+      "quote": "去极化激活、无慢失活门/无超极化再武装状态依赖的持续内向流",
+      "later": "“存在额外电流”只挂在第一组实验一次偏高的测量上（G3）；该观测在真相下是 {{s0.P1.z_truth}} 个标准误的高抽样。",
+      "correction": "H5 只能停在“领先但未定”，不能写成机制已确定。",
+      "basis": [
+        {
+          "text": "复算 table()；攻击 G3（运行记录第 73 行）",
+          "ref": "mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §1、§3 D4–D5"
+        }
+      ]
+    }
+  ],
+  "unknowns": [
+    "四组实验都分不开真相与基线；预算内只有阻断剂实验可能给出决定性证据，而且要在第二、三组实验之前就留出预算。",
+    "失活门符号错误对数值的影响只在四组实验上复算过。",
+    "H7（带累积失活的持续内向流）一直没被检验。",
+    "所有实验共用同一条噪声流，各组误差并不独立；这对预测区间的系统影响没有量化。"
+  ]
+}

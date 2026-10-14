@@ -1,0 +1,26 @@
+{
+ "schema": "crucible.recompute/1",
+ "script": "mindset/轨迹偏离审计-s0-复算.py",
+ "values": {
+  "p0.P2.base_mean": 15.52,
+  "p0.P2.base_p_kill": 0.94,
+  "p0.P2.base_sd": 1.94,
+  "p0.P2.delta": 0.58,
+  "p0.P2.kill_hi": 19,
+  "p0.P2.kill_lo": 14,
+  "p0.P2.obs": 16.0,
+  "p0.P2.r_star": 42,
+  "p0.P2.reps": 4,
+  "p0.P2.truth_mean": 16.09,
+  "p0.P2.truth_p_kill": 0.99,
+  "p0.P2.truth_sd": 1.8,
+  "p0.P2.z_truth": -0.1,
+  "p0.replay.P2": 16.0,
+  "p0.replay.P2_reps": "14/15/18/17",
+  "p0.replay.P4": 16.0,
+  "p0.replay.P4_equals_P2_rep1": false,
+  "p0.replay.corr_r4_r1": 0.08,
+  "p0.replay.rerun_P4": 16.0,
+  "p0.replay.seeds": 40
+ }
+}

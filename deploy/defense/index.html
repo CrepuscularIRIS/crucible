@@ -1,747 +1,285 @@
-<title>Crucible 终审答辩</title>
+<title>一句话让 AI 研究一个神经元</title>
 <style>
-/* tokens · layout: one column of full-width screens (max 1160px), sticky index bar on top */
+/* tokens · layout: one reading column (max 880px), sticky case bar; cards are bordered blocks, no shadows */
 :root{
-  --bg:#f3f4f6; --surface:#ffffff; --ink:#15191f; --muted:#5b6370; --line:#d6dae0; --accent:#1e4f9c;
-  --ok:#16794a; --kill:#b42318; --scope:#935800;
-  --live:var(--accent);
-  --f-display:"IBM Plex Sans","Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
-  --f-body:"IBM Plex Sans","Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
-  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --bg:#eef0f3; --surface:#ffffff; --ink:#14181e; --muted:#59616d; --line:#d3d8df; --accent:#1d4e94;
+  --yes:#16794a; --no:#b42318; --warn:#8a5a00;
+  --f-display:"PingFang SC","Noto Sans SC","Microsoft YaHei","Source Han Sans SC",system-ui,sans-serif;
+  --f-body:"PingFang SC","Noto Sans SC","Microsoft YaHei","Source Han Sans SC",system-ui,sans-serif;
+  --f-mono:ui-monospace,"SFMono-Regular","Cascadia Mono",Menlo,Consolas,monospace;
   color-scheme:light;
 }
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#0e1116; --surface:#161a21; --ink:#e6e9ee; --muted:#9aa2ae; --line:#2a3039; --accent:#7ea9ff;
-    --ok:#4cc38a; --kill:#ff7b6b; --scope:#e2a64b; color-scheme:dark;
-  }
-}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1217; --surface:#171b22; --ink:#e5e8ed; --muted:#9aa3af; --line:#2b313b; --accent:#86aefc;
+  --yes:#4cc38a; --no:#ff7b6b; --warn:#e2a64b; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#0e1116; --surface:#161a21; --ink:#e6e9ee; --muted:#9aa2ae; --line:#2a3039; --accent:#7ea9ff;
-  --ok:#4cc38a; --kill:#ff7b6b; --scope:#e2a64b; color-scheme:dark;
-}
+  --bg:#0f1217; --surface:#171b22; --ink:#e5e8ed; --muted:#9aa3af; --line:#2b313b; --accent:#86aefc;
+  --yes:#4cc38a; --no:#ff7b6b; --warn:#e2a64b; color-scheme:dark}
 *{box-sizing:border-box}
-html{scroll-behavior:smooth}
-@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.55;
-  padding-inline:max(16px,env(safe-area-inset-left));-webkit-text-size-adjust:100%}
-@media (min-width:1400px){body{font-size:18px}}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 var(--f-body);padding-inline:16px;-webkit-text-size-adjust:100%}
+main,.bar-in{max-width:880px;margin-inline:auto;min-width:0}
 a{color:var(--accent)}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
-.wrap{max-width:1160px;margin-inline:auto;min-width:0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3{font-family:var(--f-display);line-height:1.3}
+h1{font-size:clamp(1.5rem,1.1rem + 1.8vw,2.2rem);margin:0 0 12px}
+h2{font-size:1.3rem;margin:0 0 14px}
+h3{font-size:1.05rem;margin:0}
+section{padding-block:32px;border-bottom:1px solid var(--line);scroll-margin-top:56px}
+p{margin:.45em 0}
+.muted{color:var(--muted)}.small{font-size:.86rem}
 .num,td,.mono{font-variant-numeric:tabular-nums}
-.mono,code{font-family:var(--f-mono);font-size:.88em}
-code{background:color-mix(in srgb,var(--line) 45%,transparent);padding:0 .3em;border-radius:3px;overflow-wrap:anywhere}
-
-/* sticky index bar */
-.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);margin-inline:calc(-1 * max(16px,env(safe-area-inset-left)));padding:8px max(16px,env(safe-area-inset-left))}
-.bar .wrap{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.brand{font-family:var(--f-display);font-weight:700;letter-spacing:.01em;margin-right:auto;min-width:0}
-.brand span{font-weight:400;color:var(--muted);font-size:.85em;margin-left:.4em}
-.idx{display:flex;gap:4px;flex-wrap:wrap;list-style:none;margin:0;padding:0}
-.idx a{display:inline-flex;gap:.35em;align-items:baseline;text-decoration:none;color:var(--muted);border:1px solid var(--line);
-  border-radius:4px;padding:2px 8px;font-size:.82rem;background:var(--surface)}
-.idx a b{font-family:var(--f-mono);font-weight:500;color:var(--ink)}
-.idx a[aria-current="true"]{border-color:var(--accent);color:var(--ink);box-shadow:inset 0 -2px 0 var(--accent)}
-.keys{font-size:.75rem;color:var(--muted)}
-.theme{font:inherit;font-size:.8rem;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:2px 8px;cursor:pointer}
-@media (max-width:640px){.idx a span{display:none}.keys{display:none}}
-
-/* screens */
-.screen{padding-block:44px 52px;border-bottom:1px solid var(--line);scroll-margin-top:52px}
-.head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;margin-bottom:22px}
-.head .n{font-family:var(--f-mono);color:var(--accent);font-weight:500}
-.head .tm{font-family:var(--f-mono);font-size:.8rem;color:var(--muted);border:1px solid var(--line);border-radius:3px;padding:0 6px}
-.head h2{flex-basis:100%;margin:0;font-family:var(--f-display);font-size:clamp(1.45rem,1.05rem + 1.6vw,2.2rem);line-height:1.25;font-weight:700;min-width:0}
-.say{margin:26px 0 0;padding:10px 14px;border-left:3px solid var(--accent);background:var(--surface);color:var(--muted);font-size:.95rem}
-.say b{color:var(--ink);font-weight:600;margin-right:.4em}
-h3{font-family:var(--f-display);font-size:1.05rem;margin:28px 0 10px}
-p{margin:.4em 0}
-.muted{color:var(--muted)}
-.small{font-size:.85rem}
-
-/* S1 */
-.kicker{font-size:.9rem;color:var(--muted);margin-bottom:10px}
-.thesis{font-family:var(--f-display);font-weight:700;font-size:clamp(1.8rem,1.1rem + 3.2vw,3.4rem);line-height:1.18;margin:0 0 16px;max-width:22em}
-.thesis em{font-style:normal;color:var(--accent)}
-.quote{margin:0 0 22px;color:var(--muted);max-width:46em}
-.quote cite{font-style:normal;font-size:.85rem;margin-left:.5em}
-.oneline{font-size:1.15rem;margin:0 0 18px}
-.stack{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1px;border:1px solid var(--line);border-radius:6px;background:var(--line);overflow:hidden}
-.stack > div{padding:14px 16px;background:var(--surface);min-width:0}
-.stack h4{margin:0 0 4px;font-family:var(--f-display);font-size:1rem}
-.stack p{margin:0;font-size:.9rem;color:var(--muted)}
-.tagline{font-family:var(--f-display);font-weight:600;margin:12px 0 0}
-
-/* tables */
+code,.mono,pre{font-family:var(--f-mono);font-size:.86em}
+.bar{position:sticky;top:0;z-index:3;background:var(--bg);border-bottom:1px solid var(--line);margin-inline:-16px;padding:8px 16px}
+.bar-in{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+.bar b{margin-right:auto;font-family:var(--f-display)}
+.bar ul{display:flex;flex-wrap:wrap;gap:6px;list-style:none;margin:0;padding:0}
+.bar a{display:inline-block;padding:2px 10px;border:1px solid var(--line);border-radius:4px;background:var(--surface);text-decoration:none;color:var(--muted);font-size:.86rem}
+.bar a[aria-current="page"]{color:var(--ink);border-color:var(--accent)}
+.headline{font-size:1.12rem;font-weight:600;margin:0 0 18px}
+.qa{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden;margin:0}
+.qa>div{background:var(--surface);padding:12px 14px;min-width:0}
+.qa dt{font-weight:700;font-size:.9rem;color:var(--accent)}
+.qa dd{margin:2px 0 0}
+pre{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 12px;overflow-x:auto;white-space:pre-wrap;overflow-wrap:anywhere}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px;margin:14px 0;min-width:0;scroll-margin-top:56px}
+.card header{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;margin-bottom:10px}
+.nid{font-family:var(--f-mono);color:var(--accent);font-weight:600}
+.meta{color:var(--muted);font-size:.85rem}
+.five{margin:0;display:grid;gap:6px}
+.five>div{display:grid;grid-template-columns:6.5em 1fr;gap:8px}
+.five dt{font-weight:700;color:var(--muted);font-size:.9rem}
+.five dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.aud{color:var(--warn);font-size:.8rem;white-space:nowrap}
+@media (max-width:520px){.five>div{grid-template-columns:1fr;gap:0}}
+.verdicts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:10px;margin:14px 0 6px}
+.verdict{border:1px solid var(--line);border-radius:6px;padding:10px 12px;min-width:0}
+.verdict h4{margin:0 0 4px;font-size:.82rem;color:var(--muted);font-weight:600}
+.verdict p{margin:0}
+.icon{font-weight:700;display:inline-block;min-width:1.2em}
+.m-yes{color:var(--yes)}.m-no{color:var(--no)}.m-partial{color:var(--warn)}
+.basis{font-size:.88rem;color:var(--muted)}
+.basis code{color:var(--ink)}
+details{margin-top:10px;border-top:1px dashed var(--line);padding-top:8px}
+summary{cursor:pointer;color:var(--accent);font-size:.9rem}
+details h5{margin:10px 0 4px;font-size:.85rem}
+details pre{font-size:.78rem;max-height:22em;overflow:auto}
+details ul{margin:0;padding-left:1.2em;font-size:.88rem}
+.tl{list-style:none;padding:0;margin:0 0 16px;display:grid;gap:4px}
+.tl a{display:flex;gap:10px;align-items:baseline;text-decoration:none;color:var(--ink);padding:4px 8px;border-radius:4px;border:1px solid transparent}
+.tl a[aria-current="true"]{border-color:var(--accent);background:var(--surface)}
+.tl .icons{font-weight:700;white-space:nowrap}
+.layers{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:8px;margin:0 0 10px;padding:0;list-style:none}
+.layers li{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px 10px;font-size:.9rem}
 .tbl{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
-table{border-collapse:collapse;width:100%;font-size:.9rem}
-th,td{text-align:left;vertical-align:top;padding:8px 12px;border-bottom:1px solid var(--line)}
-th{font-weight:600;color:var(--muted);font-size:.8rem;white-space:nowrap;background:color-mix(in srgb,var(--line) 30%,var(--surface))}
+table{border-collapse:collapse;width:100%;font-size:.88rem;min-width:620px}
+th,td{text-align:left;vertical-align:top;padding:8px 10px;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:600;font-size:.8rem}
 tr:last-child td{border-bottom:0}
-td.stage{font-weight:600;white-space:nowrap}
-.wide{min-width:880px}
-.mid{min-width:640px}
-
-/* chips */
-.chip{display:inline-block;font-family:var(--f-mono);font-size:.75rem;border:1px solid currentColor;border-radius:3px;padding:0 5px;margin:1px 2px 1px 0;white-space:nowrap;line-height:1.5}
-.L-M{color:var(--kill)}.L-H{color:var(--accent)}.L-C{color:var(--scope)}
-.st{font-size:.78rem;white-space:nowrap;font-weight:600}
-.st.done{color:var(--ok)}.st.port{color:var(--scope)}.st.design{color:var(--muted)}.st.none{color:var(--kill)}
-.layers{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:16px}
-.layers > div{border:1px solid var(--line);border-radius:6px;padding:10px 14px;background:var(--surface);min-width:0}
-.layers h4{margin:0;font-size:.95rem}
-.layers p{margin:2px 0 0;font-size:.86rem;color:var(--muted)}
-
-/* S3 */
-.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:16px}
-.tile{border:1px solid var(--line);border-radius:6px;padding:8px 12px;background:var(--surface);min-width:0}
-.tile b{display:block;font-family:var(--f-mono);font-size:1.35rem;font-weight:500;font-variant-numeric:tabular-nums}
-.tile span{font-size:.78rem;color:var(--muted)}
-.runmeta{font-size:.85rem;color:var(--muted);margin-bottom:12px}
-.panel{border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:12px}
-.svgbox{overflow-x:auto}
-.svgbox svg{display:block;min-width:720px;width:100%;height:auto}
-.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.8rem;color:var(--muted);margin-top:8px}
-.legend i{display:inline-block;width:18px;height:8px;border-radius:2px;vertical-align:middle;margin-right:5px}
-.legend i.thin{height:2px}
-.stepper{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px}
-.stepper button{font:inherit;font-size:.85rem;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:4px 10px;cursor:pointer}
-.stepper button:disabled{opacity:.45;cursor:default}
-.stepper .pos{font-family:var(--f-mono);font-size:.8rem;color:var(--muted)}
-.cap{flex:1 1 320px;min-width:0;font-size:.92rem}
-.probes{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px;margin-top:14px}
-.probe{border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:10px 12px;min-width:0}
-.probe.active{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
-.probe h4{margin:0;display:flex;justify-content:space-between;gap:8px;font-size:.95rem}
-.probe h4 .obs{font-family:var(--f-mono);font-weight:500;font-size:1.25rem}
-.probe .proto{font-size:.8rem;color:var(--muted);margin:2px 0 6px}
-.probe dl{display:grid;grid-template-columns:auto 1fr;gap:1px 8px;margin:6px 0;font-size:.78rem}
-.probe dt{color:var(--muted)}
-.probe dd{margin:0;font-family:var(--f-mono);overflow-wrap:anywhere}
-.probe ul{margin:6px 0 0;padding-left:1.1em;font-size:.82rem}
-.probe .gist{font-size:.84rem;margin-top:6px}
-.probe svg{display:block;width:100%;height:auto}
-.duo{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;margin-top:10px}
-.duo .panel h4{margin:0 0 6px;font-size:.95rem}
-.atk{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0}
-.atk span{font-family:var(--f-mono);font-size:.74rem;border:1px solid var(--line);border-radius:3px;padding:1px 6px}
-.atk .k-no_change{color:var(--muted)}
-.atk .k-constraint{color:var(--scope);border-color:currentColor}
-.atk .k-new_h{color:var(--accent);border-color:currentColor}
-
-/* svg classes (colors from tokens only) */
-.t-ink{fill:var(--ink)}.t-mut{fill:var(--muted)}
-.ln{stroke:var(--line)}.ln-mut{stroke:var(--muted)}.ln-acc{stroke:var(--accent)}.ln-ink{stroke:var(--ink)}
-.f-LIVE{fill:var(--live)}.f-SCOPED{fill:var(--scope)}.f-SUPPORTED{fill:var(--ok)}.f-REFUTED{fill:var(--kill)}
-.s-LIVE{stroke:var(--live)}.s-SCOPED{stroke:var(--scope)}.s-SUPPORTED{stroke:var(--ok)}.s-REFUTED{stroke:var(--kill)}
-.f-band{fill:color-mix(in srgb,var(--muted) 30%,transparent)}
-.f-win{fill:color-mix(in srgb,var(--accent) 12%,transparent)}
-.f-mask{fill:var(--surface);opacity:.82}
-.f-surf{fill:var(--surface)}
-.f-acc{fill:var(--accent)}.f-none{fill:none}
-
-/* S4 */
-.gates{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
-.gate{border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:12px 14px;min-width:0;display:flex;flex-direction:column;gap:6px}
-.gate h4{margin:0;font-size:1rem;display:flex;justify-content:space-between;gap:8px}
-.gate h4 .v{color:var(--ok);font-family:var(--f-mono);font-size:.85rem}
-.gate ul{margin:0;padding-left:1.1em;font-size:.88rem}
-.gate .inst{font-size:.82rem;border-top:1px dashed var(--line);padding-top:6px}
-.gate .org{font-size:.82rem;color:var(--muted);border-top:1px solid var(--line);padding-top:6px;margin-top:auto}
-.gate .org b{color:var(--ink);font-weight:600}
-.chain{font-family:var(--f-mono);font-size:.8rem;overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:10px 12px;margin-top:10px}
-.chain table{font-size:.8rem;min-width:560px}
-.chain td,.chain th{padding:3px 10px;border:0}
-.chain .h1{color:var(--accent)}.chain .h2{color:var(--ok)}.chain .h3{color:var(--scope)}.chain .h4{color:var(--kill)}
-.ba{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
-.ba > div{border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:10px 14px;min-width:0}
-.ba .was{color:var(--kill);font-weight:600;font-size:.85rem}
-.ba .now{color:var(--ok);font-weight:600;font-size:.85rem}
-
-/* S5 */
-.wall{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:10px}
-.brick{border:1px solid var(--line);border-top:3px solid var(--muted);border-radius:4px;background:var(--surface);padding:10px 14px;min-width:0}
-.brick.fixed{border-top-color:var(--ok)}.brick.open{border-top-color:var(--kill)}.brick.stop{border-top-color:var(--scope)}
-.brick h4{margin:0 0 4px;font-size:.98rem;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
-.brick p{font-size:.86rem;margin:.25em 0}
-.brick .fix{color:var(--muted)}
-.brick .src{font-size:.74rem;color:var(--muted);font-family:var(--f-mono);overflow-wrap:anywhere}
-.edge{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-top:14px}
-.edge > div{border:1px dashed var(--line);border-radius:6px;padding:10px 14px;min-width:0}
-.edge h4{margin:0 0 4px;font-size:.92rem}
-
-/* S6 */
-.nog{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
-.nog > div{border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:10px 14px;min-width:0}
-.nog h4{margin:0 0 4px;font-size:.95rem}
-.nog p{margin:0;font-size:.86rem;color:var(--muted)}
-details{border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:8px 14px;margin-top:16px}
-summary{cursor:pointer;font-weight:600}
-details dl{margin:8px 0 0;font-size:.9rem}
-details dt{font-weight:600;margin-top:8px}
-details dd{margin:2px 0 0;color:var(--muted)}
-footer{padding-block:24px 40px;font-size:.78rem;color:var(--muted)}
-footer ul{padding-left:1.1em;margin:6px 0}
-footer code{font-size:.95em}
+blockquote.orig{margin:14px 0 0;padding:10px 14px;border-left:3px solid var(--no);background:var(--surface)}
+blockquote.orig .src{display:block;font-size:.8rem;color:var(--muted)}
+.correction{padding:8px 14px 12px;border-left:3px solid var(--yes);background:var(--surface);margin-bottom:12px}
+.truth{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);padding:10px 14px;border-radius:0 6px 6px 0}
+.tag{display:inline-block;font-size:.75rem;border:1px solid currentColor;border-radius:3px;padding:0 5px;color:var(--muted)}
+.tag.todo{color:var(--warn)}
+.ver dl{display:grid;grid-template-columns:9em 1fr;gap:4px 12px;margin:0}
+.ver dt{color:var(--muted)}.ver dd{margin:0;min-width:0;overflow-wrap:anywhere}
+@media (max-width:520px){.ver dl{grid-template-columns:1fr}.ver dd{margin-bottom:6px}}
+.tools{margin:0 0 10px}
+.tools button{font:inherit;font-size:.86rem;color:var(--accent);background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:3px 10px;cursor:pointer}
+@media (prefers-reduced-motion: no-preference){html{scroll-behavior:smooth}}
 </style>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap">
-
-<div class="bar">
-  <div class="wrap">
-    <div class="brand">Crucible<span>XH-202619 · 方向 1B · 终审</span></div>
-    <ol class="idx" aria-label="屏幕索引">
-      <li><a href="#s1"><b>1</b><span>论点</span></a></li>
-      <li><a href="#s2"><b>2</b><span>断点</span></a></li>
-      <li><a href="#s3"><b>3</b><span>回放</span></a></li>
-      <li><a href="#s4"><b>4</b><span>闸门</span></a></li>
-      <li><a href="#s5"><b>5</b><span>边界</span></a></li>
-      <li><a href="#s6"><b>6</b><span>评分</span></a></li>
-    </ol>
-    <span class="keys">← → / j k 翻屏</span>
-    <button class="theme" type="button" id="theme">明暗</button>
-  </div>
-</div>
-
-<main class="wrap">
-
-<!-- ============ S1 ============ -->
-<section class="screen" id="s1" aria-labelledby="s1h">
-  <div class="head"><span class="n">01</span><span class="tm">0:00–0:35</span></div>
-  <div class="kicker">挑战杯 · 赛道一 方向 1B · 基于国产开源大模型的 AI Scientist</div>
-  <h2 class="thesis" id="s1h">生成假设已经廉价。<br><em>瓶颈是结论能不能被核验。</em></h2>
-  <p class="quote">「生成的假设已经变得廉价，只有被验证或可被验证的假设才有价值。」<cite>赛题解析会 · 需求拆解 §12.1</cite></p>
-  <p class="oneline"><b>Crucible</b>：模型提出假设，确定性系统裁决对错。</p>
-  <div class="stack">
-    <div><h4>Proma</h4><p>桌面端与前端。Agent 会话、子会话、工具调用、权限都是一等事件。</p></div>
-    <div><h4>Prime Agent</h4><p>Pi SDK 的分支：在 Pi 的 agent loop 上加了持久 IPython kernel、<code>rlm()</code> 递归子代理、可自改进 harness。</p></div>
-    <div><h4>research-mcp</h4><p>只追加的 journal + 三道闸（prereg / reconcile / trace），由宿主重算，模型改不了。</p></div>
-  </div>
-  <p class="tagline">运行时最小，约束最大。</p>
-
-  <h3>出题方自己的防造假逻辑，我们装进了 agent 内部</h3>
-  <div class="tbl"><table class="mid">
-    <thead><tr><th>组委会对参赛队（方向 2 防造假协议）</th><th>Crucible 对模型</th></tr></thead>
-    <tbody>
-      <tr><td>私有评测集：看不到答案再预测</td><td>预登记 sha256 冻结：观测之前锁定预测；已观测的格子拒绝再登记</td></tr>
-      <tr><td>复现容差 <span class="num">|ΔTSS| ≤ 0.02</span>：组委会自己重跑</td><td>重算闸：报告里每个数字由确定性计量重算对账</td></tr>
-      <tr><td>公开成绩不作终评依据</td><td>模型自述不作证据，只认 journal 里的计量事件</td></tr>
-    </tbody>
-  </table></div>
-  <p class="say"><b>口播</b>出题方自己就不信自报成绩。我们把同一套逻辑放进 agent 内部：模型可以有品味，结论由账本裁决。</p>
+<div class="bar"><div class="bar-in"><b>Crucible 评委报告</b><ul><li><a href="index.html" aria-current="page">一句话（主案例）</a></li><li><a href="report/s0.html">详细指令</a></li><li><a href="report/p0.html">P0 镜像</a></li></ul></div></div>
+<main>
+<section id="top" data-kind="first">
+<h1>一句话让 AI 研究一个神经元</h1>
+<p class="headline">这次结论与真相相反，错在用一次测量否定了一整类解释；三道程序检查都没有拦住它。</p>
+<dl class="qa"><div><dt>研究什么</dt><dd>这个神经元被压低之后，放电为什么会变多？用 8 次真实测量去分清几种解释。</dd></div><div><dt>怎么做的</dt><dd>先写下预测和判定规则再做真实测量：4 组实验，用掉 6/8 次测量，另跑了 65 次免费仿真。</dd></div><div><dt>结果改变了什么</dt><dd>第一次测量后它改做更短的压低实验；但那次只测了 1 次，就否定了 T 型钙电流这一整类解释。</dd></div><div><dt>下一步是什么</dt><dd>先在免费仿真里算清要测几次才分得开；分不开就换阻断剂实验，出一个峰就能排除“无额外电流”。</dd></div></dl>
 </section>
 
-<!-- ============ S2 ============ -->
-<section class="screen" id="s2" aria-labelledby="s2h">
-  <div class="head"><span class="n">02</span><span class="tm">0:35–1:25</span><h2 id="s2h">AI 科研在哪一步断，问题在哪一层</h2></div>
-  <div class="layers">
-    <div><h4><span class="chip L-M">M</span>Model</h4><p>换模型才能修。赛题锁定 Qwen，我们不改模型，只认定它的边界。</p></div>
-    <div><h4><span class="chip L-H">H</span>Harness</h4><p>运行时循环、工具、执行、闸门。Prime + research-mcp 确定性闸门。</p></div>
-    <div><h4><span class="chip L-C">C</span>Context</h4><p>模型每一步看到什么：研究状态做成 MCP、Skills、每步路由。</p></div>
-  </div>
-  <p class="small muted" style="margin-bottom:10px">判别标准：这个问题换什么能修好。Model 层不在本作品里硬修；Harness 和 Context 是全部发力点。</p>
-  <div class="tbl"><table class="wide">
-    <thead><tr><th>阶段</th><th>人怎么做</th><th>AI 出的错（我们真实踩到的）</th><th>层</th><th>最小修复</th><th>状态</th></tr></thead>
-    <tbody>
-      <tr><td class="stage">问题框定</td><td>导师把关值不值、有没有锚点</td><td>人给错先验，agent 照单全收。RGBD 会话：「本质上还是因为训练的 step 不够」</td><td><span class="chip L-C">C</span></td><td>开场契约；问题太宽或无锚点时停下</td><td><span class="st done">已实现</span> / <span class="st port">OOD 本轮移植</span></td></tr>
-      <tr><td class="stage">提出假设</td><td>多条竞争解释并存</td><td>过早收敛到一个漂亮故事。RGBD 两天换 6 次方向，每次配一个新故事</td><td><span class="chip L-M">M</span><span class="chip L-C">C</span></td><td>假设树做成 MCP；LIVE 集必须含伪影对手</td><td><span class="st done">已实现</span></td></tr>
-      <tr><td class="stage">实验设计</td><td>先写清预测和判据</td><td>先看结果再预测。旧数据 E1M：<span class="num">8/39</span> 先看后登记</td><td><span class="chip L-H">H</span></td><td>预登记 sha256 冻结；一格一登记；已观测格拒登记</td><td><span class="st done">已实现</span> <code>e1cb0f3</code></td></tr>
-      <tr><td class="stage">执行测量</td><td>仪器读数</td><td>常量冒充测量。初审旗舰 demo2r：<span class="num">16</span> 个探针里 <span class="num">10</span> 个是 <code>print(26.0)</code></td><td><span class="chip L-H">H</span></td><td>世界任务只收计量探针，由 meter 测量并扣预算；shell 探针拒绝</td><td><span class="st done">已实现</span> <code>e1cb0f3</code></td></tr>
-      <tr><td class="stage">分析归因</td><td>对照基线，问它杀死了什么</td><td>代理指标涨了就宣布成功。RGBD 代理准确率 <span class="num">71.52% → 81.43%</span>，主指标 <span class="num">56.42 → 55.82</span></td><td><span class="chip L-H">H</span><span class="chip L-C">C</span></td><td>指标由确定性程序从原始记录重算；状态迁移必须引用探针</td><td><span class="st done">已实现</span></td></tr>
-      <tr><td class="stage">对抗审查</td><td>同行攻击</td><td>同模型互审放大同一个错。Dojo「有官方录像」是两个席位都确认后才通过的幻觉</td><td><span class="chip L-C">C</span></td><td><code>rlm()</code> 子代理只看 claim，看不到辩护推理（信息不对称）</td><td><span class="st done">已实现</span></td></tr>
-      <tr><td class="stage">继续 / 转向 / 停止</td><td>导师判断止损</td><td>不会停，或乱转向。RGBD <span class="num">151</span> 个编号、<span class="num">175</span> 个脚本，有效独立实验远少于此</td><td><span class="chip L-C">C</span></td><td>预算硬上限；连续 ≥2 探针信念未动走分诊</td><td><span class="st done">预算已实现</span> / <span class="st port">分诊本轮移植</span></td></tr>
-      <tr><td class="stage">报告</td><td>图表与正文数字一致</td><td>图、表、正文数字对不上。SPOT：最强模型找勘误召回 <span class="num">21.1%</span></td><td><span class="chip L-H">H</span></td><td>reconcile：每个数字带 <code>(P#)</code>/<code>(F)</code> 出处并重算，对不上拒绝发布</td><td><span class="st done">已实现</span></td></tr>
-      <tr><td class="stage">长程累积</td><td>关键点复核</td><td>每步 99%，几十步后成功率很低</td><td><span class="chip L-H">H</span></td><td>闸门即确定性检查点，误差在每一步清零</td><td><span class="st done">已实现</span></td></tr>
-      <tr><td class="stage">上下文压缩</td><td>写实验记录</td><td>压缩摘要是模型自写的有损陈述</td><td><span class="chip L-C">C</span></td><td>每次压缩后，下一次工具调用必须是 <code>rlm()</code> 对持久状态复核</td><td><span class="st done">已实现</span></td></tr>
-      <tr><td class="stage">概念与产物</td><td>查原文、查文件</td><td>同名不同义（step）；编造接口；Dojo 没有 Video</td><td><span class="chip L-C">C</span></td><td>术语卡；引用符号必须可解析；产物清单带哈希</td><td><span class="st design">设计</span></td></tr>
-    </tbody>
-  </table></div>
-  <p class="small muted" style="margin-top:8px">文献新颖性门与假设质量门只在新颖性任务里运行，原因见 <a href="#s5">边界墙</a>。</p>
-  <p class="say"><b>口播</b>每一行读法：人怎么做，AI 少了什么，我们真实踩到的坑，问题在哪一层，最小修复。能交给程序判对错的才做成机制，其余如实标设计。</p>
+<section id="task">
+<h2>示例任务</h2>
+<p>NeuronBench 的 ca_rebound 是一个模拟神经元，叠加了一个身份未知的额外电流。agent 只能做 8 次计费的真实测量，仿真免费；最后要写出机制结论，并预报 6 个没做过的实验。</p>
+<p class="small muted">用户发给系统的原话（逐字；会话导出见 mindset/评委视角-作品打磨与轨迹审查-20261014.md §5.1）：</p>
+<pre>帮我研究一下 ca_rebound 这个神经元的放电机制。</pre>
+<p class="small">在 Proma 里回放这一次：打开任一 agent 会话 → 底栏“研究画布” → 归档回放 → 选 <code>research/campaigns/2026-10-14-glm53flash-oneline-ca_rebound</code>。画布上线前，可直接读该目录下的 <code>journal.jsonl</code>（每行一个事件，行号即本页引用的“运行记录第 N 行”）。</p>
 </section>
 
-<!-- ============ S3 ============ -->
-<section class="screen" id="s3" aria-labelledby="s3h">
-  <div class="head"><span class="n">03</span><span class="tm">1:25–2:55</span><h2 id="s3h">一次真实运行的回放：GLM 5.3 Flash · ca_rebound · seed 0</h2></div>
-  <div class="tiles" id="tiles"></div>
-  <p class="runmeta" id="runmeta"></p>
-  <div class="panel">
-    <div class="svgbox" id="timeline"></div>
-    <div class="legend">
-      <span><i style="background:var(--live)"></i>LIVE</span>
-      <span><i style="background:var(--scope)"></i>SCOPED 收窄</span>
-      <span><i style="background:var(--ok)"></i>SUPPORTED</span>
-      <span><i class="thin" style="background:var(--kill)"></i>REFUTED（进 graveyard）</span>
-      <span>竖线 = 计量探针落地（读数）</span>
-    </div>
-    <div class="stepper">
-      <button type="button" id="prev">◀ 上一步</button>
-      <button type="button" id="next">下一步 ▶</button>
-      <span class="pos" id="pos"></span>
-      <span class="cap" id="cap" aria-live="polite"></span>
-    </div>
-  </div>
-  <div class="probes" id="probes"></div>
-  <div class="duo">
-    <div class="panel">
-      <h4>对抗：<span class="num" id="atk-n"></span> 条攻击全部入账</h4>
-      <p class="small muted">rlm 对抗者只拿到 H5 的 claim，看不到辩护推理。</p>
-      <div class="atk" id="atk"></div>
-      <p class="small" id="atk-sum"></p>
-    </div>
-    <div class="panel">
-      <h4>终局预报 MSE <span class="num mono" id="mse"></span></h4>
-      <div id="fstrip"></div>
-      <p class="small muted">同 world 同 seed 的历史运行。单 seed、方差大，这张图不用来给模型排名。</p>
-    </div>
-  </div>
-  <p class="say"><b>口播</b>每次状态迁移都挂一个预登记 sha256 和一次计量。P2 读数 34 推翻了 H1 的预测，模型据此提出新假设，P3、P4 再裁决。对抗者 11 条攻击全部入账，其中一条变成 H7。</p>
+<section id="feedback">
+<h2>一次反馈改变了下一步实验</h2>
+<article class="card" data-kind="feedback">
+<p><b>原来的实验</b>（P1）：<span class="from">hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)</span></p>
+<p><b>原预测</b>：H1（强反弹电流） 预计 18–30；H2（外向钾电流） 预计 0–14.2；H3（无额外电流） 预计 14.3–17.4</p>
+<p><b>实测</b>：测 3 次平均 17.33，落在 H3（无额外电流） 的预测区间；随后 H1 收窄、H2 改为有争议。</p>
+<p><b>下一组实验</b>（P2）改为：<span class="to">brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)</span></p>
+<p class="why"><b>改变理由</b>（P2 事先写下的问题，逐字）：brief hyperpol 40ms 协议下真细胞 spike_count（reps=1）：ref/slow_na 校准 13.0、weakIh 校准 17.0、weakT 校准 20.0——三分 H3（无额外效应）/ H4（弱内向，慢 Ih flavour）/ H5（弱内向，快 T flavour）。</p>
+<details><summary>证据（原始记录）</summary><pre>30: {&quot;ts&quot;:&quot;2026-10-14T12:51:13.515Z&quot;,&quot;op&quot;:&quot;prereg.write&quot;,&quot;pid&quot;:&quot;P1&quot;,&quot;spec_sha256&quot;:&quot;f65083b7df25ae7b822ddb0f2f941a07812a169253dc8563f4d73b6c645f094d&quot;,&quot;prereg_path&quot;:&quot;prereg/P1.json&quot;,&quot;prev&quot;:&quot;7cced9b2bb5b0468de9ff7d4f26e4dd6c978e001799bbd31783bb1554a8b9f35&quot;}
+32: {&quot;ts&quot;:&quot;2026-10-14T12:51:23.632Z&quot;,&quot;op&quot;:&quot;world.observe&quot;,&quot;world&quot;:&quot;ca_rebound&quot;,&quot;seed&quot;:20261014,&quot;protocol&quot;:&quot;hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)&quot;,&quot;reps&quot;:3,&quot;blockers&quot;:&quot;&quot;,&quot;cost&quot;:3,&quot;spike_count&quot;:17.3333,&quot;pid&quot;:&quot;P1&quot;,&quot;prev&quot;:&quot;0a01983d1a66cd2c64ffda4eda4c58c5c9b91cdeb63270355e4c534574d2e2f8&quot;}
+34: {&quot;ts&quot;:&quot;2026-10-14T12:53:19.969Z&quot;,&quot;op&quot;:&quot;claim.transition&quot;,&quot;id&quot;:&quot;H1&quot;,&quot;to&quot;:&quot;SCOPED&quot;,&quot;by_probe&quot;:&quot;P1&quot;,&quot;note&quot;:&quot;P1 观测 17.33 落入 H3 频段 [14.3,17.4]，未达 H1 冻结带 [18,30]：超极化释放的强瞬态反弹（≥+2.7 于基线）不存在。观测相对基线仅 +2.0，弱效应变体（小电导内向流）留待 H4 判别，故 SCOPED 而非 REFUTED。&quot;,&quot;prev&quot;:&quot;e039ef8f174d97f1167a8872c75c173b3ad5ae0db1bcea0ea8b0cc2517c316ca&quot;}
+53: {&quot;ts&quot;:&quot;2026-10-14T12:59:29.950Z&quot;,&quot;op&quot;:&quot;claim.transition&quot;,&quot;id&quot;:&quot;H2&quot;,&quot;to&quot;:&quot;CONTESTED&quot;,&quot;note&quot;:&quot;P1 观测 17.33 落在 H2 预注册带 [0,14.2] 之外：『超极化后压抑』预测与观测矛盾。因频段未命中无法按 kill 分支正式 REFUTED（须值在带内），先迁 CONTESTED 等待 P2 在带内判别；若 P2 观测再次高于 15.4 则 H4/H3 频段命中时 H2 一并 kill。&quot;,&quot;prev&quot;:&quot;54715115fd62d11b9a529e5af28003c50165b536efeb2ac5e1ff5a7e627a7415&quot;}
+63: {&quot;ts&quot;:&quot;2026-10-14T13:04:14.282Z&quot;,&quot;op&quot;:&quot;prereg.write&quot;,&quot;pid&quot;:&quot;P2&quot;,&quot;spec_sha256&quot;:&quot;79578c09448409ca65b99cf8fac5185f7f2cc6d113637fc0aeb1a5828da24748&quot;,&quot;prereg_path&quot;:&quot;prereg/P2.json&quot;,&quot;prev&quot;:&quot;2f1c5dc90149847e7e68fede197a14884305d14ac7080f60a5563bb89e981910&quot;}</pre></details>
+</article>
 </section>
 
-<!-- ============ S4 ============ -->
-<section class="screen" id="s4" aria-labelledby="s4h">
-  <div class="head"><span class="n">04</span><span class="tm">2:55–3:50</span><h2 id="s4h">三道闸：宿主重算，不读作文</h2></div>
-  <div class="gates">
-    <div class="gate">
-      <h4>prereg 闸<span class="v" id="g-prereg"></span></h4>
-      <ul>
-        <li>预登记规约冻结并计算 sha256</li>
-        <li>没有预登记的探针拒绝执行</li>
-        <li>同一格子只许一次登记；已观测的格子拒绝登记</li>
-        <li>频段须能判别竞争假设</li>
-      </ul>
-      <p class="inst">本次：P1 规约 <code>ec1e10df…</code> 10:26:08 冻结 → 10:26:14 开测 → 10:26:16 读数 32</p>
-      <p class="org"><b>对应组委会</b>私有评测集：看不到答案再预测</p>
-    </div>
-    <div class="gate">
-      <h4>reconcile 闸<span class="v" id="g-reconcile"></span></h4>
-      <ul>
-        <li>报告里每个数字必须带出处 <code>(P#)</code> 或 <code>(F)</code></li>
-        <li>由计量事件重算对账，对不上拒绝发布</li>
-        <li>没有出处的模拟值只能取整写，不许冒充观测</li>
-      </ul>
-      <p class="inst">本次：REPORT 写「32 (P1)」「13.5 (P3)」「30.883 (F)」，逐个对上 <code>world.observe</code> / <code>world.forecast</code></p>
-      <p class="org"><b>对应组委会</b>复现容差：组委会自己重跑</p>
-    </div>
-    <div class="gate">
-      <h4>trace 闸<span class="v" id="g-trace"></span></h4>
-      <ul>
-        <li>journal 只追加；每行 <code>prev</code> = 上一行原文的 sha256</li>
-        <li>终态迁移必须点名一次已落地的探针</li>
-        <li>register.json 只是重放缓存，手改会被当场抓住</li>
-      </ul>
-      <p class="inst">本次：制作本页时用 Python 独立重算，<span class="num">90/90</span> 行链完整；register 中 tampers 为空</p>
-      <p class="org"><b>对应组委会</b>公开成绩不作终评依据</p>
-    </div>
-  </div>
-  <div class="chain" aria-label="journal 哈希链片段">
-    <table>
-      <thead><tr><th>行</th><th>事件</th><th>prev（上一行 sha256）</th><th>本行 sha256</th></tr></thead>
-      <tbody>
-        <tr><td>34</td><td>prereg.write P1</td><td>6b73303b3e4f…</td><td class="h1">beb46088904b…</td></tr>
-        <tr><td>35</td><td>probe.start P1</td><td class="h1">beb46088904b…</td><td class="h2">52c791891e26…</td></tr>
-        <tr><td>36</td><td>world.observe → 32</td><td class="h2">52c791891e26…</td><td class="h3">f0587e8ea2fb…</td></tr>
-        <tr><td>37</td><td>probe.land P1</td><td class="h3">f0587e8ea2fb…</td><td class="h4">a21204622a08…</td></tr>
-      </tbody>
-    </table>
-    <p class="small muted" style="margin:6px 0 0;font-family:var(--f-body)">改任何一行，下一行的 prev 就对不上。如实：链没有外部锚点。</p>
-  </div>
+<section id="nodes">
+<h2>关键节点</h2>
+<p class="small muted">每个节点两栏判定：左栏只看当时 agent 能知道的信息，右栏对照真相。按 ← / → 在节点间跳转。</p>
+<div class="tools"></div>
+<ol class="tl"><li><a href="#D3"><span class="mono">D3</span><span class="icons"><span class="m-yes" title="当时合理">✓</span> <span class="m-partial" title="事后部分正确">⚠</span></span><span>第一次测量：没落进强反弹的区间，只收窄、不否定</span></a></li><li><a href="#D6"><span class="mono">D6</span><span class="icons"><span class="m-no" title="当时不合理">✕</span> <span class="m-no" title="事后错误">✕</span></span><span>一次测量否定整个 T 型家族</span></a></li><li><a href="#D9"><span class="mono">D9</span><span class="icons"><span class="m-no" title="当时不合理">✕</span> <span class="m-no" title="事后错误">✕</span></span><span>把“没测到”写成“不存在”</span></a></li><li><a href="#D10"><span class="mono">D10</span><span class="icons"><span class="m-partial" title="当时部分合理">⚠</span> <span class="m-no" title="事后错误">✕</span></span><span>从没用过阻断剂：预算内唯一的决定性实验</span></a></li></ol>
+<h3>问题出在哪</h3>
+<ul class="layers"><li><b>接入层</b>：<a href="#D10">D10</a>、<a href="#D11">D11</a></li><li><b>推理层</b>：<a href="#D1">D1</a>、<a href="#D3">D3</a>、<a href="#D4">D4</a>、<a href="#D5">D5</a>、<a href="#D6">D6</a>、<a href="#D7">D7</a>、<a href="#D8">D8</a>、<a href="#D9">D9</a></li></ul>
+<article class="card node" data-kind="node" data-key id="D3">
+<header><span class="nid">D3</span><h3>第一次测量：没落进强反弹的区间，只收窄、不否定</h3><span class="meta">运行记录第 30–34 行 · 推理层</span></header>
+<dl class="five"><div><dt>当时知道</dt><dd>登记时仍在考虑：H1（强反弹电流）、H2（外向钾电流）、H3（无额外电流）。之前还没有真实测量。上次登记之后没有同协议仿真；全程同协议候选仿真值 14–21（6 次；候选参数未记录，含参数差异）。</dd></div><div><dt>为什么这样选</dt><dd>真细胞在超极化条件+去极化测试协议下的 mean spike_count（reps=3 均值）相对裸细胞基线（15.3, n=3）是增强、压低还是无差？三分 H1（瞬态内向）/ H2（适应压抑）/ H3（无额外效应）。</dd></div><div><dt>期待看到</dt><dd>若结果落在 0–14.2：否定 H1；18–30：支持 H1；14.3–17.4：收窄 H1。</dd></div><div><dt>实际发生</dt><dd>测了 3 次，平均得 17.33，落在 H3 的预测区间。</dd></div><div><dt>因此调整</dt><dd>H1 收窄到更小的说法、H2 改为有争议（判断，非测量，第 53 行）。下一组实验 P2 改用「brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)」。</dd></div></dl>
+<div class="verdicts"><div class="verdict" data-col="at-time"><h4>当时是否合理</h4><p><span class="icon m-yes" aria-hidden="true">✓</span><b class="word m-yes">合理</b>。选了池内较优的协议、测 3 次；结果没落进强反弹区间就只收窄，没有一口否定，克制。</p></div><div class="verdict" data-col="hindsight"><h4>事后对照真相</h4><p><span class="icon m-partial" aria-hidden="true">⚠</span><b class="word m-partial">部分正确</b>。强反弹区间是按强电流画的；在这个实验上真相与无额外电流平均只差 0.42 个峰，这次测量本身几乎不含判别信息。</p></div></div>
+<p class="basis">依据：复算：该协议基线 15.88、真相 16.29，要分开约需 61 次（<code>mindset/轨迹偏离审计-ca_rebound-一句话-20261014.md §1、§2 D3</code>）</p>
 
-  <h3>我们自己的系统也被绕过过：初审后自查与修复（<code>e1cb0f3</code>）</h3>
-  <div class="ba">
-    <div><p class="was">初审旗舰 demo2r</p><p><span class="num">16</span> 个探针里 <span class="num">10</span> 个是常量回显 <code>print(26.0)</code>，闸照样放行。</p><p class="now">修复</p><p>证据原语统一成计量探针；shell 探针在世界任务里一律拒绝。</p></div>
-    <div><p class="was">E1M 六臂</p><p><span class="num">8/39</span> 先看后登记。</p><p class="now">修复</p><p>格子锁：同格一次登记，已观测格拒登记；预算真拦截。</p></div>
-    <div><p class="was">怎么发现的</p><p>零 LLM 的确定性审计复查初审版运行记录。</p><p class="now">结论</p><p>Skill 里的文字约束会被绕过；漏洞出在两道闸之间的缝。修法放在结构上。</p></div>
-  </div>
-  <p class="say"><b>口播</b>闸只查账。我们初审版的旗舰案例被零 LLM 审计抓到两条漏洞，修在结构上。这件事本身说明：可核验性让我们发现了自己的问题。</p>
+<details><summary>证据（原始记录 5 行 · 推导值 · 复算 · 审查者 · 干预）</summary>
+<h5>① 原始记录</h5><pre>30: {&quot;ts&quot;:&quot;2026-10-14T12:51:13.515Z&quot;,&quot;op&quot;:&quot;prereg.write&quot;,&quot;pid&quot;:&quot;P1&quot;,&quot;spec_sha256&quot;:&quot;f65083b7df25ae7b822ddb0f2f941a07812a169253dc8563f4d73b6c645f094d&quot;,&quot;prereg_path&quot;:&quot;prereg/P1.json&quot;,&quot;prev&quot;:&quot;7cced9b2bb5b0468de9ff7d4f26e4dd6c978e001799bbd31783bb1554a8b9f35&quot;}
+31: {&quot;ts&quot;:&quot;2026-10-14T12:51:20.411Z&quot;,&quot;op&quot;:&quot;probe.start&quot;,&quot;pid&quot;:&quot;P1&quot;,&quot;prev&quot;:&quot;c863c85e976198f23a8cb36a914fd6f308347dd127bbc24081846ca40fb977f0&quot;}
+32: {&quot;ts&quot;:&quot;2026-10-14T12:51:23.632Z&quot;,&quot;op&quot;:&quot;world.observe&quot;,&quot;world&quot;:&quot;ca_rebound&quot;,&quot;seed&quot;:20261014,&quot;protocol&quot;:&quot;hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)&quot;,&quot;reps&quot;:3,&quot;blockers&quot;:&quot;&quot;,&quot;cost&quot;:3,&quot;spike_count&quot;:17.3333,&quot;pid&quot;:&quot;P1&quot;,&quot;prev&quot;:&quot;0a01983d1a66cd2c64ffda4eda4c58c5c9b91cdeb63270355e4c534574d2e2f8&quot;}
+33: {&quot;ts&quot;:&quot;2026-10-14T12:51:23.633Z&quot;,&quot;op&quot;:&quot;probe.land&quot;,&quot;pid&quot;:&quot;P1&quot;,&quot;exit_code&quot;:0,&quot;metric&quot;:17.3333,&quot;prev&quot;:&quot;9d986761f06dce481d2389e518b446d85aca270e3f43a9c86fe19df349ba1a74&quot;}
+34: {&quot;ts&quot;:&quot;2026-10-14T12:53:19.969Z&quot;,&quot;op&quot;:&quot;claim.transition&quot;,&quot;id&quot;:&quot;H1&quot;,&quot;to&quot;:&quot;SCOPED&quot;,&quot;by_probe&quot;:&quot;P1&quot;,&quot;note&quot;:&quot;P1 观测 17.33 落入 H3 频段 [14.3,17.4]，未达 H1 冻结带 [18,30]：超极化释放的强瞬态反弹（≥+2.7 于基线）不存在。观测相对基线仅 +2.0，弱效应变体（小电导内向流）留待 H4 判别，故 SCOPED 而非 REFUTED。&quot;,&quot;prev&quot;:&quot;e039ef8f174d97f1167a8872c75c173b3ad5ae0db1bcea0ea8b0cc2517c316ca&quot;}</pre>
+<h5>② 推导值（由记录推出）</h5><ul><li>同协议候选仿真值（全程）14–21，6 次</li><li>观测 17.33（3 次）对各预测区间：H1 [18, 30]；H2 [0, 14.2]；H3 [14.3, 17.4] ← 观测落在此</li></ul>
+<h5>③ 复算</h5><p class="small">键 <code>one.P1.base_mean</code>、<code>one.P1.delta</code>、<code>one.P1.r_star</code>、<code>one.P1.truth_mean</code>，来自 <code>recompute.json</code>，脚本 <code>mindset/轨迹偏离审计-复算.py</code></p>
+<h5>④ 审查者</h5><ul><li>无（本节点没有对应的攻击记录）</li></ul>
+<h5>⑤ 人的干预</h5><p class="small muted">本归档没有干预文件。</p>
+</details>
+</article>
+<article class="card node" data-kind="node" data-key id="D6">
+<header><span class="nid">D6</span><h3>一次测量否定整个 T 型家族</h3><span class="meta">运行记录第 67–68 行 · 推理层</span></header>
+<dl class="five"><div><dt>当时知道</dt><dd>登记时仍在考虑：H2（外向钾电流）、H3（无额外电流）、H4（弱内向电流）、H5（快 T 型弱电流）。之前的真实测量：P1 得 17.33（3 次）。同协议候选仿真值 13–20（8 次；候选参数未记录，含参数差异）。</dd></div><div><dt>为什么这样选</dt><dd>想用一次测量同时分清三种解释：无额外电流、慢的弱内向电流、快的弱 T 型电流。 <span class="aud">（审计补写）</span></dd></div><div><dt>期待看到</dt><dd>若结果落在 10–15.5：否定 H5、支持 H3；15.6–18.4：支持 H4、否定 H5；18.5–26：支持 H5、否定 H3、收窄 H4。</dd></div><div><dt>实际发生</dt><dd>测了 1 次，平均得 13，落在 H3 的预测区间。</dd></div><div><dt>因此调整</dt><dd>H5 被否定、H3 得到支持、H4 改为有争议（判断，非测量，第 69 行）。下一组实验 P3 改用「brief step (12 uA, 40 ms)」。</dd></div></dl>
+<div class="verdicts"><div class="verdict" data-col="at-time"><h4>当时是否合理</h4><p><span class="icon m-no" aria-hidden="true">✕</span><b class="word m-no">不合理</b>。同协议候选仿真值已散得很开（见证据②），一次测量分不开宽约 3 个峰的三个区间；“快 T 型”只仿真过一组参数，却据此否定了整个家族。</p></div><div class="verdict" data-col="hindsight"><h4>事后对照真相</h4><p><span class="icon m-no" aria-hidden="true">✕</span><b class="word m-no">错误</b>。真相正是 T 型；在这个实验上，真相和无额外电流平均只差 0.67 个峰，而一次测量的散布约 1.94 个峰。</p></div></div>
+<p class="basis">依据：复算：基线 15.5 对真相 16.17，σ 1.94，分开约需 34 次（<code>mindset/轨迹偏离审计-ca_rebound-一句话-20261014.md §1、§2 D6</code>）</p>
+<p class="small"><b>当时本可以选：</b>按预登记分支：否定快 T 型、支持无额外电流（若真相是弱 T 型，这一步就是误判）；只收窄为“40 ms 实验单次未见增强”，保留 T 型家族；先在仿真里估所需次数（复算约 34 次，超预算，应换实验）</p>
+<details><summary>证据（原始记录 11 行 · 推导值 · 复算 · 审查者 · 干预）</summary>
+<h5>① 原始记录</h5><pre>55: {&quot;ts&quot;:&quot;2026-10-14T13:01:36.953Z&quot;,&quot;op&quot;:&quot;world.simulate&quot;,&quot;world&quot;:&quot;ca_rebound&quot;,&quot;seed&quot;:20261014,&quot;protocol&quot;:&quot;brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)&quot;,&quot;mode&quot;:&quot;candidate&quot;,&quot;mean_spike_count&quot;:16.5,&quot;prev&quot;:&quot;ae436e186793fe38c14a7d958f04e4bbaa01bac823d2296106a745c8019f3fdb&quot;}
+56: {&quot;ts&quot;:&quot;2026-10-14T13:01:38.702Z&quot;,&quot;op&quot;:&quot;world.simulate&quot;,&quot;world&quot;:&quot;ca_rebound&quot;,&quot;seed&quot;:20261014,&quot;protocol&quot;:&quot;brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)&quot;,&quot;mode&quot;:&quot;candidate&quot;,&quot;mean_spike_count&quot;:14.5,&quot;prev&quot;:&quot;ba575fc95e5b5efbbdc3a20d7e54cd18616f83889df65c993b39d01ffa7fbd17&quot;}
+57: {&quot;ts&quot;:&quot;2026-10-14T13:01:40.558Z&quot;,&quot;op&quot;:&quot;world.simulate&quot;,&quot;world&quot;:&quot;ca_rebound&quot;,&quot;seed&quot;:20261014,&quot;protocol&quot;:&quot;brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)&quot;,&quot;mode&quot;:&quot;candidate&quot;,&quot;mean_spike_count&quot;:16.5,&quot;prev&quot;:&quot;a654459f9c65188213b5d371a757f63b3a4eb755cb4c175578e3930c24f0ea63&quot;}
+58: {&quot;ts&quot;:&quot;2026-10-14T13:01:42.650Z&quot;,&quot;op&quot;:&quot;world.simulate&quot;,&quot;world&quot;:&quot;ca_rebound&quot;,&quot;seed&quot;:20261014,&quot;protocol&quot;:&quot;brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)&quot;,&quot;mode&quot;:&quot;candidate&quot;,&quot;mean_spike_count&quot;:17,&quot;prev&quot;:&quot;48ab143860fbdca8f6b4243a493e5a5bd03859fbd20783a341e380710ce6661f&quot;}
+59: {&quot;ts&quot;:&quot;2026-10-14T13:02:42.533Z&quot;,&quot;op&quot;:&quot;world.simulate&quot;,&quot;world&quot;:&quot;ca_rebound&quot;,&quot;seed&quot;:20261014,&quot;protocol&quot;:&quot;brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)&quot;,&quot;mode&quot;:&quot;candidate&quot;,&quot;mean_spike_count&quot;:13,&quot;prev&quot;:&quot;97e55a21a2a2d0883b769f4d1c33cbdcd9a0c491da171b9fa8fe5472f5b00857&quot;}
+60: {&quot;ts&quot;:&quot;2026-10-14T13:02:43.890Z&quot;,&quot;op&quot;:&quot;world.simulate&quot;,&quot;world&quot;:&quot;ca_rebound&quot;,&quot;seed&quot;:20261014,&quot;protocol&quot;:&quot;brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)&quot;,&quot;mode&quot;:&quot;candidate&quot;,&quot;mean_spike_count&quot;:13,&quot;prev&quot;:&quot;95fdd239bceaf2805e6bb70ccee554a1d8bfaf02ff837052722d84de4e82061e&quot;}
+61: {&quot;ts&quot;:&quot;2026-10-14T13:02:45.910Z&quot;,&quot;op&quot;:&quot;world.simulate&quot;,&quot;world&quot;:&quot;ca_rebound&quot;,&quot;seed&quot;:20261014,&quot;protocol&quot;:&quot;brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)&quot;,&quot;mode&quot;:&quot;candidate&quot;,&quot;mean_spike_count&quot;:17,&quot;prev&quot;:&quot;3ef8f6d0a75f4c8f2ccd9d6d3a27968dff89ac565e4b9be7df3ae585a8f24ded&quot;}
+62: {&quot;ts&quot;:&quot;2026-10-14T13:02:47.119Z&quot;,&quot;op&quot;:&quot;world.simulate&quot;,&quot;world&quot;:&quot;ca_rebound&quot;,&quot;seed&quot;:20261014,&quot;protocol&quot;:&quot;brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)&quot;,&quot;mode&quot;:&quot;candidate&quot;,&quot;mean_spike_count&quot;:20,&quot;prev&quot;:&quot;5c86a16fcbf6ea48cac4130b0a6b073b1a73c9245e965d7e732e907da224c507&quot;}
+65: {&quot;ts&quot;:&quot;2026-10-14T13:04:20.396Z&quot;,&quot;op&quot;:&quot;world.observe&quot;,&quot;world&quot;:&quot;ca_rebound&quot;,&quot;seed&quot;:20261014,&quot;protocol&quot;:&quot;brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)&quot;,&quot;reps&quot;:1,&quot;blockers&quot;:&quot;&quot;,&quot;cost&quot;:1,&quot;spike_count&quot;:13,&quot;pid&quot;:&quot;P2&quot;,&quot;prev&quot;:&quot;a803345f22e124b90a0d02a034afa2d31f2687a7dfaffb760848890065ea081e&quot;}
+67: {&quot;ts&quot;:&quot;2026-10-14T13:08:24.223Z&quot;,&quot;op&quot;:&quot;claim.transition&quot;,&quot;id&quot;:&quot;H5&quot;,&quot;to&quot;:&quot;REFUTED&quot;,&quot;by_probe&quot;:&quot;P2&quot;,&quot;note&quot;:&quot;P2 观测 13.0 落入冻结带 [10,15.5]：brief hyperpol 40ms 协议下真细胞与裸细胞基线完全一致（13.0 vs 校准 13.0），快瞬态 T 型样 flavour 预测的 ≥+5 增强不存在。weakT 在同 draws 校准预测 20.0，偏差 -7.0。&quot;,&quot;prev&quot;:&quot;7f9e79007f65099b75ab9e5027285ccf13f5984f0091aa4fd24173b23606e322&quot;}
+68: {&quot;ts&quot;:&quot;2026-10-14T13:08:24.225Z&quot;,&quot;op&quot;:&quot;claim.transition&quot;,&quot;id&quot;:&quot;H3&quot;,&quot;to&quot;:&quot;SUPPORTED&quot;,&quot;by_probe&quot;:&quot;P2&quot;,&quot;note&quot;:&quot;P2 观测 13.0 落入冻结带 [10,15.5] 且与 ref/slow_na 校准值（13.0）完全一致：brief 协议无增强。P1 协议观测 17.33 vs slow_na 校准 15.67 的 +1.67 残差归入慢 Na 失活动力学的参数不确定性（P1 协议上 H1/H2/H3 频段 [14.3,17.4] 未区分该细节）。放电表观变化由基线通道（含 slow_na 动力学）解释，无需额外反弹电流。&quot;,&quot;prev&quot;:&quot;3b64b355290bffa6985612cfe4b8fbee40f7c6b36ec5fdf877b5d305a46ce58d&quot;}</pre>
+<h5>② 推导值（由记录推出）</h5><ul><li>同协议候选仿真值（最近窗口）13–20，8 次，第 55、56、57、58、59、60、61、62 行；候选参数未记录，含参数差异</li><li>同协议候选仿真值（全程）13–22，16 次</li><li>观测 13（1 次）对各预测区间：H3 [10, 15.5] ← 观测落在此；H4 [15.6, 18.4]；H5 [18.5, 26]</li></ul>
+<h5>③ 复算</h5><p class="small">键 <code>one.P2.base_mean</code>、<code>one.P2.delta</code>、<code>one.P2.r_star</code>、<code>one.P2.sd</code>、<code>one.P2.truth_mean</code>，来自 <code>recompute.json</code>，脚本 <code>mindset/轨迹偏离审计-复算.py</code></p>
+<h5>④ 审查者</h5><ul><li>G2 → H3：父会话自写</li><li>G3 → H3：父会话自写</li></ul>
+<h5>⑤ 人的干预</h5><p class="small muted">本归档没有干预文件。</p>
+</details>
+</article>
+<article class="card node" data-kind="node" data-key id="D9">
+<header><span class="nid">D9</span><h3>把“没测到”写成“不存在”</h3><span class="meta">运行记录第 104 行 · 推理层</span></header>
+<dl class="five"><div><dt>当时知道</dt><dd>四组实验都没测到明显增强；它自己记下的攻击 G2 已指出“无额外电流”与“低于精度的弱电流”分不开。 <span class="aud">（审计补写）</span></dd></div><div><dt>为什么这样选</dt><dd>要交一句话结论，并通过提交时的三道程序检查。 <span class="aud">（审计补写）</span></dd></div><div><dt>期待看到</dt><dd>结论能被全部测量支持，又不越过测量精度。 <span class="aud">（审计补写）</span></dd></div><div><dt>实际发生</dt><dd>写成“不存在生物学可检测的超极化反弹电流”，三道程序检查全部放行。 <span class="aud">（审计补写）</span></dd></div><div><dt>因此调整</dt><dd>没有把结论限定在测量精度之内；终局预报也按“无额外电流”外推。 <span class="aud">（审计补写）</span></dd></div></dl>
+<div class="verdicts"><div class="verdict" data-col="at-time"><h4>当时是否合理</h4><p><span class="icon m-no" aria-hidden="true">✕</span><b class="word m-no">不合理</b>。G2 已提示二者分不开，结论仍写成不存在。</p></div><div class="verdict" data-col="hindsight"><h4>事后对照真相</h4><p><span class="icon m-no" aria-hidden="true">✕</span><b class="word m-no">错误</b>。与真相相反；在不超过 3 次重复的精度下，T 型效应只有约 0.42–0.67 个峰，本就检不出。</p></div></div>
+<p class="basis">依据：报告原句与 G2 原文（运行记录第 70 行）（<code>REPORT.md:11</code>）；复算各实验的效应量（<code>mindset/轨迹偏离审计-ca_rebound-一句话-20261014.md §1、§2 D9</code>）</p>
+
+<details><summary>证据（原始记录 1 行 · 推导值 · 复算 · 审查者 · 干预）</summary>
+<h5>① 原始记录</h5><pre>104: {&quot;ts&quot;:&quot;2026-10-14T13:23:44.624Z&quot;,&quot;op&quot;:&quot;report.declare&quot;,&quot;path&quot;:&quot;REPORT.md&quot;,&quot;sha256&quot;:&quot;4a3c575f0b1b1c4516bded76f99080942f4b92018dd8afb16aca20367a26e9d6&quot;,&quot;prev&quot;:&quot;ea7c03a6483c68e3ff4ead6b34adbf33b9137b2177fd0240034fe8525a0f691f&quot;}</pre>
+<h5>② 推导值（由记录推出）</h5><p class="small muted">无。</p>
+<h5>③ 复算</h5><p class="small">键 <code>one.P1.delta</code>、<code>one.P2.delta</code>，来自 <code>recompute.json</code>，脚本 <code>mindset/轨迹偏离审计-复算.py</code></p>
+<h5>④ 审查者</h5><ul><li>无（本节点没有对应的攻击记录）</li></ul>
+<h5>⑤ 人的干预</h5><p class="small muted">本归档没有干预文件。</p>
+</details>
+</article>
+<article class="card node" data-kind="node" data-key id="D10">
+<header><span class="nid">D10</span><h3>从没用过阻断剂：预算内唯一的决定性实验</h3><span class="meta">全程 / 会话外 · 接入层</span></header>
+<dl class="five"><div><dt>当时知道</dt><dd>取题工具只列实验协议，不列可用的阻断剂；测量工具只有一个可选的阻断剂字符串参数，没有说明可填什么。 <span class="aud">（审计补写）</span></dd></div><div><dt>为什么这样选</dt><dd>agent 不知道有阻断剂可用，全部测量都只看放电次数。 <span class="aud">（审计补写）</span></dd></div><div><dt>期待看到</dt><dd>没有设计过这类实验，也就没有预期。 <span class="aud">（审计补写）</span></dd></div><div><dt>实际发生</dt><dd>8 次预算里一次阻断剂实验都没做。 <span class="aud">（审计补写）</span></dd></div><div><dt>因此调整</dt><dd>无；结论完全建立在放电次数上。 <span class="aud">（审计补写）</span></dd></div></dl>
+<div class="verdicts"><div class="verdict" data-col="at-time"><h4>当时是否合理</h4><p><span class="icon m-partial" aria-hidden="true">⚠</span><b class="word m-partial">部分合理</b>。接入层缺口：阻断剂无从发现，不能全算推理错误。</p></div><div class="verdict" data-col="hindsight"><h4>事后对照真相</h4><p><span class="icon m-no" aria-hidden="true">✕</span><b class="word m-no">错误</b>。加 TTX 后，无额外电流的细胞 120 次里出峰 0 次，真相 49 次；测 8 次至少见 1 个峰的概率 0.985，一个峰就能排除“无额外电流”。</p></div></div>
+<p class="basis">依据：复算 TTX 判别（<code>mindset/轨迹偏离审计-复算.py ttx()</code>）；一句话审计 D10（<code>mindset/轨迹偏离审计-ca_rebound-一句话-20261014.md §1、§2 D10</code>）</p>
+
+<details><summary>证据（原始记录 0 行 · 推导值 · 复算 · 审查者 · 干预）</summary>
+<h5>① 原始记录</h5><p class="small muted">本节点不对应运行记录里的行（全程或会话外）。</p>
+<h5>② 推导值（由记录推出）</h5><p class="small muted">无。</p>
+<h5>③ 复算</h5><p class="small">键 <code>one.ttx.hypc.plain_hits</code>、<code>one.ttx.hypc.truth_hits</code>、<code>one.ttx.hypc.truth_p8</code>、<code>one.ttx.reps</code>，来自 <code>recompute.json</code>，脚本 <code>mindset/轨迹偏离审计-复算.py</code></p>
+<h5>④ 审查者</h5><ul><li>无（本节点没有对应的攻击记录）</li></ul>
+<h5>⑤ 人的干预</h5><p class="small muted">本归档没有干预文件。</p>
+</details>
+</article>
+<h3>其余决策</h3><div class="tbl"><table><thead><tr><th>#</th><th>决策</th><th>当时是否合理</th><th>事后对照真相</th><th>依据</th></tr></thead><tbody><tr id="D1"><td class="mono">D1</td><td>用单次仿真值当基线<br><span class="small muted">运行记录第 7–24 行 · 推理层</span></td><td><span class="icon m-partial" aria-hidden="true">⚠</span><b class="m-partial">部分合理</b>。校准思路对；但同协议连续仿真已经散得很开，仍取单个值当基准。</td><td><span class="icon m-no" aria-hidden="true">✕</span><b class="m-no">错误</b>。短压低实验的基线实为 15.5±1.94，成对长脉冲实为 27.54。</td><td class="small">一句话审计 D1；复算 effect_sizes()（<code>mindset/轨迹偏离审计-ca_rebound-一句话-20261014.md §2 D1</code>）</td></tr><tr id="D2"><td class="mono">D2</td><td>提出强反弹、外向钾、无额外电流三种解释<br><span class="small muted">运行记录第 25–27 行 · 推理层</span></td><td><span class="icon m-yes" aria-hidden="true">✓</span><b class="m-yes">合理</b>。覆盖面合理，含对立解释。</td><td><span class="icon m-yes" aria-hidden="true">✓</span><b class="m-yes">正确</b>。强反弹这一家族就是真相。</td><td class="small">一句话审计 D2（<code>mindset/轨迹偏离审计-ca_rebound-一句话-20261014.md §2 D2</code>）</td></tr><tr id="D4"><td class="mono">D4</td><td>把强反弹收窄成弱内向电流的快、慢两个版本<br><span class="small muted">运行记录第 35–54 行 · 推理层</span></td><td><span class="icon m-yes" aria-hidden="true">✓</span><b class="m-yes">合理</b>。收窄方向合理；它自己记下的攻击 G1 指出效应对参数非常敏感。</td><td><span class="icon m-partial" aria-hidden="true">⚠</span><b class="m-partial">部分正确</b>。方向对，但 G1 的提醒没有传导到后面的区间设计。</td><td class="small">一句话审计 D4（<code>mindset/轨迹偏离审计-ca_rebound-一句话-20261014.md §2 D4</code>）</td></tr><tr id="D5"><td class="mono">D5</td><td>第二组实验只测 1 次，要同时分清三种解释<br><span class="small muted">运行记录第 63–66 行 · 推理层</span></td><td><span class="icon m-no" aria-hidden="true">✕</span><b class="m-no">不合理</b>。同协议的候选仿真值已散得很开，单次测量分不开宽约 3 个峰的三个区间。</td><td><span class="icon m-no" aria-hidden="true">✕</span><b class="m-no">错误</b>。该实验上真相与基线只差 0.67 个峰。</td><td class="small">复算：分开约需 34 次（<code>mindset/轨迹偏离审计-ca_rebound-一句话-20261014.md §2 D5</code>）</td></tr><tr id="D7"><td class="mono">D7</td><td>剩余预算花在两组几乎没有判别力的实验上<br><span class="small muted">运行记录第 86–101 行 · 推理层</span></td><td><span class="icon m-partial" aria-hidden="true">⚠</span><b class="m-partial">部分合理</b>。同一实验不许重测，逼它换实验；但选中的两组判别力最低。</td><td><span class="icon m-no" aria-hidden="true">✕</span><b class="m-no">错误</b>。两组实验要分开真相与基线，分别约需 49 次与 192 次。</td><td class="small">一句话审计 D7（<code>mindset/轨迹偏离审计-ca_rebound-一句话-20261014.md §2 D7</code>）</td></tr><tr id="D8"><td class="mono">D8</td><td>把一次仿真值当参考，推出“慢钠亚族”<br><span class="small muted">运行记录第 102 行 · 推理层</span></td><td><span class="icon m-no" aria-hidden="true">✕</span><b class="m-no">不合理</b>。同协议仿真得过三个差很多的值，参考值只是其中一次抽样。</td><td><span class="icon m-no" aria-hidden="true">✕</span><b class="m-no">错误</b>。基线真均值 27.54，把噪声读成了信号。</td><td class="small">一句话审计 D8（<code>mindset/轨迹偏离审计-ca_rebound-一句话-20261014.md §2 D8</code>）</td></tr><tr id="D11"><td class="mono">D11</td><td>预报 6 个没做过的实验只能外推<br><span class="small muted">运行记录第 103 行 · 接入层</span></td><td><span class="icon m-partial" aria-hidden="true">⚠</span><b class="m-partial">部分合理</b>。预报用的实验当时无法仿真，只能外推（报告第 9 节自己承认）。</td><td><span class="icon m-no" aria-hidden="true">✕</span><b class="m-no">错误</b>。释放族目标约 12.1；直接用无额外电流模型仿真 64 次，误差就降到 0.61。</td><td class="small">复算 forecast()（<code>mindset/轨迹偏离审计-ca_rebound-一句话-20261014.md §2 D11</code>）</td></tr></tbody></table></div>
 </section>
 
-<!-- ============ S5 ============ -->
-<section class="screen" id="s5" aria-labelledby="s5h">
-  <div class="head"><span class="n">05</span><span class="tm">3:50–4:35</span><h2 id="s5h">边界墙：我们故意摆出来的失败</h2></div>
-  <div class="wall">
-    <div class="brick fixed">
-      <h4>规则挡住了决定性实验<span class="st done">已修</span></h4>
-      <p>预登记要求频段覆盖 ≥2 条 LIVE。H5 已 SUPPORTED，唯一 LIVE 是 H7，判别 H5 vs H7 的探针被拒两次，<span class="num">2</span> 单位预算没花。</p>
-      <p class="fix">修复：SUPPORTED 可作为被挑战的对手进入频段，至少一条 LIVE/CONTESTED。过度严谨也是 overengineering；每条硬规则都要有合法出口。</p>
-      <p class="src">REPORT §5 §9 · research-mcp/src/state.ts</p>
-    </div>
-    <div class="brick open">
-      <h4>H5 的支持很弱<span class="st none">如实</span></h4>
-      <p>P4 只测 1 次，读数 8 比基线 6 高 2（攻击 G2：约 0.55σ）。P2 读数 34 恰等于无电流基线 34（G1：对 H5 的信念更新应为零）。</p>
-      <p class="fix">报告已按攻击弱化 H5；H5 vs H7 目前靠拟合简洁性裁决，没有落地测量。</p>
-      <p class="src">journal G1 G2 · REPORT §5</p>
-    </div>
-    <div class="brick fixed">
-      <h4>预报协议模拟不了：是我们的 bug<span class="st done">已修</span></h4>
-      <p>held-out 释放族 <span class="num">4/6</span> 个标签模拟时报 KeyError。原因是我们的计量器查协议时没带 world，不是模型的边界。模型只能外推，MSE <span class="num">30.883</span>。</p>
-      <p class="fix">修复后 simulate 认得 held-out，observe 仍只认公开池（不泄漏预报答案）。复算：一句话 run 若直接模拟基线模型，MSE 可从 <span class="num">8.99</span> 降到 <span class="num">0.61</span>。</p>
-      <p class="src">research/eval/world-meter.py · 轨迹偏离审计 D10</p>
-    </div>
-    <div class="brick open">
-      <h4>只有一个 seed<span class="st none">如实</span></h4>
-      <p>全部结论限定 seed 0 这一个模拟细胞。同 world 同 seed 历史 MSE 从 <span class="num">6.5</span> 到 <span class="num">58.4</span>。</p>
-      <p class="fix">一个 MSE 不能比模型；也不把仿真说成真实科学验证。</p>
-      <p class="src">REPORT §6 S2 · GLM跑通 记录</p>
-    </div>
-    <div class="brick fixed">
-      <h4>移植的门用错了任务<span class="st done">已修</span></h4>
-      <p>Scoop Check / Idea Quality 服务论文选题。用在机制辨识上，会把教科书机制（T 型钙流）判低分退回，推模型去提新但错的假设。</p>
-      <p class="fix">已发表的机制同样值得检验。两道门改为只在新颖性任务（交付物是新想法/新方法）里运行。</p>
-      <p class="src">口述记录 第二轮 · 追记</p>
-    </div>
-    <div class="brick fixed">
-      <h4>压缩摘要有损<span class="st done">已实现</span></h4>
-      <p>压缩摘要由模型自己写。现在每次压缩后，下一次工具调用必须是 <code>rlm()</code> 子代理，用无摘要的新上下文对照 journal 复核。</p>
-      <p class="fix">本次运行 0 次压缩，这条还没经过实战。</p>
-      <p class="src">adapters/pi-post-compaction-rlm.ts</p>
-    </div>
-    <div class="brick stop">
-      <h4>VLM 方向：停了<span class="st port">问题在模型层</span></h4>
-      <p><span class="num">32</span> 条真实重看轨迹：模型会主动重看，像素也送到了，仍把错的视觉关系写成已核验。harness 强制重发原图，修复 <span class="num">0/2</span>；同一 harness 换模型，受控任务 <span class="num">359/360</span>。</p>
-      <p class="fix">harness 补不了，所以不做多模态。</p>
-      <p class="src">调研 03 §1 · ~/icml N1 REPORT</p>
-    </div>
-    <div class="brick stop">
-      <h4>RGBD 方向：停了<span class="st port">自动化放大无知</span></h4>
-      <p><span class="num">35</span> 个实验家族、<span class="num">151</span> 个编号、<span class="num">175</span> 个脚本。代理准确率 <span class="num">71.52% → 81.43%</span>，主指标 <span class="num">56.42 → 55.82</span>；条件网络被四个常数近似；「4.5/10 评审」是模型生成的。</p>
-      <p class="fix">事后审计救回来的是可复核的边界。这正是三道闸的动机。</p>
-      <p class="src">调研 03 §2</p>
-    </div>
-  </div>
-  <div class="edge">
-    <div><h4>能解</h4><p class="small">纯语言、结论可以重算的部分：数字、预登记、测量、篡改、预算。这些是 Crucible。</p></div>
-    <div><h4>几乎解不了</h4><p class="small">多模态感知错误、长程复合、只靠文本的 overclaim：没有可重算的真值。这些是第二阶段研究（视觉核验、具身轨迹）的起点。</p></div>
-  </div>
-  <p class="say"><b>口播</b>我们不声称 AI 已经会做科学。我们声称：模型受限时，能结构性地拦住它的不可靠结论，并且诚实报告哪些拦不住。</p>
+<section id="corrections">
+<h2>原结论与修正</h2>
+<div class="truth"><p><b>对照的真相</b>：T 型钙电流：超极化让它解除失活，松开时产生反弹爆发（电导 3.2，失活时间常数 22 ms）（来源 <code class="src">neuronbench/worlds.py:196（描述）、:128（参数 MT）</code>；真相只存在归档里，运行中的 agent 读不到）</p></div>
+<blockquote class="orig" data-ref="REPORT.md:11"><span class="src">报告原句（REPORT.md:11，逐字）</span>不存在生物学可检测的超极化反弹电流</blockquote>
+<div class="correction"><p><b>后来发现</b>：真相正是 T 型钙电流；四组实验的放电次数都分不开它与无额外电流。</p><p><b>修正</b>：在不超过 3 次重复的放电计数下未检出；在这个精度下 T 型效应只有约 0.42–0.67 个峰，本就检不出。</p><p class="basis">依据：复算各实验的效应量（<code>mindset/轨迹偏离审计-ca_rebound-一句话-20261014.md §1、§2 D9</code>）</p></div>
+<blockquote class="orig" data-ref="REPORT.md:36"><span class="src">报告原句（REPORT.md:36，逐字）</span>同一 (world, seed, protocol, reps) 下候选仿真与真细胞观测共享噪声 draws</blockquote>
+<div class="correction"><p><b>后来发现</b>：同一会话里完全相同的仿真请求返回过不同的值（同一实验先得 5、后得 7，运行记录第 7、77 行）。</p><p><b>修正</b>：候选仿真不与真实测量共享噪声；每个仿真值只是一次随机抽样，不是对真实测量的精确预测。</p><p class="basis">依据：会话复核（<code>mindset/评委视角-作品打磨与轨迹审查-20261014.md §5.3</code>）</p></div>
 </section>
 
-<!-- ============ S6 ============ -->
-<section class="screen" id="s6" aria-labelledby="s6h">
-  <div class="head"><span class="n">06</span><span class="tm">4:35–5:00</span><h2 id="s6h">评分项 → 证据</h2></div>
-  <p class="small muted" style="margin-bottom:10px">评分有两个版本：官方方案 PDF §六 与解析会网页版，口径以官网最新版为准，初审终审一致。两套分值都列出。</p>
-  <div class="tbl"><table class="wide">
-    <thead><tr><th>主题</th><th>PDF 版</th><th>网页版</th><th>证据（本页 / 仓库）</th><th>状态</th></tr></thead>
-    <tbody>
-      <tr><td class="stage">假设质量</td><td>创新性与自洽性 <span class="num">20</span></td><td>科学事实准确 <span class="num">15</span></td><td>7 个假设都写成可证伪的预登记频段，含伪影对手 H4（<a href="#s3">屏 3</a>）</td><td><span class="st done">已实现</span></td></tr>
-      <tr><td class="stage">可验证性</td><td>可落地验证性 <span class="num">20</span></td><td>完整一致 <span class="num">10</span></td><td>三道闸宿主重算 3/3；journal 链 90/90（<a href="#s4">屏 4</a>）· <code>packages/research-mcp/src/state.ts</code></td><td><span class="st done">已实现</span></td></tr>
-      <tr><td class="stage">清晰</td><td>—</td><td>解释与展示清晰 <span class="num">15</span></td><td>本页代替 PPT，6 屏对应 5 分钟</td><td><span class="st done">本页</span></td></tr>
-      <tr><td class="stage">智能体设计</td><td>多智能体协作 <span class="num">15</span></td><td>链路完整 <span class="num">10</span></td><td>Prime Agent + <code>rlm()</code> 对抗子代理 + MCP 状态层；本次 11 条攻击入账。heartbeat、agent 间消息刻意不接</td><td><span class="st done">已实现</span></td></tr>
-      <tr><td class="stage">校验与迭代</td><td>—</td><td>校验、迭代、稳定性 <span class="num">10</span></td><td>P2 推翻 H1 → 新假设 → P3/P4 裁决（<a href="#s3">屏 3</a>）；初审后自查修复 <code>e1cb0f3</code>（<a href="#s4">屏 4</a>）</td><td><span class="st done">已实现</span></td></tr>
-      <tr><td class="stage">多模态</td><td><span class="num">15</span></td><td><span class="num">10</span></td><td>没做。VLM 证据与停止理由见 <a href="#s5">边界墙</a></td><td><span class="st none">未做（如实）</span></td></tr>
-      <tr><td class="stage">场景</td><td>实际场景支撑 <span class="num">10</span></td><td>真实场景价值 <span class="num">15</span></td><td>闭环：规划 → 计量 → 分析 → 下一轮；可计量的世界（仿真、仪器）都能接</td><td><span class="st done">已实现（仿真世界）</span></td></tr>
-      <tr><td class="stage">转化 / 交付</td><td>论文专利转化 <span class="num">10</span></td><td>演示与交付 <span class="num">10</span></td><td>报告、开源仓库、Docker 镜像、本页</td><td><span class="st done">已实现</span></td></tr>
-      <tr><td class="stage">复现 / 复用</td><td>代码与结果可复现 <span class="num">10</span></td><td>代码可复用 <span class="num">10</span></td><td>一条 docker 命令起；MCP 状态层可单独复用；本次产物 <code>research/campaigns/2026-10-14-glm53flash-ca_rebound-s0/</code></td><td><span class="st done">已实现</span></td></tr>
-    </tbody>
-  </table></div>
-
-  <h3>方向 1B 模板的四条自检</h3>
-  <div class="tbl"><table class="mid">
-    <thead><tr><th>自检</th><th>本页怎么回答</th></tr></thead>
-    <tbody>
-      <tr><td>1 真实呈现计划 → 结果 → 调整依据 → 下一轮变化，不用重新生成代替迭代</td><td>P2 推翻 H1 预测 → 产出 H6 → P3/P4 裁决；对抗产出 H7。每次迁移挂预登记 sha256 + 探针（<a href="#s3">屏 3</a>）</td></tr>
-      <tr><td>2 不省略失败、未改善和边界</td><td>边界墙 8 张卡（<a href="#s5">屏 5</a>）；REPORT §5 §6 自己写了弱支持与未检验</td></tr>
-      <tr><td>3 代码、Qwen 凭证、案例、API、前端可核验</td><td>本页回放的是 GLM 5.3 Flash 演示运行；主实验与百炼 Qwen 凭证截图在报告中；代码、Docker 构建与本次运行产物都在仓库里可核验</td></tr>
-      <tr><td>4 不把仿真或模型判断说成真实科学验证</td><td>world 是模拟细胞；结论限定 seed 0 单一实现</td></tr>
-    </tbody>
-  </table></div>
-
-  <h3>不做什么</h3>
-  <div class="nog">
-    <div><h4>多 Agent 编排 / Swarm</h4><p>科研是顺序任务。多 agent 在可分解任务上最高 +80.8%，顺序任务上最低 −70%（arXiv:2512.08296）。单 Agent 先做好。</p></div>
-    <div><h4>VLM / 多模态</h4><p>问题在模型层：harness 强制重发原图修复 0/2，同一 harness 换模型 359/360。</p></div>
-    <div><h4>写论文</h4><p>写得越好编得越多：PaperRecon 测得 Claude Code 写论文平均每篇 &gt;10 处幻觉。CCF / Nature 写作插件默认关闭。</p></div>
-  </div>
-
-  <details>
-    <summary>答疑速查（5 问）</summary>
-    <dl>
-      <dt>和 ARIS / ResearchStudio / AI Scientist 有什么区别？</dt>
-      <dd>它们多是 keep/discard 循环 + 引用核验 + 第二模型评审。拦截式预登记、MCP 暴露研究状态、数字溯源到计量很少见。</dd>
-      <dt>多模态为什么是 0？</dt>
-      <dd>如实：电压 trace 没接 VL。重看实验说明问题在模型层，这是第二阶段研究的出发点。</dd>
-      <dt>演示为什么不是 Qwen？</dt>
-      <dd>主实验是百炼 Qwen，凭证截图在报告。演示换 GLM 说明 runtime 可替换。</dd>
-      <dt>两轮误差变差了，怎么叫迭代？</dt>
-      <dd>旧案例两轮换了 seed，不可比，是我们自己查出来的。正确做法是同 seed 拆预算。</dd>
-      <dt>既然会被绕过，这套东西有什么用？</dt>
-      <dd>被绕过的是 Skill 里的文字约束；结构约束守住了，而且绕过的痕迹被确定性审计抓到。</dd>
-    </dl>
-  </details>
-  <p class="say"><b>口播</b>回到一句话：生成假设已经廉价，我们做的是让结论能被别人重算。</p>
+<section id="unknowns">
+<h2>仍不能确定</h2>
+<ul><li>只看放电次数时，预算内任何实验都分不开真相与无额外电流（最省的判别实验也要约 {{one.disc.r_star}} 次）；电压轨迹是否更早露出反弹，没有检验。</li><li>阻断剂实验的效果只在仿真里复算过，没有在这次运行里真的做。</li><li>这条轨迹只有一个 seed；换 seed 后是否同样偏离，见详细指令案例。</li><li>攻击都由主会话自己写，没有独立审查者；独立审查能否拦住这一步，没有证据。</li></ul>
 </section>
 
-<footer>
-  数据来源（本页数字只取自这些文件）
-  <ul>
-    <li><code>research/campaigns/2026-10-14-glm53flash-ca_rebound-s0/journal.jsonl</code>（90 行）、<code>prereg/P1–P4.json</code>、<code>REPORT.md</code>：屏 3 的全部运行数据内嵌为 JSON，页面按它绘制</li>
-    <li><code>mindset/GLM跑通-ca-rebound-20261014.md</code>：历史 MSE 对照、人工干预 0、rlm 调用次数</li>
-    <li><code>mindset/答辩组织-规则评分洞察-20261014.md</code>、<code>mindset/叙事主干-流程推导-20261014.md</code>：评分表、阶段表、自查修复</li>
-    <li><code>mindset/口述记录-第二轮-拆解与任务-20261014.md</code>、<code>mindset/调研/03</code>、<code>04</code>：边界墙、技术选型</li>
-  </ul>
-</footer>
+<section id="version" class="ver">
+<h2>运行版本卡</h2>
+<dl>
+<dt>会话 ID</dt><dd class="mono">eb383a8d-e7a2-4fce-bb3b-803104263c08</dd>
+<dt>run</dt><dd class="mono">ca_rebound · research/campaigns/2026-10-14-glm53flash-oneline-ca_rebound</dd>
+<dt>模型</dt><dd>GLM 5.3 Flash（glm-5.3-flash / high）</dd>
+<dt>world / seed</dt><dd class="mono">ca_rebound / 20261014</dd>
+<dt>时间</dt><dd>2026-10-14 20:41（UTC+08:00） – 2026-10-14 21:23（UTC+08:00）</dd>
+<dt>程序检查</dt><dd>程序检查通过（预登记 ✓ · 对账 ✓ · 溯源 ✓）。程序检查通过只说明记录前后一致，不说明结论正确。</dd>
+<dt>人工干预</dt><dd>未记录（本归档无干预文件）</dd>
+<dt>运行记录链</dt><dd>完整（105 行，逐行哈希相连）</dd>
+<dt>sha256</dt><dd><ul class="small mono"><li>journal.jsonl c80e0c7a66a9b7b9ef5ef16bc9e36c399ef2660569bd132c2e0e95f42bbce1e2</li><li>REPORT.md 4a3c575f0b1b1c4516bded76f99080942f4b92018dd8afb16aca20367a26e9d6</li><li>prereg/P1.json de54b108e31c0b1609c1233fd0a27f88f4505a4ea2145828be6ac7cb60827eb7</li><li>prereg/P2.json bb0a0723acb1f382a969e54a4bfe0843301ba1ab66ed186f0967def56cee0d76</li><li>prereg/P3.json c3caddec933cb89b9b62d6c50cad1a50020f55c991d8734c4fcc30bfac03a2ad</li><li>prereg/P4.json 07f94c0a7c97e15b5a9d90e88f2f0926663a34b0393777bf26349fe1355c7b68</li><li>annotations.json a8fff3ac8fe6ddabdbfb12eb35ba951b1663e236052ad5fa76913b3da4279a74</li><li>recompute.json 3b8b9e01f858e9f7fce34931f3ba93ac882e1b7ee1be0d94eb81642673556eb6</li></ul></dd>
+<dt>生成器</dt><dd class="mono">judge-report/1</dd>
+</dl>
+</section>
+
+<section id="appendix">
+<h2>附录：每次实验的五句话</h2>
+<p class="small muted">由运行记录自动推出；没有审计节点覆盖的标“未审”，不带判定。</p>
+<article class="card cycle" id="cyc-P1"><header><span class="nid">P1</span><h3>hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)</h3><span class="meta">运行记录第 30–34 行</span><span class="tag">已审：<a href="#D3">D3</a></span></header>
+<dl class="five"><div><dt>当时知道</dt><dd>登记时仍在考虑：H1（强反弹电流）、H2（外向钾电流）、H3（无额外电流）。之前还没有真实测量。上次登记之后没有同协议仿真；全程同协议候选仿真值 14–21（6 次；候选参数未记录，含参数差异）。</dd></div><div><dt>为什么这样选</dt><dd>真细胞在超极化条件+去极化测试协议下的 mean spike_count（reps=3 均值）相对裸细胞基线（15.3, n=3）是增强、压低还是无差？三分 H1（瞬态内向）/ H2（适应压抑）/ H3（无额外效应）。</dd></div><div><dt>期待看到</dt><dd>若结果落在 0–14.2：否定 H1；18–30：支持 H1；14.3–17.4：收窄 H1。</dd></div><div><dt>实际发生</dt><dd>测了 3 次，平均得 17.33，落在 H3 的预测区间。</dd></div><div><dt>因此调整</dt><dd>H1 收窄到更小的说法、H2 改为有争议（判断，非测量，第 53 行）。下一组实验 P2 改用「brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)」。</dd></div></dl></article>
+<article class="card cycle" id="cyc-P2"><header><span class="nid">P2</span><h3>brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)</h3><span class="meta">运行记录第 63–68 行</span><span class="tag">已审：<a href="#D5">D5</a>、<a href="#D6">D6</a></span></header>
+<dl class="five"><div><dt>当时知道</dt><dd>登记时仍在考虑：H2（外向钾电流）、H3（无额外电流）、H4（弱内向电流）、H5（快 T 型弱电流）。之前的真实测量：P1 得 17.33（3 次）。同协议候选仿真值 13–20（8 次；候选参数未记录，含参数差异）。</dd></div><div><dt>为什么这样选</dt><dd>brief hyperpol 40ms 协议下真细胞 spike_count（reps=1）：ref/slow_na 校准 13.0、weakIh 校准 17.0、weakT 校准 20.0——三分 H3（无额外效应）/ H4（弱内向，慢 Ih flavour）/ H5（弱内向，快 T flavour）。</dd></div><div><dt>期待看到</dt><dd>若结果落在 10–15.5：否定 H5、支持 H3；15.6–18.4：支持 H4、否定 H5；18.5–26：支持 H5、否定 H3、收窄 H4。</dd></div><div><dt>实际发生</dt><dd>测了 1 次，平均得 13，落在 H3 的预测区间。</dd></div><div><dt>因此调整</dt><dd>H5 被否定、H3 得到支持、H4 改为有争议（判断，非测量，第 69 行）。下一组实验 P3 改用「brief step (12 uA, 40 ms)」。</dd></div></dl></article>
+<article class="card cycle" id="cyc-P3"><header><span class="nid">P3</span><h3>brief step (12 uA, 40 ms)</h3><span class="meta">运行记录第 86–90 行</span><span class="tag">已审：<a href="#D7">D7</a></span></header>
+<dl class="five"><div><dt>当时知道</dt><dd>登记时仍在考虑：H2（外向钾电流）、H4（弱内向电流）。之前的真实测量：P1 得 17.33（3 次）；P2 得 13（1 次）。同协议候选仿真值 4–7（4 次；候选参数未记录，含参数差异）。</dd></div><div><dt>为什么这样选</dt><dd>brief step 12uA reps=1（未烧毁格子，全新 draws）：ref 校准 7.0、slow_na 校准 4.0、slowIh(g0.08,htau300) 校准 6.0。出样本检验 H3（无额外通道）并判别基线参数亚族（是否 slow_na 变体），同时收束 H4。</dd></div><div><dt>期待看到</dt><dd>若结果落在 0–2：否定 H3、否定 H4；3–8：支持 H3、收窄 H4；9–26：支持 H4。</dd></div><div><dt>实际发生</dt><dd>测了 1 次，平均得 6，落在 H3 的预测区间。</dd></div><div><dt>因此调整</dt><dd>H4 收窄到更小的说法。下一组实验 P4 改用「paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)」。</dd></div></dl></article>
+<article class="card cycle" id="cyc-P4"><header><span class="nid">P4</span><h3>paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)</h3><span class="meta">运行记录第 97–101 行</span><span class="tag todo">未审</span></header>
+<dl class="five"><div><dt>当时知道</dt><dd>登记时仍在考虑：H2（外向钾电流）。之前的真实测量：P1 得 17.33（3 次）；P2 得 13（1 次）；P3 得 6（1 次）。同协议候选仿真值 22–33（3 次；候选参数未记录，含参数差异）。</dd></div><div><dt>为什么这样选</dt><dd>paired long pulses reps=1（未烧毁格子）：ref 校准 33、slow_na 22、AdaptK（适应 K 流，H2 规范机制）24。正式裁决 H2（CONTESTED）：真细胞是否有去极化条件后的活动依赖压抑。</dd></div><div><dt>期待看到</dt><dd>若结果落在 28–45：否定 H2；12–27：收窄 H2；0–11：否定 H3。</dd></div><div><dt>实际发生</dt><dd>测了 1 次，平均得 26，落在 H2 的预测区间。</dd></div><div><dt>因此调整</dt><dd>H2 收窄到更小的说法。</dd></div></dl></article>
+</section>
 </main>
-
-<script type="application/json" id="run-data">{"source":"research/campaigns/2026-10-14-glm53flash-ca_rebound-s0/journal.jsonl + prereg/*.json","start":"09:42:47","end":"11:54:16","events":90,"simulate":44,"claims":[{"id":"H1","label":"T 型低阈值钙（慢失活）","t":"10:21:13"},{"id":"H2","label":"无附加电流 / slow_na","t":"10:21:44"},{"id":"H3","label":"强参数化 Ih","t":"10:21:31"},{"id":"H4","label":"强负偏置测量伪影（对手）","t":"10:21:21"},{"id":"H5","label":"持续去极化激活内向流","t":"10:31:04"},{"id":"H6","label":"可用性再武装瞬变流","t":"10:53:19"},{"id":"H7","label":"去极化累积失活持续 Na 型","t":"11:45:36"}],"probes":[{"pid":"P1","sha":"ec1e10dfc435762218475e87c86588241b802b18663e698c708e6c983a3efa00","frozen":"10:26:08","protocol":"long step (10 uA, 300 ms)","reps":1,"bands":{"H1":[27,44],"H2":[14,32],"H3":[26,42],"H4":[0,13]},"branches":[{"band":[0,13],"action":"kill","target":"H4"},{"band":[14,32],"action":"kill","target":"H2"},{"band":[27,42],"action":"support","target":"H1"},{"band":[27,42],"action":"support","target":"H3"},{"band":[43,44],"action":"scope","target":"H1"},{"band":[45,400],"action":"kill","target":"H2"},{"band":[45,400],"action":"kill","target":"H3"},{"band":[45,400],"action":"scope","target":"H1"}],"observed":32,"cost":1,"landed":"10:26:16"},{"pid":"P2","sha":"e1d90f087f90347b39b5128276eda22ee4caf1eefcdc41edc01d946f3dd1e523","frozen":"10:35:11","protocol":"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)","reps":2,"bands":{"H1":[37,50],"H2":[22,41],"H3":[31,44],"H4":[0,26],"H5":[32,45]},"branches":[{"band":[0,26],"action":"kill","target":"H4"},{"band":[27,30],"action":"kill","target":"H4"},{"band":[27,30],"action":"kill","target":"H5"},{"band":[46,200],"action":"kill","target":"H3"},{"band":[46,200],"action":"kill","target":"H5"},{"band":[46,200],"action":"kill","target":"H2"},{"band":[46,200],"action":"scope","target":"H1"},{"band":[41,45],"action":"scope","target":"H1"},{"band":[37,40],"action":"support","target":"H3"},{"band":[37,40],"action":"support","target":"H5"},{"band":[33,36],"action":"scope","target":"H3"},{"band":[33,36],"action":"scope","target":"H2"},{"band":[31,32],"action":"scope","target":"H3"}],"observed":34,"cost":2,"landed":"10:35:19"},{"pid":"P3","sha":"f8ba4027f696cdf132f6ded9747a729cc1612cbeedf5c8184ac7a4e5d0b30172","frozen":"11:03:37","protocol":"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)","reps":2,"bands":{"H1":[11,24],"H4":[0,10],"H5":[9,22],"H6":[16,27]},"branches":[{"band":[0,8],"action":"scope","target":"H6"},{"band":[9,10],"action":"kill","target":"H6"},{"band":[11,15],"action":"kill","target":"H4"},{"band":[11,15],"action":"kill","target":"H6"},{"band":[11,15],"action":"scope","target":"H1"},{"band":[11,15],"action":"scope","target":"H5"},{"band":[16,22],"action":"kill","target":"H4"},{"band":[16,22],"action":"scope","target":"H5"},{"band":[16,22],"action":"scope","target":"H6"},{"band":[16,22],"action":"scope","target":"H1"},{"band":[23,24],"action":"kill","target":"H4"},{"band":[23,24],"action":"kill","target":"H5"},{"band":[23,24],"action":"support","target":"H6"},{"band":[23,24],"action":"scope","target":"H1"},{"band":[25,27],"action":"kill","target":"H4"},{"band":[25,27],"action":"kill","target":"H5"},{"band":[25,27],"action":"kill","target":"H1"},{"band":[25,27],"action":"support","target":"H6"},{"band":[28,200],"action":"kill","target":"H4"},{"band":[28,200],"action":"kill","target":"H5"},{"band":[28,200],"action":"kill","target":"H1"},{"band":[28,200],"action":"kill","target":"H6"}],"observed":13.5,"cost":2,"landed":"11:03:45"},{"pid":"P4","sha":"7c8c69eb55289432d85779cbdbd64e1b8867ba31bd7b043da69e1432626ad6e0","frozen":"11:10:58","protocol":"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)","reps":1,"bands":{"H1":[12,19],"H5":[3,10]},"branches":[{"band":[3,8],"action":"kill","target":"H1"},{"band":[3,8],"action":"support","target":"H5"},{"band":[9,10],"action":"kill","target":"H5"},{"band":[9,10],"action":"scope","target":"H1"},{"band":[11,11],"action":"scope","target":"H1"},{"band":[12,19],"action":"kill","target":"H5"},{"band":[12,19],"action":"support","target":"H1"},{"band":[20,200],"action":"kill","target":"H5"},{"band":[20,200],"action":"kill","target":"H1"}],"observed":8,"cost":1,"landed":"11:11:07"}],"transitions":[{"id":"H3","to":"SCOPED","by":"P2","t":"11:01:27"},{"id":"H2","to":"SCOPED","by":"P2","t":"11:01:36"},{"id":"H4","to":"REFUTED","by":"P3","t":"11:05:54"},{"id":"H6","to":"REFUTED","by":"P3","t":"11:06:02"},{"id":"H1","to":"REFUTED","by":"P4","t":"11:11:59"},{"id":"H5","to":"SUPPORTED","by":"P4","t":"11:12:09"}],"attacks":[{"gid":"G1","kind":"no_change","t":"11:35:54"},{"gid":"G2","kind":"no_change","t":"11:36:02"},{"gid":"G3","kind":"constraint","t":"11:36:10"},{"gid":"G4","kind":"constraint","t":"11:36:18"},{"gid":"G5","kind":"constraint","t":"11:36:23"},{"gid":"G6","kind":"new_h","t":"11:36:31"},{"gid":"G7","kind":"constraint","t":"11:36:39"},{"gid":"G8","kind":"constraint","t":"11:36:44"},{"gid":"G9","kind":"constraint","t":"11:36:53"},{"gid":"G10","kind":"constraint","t":"11:36:59"},{"gid":"G11","kind":"constraint","t":"11:37:04"}],"forecast":{"t":"11:49:27","counts":{"brief step (12 uA, 40 ms)":8,"hyperpol -25 then release":6,"hyperpol -30 then release":6,"hyperpol -35 then release":6,"hyperpol -40 then release":6,"long step (10 uA, 300 ms)":32},"mse":30.883095833333332,"budget":6},"report":{"t":"11:54:16","sha":"08dc30d39579ca3f3e79a83ae52ec918bf68818eb2e1bcc0e05f353802bf1400"},"gate":{"t":"11:54:16","passed":true,"prereg":true,"reconcile":true,"trace":true}}</script>
 <script>
-(function(){
-  'use strict';
-  var D = JSON.parse(document.getElementById('run-data').textContent);
-  var NS = 'http://www.w3.org/2000/svg';
-  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  function sec(s){ var p = s.split(':').map(Number); return p[0]*3600 + p[1]*60 + p[2]; }
-  function hm(s){ return s.slice(0,5); }
-  function el(tag, attrs, text){
-    var e = document.createElementNS(NS, tag);
-    for (var k in attrs) e.setAttribute(k, attrs[k]);
-    if (text != null) e.textContent = text;
-    return e;
-  }
-  function h(tag, cls, html){ var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
-  function esc(s){ return String(s).replace(/[&<>]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); }
-  var byId = {}; D.claims.forEach(function(c){ byId[c.id] = c; });
-
-  /* ---------- tiles ---------- */
-  var kinds = {}; D.attacks.forEach(function(a){ kinds[a.kind] = (kinds[a.kind]||0) + 1; });
-  var spent = D.probes.reduce(function(s,p){ return s + p.cost; }, 0);
-  var g = D.gate;
-  var gatesOk = [g.prereg, g.reconcile, g.trace].filter(Boolean).length;
-  var tiles = [
-    [D.claims.length, '假设 H1–H7'],
-    [D.probes.length, '计量探针 P1–P4'],
-    [spent + '/8', '预算（单位）'],
-    [D.simulate, '免费候选模拟（不扣预算）'],
-    [D.attacks.length, '对抗攻击入账'],
-    [gatesOk + '/3', '闸门通过'],
-    ['0', '人工干预（开场一条任务）']
-  ];
-  var tw = document.getElementById('tiles');
-  tiles.forEach(function(t){ tw.appendChild(h('div','tile','<b>'+esc(t[0])+'</b><span>'+esc(t[1])+'</span>')); });
-  document.getElementById('runmeta').textContent =
-    'journal ' + D.events + ' 行 · ' + D.start + ' → ' + D.end + ' UTC · 主会话 rlm( 调用 13 次 · 压缩 0 次 · 容器 crucible/proma:e1cb0f3';
-
-  /* ---------- timeline ---------- */
-  var W = 1040, L = 232, R = 920, top = 58, rowH = 34;
-  var n = D.claims.length, H = top + n*rowH + 34;
-  var t0 = sec('10:18:00'), t1 = sec('11:57:00');
-  function x(t){ return L + (t - t0)/(t1 - t0)*(R - L); }
-  var svg = el('svg', {viewBox:'0 0 '+W+' '+H, role:'img', 'aria-labelledby':'tlt'});
-  svg.appendChild(el('title', {id:'tlt'}, '假设状态时间线：H1–H7 在探针 P1–P4、对抗、预报与闸门处的状态变化'));
-  var yEnd = top + n*rowH;
-  // ticks
-  for (var m = 20; m <= 110; m += 10){
-    var tt = 10*3600 + m*60, xx = x(tt);
-    svg.appendChild(el('line', {x1:xx, x2:xx, y1:top-6, y2:yEnd, class:'ln', 'stroke-width':1}));
-    var hh = Math.floor(tt/3600), mm = (tt%3600)/60;
-    svg.appendChild(el('text', {x:xx, y:yEnd+18, 'text-anchor':'middle', class:'t-mut', 'font-size':11, 'font-family':'IBM Plex Mono, monospace'}, hh+':'+(mm<10?'0':'')+mm));
-  }
-  // attack window
-  var a0 = sec(D.attacks[0].t), a1 = sec(D.attacks[D.attacks.length-1].t);
-  svg.appendChild(el('rect', {x:x(a0)-3, y:top-6, width:x(a1)-x(a0)+6, height:yEnd-top+6, class:'f-win'}));
-  svg.appendChild(el('text', {x:x(a0), y:top-28, 'text-anchor':'middle', class:'t-ink', 'font-size':12, 'font-weight':600}, '对抗 ×' + D.attacks.length));
-  // probe lines
-  D.probes.forEach(function(p){
-    var xx = x(sec(p.landed));
-    svg.appendChild(el('line', {x1:xx, x2:xx, y1:top-18, y2:yEnd, class:'ln-ink', 'stroke-width':1.5}));
-    svg.appendChild(el('text', {x:xx, y:top-28, 'text-anchor':'middle', class:'t-ink', 'font-size':12, 'font-weight':600}, p.pid + ' · ' + p.observed));
-  });
-  // forecast + gate
-  [[D.forecast.t, '预报', top-42], [D.gate.t, '闸 ' + gatesOk + '/3', top-28]].forEach(function(f){
-    var xx = x(sec(f[0]));
-    svg.appendChild(el('line', {x1:xx, x2:xx, y1:f[2]+4, y2:yEnd, class:'ln-acc', 'stroke-width':1.5, 'stroke-dasharray':'4 3'}));
-    svg.appendChild(el('text', {x:xx, y:f[2], 'text-anchor':'middle', class:'t-ink', 'font-size':12, 'font-weight':600}, f[1]));
-  });
-  // rows
-  var tEnd = sec(D.gate.t);
-  D.claims.forEach(function(c, i){
-    var y = top + i*rowH + rowH/2;
-    svg.appendChild(el('text', {x:0, y:y+4, class:'t-ink', 'font-size':13, 'font-weight':700, 'font-family':'IBM Plex Mono, monospace'}, c.id));
-    svg.appendChild(el('text', {x:30, y:y+4, class:'t-mut', 'font-size':12}, c.label));
-    var tr = D.transitions.filter(function(t){ return t.id === c.id; });
-    var cur = {s:'LIVE', t:sec(c.t)}, segs = [];
-    tr.forEach(function(t){ segs.push({s:cur.s, a:cur.t, b:sec(t.t)}); cur = {s:t.to, t:sec(t.t)}; });
-    segs.push({s:cur.s, a:cur.t, b:tEnd});
-    segs.forEach(function(s){
-      if (s.s === 'REFUTED'){
-        svg.appendChild(el('line', {x1:x(s.a), x2:x(s.b), y1:y, y2:y, class:'s-REFUTED', 'stroke-width':2, 'stroke-dasharray':'2 4', opacity:.8}));
-      } else {
-        svg.appendChild(el('rect', {x:x(s.a), y:y-6, width:Math.max(2, x(s.b)-x(s.a)), height:12, rx:2, class:'f-'+s.s}));
-      }
-    });
-    svg.appendChild(el('circle', {cx:x(sec(c.t)), cy:y, r:3, class:'f-surf'}));
-    tr.forEach(function(t){
-      var xx = x(sec(t.t));
-      svg.appendChild(el('circle', {cx:xx, cy:y, r:5.5, class:'f-'+t.to, stroke:'none'}));
-      svg.appendChild(el('text', {x:xx, y:y-10, 'text-anchor':'middle', class:'t-mut', 'font-size':10, 'font-family':'IBM Plex Mono, monospace'}, '←' + t.by));
-    });
-    var last = tr.length ? tr[tr.length-1].to : 'LIVE';
-    var lt = el('text', {x:x(tEnd)+10, y:y+4, 'font-size':11, 'font-weight':700, 'font-family':'IBM Plex Mono, monospace', class:'f-'+last}, last);
-    svg.appendChild(lt);
-  });
-  // replay mask
-  var mask = el('rect', {x:W, y:0, width:0, height:H, class:'f-mask'});
-  var cursor = el('line', {x1:W, x2:W, y1:top-46, y2:yEnd, class:'ln-acc', 'stroke-width':2, visibility:'hidden'});
-  svg.appendChild(mask); svg.appendChild(cursor);
-  document.getElementById('timeline').appendChild(svg);
-
-  /* ---------- probe cards ---------- */
-  var SC = [0, 55];
-  function bandChart(p){
-    var keys = Object.keys(p.bands).sort(function(a,b){ return +a.slice(1) - +b.slice(1); });
-    var w = 240, l = 24, r = 232, rh = 17, t = 18, hgt = t + keys.length*rh + 18;
-    function sx(v){ return l + (Math.min(Math.max(v, SC[0]), SC[1]) - SC[0])/(SC[1]-SC[0])*(r - l); }
-    var s = el('svg', {viewBox:'0 0 '+w+' '+hgt, role:'img', 'aria-label': p.pid + ' 预登记频段与读数 ' + p.observed});
-    [0,10,20,30,40,50].forEach(function(v){
-      s.appendChild(el('line', {x1:sx(v), x2:sx(v), y1:t-4, y2:t+keys.length*rh, class:'ln', 'stroke-width':1}));
-      s.appendChild(el('text', {x:sx(v), y:hgt-4, 'text-anchor':'middle', class:'t-mut', 'font-size':10, 'font-family':'IBM Plex Mono, monospace'}, v));
-    });
-    keys.forEach(function(k, i){
-      var b = p.bands[k], y = t + i*rh;
-      var tr = D.transitions.filter(function(q){ return q.id === k && q.by === p.pid; })[0];
-      s.appendChild(el('text', {x:0, y:y+11, class:'t-mut', 'font-size':11, 'font-family':'IBM Plex Mono, monospace'}, k));
-      s.appendChild(el('rect', {x:sx(b[0]), y:y+3, width:Math.max(2, sx(b[1])-sx(b[0])), height:10, rx:1.5, class: tr ? 'f-'+tr.to : 'f-band'}));
-    });
-    var ox = sx(p.observed);
-    s.appendChild(el('line', {x1:ox, x2:ox, y1:t-6, y2:t+keys.length*rh+2, class:'ln-ink', 'stroke-width':2}));
-    s.appendChild(el('text', {x:ox, y:t-8, 'text-anchor':'middle', class:'t-ink', 'font-size':11, 'font-weight':700, 'font-family':'IBM Plex Mono, monospace'}, '读数 ' + p.observed));
-    return s;
-  }
-  var GIST = {
-    P1: '比无电流基线 23 高 +9。本探针没有触发状态迁移。',
-    P2: '恰等于无电流基线 34；H1 预测 [40,53] 落空，触发 triage，模型提出 H6。',
-    P3: '没有超极化再武装放大：伪影对手 H4 与 H6 同时出局。',
-    P4: '弱测试没有点燃 T 型窗：H1 出局；H5 获支持（只测 1 次，弱）。'
-  };
-  var pw = document.getElementById('probes');
-  D.probes.forEach(function(p){
-    var card = h('div', 'probe'); card.dataset.pid = p.pid;
-    card.appendChild(h('h4', null, '<span>' + p.pid + '</span><span class="obs">' + p.observed + '</span>'));
-    card.appendChild(h('div', 'proto', esc(p.protocol)));
-    card.appendChild(bandChart(p));
-    card.appendChild(h('dl', null,
-      '<dt>prereg</dt><dd>' + p.sha.slice(0,12) + '…</dd>' +
-      '<dt>冻结 → 落地</dt><dd>' + p.frozen + ' → ' + p.landed + '</dd>' +
-      '<dt>reps · 扣预算</dt><dd>' + p.reps + ' · ' + p.cost + '</dd>'));
-    var tr = D.transitions.filter(function(q){ return q.by === p.pid; });
-    if (tr.length){
-      var ul = h('ul');
-      tr.forEach(function(q){
-        var act = {REFUTED:'kill', SCOPED:'scope', SUPPORTED:'support'}[q.to];
-        var br = p.branches.filter(function(b){ return b.target === q.id && b.action === act && p.observed >= b.band[0] && p.observed <= b.band[1]; })[0];
-        ul.appendChild(h('li', null, '<b>' + q.id + ' → ' + q.to + '</b> <span class="muted">· 预登记 ' + act + ' 带 ' + (br ? '[' + br.band.join(',') + ']' : '未找到') + ' · ' + hm(q.t) + '</span>'));
-      });
-      card.appendChild(ul);
-    }
-    card.appendChild(h('p', 'gist', GIST[p.pid] || ''));
-    pw.appendChild(card);
-  });
-
-  /* ---------- attacks ---------- */
-  document.getElementById('atk-n').textContent = D.attacks.length;
-  var aw = document.getElementById('atk');
-  D.attacks.forEach(function(a){ var s = h('span', 'k-' + a.kind, a.gid + ' ' + a.kind); aw.appendChild(s); });
-  document.getElementById('atk-sum').innerHTML =
-    'no_change <b class="num">' + (kinds.no_change||0) + '</b> · constraint <b class="num">' + (kinds.constraint||0) +
-    '</b> · new_h <b class="num">' + (kinds.new_h||0) + '</b>（G6 → 登记为 H7，LIVE）';
-
-  /* ---------- forecast strip ---------- */
-  document.getElementById('mse').textContent = D.forecast.mse.toFixed(2);
-  var rows = [
-    {k:'历史 Qwen plus（6 次）', v:[6.5, 9.2, 15.0, 24.4, 33.2, 58.4], me:false},
-    {k:'历史 Qwen 3.8max', v:[35.5], me:false},
-    {k:'本次 GLM 5.3 Flash', v:[D.forecast.mse], me:true}
-  ];
-  var fw = 520, fl = 150, fr = 505, frh = 24, ft = 8, fh = ft + rows.length*frh + 20;
-  function fx(v){ return fl + v/60*(fr - fl); }
-  var fs = el('svg', {viewBox:'0 0 '+fw+' '+fh, role:'img', 'aria-label':'预报 MSE 对照：同 world 同 seed 历史运行与本次'});
-  [0,10,20,30,40,50,60].forEach(function(v){
-    fs.appendChild(el('line', {x1:fx(v), x2:fx(v), y1:ft, y2:ft+rows.length*frh, class:'ln', 'stroke-width':1}));
-    fs.appendChild(el('text', {x:fx(v), y:fh-4, 'text-anchor':'middle', class:'t-mut', 'font-size':10, 'font-family':'IBM Plex Mono, monospace'}, v));
-  });
-  rows.forEach(function(r, i){
-    var y = ft + i*frh + frh/2;
-    fs.appendChild(el('text', {x:0, y:y+4, class: r.me ? 't-ink' : 't-mut', 'font-size':11, 'font-weight': r.me ? 700 : 400}, r.k));
-    r.v.forEach(function(v){
-      fs.appendChild(el('circle', {cx:fx(v), cy:y, r: r.me ? 6 : 4.5, class: r.me ? 'f-acc' : 'f-none ln-mut', 'stroke-width': r.me ? 0 : 1.5}));
-      var j = r.v.indexOf(v); if (r.me || j === 0 || j === r.v.length - 1) fs.appendChild(el('text', {x: (j === 0 && r.v.length > 1) ? fx(v)-9 : fx(v)+10, 'text-anchor': (j === 0 && r.v.length > 1) ? 'end' : 'start', y:y+4, class:'t-ink', 'font-size':11, 'font-family':'IBM Plex Mono, monospace'}, v.toFixed(v % 1 ? (r.me ? 2 : 1) : 1)));
-    });
-  });
-  document.getElementById('fstrip').appendChild(fs);
-  var fc = D.forecast.counts, ft2 = h('p', 'small');
-  ft2.innerHTML = '一次性提交：long step <b class="num">' + fc['long step (10 uA, 300 ms)'] + '</b>（P1 实测锚定）· brief step <b class="num">' +
-    fc['brief step (12 uA, 40 ms)'] + '</b>（P4 同族锚定）· 释放族 −25/−30/−35/−40 各 <b class="num">' + fc['hyperpol -30 then release'] + '</b>（结构外推）';
-  document.getElementById('fstrip').appendChild(ft2);
-
-  /* ---------- gate verdicts ---------- */
-  ['prereg','reconcile','trace'].forEach(function(k){
-    document.getElementById('g-' + k).textContent = (g[k] ? '✓ 通过' : '✗ 拒绝') + ' ' + hm(g.t);
-  });
-
-  /* ---------- replay stepper ---------- */
-  var STEPS = [
-    {t:'10:21:44', pid:null, k:'开场', c:'开跑后先用免费候选模拟摸底，10:21 提出 H1–H4；H4 是测量伪影对手。'},
-    {t:'10:26:16', pid:'P1', k:'P1', c:'long step 读数 32，比无电流基线 23 高 +9。没有触发迁移。'},
-    {t:'11:01:36', pid:'P2', k:'P2', c:'10:31 提出 H5。P2 读数 34，H1 预测落空，模型提出 H6；H2、H3 落在预登记 scope 带 [33,36]，收窄。'},
-    {t:'11:06:02', pid:'P3', k:'P3', c:'P3 读数 13.5 落在 kill 带 [11,15]：H4 与 H6 出局。'},
-    {t:'11:12:09', pid:'P4', k:'P4', c:'P4 读数 8 落在 [3,8]：H1 出局，H5 获弱支持。'},
-    {t:'11:45:36', pid:null, k:'对抗', c:'rlm 对抗者对 H5 发起 11 条攻击，全部入账；G6 登记为 H7。判别 H5 vs H7 的探针被预登记规则拒绝两次。'},
-    {t:D.gate.t, pid:null, k:'终局', c:'一次性预报 MSE ' + D.forecast.mse.toFixed(3) + '；报告声明 sha256 后宿主重算，三道闸 ' + gatesOk + '/3 通过。'}
-  ];
-  var si = STEPS.length - 1;
-  var bPrev = document.getElementById('prev'), bNext = document.getElementById('next');
-  function setStep(i){
-    si = Math.max(0, Math.min(STEPS.length - 1, i));
-    var st = STEPS[si], last = si === STEPS.length - 1;
-    var cx = last ? W : x(sec(st.t)) + 4;
-    mask.setAttribute('x', cx); mask.setAttribute('width', Math.max(0, W - cx));
-    cursor.setAttribute('x1', cx); cursor.setAttribute('x2', cx); cursor.setAttribute('visibility', last ? 'hidden' : 'visible');
-    document.getElementById('pos').textContent = (si + 1) + '/' + STEPS.length + ' ' + st.k;
-    document.getElementById('cap').textContent = st.c;
-    bPrev.disabled = si === 0; bNext.disabled = last;
-    pw.querySelectorAll('.probe').forEach(function(c){ c.classList.toggle('active', c.dataset.pid === st.pid); });
-  }
-  bPrev.addEventListener('click', function(){ setStep(si - 1); });
-  bNext.addEventListener('click', function(){ setStep(si + 1); });
-  setStep(si);
-
-  /* ---------- screen navigation ---------- */
-  var screens = Array.prototype.slice.call(document.querySelectorAll('section.screen'));
-  var links = Array.prototype.slice.call(document.querySelectorAll('.idx a'));
-  function curIdx(){
-    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) return screens.length - 1;
-    var i = 0;
-    screens.forEach(function(s, k){ if (s.getBoundingClientRect().top <= 90) i = k; });
+(() => {
+  const cards = [...document.querySelectorAll('article[data-key]')];
+  const links = new Map([...document.querySelectorAll('.tl a')].map((a) => [a.getAttribute('href').slice(1), a]));
+  const mark = (id) => links.forEach((a, k) => a.setAttribute('aria-current', String(k === id)));
+  const current = () => {
+    let i = -1;
+    cards.forEach((c, k) => { if (c.getBoundingClientRect().top < 120) i = k; });
     return i;
-  }
-  function mark(){ var i = curIdx(); links.forEach(function(a, k){ a.setAttribute('aria-current', k === i ? 'true' : 'false'); }); }
-  var navTarget = -1, navAt = 0;
-  function navIdx(){ return (Date.now() - navAt < 900 && navTarget >= 0) ? navTarget : curIdx(); }
-  function go(i){
-    i = Math.max(0, Math.min(screens.length - 1, i));
-    navTarget = i; navAt = Date.now();
-    screens[i].scrollIntoView({behavior: reduce ? 'auto' : 'smooth', block: 'start'});
-    try { history.replaceState(null, '', '#' + screens[i].id); } catch (e) {}
-  }
-  document.addEventListener('keydown', function(e){
-    if (e.metaKey || e.ctrlKey || e.altKey) return;
-    var tg = e.target;
-    if (tg && tg.matches && tg.matches('input,textarea,select,[contenteditable="true"]')) return;
-    if (e.key === 'ArrowRight' || e.key === 'j'){ e.preventDefault(); go(navIdx() + 1); }
-    else if (e.key === 'ArrowLeft' || e.key === 'k'){ e.preventDefault(); go(navIdx() - 1); }
+  };
+  document.addEventListener('keydown', (e) => {
+    if (e.altKey || e.ctrlKey || e.metaKey || /input|textarea/i.test(e.target.tagName)) return;
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    const i = current();
+    const next = cards[e.key === 'ArrowRight' ? Math.min(i + 1, cards.length - 1) : Math.max(i - 1, 0)];
+    if (!next) return;
+    e.preventDefault();
+    next.scrollIntoView({ block: 'start' });
+    history.replaceState(null, '', '#' + next.id);
+    mark(next.id);
   });
-  var ticking = false;
-  window.addEventListener('scroll', function(){ if (!ticking){ ticking = true; requestAnimationFrame(function(){ mark(); ticking = false; }); } }, {passive:true});
-  mark();
-
-  /* ---------- theme toggle ---------- */
-  var root = document.documentElement;
-  try { var saved = localStorage.getItem('crucible-defense-theme'); if (saved === 'light' || saved === 'dark') root.dataset.theme = saved; } catch (e) {}
-  document.getElementById('theme').addEventListener('click', function(){
-    var dark = root.dataset.theme ? root.dataset.theme === 'dark' : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    root.dataset.theme = dark ? 'light' : 'dark';
-    try { localStorage.setItem('crucible-defense-theme', root.dataset.theme); } catch (e) {}
-  });
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((es) => es.forEach((x) => x.isIntersecting && mark(x.target.id)), { rootMargin: '0px 0px -70% 0px' });
+    cards.forEach((c) => io.observe(c));
+  }
+  const host = document.querySelector('.tools');
+  if (host) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = '展开全部证据';
+    b.addEventListener('click', () => {
+      const all = [...document.querySelectorAll('article details')];
+      const open = all.some((d) => !d.open);
+      all.forEach((d) => { d.open = open; });
+      b.textContent = open ? '收起全部证据' : '展开全部证据';
+    });
+    host.append(b);
+  }
 })();
 </script>

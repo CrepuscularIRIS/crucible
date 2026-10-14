@@ -26,6 +26,10 @@ dash.md
 **/.proma-research
 .playwright-mcp
 research/campaigns
+# 带真相的宿主产物：答辩页 / 评委报告逐字写出 annotations 的 truth；历史评测轨迹里有同一世界的结论。
+# agent 在容器里能读 /crucible，留着等于把答案放进镜像（docker-compose-eval.test.ts 按 truth 口令扫整个上下文）。
+deploy/defense
+research/arft
 # 比赛原始材料只用于宿主侧阅读与提交，不进入产品运行时镜像
 Race
 mindset
@@ -42,3 +46,6 @@ __pycache__
 .idea
 .cache
 *.tsbuildinfo
+
+# 渲染测试快照含运行原文（假设/结论/测量），与 research/campaigns 同类
+**/__snapshots__

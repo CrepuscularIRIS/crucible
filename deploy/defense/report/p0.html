@@ -1,0 +1,250 @@
+<title>新镜像上的一句话：“看不到额外电流”</title>
+<style>
+/* tokens · layout: one reading column (max 880px), sticky case bar; cards are bordered blocks, no shadows */
+:root{
+  --bg:#eef0f3; --surface:#ffffff; --ink:#14181e; --muted:#59616d; --line:#d3d8df; --accent:#1d4e94;
+  --yes:#16794a; --no:#b42318; --warn:#8a5a00;
+  --f-display:"PingFang SC","Noto Sans SC","Microsoft YaHei","Source Han Sans SC",system-ui,sans-serif;
+  --f-body:"PingFang SC","Noto Sans SC","Microsoft YaHei","Source Han Sans SC",system-ui,sans-serif;
+  --f-mono:ui-monospace,"SFMono-Regular","Cascadia Mono",Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1217; --surface:#171b22; --ink:#e5e8ed; --muted:#9aa3af; --line:#2b313b; --accent:#86aefc;
+  --yes:#4cc38a; --no:#ff7b6b; --warn:#e2a64b; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1217; --surface:#171b22; --ink:#e5e8ed; --muted:#9aa3af; --line:#2b313b; --accent:#86aefc;
+  --yes:#4cc38a; --no:#ff7b6b; --warn:#e2a64b; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 var(--f-body);padding-inline:16px;-webkit-text-size-adjust:100%}
+main,.bar-in{max-width:880px;margin-inline:auto;min-width:0}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3{font-family:var(--f-display);line-height:1.3}
+h1{font-size:clamp(1.5rem,1.1rem + 1.8vw,2.2rem);margin:0 0 12px}
+h2{font-size:1.3rem;margin:0 0 14px}
+h3{font-size:1.05rem;margin:0}
+section{padding-block:32px;border-bottom:1px solid var(--line);scroll-margin-top:56px}
+p{margin:.45em 0}
+.muted{color:var(--muted)}.small{font-size:.86rem}
+.num,td,.mono{font-variant-numeric:tabular-nums}
+code,.mono,pre{font-family:var(--f-mono);font-size:.86em}
+.bar{position:sticky;top:0;z-index:3;background:var(--bg);border-bottom:1px solid var(--line);margin-inline:-16px;padding:8px 16px}
+.bar-in{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+.bar b{margin-right:auto;font-family:var(--f-display)}
+.bar ul{display:flex;flex-wrap:wrap;gap:6px;list-style:none;margin:0;padding:0}
+.bar a{display:inline-block;padding:2px 10px;border:1px solid var(--line);border-radius:4px;background:var(--surface);text-decoration:none;color:var(--muted);font-size:.86rem}
+.bar a[aria-current="page"]{color:var(--ink);border-color:var(--accent)}
+.headline{font-size:1.12rem;font-weight:600;margin:0 0 18px}
+.qa{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden;margin:0}
+.qa>div{background:var(--surface);padding:12px 14px;min-width:0}
+.qa dt{font-weight:700;font-size:.9rem;color:var(--accent)}
+.qa dd{margin:2px 0 0}
+pre{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 12px;overflow-x:auto;white-space:pre-wrap;overflow-wrap:anywhere}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px;margin:14px 0;min-width:0;scroll-margin-top:56px}
+.card header{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;margin-bottom:10px}
+.nid{font-family:var(--f-mono);color:var(--accent);font-weight:600}
+.meta{color:var(--muted);font-size:.85rem}
+.five{margin:0;display:grid;gap:6px}
+.five>div{display:grid;grid-template-columns:6.5em 1fr;gap:8px}
+.five dt{font-weight:700;color:var(--muted);font-size:.9rem}
+.five dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.aud{color:var(--warn);font-size:.8rem;white-space:nowrap}
+@media (max-width:520px){.five>div{grid-template-columns:1fr;gap:0}}
+.verdicts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:10px;margin:14px 0 6px}
+.verdict{border:1px solid var(--line);border-radius:6px;padding:10px 12px;min-width:0}
+.verdict h4{margin:0 0 4px;font-size:.82rem;color:var(--muted);font-weight:600}
+.verdict p{margin:0}
+.icon{font-weight:700;display:inline-block;min-width:1.2em}
+.m-yes{color:var(--yes)}.m-no{color:var(--no)}.m-partial{color:var(--warn)}
+.basis{font-size:.88rem;color:var(--muted)}
+.basis code{color:var(--ink)}
+details{margin-top:10px;border-top:1px dashed var(--line);padding-top:8px}
+summary{cursor:pointer;color:var(--accent);font-size:.9rem}
+details h5{margin:10px 0 4px;font-size:.85rem}
+details pre{font-size:.78rem;max-height:22em;overflow:auto}
+details ul{margin:0;padding-left:1.2em;font-size:.88rem}
+.tl{list-style:none;padding:0;margin:0 0 16px;display:grid;gap:4px}
+.tl a{display:flex;gap:10px;align-items:baseline;text-decoration:none;color:var(--ink);padding:4px 8px;border-radius:4px;border:1px solid transparent}
+.tl a[aria-current="true"]{border-color:var(--accent);background:var(--surface)}
+.tl .icons{font-weight:700;white-space:nowrap}
+.layers{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:8px;margin:0 0 10px;padding:0;list-style:none}
+.layers li{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px 10px;font-size:.9rem}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.88rem;min-width:620px}
+th,td{text-align:left;vertical-align:top;padding:8px 10px;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:600;font-size:.8rem}
+tr:last-child td{border-bottom:0}
+blockquote.orig{margin:14px 0 0;padding:10px 14px;border-left:3px solid var(--no);background:var(--surface)}
+blockquote.orig .src{display:block;font-size:.8rem;color:var(--muted)}
+.correction{padding:8px 14px 12px;border-left:3px solid var(--yes);background:var(--surface);margin-bottom:12px}
+.truth{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);padding:10px 14px;border-radius:0 6px 6px 0}
+.tag{display:inline-block;font-size:.75rem;border:1px solid currentColor;border-radius:3px;padding:0 5px;color:var(--muted)}
+.tag.todo{color:var(--warn)}
+.ver dl{display:grid;grid-template-columns:9em 1fr;gap:4px 12px;margin:0}
+.ver dt{color:var(--muted)}.ver dd{margin:0;min-width:0;overflow-wrap:anywhere}
+@media (max-width:520px){.ver dl{grid-template-columns:1fr}.ver dd{margin-bottom:6px}}
+.tools{margin:0 0 10px}
+.tools button{font:inherit;font-size:.86rem;color:var(--accent);background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:3px 10px;cursor:pointer}
+@media (prefers-reduced-motion: no-preference){html{scroll-behavior:smooth}}
+</style>
+<div class="bar"><div class="bar-in"><b>Crucible 评委报告</b><ul><li><a href="../index.html">一句话（主案例）</a></li><li><a href="../report/s0.html">详细指令</a></li><li><a href="../report/p0.html" aria-current="page">P0 镜像</a></li></ul></div></div>
+<main>
+<section id="top" data-kind="first">
+<h1>新镜像上的一句话：“看不到额外电流”</h1>
+<p class="headline">这次 agent 开了子任务窗口，但结论“看不到额外电流”与真相相反：用来否定 T 型家族的实验分不开真相与无额外电流。</p>
+<dl class="qa"><div><dt>研究什么</dt><dd>同一个神经元、同一句话，换成新镜像：被压低后为什么多放电？用 8 次真实测量分清几种解释。</dd></div><div><dt>怎么做的</dt><dd>先写下预测和判定规则再做真实测量：5 组实验（1 组测量失败），用掉 7/8 次测量，另跑了 34 次免费仿真。</dd></div><div><dt>结果改变了什么</dt><dd>一组实验因工具不认协议而失败，它改测标准的超极化实验，4 次测量后否定了 T 型这一整类解释。</dd></div><div><dt>下一步是什么</dt><dd>否定一整类解释前，先在仿真里扫参数、算清要测几次；分不开就换阻断剂实验。</dd></div></dl>
+</section>
+
+<section id="task">
+<h2>示例任务</h2>
+<p>与详细指令案例同一个模拟神经元（seed 0），换成 P0 镜像。父会话开了子任务窗口做仿真，子任务被隔离规则拦下、只交回计划，仿真全由父会话自己跑。</p>
+<p class="small muted">用户发给系统的原话（逐字，与一句话案例同一句提示词（提交 c55e023 的说明））：</p>
+<pre>帮我研究一下 ca_rebound 这个神经元的放电机制。</pre>
+<p class="small">在 Proma 里回放这一次：打开任一 agent 会话 → 底栏“研究画布” → 归档回放 → 选 <code>research/campaigns/2026-10-14-glm53flash-p0-oneline-ca_rebound</code>。画布上线前，可直接读该目录下的 <code>journal.jsonl</code>（每行一个事件，行号即本页引用的“运行记录第 N 行”）。</p>
+</section>
+
+<section id="feedback">
+<h2>一次反馈改变了下一步实验</h2>
+<article class="card" data-kind="feedback">
+<p><b>原来的实验</b>（P0）：<span class="from">brief step (12 uA, 40 ms)</span></p>
+<p><b>原预测</b>：H3（外向钾电流） 预计 0–5；H4（额外电流不可见（零假设）） 预计 6–10</p>
+<p><b>实测</b>：测 1 次平均 7，落在 H4（额外电流不可见（零假设）） 的预测区间；随后 。</p>
+<p><b>下一组实验</b>（P2）改为：<span class="to">hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)</span></p>
+<p class="why"><b>改变理由</b>（P2 事先写下的问题，逐字）：真细胞在 hyperpol conditioning + depol test（250ms 释放后 +12uA）的 spike_count 均值落入哪个家族频段？（H1 内向反跳 20–28 / H4 零假设 14–19 / H3 外向 ≤13）</p>
+<details><summary>证据（原始记录）</summary><pre>41: {&quot;ts&quot;:&quot;2026-10-14T15:42:50.496Z&quot;,&quot;op&quot;:&quot;prereg.write&quot;,&quot;pid&quot;:&quot;P0&quot;,&quot;spec_sha256&quot;:&quot;f3a038f1ebf6422beadaca4c13a4f5c5d8d4a4f3a1dd3fafbb4b17e353e1f802&quot;,&quot;prereg_path&quot;:&quot;prereg/P0.json&quot;,&quot;prev&quot;:&quot;a215f15cde798dcf7b4712cd3e3bd628f11fc867ae8530428d9e5332fce82694&quot;}
+44: {&quot;ts&quot;:&quot;2026-10-14T15:43:45.025Z&quot;,&quot;op&quot;:&quot;world.observe&quot;,&quot;world&quot;:&quot;ca_rebound&quot;,&quot;seed&quot;:0,&quot;protocol&quot;:&quot;brief step (12 uA, 40 ms)&quot;,&quot;reps&quot;:1,&quot;blockers&quot;:&quot;无；本探针仅校准，不判别 H1/H2&quot;,&quot;cost&quot;:1,&quot;spike_count&quot;:7,&quot;pid&quot;:&quot;P0&quot;,&quot;prev&quot;:&quot;fca1f1260f991fa701510c54e6d91b98f0c86c916220a7449d0705882501e7d6&quot;}
+51: {&quot;ts&quot;:&quot;2026-10-14T15:47:10.703Z&quot;,&quot;op&quot;:&quot;prereg.write&quot;,&quot;pid&quot;:&quot;P2&quot;,&quot;spec_sha256&quot;:&quot;6c2d98f2c4feadeb8a6bf540c3032879fc6f19f5750dcbfd4ef93bac4b064aee&quot;,&quot;prereg_path&quot;:&quot;prereg/P2.json&quot;,&quot;prev&quot;:&quot;0f2b07d7da2efbd75c97e06698d638e56c4cfb75f585ce09502f22bbde3d4239&quot;}</pre></details>
+</article>
+</section>
+
+<section id="nodes">
+<h2>关键节点</h2>
+<p class="small muted">每个节点两栏判定：左栏只看当时 agent 能知道的信息，右栏对照真相。按 ← / → 在节点间跳转。</p>
+<div class="tools"></div>
+<ol class="tl"><li><a href="#N1"><span class="mono">N1</span><span class="icons"><span class="m-no" title="当时不合理">✕</span> <span class="m-no" title="事后错误">✕</span></span><span>4 次测量否定整个 T 型 / Ih 家族</span></a></li><li><a href="#N2"><span class="mono">N2</span><span class="icons"><span class="m-no" title="当时不合理">✕</span> <span class="m-no" title="事后错误">✕</span></span><span>补测 1 次，否定 T 型浅失活亚型</span></a></li></ol>
+<h3>问题出在哪</h3>
+<ul class="layers"><li><b>推理层</b>：<a href="#N1">N1</a>、<a href="#N2">N2</a></li></ul>
+<article class="card node" data-kind="node" data-key id="N1">
+<header><span class="nid">N1</span><h3>4 次测量否定整个 T 型 / Ih 家族</h3><span class="meta">运行记录第 51–56 行 · 推理层</span></header>
+<dl class="five"><div><dt>当时知道</dt><dd>登记时仍在考虑：H1（T 型 / Ih 窗电流家族）、H2（T 型浅失活亚型）、H3（外向钾电流）、H4（额外电流不可见（零假设））。之前的真实测量：P0 得 7（1 次）。上次登记之后没有同协议仿真；全程同协议候选仿真值 8–25（9 次；候选参数未记录，含参数差异）。</dd></div><div><dt>为什么这样选</dt><dd>真细胞在 hyperpol conditioning + depol test（250ms 释放后 +12uA）的 spike_count 均值落入哪个家族频段？（H1 内向反跳 20–28 / H4 零假设 14–19 / H3 外向 ≤13）</dd></div><div><dt>期待看到</dt><dd>若结果落在 20–28：支持 H1、否定 H4、否定 H3；14–19：支持 H4、否定 H1；0–13：收窄 H3、否定 H1。</dd></div><div><dt>实际发生</dt><dd>测了 4 次，平均得 16，落在 H4 的预测区间。</dd></div><div><dt>因此调整</dt><dd>H4 得到支持、H1 被否定。下一组实验 P3 改用「depolarising conditioning + test (+15 uA/250 ms, then +12 uA)」。</dd></div></dl>
+<div class="verdicts"><div class="verdict" data-col="at-time"><h4>当时是否合理</h4><p><span class="icon m-no" aria-hidden="true">✕</span><b class="word m-no">不合理</b>。家族的预测区间只按一组参数的仿真画出；4 次测量分不开相差不到 1 个峰的真相与基线，却据此否定了整个家族。</p></div><div class="verdict" data-col="hindsight"><h4>事后对照真相</h4><p><span class="icon m-no" aria-hidden="true">✕</span><b class="word m-no">错误</b>。真相均值 16.09 本身就落在否定 H1 的区间 14–19 里（4 次测量平均落入的概率约 0.99，正态近似）；分开真相与基线约需 42 次。</p></div></div>
+<p class="basis">依据：复算：同 world、同 seed、同协议，基线 15.52±1.94 对真相 16.09±1.8（<code>mindset/轨迹偏离审计-s0-复算.py cell_keys(p0.P2)</code>）；s0 审计同协议行（hyperpol cond + depol test）（<code>mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §1 P3 行</code>）</p>
+<p class="small"><b>当时本可以选：</b>按预登记分支否定整个家族（若真相是弱 T 型，这一步就是误判）；只收窄为“这组参数在 250 ms 超极化下未见增强”，保留家族；先在仿真里扫家族参数并估所需次数，超预算就换阻断剂实验</p>
+<details><summary>证据（原始记录 6 行 · 推导值 · 复算 · 审查者 · 干预）</summary>
+<h5>① 原始记录</h5><pre>51: {&quot;ts&quot;:&quot;2026-10-14T15:47:10.703Z&quot;,&quot;op&quot;:&quot;prereg.write&quot;,&quot;pid&quot;:&quot;P2&quot;,&quot;spec_sha256&quot;:&quot;6c2d98f2c4feadeb8a6bf540c3032879fc6f19f5750dcbfd4ef93bac4b064aee&quot;,&quot;prereg_path&quot;:&quot;prereg/P2.json&quot;,&quot;prev&quot;:&quot;0f2b07d7da2efbd75c97e06698d638e56c4cfb75f585ce09502f22bbde3d4239&quot;}
+52: {&quot;ts&quot;:&quot;2026-10-14T15:47:17.378Z&quot;,&quot;op&quot;:&quot;probe.start&quot;,&quot;pid&quot;:&quot;P2&quot;,&quot;prev&quot;:&quot;ac9515f193ebc174a4facee412fd8c35ba917da7270960864d9d25fb04c93be1&quot;}
+53: {&quot;ts&quot;:&quot;2026-10-14T15:47:20.696Z&quot;,&quot;op&quot;:&quot;world.observe&quot;,&quot;world&quot;:&quot;ca_rebound&quot;,&quot;seed&quot;:0,&quot;protocol&quot;:&quot;hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)&quot;,&quot;reps&quot;:4,&quot;blockers&quot;:&quot;依赖 P0 已通过（brief=7∈[6,10]，journal 在案）；协议标签为 meter 可达的标准池协议（held-out 释放深度标签不可达，见 G1）&quot;,&quot;cost&quot;:4,&quot;spike_count&quot;:16,&quot;pid&quot;:&quot;P2&quot;,&quot;prev&quot;:&quot;47cdf5734a6f2e0f8a0fe6f021d1bc6ad40d7ce1a1332c3148cb4e5c5f51bcb7&quot;}
+54: {&quot;ts&quot;:&quot;2026-10-14T15:47:20.696Z&quot;,&quot;op&quot;:&quot;probe.land&quot;,&quot;pid&quot;:&quot;P2&quot;,&quot;exit_code&quot;:0,&quot;metric&quot;:16,&quot;prev&quot;:&quot;5301d74c3edde6b880b01d19c2707f5f896b7e243378af6aa278ccae82262dc7&quot;}
+55: {&quot;ts&quot;:&quot;2026-10-14T15:48:39.585Z&quot;,&quot;op&quot;:&quot;claim.transition&quot;,&quot;id&quot;:&quot;H4&quot;,&quot;to&quot;:&quot;SUPPORTED&quot;,&quot;by_probe&quot;:&quot;P2&quot;,&quot;note&quot;:&quot;n250=16 落入 P2 为 H4 预注册频段 [14,19]：真细胞对 250ms 超极化条件化+12uA 测试的响应与无附加电流参考（模拟 15）一致，释放期额外放电贡献近零；P0 校准（brief=7∈[6,10]）同向。零假设（附加电流在可观测轴上不可见）在释放轴成立。&quot;,&quot;prev&quot;:&quot;79f77f82577f0eef9a86be384183c214c3dded766a4f5fe4e391f044b6fac177&quot;}
+56: {&quot;ts&quot;:&quot;2026-10-14T15:48:39.588Z&quot;,&quot;op&quot;:&quot;claim.transition&quot;,&quot;id&quot;:&quot;H1&quot;,&quot;to&quot;:&quot;REFUTED&quot;,&quot;by_probe&quot;:&quot;P2&quot;,&quot;note&quot;:&quot;n250=16 未落入 P2 为 H1 预注册频段 [20,28]（内向家族模拟值域 19–27），按 [14,19] 频段的 kill 分支死亡：真细胞释放期没有可检测的低阈值持续内向反跳。&quot;,&quot;prev&quot;:&quot;a2cd8970bb0a957f4acaf9f1601cb12523779af997ac6c2086af348bfac87f9b&quot;}</pre>
+<h5>② 推导值（由记录推出）</h5><ul><li>同协议候选仿真值（全程）8–25，9 次</li><li>观测 16（4 次）对各预测区间：H1 [20, 28]；H3 [0, 13]；H4 [14, 19] ← 观测落在此</li></ul>
+<h5>③ 复算</h5><p class="small">键 <code>p0.P2.base_mean</code>、<code>p0.P2.base_sd</code>、<code>p0.P2.kill_hi</code>、<code>p0.P2.kill_lo</code>、<code>p0.P2.r_star</code>、<code>p0.P2.truth_mean</code>、<code>p0.P2.truth_p_kill</code>、<code>p0.P2.truth_sd</code>，来自 <code>recompute.json</code>，脚本 <code>mindset/轨迹偏离审计-s0-复算.py</code></p>
+<h5>④ 审查者</h5><ul><li>G1 → H1：作者未记录</li><li>G3 → H4：作者未记录</li><li>G4 → H4：作者未记录</li><li>G5 → H4：作者未记录</li></ul>
+<h5>⑤ 人的干预</h5><p class="small muted">本归档没有干预文件。</p>
+</details>
+</article>
+<article class="card node" data-kind="node" data-key id="N2">
+<header><span class="nid">N2</span><h3>补测 1 次，否定 T 型浅失活亚型</h3><span class="meta">运行记录第 64–68 行 · 推理层</span></header>
+<dl class="five"><div><dt>当时知道</dt><dd>登记时仍在考虑：H2（T 型浅失活亚型）。之前的真实测量：P0 得 7（1 次）；P2 得 16（4 次）；P3 得 40（1 次）。上次登记之后没有同协议仿真；全程同协议候选仿真值 8–25（9 次；候选参数未记录，含参数差异）。</dd></div><div><dt>为什么这样选</dt><dd>同轴复测：真细胞 hyperpol conditioning + depol test 的 spike_count 是否再次落在参考带 [14,19]（→点名杀掉 H2 的内向反跳预测），还是落入 H2 预测带 [20,28]？</dd></div><div><dt>期待看到</dt><dd>若结果落在 20–28：支持 H2、收窄 H4；14–19：支持 H4、否定 H2；0–13：否定 H2、收窄 H4。</dd></div><div><dt>实际发生</dt><dd>测了 1 次，平均得 16，落在 H4 的预测区间。</dd></div><div><dt>因此调整</dt><dd>H2 被否定。</dd></div></dl>
+<div class="verdicts"><div class="verdict" data-col="at-time"><h4>当时是否合理</h4><p><span class="icon m-no" aria-hidden="true">✕</span><b class="word m-no">不合理</b>。为满足“终态迁移须有点名分支”的规则补了一次同协议测量，只测 1 次就否定了一个亚型；这一格同样分不开真相与基线。</p></div><div class="verdict" data-col="hindsight"><h4>事后对照真相</h4><p><span class="icon m-no" aria-hidden="true">✕</span><b class="word m-no">错误</b>。浅失活亚型与真相同属 T 型家族。重放显示这次补测不是 P2 的第一次重复（P2 四次为 14/15/18/17），40 个 seed 上两格相关 0.08，所以“独立重复”的说法本身成立；错在 1 次测量够不着这个判别。</p></div></div>
+<p class="basis">依据：重放：P2 = 16、P4 = 16、P4 是否等于 P2 第一次重复：否；再跑一次 P4 仍得 16（计量格冻结）（<code>mindset/轨迹偏离审计-s0-复算.py replay_p0()</code>）</p>
+
+<details><summary>证据（原始记录 5 行 · 推导值 · 复算 · 审查者 · 干预）</summary>
+<h5>① 原始记录</h5><pre>64: {&quot;ts&quot;:&quot;2026-10-14T15:55:03.432Z&quot;,&quot;op&quot;:&quot;prereg.write&quot;,&quot;pid&quot;:&quot;P4&quot;,&quot;spec_sha256&quot;:&quot;453f83dcc075ccbb8680e3319fa83096f786425eab07d09ab19575db4f8fc8a7&quot;,&quot;prereg_path&quot;:&quot;prereg/P4.json&quot;,&quot;prev&quot;:&quot;51e191618527923c3f37f8a0d53c32c0e5dc17a67b3a983711a8fddff7a3e343&quot;}
+65: {&quot;ts&quot;:&quot;2026-10-14T15:55:08.874Z&quot;,&quot;op&quot;:&quot;probe.start&quot;,&quot;pid&quot;:&quot;P4&quot;,&quot;prev&quot;:&quot;bfdca9fc6bb629b182ae7e51536085b06cce3d605f3deaddfa06b700bb153f56&quot;}
+66: {&quot;ts&quot;:&quot;2026-10-14T15:55:12.300Z&quot;,&quot;op&quot;:&quot;world.observe&quot;,&quot;world&quot;:&quot;ca_rebound&quot;,&quot;seed&quot;:0,&quot;protocol&quot;:&quot;hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)&quot;,&quot;reps&quot;:1,&quot;blockers&quot;:&quot;预算账目：P0=1+P2=4+P3=1+P4=1=7/8，余 1 备用；同轴复测（reps=1）专门补上 P2 预登记未点名 H2 的缺口（该 gate 拒绝已记录在案）&quot;,&quot;cost&quot;:1,&quot;spike_count&quot;:16,&quot;pid&quot;:&quot;P4&quot;,&quot;prev&quot;:&quot;61b43be669ff5109e4491954c2b548614aa1e2bf54e4e9f7de4d39d00d4a478c&quot;}
+67: {&quot;ts&quot;:&quot;2026-10-14T15:55:12.300Z&quot;,&quot;op&quot;:&quot;probe.land&quot;,&quot;pid&quot;:&quot;P4&quot;,&quot;exit_code&quot;:0,&quot;metric&quot;:16,&quot;prev&quot;:&quot;919bff403a4536f450e5ec47628aa5cc038ad68b8bffc4c436db1bc872e70327&quot;}
+68: {&quot;ts&quot;:&quot;2026-10-14T15:55:28.031Z&quot;,&quot;op&quot;:&quot;claim.transition&quot;,&quot;id&quot;:&quot;H2&quot;,&quot;to&quot;:&quot;REFUTED&quot;,&quot;by_probe&quot;:&quot;P4&quot;,&quot;note&quot;:&quot;P4 同轴复测 n250=16∈[14,19]，与 P2 独立重复一致；H2 的内向反跳预测带 [20,28]（浅层失活亚型，模拟 22–25）未命中 → 按预注册 kill 分支 REFUTED。真细胞释放轴上不存在任何低阈值持续内向反跳。&quot;,&quot;prev&quot;:&quot;948f87bc5540aaa86375b24ee5f76307629a4498b751816d7503e8547f1f349c&quot;}</pre>
+<h5>② 推导值（由记录推出）</h5><ul><li>同协议候选仿真值（全程）8–25，9 次</li><li>观测 16（1 次）对各预测区间：H2 [20, 28]；H4 [14, 19] ← 观测落在此</li></ul>
+<h5>③ 复算</h5><p class="small">键 <code>p0.replay.P2</code>、<code>p0.replay.P2_reps</code>、<code>p0.replay.P4</code>、<code>p0.replay.P4_equals_P2_rep1</code>、<code>p0.replay.corr_r4_r1</code>、<code>p0.replay.rerun_P4</code>，来自 <code>recompute.json</code>，脚本 <code>mindset/轨迹偏离审计-s0-复算.py</code></p>
+<h5>④ 审查者</h5><ul><li>G2 → H2：作者未记录</li></ul>
+<h5>⑤ 人的干预</h5><p class="small muted">本归档没有干预文件。</p>
+</details>
+</article>
+
+</section>
+
+<section id="corrections">
+<h2>原结论与修正</h2>
+<div class="truth"><p><b>对照的真相</b>：T 型钙电流：超极化让它解除失活，松开时产生反弹爆发（电导 3.2，失活时间常数 22 ms）（来源 <code class="src">neuronbench/worlds.py:196（描述）、:128（参数 MT）</code>；真相只存在归档里，运行中的 agent 读不到）</p></div>
+<blockquote class="orig" data-ref="REPORT.md:53"><span class="src">报告原句（REPORT.md:53，逐字）</span>三轴独立支持 H4</blockquote>
+<div class="correction"><p><b>后来发现</b>：释放轴上真相与无额外电流平均只差 0.58 个峰，约需 42 次才分得开；四次观测与两者都相容。</p><p><b>修正</b>：这些测量只说明“在已测实验上分不开有无额外电流”，不能写成“独立支持零假设”；同一 seed 下不同实验的误差是否独立，也没有核实。</p><p class="basis">依据：复算 cell_keys(p0.P2)；s0 审计关于共用噪声流的说明（<code>mindset/轨迹偏离审计-ca_rebound-s0-20261014.md §1</code>）</p></div>
+</section>
+
+<section id="unknowns">
+<h2>仍不能确定</h2>
+<ul><li>校准实验与去极化实验没有单独复算，本页对它们不下判定（附录标“未审”）。</li><li>子任务被隔离规则拦下后只交回计划；如果子任务能跑仿真，结论会不会不同，没有证据。</li><li>子任务的结束行不合约定格式，宿主无法自动判断它们是否完成。</li><li>同一 seed 下不同实验之间的噪声相关，只对少数实验量过。</li></ul>
+</section>
+
+<section id="version" class="ver">
+<h2>运行版本卡</h2>
+<dl>
+<dt>会话 ID</dt><dd class="mono">未记录</dd>
+<dt>run</dt><dd class="mono">ca_rebound · research/campaigns/2026-10-14-glm53flash-p0-oneline-ca_rebound</dd>
+<dt>模型</dt><dd>GLM 5.3 Flash（镜像 5533e6a）</dd>
+<dt>world / seed</dt><dd class="mono">ca_rebound / 0</dd>
+<dt>时间</dt><dd>2026-10-14 22:48（UTC+08:00） – 2026-10-15 00:02（UTC+08:00）</dd>
+<dt>程序检查</dt><dd>程序检查通过（预登记 ✓ · 对账 ✓ · 溯源 ✓）。程序检查通过只说明记录前后一致，不说明结论正确。</dd>
+<dt>人工干预</dt><dd>未记录（本归档无干预文件）</dd>
+<dt>运行记录链</dt><dd>完整（71 行，逐行哈希相连）</dd>
+<dt>sha256</dt><dd><ul class="small mono"><li>journal.jsonl 33e03ef880424a77f4f9ec904576206ce09b2411363c4428256148a18da82b4f</li><li>REPORT.md 9733f57548637d6e00de4887f396e432bfebccbe37676bcdbef236e2bc6cc828</li><li>prereg/P0.json 6c06d1eef9b0cccc6c14b1fac8e048a251d07affed55ca0af0fa7529899a0034</li><li>prereg/P1.json 4db96d00d773b27c32639ce47d7446b5accbd61163060515deebdf026403db5d</li><li>prereg/P2.json f8d33b13ba523423ea1164561e67f09ea66da8d951b4601c23cd7be4bead413e</li><li>prereg/P3.json ee422e2133f2608d85a687eec9e7ea9941683dd27801470b046a324ea64729c1</li><li>prereg/P4.json e168634685c2a83a87c5dbf187241bb7249e1833cd0906a99c7c15796a3ca37f</li><li>annotations.json c2d8aaa6a0d884bd56af9e20151951a699b5fedf3314bc4aae11b1cde4637e07</li><li>recompute.json 54cb6cd664facf99fba17a424e192adf12954dedf8d57b8609f96adf99af9c21</li></ul></dd>
+<dt>生成器</dt><dd class="mono">judge-report/1</dd>
+</dl>
+</section>
+
+<section id="appendix">
+<h2>附录：每次实验的五句话</h2>
+<p class="small muted">由运行记录自动推出；没有审计节点覆盖的标“未审”，不带判定。</p>
+<article class="card cycle" id="cyc-P0"><header><span class="nid">P0</span><h3>brief step (12 uA, 40 ms)</h3><span class="meta">运行记录第 41–45 行</span><span class="tag todo">未审</span></header>
+<dl class="five"><div><dt>当时知道</dt><dd>登记时仍在考虑：H1（T 型 / Ih 窗电流家族）、H2（T 型浅失活亚型）、H3（外向钾电流）、H4（额外电流不可见（零假设））。之前还没有真实测量。上次登记之后没有同协议仿真；全程同协议候选仿真值 8–8（1 次；候选参数未记录，含参数差异）。</dd></div><div><dt>为什么这样选</dt><dd>真细胞 brief step 基线是否与无附加电流参考锚（8，免费模拟在案）一致？</dd></div><div><dt>期待看到</dt><dd>若结果落在 6–10：收窄 H4；0–5：否定 H4、收窄 H3。</dd></div><div><dt>实际发生</dt><dd>测了 1 次，平均得 7，落在 H4 的预测区间。</dd></div><div><dt>因此调整</dt><dd>没有据此改变任何判断。下一组实验 P1 改用「hyperpol -40 then release」。</dd></div></dl></article>
+<article class="card cycle" id="cyc-P1"><header><span class="nid">P1</span><h3>hyperpol -40 then release</h3><span class="meta">运行记录第 42–47 行</span><span class="tag todo">未审</span></header>
+<dl class="five"><div><dt>当时知道</dt><dd>登记时仍在考虑：H1（T 型 / Ih 窗电流家族）、H2（T 型浅失活亚型）、H3（外向钾电流）、H4（额外电流不可见（零假设））。之前还没有真实测量。同协议没有候选仿真。</dd></div><div><dt>为什么这样选</dt><dd>真细胞在 hyperpol -40 then release 的 spike_count 均值落入哪个家族频段？（H1 内向反跳 ≥21 / H4 零假设 14–20 / H3 外向 ≤13）</dd></div><div><dt>期待看到</dt><dd>若结果落在 21–30：支持 H1、否定 H4；14–20：支持 H4、否定 H1；0–13：收窄 H3、否定 H1。</dd></div><div><dt>实际发生</dt><dd>这次测量没有成功（退出码 1），没有得到数值。</dd></div><div><dt>因此调整</dt><dd>H2 改为有争议（判断，非测量，第 50 行）。下一组实验 P2 改用「hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)」。</dd></div></dl></article>
+<article class="card cycle" id="cyc-P2"><header><span class="nid">P2</span><h3>hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)</h3><span class="meta">运行记录第 51–56 行</span><span class="tag">已审：<a href="#N1">N1</a></span></header>
+<dl class="five"><div><dt>当时知道</dt><dd>登记时仍在考虑：H1（T 型 / Ih 窗电流家族）、H2（T 型浅失活亚型）、H3（外向钾电流）、H4（额外电流不可见（零假设））。之前的真实测量：P0 得 7（1 次）。上次登记之后没有同协议仿真；全程同协议候选仿真值 8–25（9 次；候选参数未记录，含参数差异）。</dd></div><div><dt>为什么这样选</dt><dd>真细胞在 hyperpol conditioning + depol test（250ms 释放后 +12uA）的 spike_count 均值落入哪个家族频段？（H1 内向反跳 20–28 / H4 零假设 14–19 / H3 外向 ≤13）</dd></div><div><dt>期待看到</dt><dd>若结果落在 20–28：支持 H1、否定 H4、否定 H3；14–19：支持 H4、否定 H1；0–13：收窄 H3、否定 H1。</dd></div><div><dt>实际发生</dt><dd>测了 4 次，平均得 16，落在 H4 的预测区间。</dd></div><div><dt>因此调整</dt><dd>H4 得到支持、H1 被否定。下一组实验 P3 改用「depolarising conditioning + test (+15 uA/250 ms, then +12 uA)」。</dd></div></dl></article>
+<article class="card cycle" id="cyc-P3"><header><span class="nid">P3</span><h3>depolarising conditioning + test (+15 uA/250 ms, then +12 uA)</h3><span class="meta">运行记录第 57–61 行</span><span class="tag todo">未审</span></header>
+<dl class="five"><div><dt>当时知道</dt><dd>登记时仍在考虑：H2（T 型浅失活亚型）、H3（外向钾电流）。之前的真实测量：P0 得 7（1 次）；P2 得 16（4 次）。上次登记之后没有同协议仿真；全程同协议候选仿真值 29–48（8 次；候选参数未记录，含参数差异）。</dd></div><div><dt>为什么这样选</dt><dd>真细胞在去极化条件化+测试（+15uA/250ms 后 +12uA）的 spike_count 是落在 H3 去极化适应频段（≤31）还是 H4 参考频段（32–40）？</dd></div><div><dt>期待看到</dt><dd>若结果落在 0–31：收窄 H3、收窄 H4；32–40：支持 H4、否定 H3。</dd></div><div><dt>实际发生</dt><dd>测了 1 次，平均得 40，落在 H4 的预测区间。</dd></div><div><dt>因此调整</dt><dd>H3 被否定。下一组实验 P4 改用「hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)」。</dd></div></dl></article>
+<article class="card cycle" id="cyc-P4"><header><span class="nid">P4</span><h3>hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)</h3><span class="meta">运行记录第 64–68 行</span><span class="tag">已审：<a href="#N2">N2</a></span></header>
+<dl class="five"><div><dt>当时知道</dt><dd>登记时仍在考虑：H2（T 型浅失活亚型）。之前的真实测量：P0 得 7（1 次）；P2 得 16（4 次）；P3 得 40（1 次）。上次登记之后没有同协议仿真；全程同协议候选仿真值 8–25（9 次；候选参数未记录，含参数差异）。</dd></div><div><dt>为什么这样选</dt><dd>同轴复测：真细胞 hyperpol conditioning + depol test 的 spike_count 是否再次落在参考带 [14,19]（→点名杀掉 H2 的内向反跳预测），还是落入 H2 预测带 [20,28]？</dd></div><div><dt>期待看到</dt><dd>若结果落在 20–28：支持 H2、收窄 H4；14–19：支持 H4、否定 H2；0–13：否定 H2、收窄 H4。</dd></div><div><dt>实际发生</dt><dd>测了 1 次，平均得 16，落在 H4 的预测区间。</dd></div><div><dt>因此调整</dt><dd>H2 被否定。</dd></div></dl></article>
+</section>
+</main>
+<script>
+(() => {
+  const cards = [...document.querySelectorAll('article[data-key]')];
+  const links = new Map([...document.querySelectorAll('.tl a')].map((a) => [a.getAttribute('href').slice(1), a]));
+  const mark = (id) => links.forEach((a, k) => a.setAttribute('aria-current', String(k === id)));
+  const current = () => {
+    let i = -1;
+    cards.forEach((c, k) => { if (c.getBoundingClientRect().top < 120) i = k; });
+    return i;
+  };
+  document.addEventListener('keydown', (e) => {
+    if (e.altKey || e.ctrlKey || e.metaKey || /input|textarea/i.test(e.target.tagName)) return;
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    const i = current();
+    const next = cards[e.key === 'ArrowRight' ? Math.min(i + 1, cards.length - 1) : Math.max(i - 1, 0)];
+    if (!next) return;
+    e.preventDefault();
+    next.scrollIntoView({ block: 'start' });
+    history.replaceState(null, '', '#' + next.id);
+    mark(next.id);
+  });
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((es) => es.forEach((x) => x.isIntersecting && mark(x.target.id)), { rootMargin: '0px 0px -70% 0px' });
+    cards.forEach((c) => io.observe(c));
+  }
+  const host = document.querySelector('.tools');
+  if (host) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = '展开全部证据';
+    b.addEventListener('click', () => {
+      const all = [...document.querySelectorAll('article details')];
+      const open = all.some((d) => !d.open);
+      all.forEach((d) => { d.open = open; });
+      b.textContent = open ? '收起全部证据' : '展开全部证据';
+    });
+    host.append(b);
+  }
+})();
+</script>

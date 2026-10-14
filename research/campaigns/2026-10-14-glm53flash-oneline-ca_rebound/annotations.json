@@ -1,0 +1,378 @@
+{
+  "schema": "crucible.annotations/2",
+  "journal_sha256": "c80e0c7a66a9b7b9ef5ef16bc9e36c399ef2660569bd132c2e0e95f42bbce1e2",
+  "report_sha256": "4a3c575f0b1b1c4516bded76f99080942f4b92018dd8afb16aca20367a26e9d6",
+  "case": {
+    "title": "一句话让 AI 研究一个神经元",
+    "model": "GLM 5.3 Flash（glm-5.3-flash / high）",
+    "session_id": "eb383a8d-e7a2-4fce-bb3b-803104263c08",
+    "task_plain": "这个神经元被压低之后，放电为什么会变多？用 8 次真实测量去分清几种解释。",
+    "changed_plain": "第一次测量后它改做更短的压低实验；但那次只测了 1 次，就否定了 T 型钙电流这一整类解释。",
+    "next_plain": "先在免费仿真里算清要测几次才分得开；分不开就换阻断剂实验，出一个峰就能排除“无额外电流”。",
+    "headline_plain": "这次结论与真相相反，错在用一次测量否定了一整类解释；三道程序检查都没有拦住它。",
+    "background": "NeuronBench 的 ca_rebound 是一个模拟神经元，叠加了一个身份未知的额外电流。agent 只能做 8 次计费的真实测量，仿真免费；最后要写出机制结论，并预报 6 个没做过的实验。",
+    "prompt": "帮我研究一下 ca_rebound 这个神经元的放电机制。",
+    "prompt_source": "逐字；会话导出见 mindset/评委视角-作品打磨与轨迹审查-20261014.md §5.1",
+    "budget_total": 8,
+    "truth": {
+      "text": "T 型钙电流：超极化让它解除失活，松开时产生反弹爆发（电导 3.2，失活时间常数 22 ms）",
+      "source": "neuronbench/worlds.py:196（描述）、:128（参数 MT）",
+      "markers": [
+        "T型钙",
+        "T 型钙"
+      ]
+    }
+  },
+  "names": {
+    "H1": "强反弹电流",
+    "H2": "外向钾电流",
+    "H3": "无额外电流",
+    "H4": "弱内向电流",
+    "H5": "快 T 型弱电流"
+  },
+  "parents": {
+    "H4": "H1",
+    "H5": "H4"
+  },
+  "attacks_by": {
+    "G1": "父会话自写",
+    "G2": "父会话自写",
+    "G3": "父会话自写"
+  },
+  "nodes": [
+    {
+      "id": "D1",
+      "seq": [
+        7,
+        24
+      ],
+      "kind": "other",
+      "layer": "推理层",
+      "key": false,
+      "title_plain": "用单次仿真值当基线",
+      "at_time": {
+        "mark": "partial",
+        "text": "校准思路对；但同协议连续仿真已经散得很开，仍取单个值当基准。"
+      },
+      "hindsight": {
+        "mark": "no",
+        "text": "短压低实验的基线实为 {{one.P2.base_mean}}±{{one.P2.sd}}，成对长脉冲实为 {{one.P4.base_mean}}。"
+      },
+      "basis": [
+        {
+          "text": "一句话审计 D1；复算 effect_sizes()",
+          "ref": "mindset/轨迹偏离审计-ca_rebound-一句话-20261014.md §2 D1"
+        }
+      ]
+    },
+    {
+      "id": "D2",
+      "seq": [
+        25,
+        27
+      ],
+      "kind": "propose",
+      "layer": "推理层",
+      "key": false,
+      "title_plain": "提出强反弹、外向钾、无额外电流三种解释",
+      "at_time": {
+        "mark": "yes",
+        "text": "覆盖面合理，含对立解释。"
+      },
+      "hindsight": {
+        "mark": "yes",
+        "text": "强反弹这一家族就是真相。"
+      },
+      "basis": [
+        {
+          "text": "一句话审计 D2",
+          "ref": "mindset/轨迹偏离审计-ca_rebound-一句话-20261014.md §2 D2"
+        }
+      ]
+    },
+    {
+      "id": "D3",
+      "seq": [
+        30,
+        34
+      ],
+      "kind": "scope",
+      "layer": "推理层",
+      "key": true,
+      "title_plain": "第一次测量：没落进强反弹的区间，只收窄、不否定",
+      "at_time": {
+        "mark": "yes",
+        "text": "选了池内较优的协议、测 3 次；结果没落进强反弹区间就只收窄，没有一口否定，克制。"
+      },
+      "hindsight": {
+        "mark": "partial",
+        "text": "强反弹区间是按强电流画的；在这个实验上真相与无额外电流平均只差 {{one.P1.delta}} 个峰，这次测量本身几乎不含判别信息。"
+      },
+      "basis": [
+        {
+          "text": "复算：该协议基线 {{one.P1.base_mean}}、真相 {{one.P1.truth_mean}}，要分开约需 {{one.P1.r_star}} 次",
+          "ref": "mindset/轨迹偏离审计-ca_rebound-一句话-20261014.md §1、§2 D3"
+        }
+      ]
+    },
+    {
+      "id": "D4",
+      "seq": [
+        35,
+        54
+      ],
+      "kind": "propose",
+      "layer": "推理层",
+      "key": false,
+      "title_plain": "把强反弹收窄成弱内向电流的快、慢两个版本",
+      "at_time": {
+        "mark": "yes",
+        "text": "收窄方向合理；它自己记下的攻击 G1 指出效应对参数非常敏感。"
+      },
+      "hindsight": {
+        "mark": "partial",
+        "text": "方向对，但 G1 的提醒没有传导到后面的区间设计。"
+      },
+      "basis": [
+        {
+          "text": "一句话审计 D4",
+          "ref": "mindset/轨迹偏离审计-ca_rebound-一句话-20261014.md §2 D4"
+        }
+      ]
+    },
+    {
+      "id": "D5",
+      "seq": [
+        63,
+        66
+      ],
+      "kind": "prereg",
+      "layer": "推理层",
+      "key": false,
+      "title_plain": "第二组实验只测 1 次，要同时分清三种解释",
+      "at_time": {
+        "mark": "no",
+        "text": "同协议的候选仿真值已散得很开，单次测量分不开宽约 3 个峰的三个区间。"
+      },
+      "hindsight": {
+        "mark": "no",
+        "text": "该实验上真相与基线只差 {{one.P2.delta}} 个峰。"
+      },
+      "basis": [
+        {
+          "text": "复算：分开约需 {{one.P2.r_star}} 次",
+          "ref": "mindset/轨迹偏离审计-ca_rebound-一句话-20261014.md §2 D5"
+        }
+      ]
+    },
+    {
+      "id": "D6",
+      "seq": [
+        67,
+        68
+      ],
+      "kind": "refute",
+      "layer": "推理层",
+      "key": true,
+      "title_plain": "一次测量否定整个 T 型家族",
+      "plain": {
+        "why": "想用一次测量同时分清三种解释：无额外电流、慢的弱内向电流、快的弱 T 型电流。"
+      },
+      "at_time": {
+        "mark": "no",
+        "text": "同协议候选仿真值已散得很开（见证据②），一次测量分不开宽约 3 个峰的三个区间；“快 T 型”只仿真过一组参数，却据此否定了整个家族。"
+      },
+      "hindsight": {
+        "mark": "no",
+        "text": "真相正是 T 型；在这个实验上，真相和无额外电流平均只差 {{one.P2.delta}} 个峰，而一次测量的散布约 {{one.P2.sd}} 个峰。"
+      },
+      "basis": [
+        {
+          "text": "复算：基线 {{one.P2.base_mean}} 对真相 {{one.P2.truth_mean}}，σ {{one.P2.sd}}，分开约需 {{one.P2.r_star}} 次",
+          "ref": "mindset/轨迹偏离审计-ca_rebound-一句话-20261014.md §1、§2 D6"
+        }
+      ],
+      "options_at_time": [
+        "按预登记分支：否定快 T 型、支持无额外电流（若真相是弱 T 型，这一步就是误判）",
+        "只收窄为“40 ms 实验单次未见增强”，保留 T 型家族",
+        "先在仿真里估所需次数（复算约 {{one.P2.r_star}} 次，超预算，应换实验）"
+      ]
+    },
+    {
+      "id": "D7",
+      "seq": [
+        86,
+        101
+      ],
+      "kind": "prereg",
+      "layer": "推理层",
+      "key": false,
+      "title_plain": "剩余预算花在两组几乎没有判别力的实验上",
+      "at_time": {
+        "mark": "partial",
+        "text": "同一实验不许重测，逼它换实验；但选中的两组判别力最低。"
+      },
+      "hindsight": {
+        "mark": "no",
+        "text": "两组实验要分开真相与基线，分别约需 {{one.P3.r_star}} 次与 {{one.P4.r_star}} 次。"
+      },
+      "basis": [
+        {
+          "text": "一句话审计 D7",
+          "ref": "mindset/轨迹偏离审计-ca_rebound-一句话-20261014.md §2 D7"
+        }
+      ]
+    },
+    {
+      "id": "D8",
+      "seq": [
+        102,
+        102
+      ],
+      "kind": "attack",
+      "layer": "推理层",
+      "key": false,
+      "title_plain": "把一次仿真值当参考，推出“慢钠亚族”",
+      "at_time": {
+        "mark": "no",
+        "text": "同协议仿真得过三个差很多的值，参考值只是其中一次抽样。"
+      },
+      "hindsight": {
+        "mark": "no",
+        "text": "基线真均值 {{one.P4.base_mean}}，把噪声读成了信号。"
+      },
+      "basis": [
+        {
+          "text": "一句话审计 D8",
+          "ref": "mindset/轨迹偏离审计-ca_rebound-一句话-20261014.md §2 D8"
+        }
+      ]
+    },
+    {
+      "id": "D9",
+      "seq": [
+        104,
+        104
+      ],
+      "kind": "report",
+      "layer": "推理层",
+      "key": true,
+      "title_plain": "把“没测到”写成“不存在”",
+      "plain": {
+        "knew": "四组实验都没测到明显增强；它自己记下的攻击 G2 已指出“无额外电流”与“低于精度的弱电流”分不开。",
+        "why": "要交一句话结论，并通过提交时的三道程序检查。",
+        "expect": "结论能被全部测量支持，又不越过测量精度。",
+        "actual": "写成“不存在生物学可检测的超极化反弹电流”，三道程序检查全部放行。",
+        "adjust": "没有把结论限定在测量精度之内；终局预报也按“无额外电流”外推。"
+      },
+      "at_time": {
+        "mark": "no",
+        "text": "G2 已提示二者分不开，结论仍写成不存在。"
+      },
+      "hindsight": {
+        "mark": "no",
+        "text": "与真相相反；在不超过 3 次重复的精度下，T 型效应只有约 {{one.P1.delta}}–{{one.P2.delta}} 个峰，本就检不出。"
+      },
+      "basis": [
+        {
+          "text": "报告原句与 G2 原文（运行记录第 70 行）",
+          "ref": "REPORT.md:11"
+        },
+        {
+          "text": "复算各实验的效应量",
+          "ref": "mindset/轨迹偏离审计-ca_rebound-一句话-20261014.md §1、§2 D9"
+        }
+      ]
+    },
+    {
+      "id": "D10",
+      "seq": null,
+      "kind": "other",
+      "layer": "接入层",
+      "key": true,
+      "title_plain": "从没用过阻断剂：预算内唯一的决定性实验",
+      "plain": {
+        "knew": "取题工具只列实验协议，不列可用的阻断剂；测量工具只有一个可选的阻断剂字符串参数，没有说明可填什么。",
+        "why": "agent 不知道有阻断剂可用，全部测量都只看放电次数。",
+        "expect": "没有设计过这类实验，也就没有预期。",
+        "actual": "8 次预算里一次阻断剂实验都没做。",
+        "adjust": "无；结论完全建立在放电次数上。"
+      },
+      "at_time": {
+        "mark": "partial",
+        "text": "接入层缺口：阻断剂无从发现，不能全算推理错误。"
+      },
+      "hindsight": {
+        "mark": "no",
+        "text": "加 TTX 后，无额外电流的细胞 {{one.ttx.reps}} 次里出峰 {{one.ttx.hypc.plain_hits}} 次，真相 {{one.ttx.hypc.truth_hits}} 次；测 8 次至少见 1 个峰的概率 {{one.ttx.hypc.truth_p8}}，一个峰就能排除“无额外电流”。"
+      },
+      "basis": [
+        {
+          "text": "复算 TTX 判别",
+          "ref": "mindset/轨迹偏离审计-复算.py ttx()"
+        },
+        {
+          "text": "一句话审计 D10",
+          "ref": "mindset/轨迹偏离审计-ca_rebound-一句话-20261014.md §1、§2 D10"
+        }
+      ]
+    },
+    {
+      "id": "D11",
+      "seq": [
+        103,
+        103
+      ],
+      "kind": "forecast",
+      "layer": "接入层",
+      "key": false,
+      "title_plain": "预报 6 个没做过的实验只能外推",
+      "at_time": {
+        "mark": "partial",
+        "text": "预报用的实验当时无法仿真，只能外推（报告第 9 节自己承认）。"
+      },
+      "hindsight": {
+        "mark": "no",
+        "text": "释放族目标约 {{one.forecast.release_target}}；直接用无额外电流模型仿真 64 次，误差就降到 {{one.forecast.plain_mse}}。"
+      },
+      "basis": [
+        {
+          "text": "复算 forecast()",
+          "ref": "mindset/轨迹偏离审计-ca_rebound-一句话-20261014.md §2 D11"
+        }
+      ]
+    }
+  ],
+  "corrections": [
+    {
+      "quote_ref": "REPORT.md:11",
+      "quote": "不存在生物学可检测的超极化反弹电流",
+      "later": "真相正是 T 型钙电流；四组实验的放电次数都分不开它与无额外电流。",
+      "correction": "在不超过 3 次重复的放电计数下未检出；在这个精度下 T 型效应只有约 {{one.P1.delta}}–{{one.P2.delta}} 个峰，本就检不出。",
+      "basis": [
+        {
+          "text": "复算各实验的效应量",
+          "ref": "mindset/轨迹偏离审计-ca_rebound-一句话-20261014.md §1、§2 D9"
+        }
+      ]
+    },
+    {
+      "quote_ref": "REPORT.md:36",
+      "quote": "同一 (world, seed, protocol, reps) 下候选仿真与真细胞观测共享噪声 draws",
+      "later": "同一会话里完全相同的仿真请求返回过不同的值（同一实验先得 5、后得 7，运行记录第 7、77 行）。",
+      "correction": "候选仿真不与真实测量共享噪声；每个仿真值只是一次随机抽样，不是对真实测量的精确预测。",
+      "basis": [
+        {
+          "text": "会话复核",
+          "ref": "mindset/评委视角-作品打磨与轨迹审查-20261014.md §5.3"
+        }
+      ]
+    }
+  ],
+  "unknowns": [
+    "只看放电次数时，预算内任何实验都分不开真相与无额外电流（最省的判别实验也要约 {{one.disc.r_star}} 次）；电压轨迹是否更早露出反弹，没有检验。",
+    "阻断剂实验的效果只在仿真里复算过，没有在这次运行里真的做。",
+    "这条轨迹只有一个 seed；换 seed 后是否同样偏离，见详细指令案例。",
+    "攻击都由主会话自己写，没有独立审查者；独立审查能否拦住这一步，没有证据。"
+  ]
+}
