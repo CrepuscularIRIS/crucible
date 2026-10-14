@@ -274,7 +274,7 @@ export function buildServer(): McpServer {
 
   server.tool(
     'claim_propose',
-    '登记一条新假设（PROPOSED→LIVE）。predicts 必须与现有 LIVE 假设可判别：不能是任一 LIVE 假设 predicts 的子集。graveyard 非空时必须给 conflicts（"none — 攻击未探索的轴"或"graveyard 的 H# 死于 X；本假设以 Y 反驳/绕开"）',
+    '登记一条新假设（PROPOSED→LIVE）。predicts 必须与现有 LIVE/SUPPORTED 假设可判别：不能是其中任一假设 predicts 的子集。graveyard 非空时必须给 conflicts（"none — 攻击未探索的轴"或"graveyard 的 H# 死于 X；本假设以 Y 反驳/绕开"）',
     {
       run: z.string(),
       id: z.string().regex(/^H\d+$/, '假设 id 形如 H1、H2'),
@@ -290,14 +290,14 @@ export function buildServer(): McpServer {
         throw new ResearchStateError(`假设 ${id} 已存在`)
       }
       const redundant = state.claims
-        .filter((c) => c.state === 'LIVE')
+        .filter((c) => c.state === 'LIVE' || c.state === 'SUPPORTED')
         .find((claim) => {
           const set = new Set(claim.predicts)
           return predicts.every((p) => set.has(p))
         })
       if (redundant) {
         throw new ResearchStateError(
-          `${id} 的 predicts 是 LIVE 假设 ${redundant.id} 的子集，两者不可判别；先写出差异再登记 → research-abduce：重写 predicts 使两条假设有互斥落点`,
+          `${id} 的 predicts 是 ${redundant.state} 假设 ${redundant.id} 的子集，两者不可判别；先写出差异再登记 → research-abduce：重写 predicts 使两条假设有互斥落点`,
         )
       }
       // Arbor constraints-block 教训的结构化：坟场非空时，新假设必须声明与死者的关系
@@ -343,6 +343,9 @@ export function buildServer(): McpServer {
           )
         }
       }
+      if (to === claim.state && (TERMINAL as readonly string[]).includes(to)) {
+        throw new ResearchStateError(`${id} 已是 ${to}，终态不能自迁移`)
+      }
       if (to === 'SUPPORTED' || to === 'REFUTED' || to === 'SCOPED') {
         if (!byProbe) {
           throw new ResearchStateError('终态迁移必须点名依据探针（byProbe）')
@@ -375,7 +378,7 @@ export function buildServer(): McpServer {
 
   server.tool(
     'prereg_write',
-    '预登记一个探针（时间戳 + sha256 冻结）。结构性拒绝装饰性探针：必须有互斥频段对与 kill/scope 分支。必须在 probe_run 之前',
+    '预登记一个探针（时间戳 + sha256 冻结）。结构性拒绝装饰性探针：必须有互斥频段对与 kill/scope 分支。bands 至少两个 claim：LIVE/CONTESTED，或 SUPPORTED 作为被挑战对手（至少一个须是 LIVE/CONTESTED；落地后可凭此探针把 SUPPORTED 迁到 REFUTED/SCOPED；迁到 CONTESTED 不需要探针）。必须在 probe_run 之前',
     { run: z.string(), spec: ProbeSpecSchema },
     async ({ run, spec }) => {
       const root = resolveRun(run)

@@ -377,7 +377,8 @@ export function replay(root: string): ResearchState {
             throw new ResearchStateError(`journal 损坏：${claim.id} 终态迁移没有已落地 probe 依据`)
           }
           claim.byProbe = byProbe
-          state.graveyard.push({ ...claim, state: to })
+          // 同一 claim 二次终态（如 SUPPORTED→REFUTED）只保留最后一次
+          state.graveyard = [...state.graveyard.filter((g) => g.id !== claim.id), { ...claim, state: to }]
         }
         claim.state = to
         claim.note = event.note ? String(event.note) : claim.note
@@ -538,12 +539,15 @@ export function validateProbeSpec(
   if (!spec.metricSpec) throw new ResearchStateError('缺少 metricSpec')
   const bandEntries = Object.entries(spec.bands ?? {})
   if (bandEntries.length < 2) {
-    throw new ResearchStateError('bands 必须覆盖至少两个 LIVE claim——单假设探针无法判别')
+    throw new ResearchStateError('bands 必须覆盖至少两个 claim（LIVE/CONTESTED，或作为被挑战对手的 SUPPORTED）——单假设探针无法判别')
   }
+  // SUPPORTED 可进 bands 当被挑战的对手（GLM ca-rebound-s0：H5 SUPPORTED 后唯一 LIVE 的 H7
+  // 无从判别）；但至少要有一个 LIVE/CONTESTED——全是 SUPPORTED 的探针只是在确认已信之事。
+  const isOpen = (s?: ClaimState) => s === 'LIVE' || s === 'CONTESTED'
   for (const [claimId, band] of bandEntries) {
     const claim = state.claims.find((c) => c.id === claimId)
-    if (!claim || (claim.state !== 'LIVE' && claim.state !== 'CONTESTED')) {
-      throw new ResearchStateError(`bands 引用了非 LIVE claim: ${claimId}`)
+    if (!claim || (!isOpen(claim.state) && claim.state !== 'SUPPORTED')) {
+      throw new ResearchStateError(`bands 引用了非 LIVE claim: ${claimId}（只收 LIVE/CONTESTED/SUPPORTED；REFUTED/SCOPED 须先带 note 复活）`)
     }
     const [lo, hi] = band
     if (!Number.isFinite(lo) || !Number.isFinite(hi) || lo > hi) {
@@ -561,6 +565,11 @@ export function validateProbeSpec(
         `预登记必须留出容差区间 → research-probe：按你执行前真实的不确定性重写频段`,
       )
     }
+  }
+  if (!bandEntries.some(([id]) => isOpen(state.claims.find((c) => c.id === id)?.state))) {
+    throw new ResearchStateError(
+      'bands 全是 SUPPORTED claim：这是确认性探针，只会重复已信之事 → research-abduce：至少放进一个 LIVE/CONTESTED 的竞争假设',
+    )
   }
   if (!hasDisjointBandPair(spec.bands)) {
     throw new ResearchStateError(

@@ -79,6 +79,25 @@ describe('约束 1：互斥频段', () => {
     expect(() => validateProbeSpec(validSpec({ bands: { H1: [0, 0.5], H99: [0.6, 1] } }), state))
       .toThrow(/非 LIVE claim/)
   })
+
+  // GLM 实跑（ca-rebound-s0 §5）：H5 SUPPORTED 后唯一 LIVE 是 H7，判别 H5-vs-H7 的探针被拒两次。
+  it('SUPPORTED 可作为被挑战的对手进 bands（至少一个 LIVE/CONTESTED）→ 通过', () => {
+    const base = replay(root)
+    const state = { ...base, claims: base.claims.map((c) => (c.id === 'H1' ? { ...c, state: 'SUPPORTED' as const } : c)) }
+    expect(() => validateProbeSpec(validSpec(), state)).not.toThrow()
+  })
+
+  it('反向验证：bands 只含 SUPPORTED claim → 拒绝（确认性探针）', () => {
+    const base = replay(root)
+    const state = { ...base, claims: base.claims.map((c) => ({ ...c, state: 'SUPPORTED' as const })) }
+    expect(() => validateProbeSpec(validSpec(), state)).toThrow(/确认性探针/)
+  })
+
+  it('反向验证：bands 引用 REFUTED claim → 仍拒绝', () => {
+    const base = replay(root)
+    const state = { ...base, claims: base.claims.map((c) => (c.id === 'H2' ? { ...c, state: 'REFUTED' as const } : c)) }
+    expect(() => validateProbeSpec(validSpec(), state)).toThrow(/非 LIVE claim/)
+  })
 })
 
 describe('约束 3：从原始文件重算', () => {

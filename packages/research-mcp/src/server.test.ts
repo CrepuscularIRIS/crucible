@@ -225,3 +225,59 @@ describe('结构拒绝', () => {
       .rejects.toThrow(/已落地/)
   })
 })
+
+describe('SUPPORTED 被挑战（GLM ca-rebound-s0 §5）', () => {
+  it('SUPPORTED + LIVE 的判别探针可预登记；落地后 SUPPORTED → REFUTED', async () => {
+    const run = 'challenge'
+    await callTool('research_init', { run })
+    await callTool('claim_propose', { run, id: 'H1', statement: '加入特征 X 提升 accuracy', predicts: ['accuracy 升到 0.8+'] })
+    await callTool('claim_propose', { run, id: 'H2', statement: '特征 X 无效', predicts: ['accuracy 不变或降'] })
+    await callTool('prereg_write', { run, spec })
+    await callTool('probe_run', { run, pid: 'P1' })
+    await callTool('claim_transition', { run, id: 'H1', to: 'SUPPORTED', byProbe: 'P1' })
+    await callTool('claim_transition', { run, id: 'H2', to: 'REFUTED', byProbe: 'P1' })
+    await callTool('claim_propose', {
+      run, id: 'H3', statement: '提升来自数据泄漏', predicts: ['打乱标签后 accuracy 仍 ≥ 0.8'],
+      conflicts: 'H1 被 P1 支持——本假设主张 P1 的观测由泄漏产生',
+    })
+    const p2 = {
+      ...spec,
+      pid: 'P2',
+      question: '打乱标签：H1 还是 H3？',
+      evalCommand: 'echo \'{"metric":{"accuracy":0.9}}\'',
+      bands: { H1: [0.0, 0.6], H3: [0.8, 1.0] },
+      branches: [
+        { band: [0.8, 1.0] as const, action: 'kill' as const, target: 'H1' },
+        { band: [0.0, 0.6] as const, action: 'kill' as const, target: 'H3' },
+      ],
+    }
+    // 修复前：bands 引用了非 LIVE claim: H1
+    await callTool('prereg_write', { run, spec: p2 })
+    await callTool('probe_run', { run, pid: 'P2' })
+    await callTool('claim_transition', { run, id: 'H1', to: 'REFUTED', byProbe: 'P2' })
+    const state = JSON.parse(await callTool('research_state', { run })) as { claims: Array<{ id: string; state: string }> }
+    expect(state.claims.find((c) => c.id === 'H1')?.state).toBe('REFUTED')
+  })
+
+  it('第二次终态迁移不重复进 graveyard（保留最后一次）', async () => {
+    const state = JSON.parse(await callTool('research_state', { run: 'challenge' })) as { graveyard: Array<{ id: string; state: string }> }
+    const h1 = state.graveyard.filter((c) => c.id === 'H1')
+    expect(h1.map((c) => c.state)).toEqual(['REFUTED'])
+  })
+
+  it('克隆 SUPPORTED 的新假设被拒；终态自迁移被拒（评审 MEDIUM 5 复现）', async () => {
+    const run = 'clone'
+    await callTool('research_init', { run })
+    await callTool('claim_propose', { run, id: 'H1', statement: 'A', predicts: ['acc rises'] })
+    await callTool('claim_propose', { run, id: 'H2', statement: 'B', predicts: ['acc flat'] })
+    await callTool('prereg_write', { run, spec })
+    await callTool('probe_run', { run, pid: 'P1' })
+    await callTool('claim_transition', { run, id: 'H1', to: 'SUPPORTED', byProbe: 'P1' })
+    await callTool('claim_transition', { run, id: 'H2', to: 'REFUTED', byProbe: 'P1' })
+    await expect(callTool('claim_propose', {
+      run, id: 'H3', statement: 'A 换个说法', predicts: ['acc rises'], conflicts: 'none — 攻击未探索的轴',
+    })).rejects.toThrow(/SUPPORTED 假设 H1 的子集.*research-abduce/)
+    await expect(callTool('claim_transition', { run, id: 'H1', to: 'SUPPORTED', byProbe: 'P1' }))
+      .rejects.toThrow(/已是 SUPPORTED/)
+  })
+})
