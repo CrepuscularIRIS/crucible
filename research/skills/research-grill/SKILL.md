@@ -1,7 +1,7 @@
 ---
 name: research-grill
 description: Use when LIVE 或 SUPPORTED 假设尚未挨过对抗攻击、有新落地证据未被攻击检验、或候选要花高成本前需要独立 idea gauntlet 时。
-version: 0.4.2
+version: 0.4.3
 ---
 
 # research-grill —— 对抗检验
@@ -112,4 +112,6 @@ Collaboration child。信息不对称是结构：对抗者看得到主张与证�
 
 - `references/adversary-prompt.md` —— 四镜头对抗 prompt 模板（原样用，只填占位符）
 - `references/idea-gauntlet.md` —— 三个互盲攻击面、独立 reformulator、执行 finding
-  的 disposition 与清账规则
+  的 disposition 与清账规则（含多 reviewer 确定性合并）
+- `references/idea-quality.md` —— A/B/C 三轴质量分 + A/C gate + Nugget/Conclusion-First
+  （由 research-probe 的 candidate-screen 在 Q1–Q6 后调用）

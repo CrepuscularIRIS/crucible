@@ -477,6 +477,17 @@ export function isRetiredDefaultSkill(slug: string): boolean {
   return RETIRED_DEFAULT_SKILL_SLUG_SET.has(slug)
 }
 
+/**
+ * 随包分发、但新注入时默认停用（落到 skills-inactive/）的内置 Skills。
+ * 写论文类（CCF / Nature）对实验闭环是噪声：它们挤占 available_skills，模型会误触发。
+ * 用户仍可在 Skills 面板手动启用；已启用的不迁移（不覆盖用户选择）。
+ * ponytail: 单独启用某个 ccf-* / nature-writing 时，它引用的 ../ccf-common、../nature-shared
+ * 仍在 skills-inactive/ 里，相对路径会落空——需一并启用 shared 目录；要自动联动时再加。
+ */
+export function isDefaultInactiveSkill(slug: string): boolean {
+  return slug.startsWith('ccf-') || slug.startsWith('nature-')
+}
+
 /** 清理 ~/.proma/default-skills/ 中已退役的内置 Skill 缓存。 */
 export function removeRetiredDefaultSkills(dir = getDefaultSkillsDir()): void {
   for (const slug of RETIRED_DEFAULT_SKILL_SLUGS) {

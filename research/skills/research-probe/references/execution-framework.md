@@ -6,7 +6,8 @@
 ## 目标函数
 
 进展的单位不是“跑了多少实验”，而是机制空间减少了多少。每个 probe 的所有
-可能结果都应至少 kill/scope 一条 LIVE claim；有一个结果什么都不改变，设计就
+可能结果都应至少 kill/scope 一条 LIVE claim（SUPPORTED claim 也可作为被挑战的
+对手进 bands，但至少要有一条 LIVE/CONTESTED）；有一个结果什么都不改变，设计就
 是装饰性的。排序使用预估 `P(kill) / cost`，同分优先能留下可复用仪器的设计。
 
 ## 成本阶梯

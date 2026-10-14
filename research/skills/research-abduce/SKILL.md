@@ -1,7 +1,7 @@
 ---
 name: research-abduce
 description: Use when 战役没有 LIVE 假设、grill 攻击产生了替代解释（new_h）、triage 判定真实意外、或 LIVE 集缺一条伪影类无聊对手时。
-version: 0.5.2
+version: 0.5.3
 ---
 
 # research-abduce —— 登记假设
@@ -49,7 +49,13 @@ version: 0.5.2
    兜底。写法同权：statement 指名具体伪影机制，predicts 给它专属落点
    （伪影通常预测"效应在打乱标签/随机对照下不消失"）。它死得快是好事——
    死法就是控制臂。
-7. `claim_propose`。被拒按报错路由修，不绕。
+7. **新颖性任务（交付物是新想法/新方法）的机制假设，登记前先过 `research-scoop`**：Level ≤2 不登记，回
+   第 2 步换机制或 `research-moves` 的 `references/reframe.md`；Level ≥3 再过
+   `research-grill` 的 `references/idea-quality.md`，最接近的前作写进 conflicts。
+   世界任务（有 `world_*` 工具 / 探针是 `spec.observe`）、关于具名系统/评测的经验
+   问题、伪影对手都跳过——问题是机制是否为真，"已发表"不说明"真"。scoop 未运行
+   （无 WebSearch）照常登记，但不得称其新颖。
+8. `claim_propose`。被拒按报错路由修，不绕。
    ✓ 成功条件：锚里出现新的 LIVE 行。
 
 ## 角色辅助（可选）

@@ -3,6 +3,7 @@ import { join, resolve } from 'node:path'
 export const RESEARCH_DEFAULT_SKILL_SLUGS = [
   'research-loop',
   'research-abduce',
+  'research-scoop',
   'research-probe',
   'research-grill',
   'research-report',

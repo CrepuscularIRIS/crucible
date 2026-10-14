@@ -25,6 +25,7 @@ import {
   parseSkillVersion,
   RETIRED_DEFAULT_SKILL_SLUGS,
   isRetiredDefaultSkill,
+  isDefaultInactiveSkill,
 } from './config-paths'
 import { findAllGitRoots, normalizeGitRoot } from './git-diff-service'
 import { listBuiltinMcpServers } from './builtin-mcp/catalog'
@@ -239,7 +240,7 @@ function copyDefaultSkills(workspaceSlug: string, options: { throwOnError?: bool
     for (const entry of entries) {
       if (!entry.isDirectory() || isRetiredDefaultSkill(entry.name)) continue
       const source = join(defaultDir, entry.name)
-      const target = join(targetDir, entry.name)
+      const target = join(isDefaultInactiveSkill(entry.name) ? getInactiveSkillsDir(workspaceSlug) : targetDir, entry.name)
       try {
         cpSync(source, target, { recursive: true, dereference: true, filter: skillCopyFilter })
       } catch (err) {
@@ -590,10 +591,13 @@ export function upgradeDefaultSkillsInWorkspaces(): void {
         continue
       }
 
+      const inject = isDefaultInactiveSkill(slug)
+        ? { dir: inactiveDir, path: inactivePath, label: 'inactive' }
+        : { dir: activeDir, path: activePath, label: 'active' }
       try {
-        if (!existsSync(activeDir)) mkdirSync(activeDir, { recursive: true })
-        cpSync(info.sourcePath, activePath, { recursive: true, dereference: true, filter: skillCopyFilter })
-        console.log(`[Agent 工作区] 已注入新默认 Skill: ${workspace.slug}/${slug} → active`)
+        if (!existsSync(inject.dir)) mkdirSync(inject.dir, { recursive: true })
+        cpSync(info.sourcePath, inject.path, { recursive: true, dereference: true, filter: skillCopyFilter })
+        console.log(`[Agent 工作区] 已注入新默认 Skill: ${workspace.slug}/${slug} → ${inject.label}`)
       } catch (err) {
         console.warn(`[Agent 工作区] 注入默认 Skill 失败 (${workspace.slug}/${slug}):`, err)
       }

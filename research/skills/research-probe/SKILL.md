@@ -1,7 +1,7 @@
 ---
 name: research-probe
 description: Use when 存在 ≥2 条 LIVE 假设有可判别差异、而没有覆盖这个差异的已落地探针时；或 triage 出口要求重新预登记一个探针时。
-version: 0.6.2
+version: 0.6.3
 ---
 
 # research-probe —— 判别性探针

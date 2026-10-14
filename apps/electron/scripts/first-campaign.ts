@@ -11,6 +11,7 @@ import { spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, dirname } from 'node:path'
+import { RESEARCH_DEFAULT_SKILL_SLUGS } from '../src/main/lib/research-default-skills.ts'
 
 process.env.PRIME_AGENT_KERNEL_PYTHON = `${process.env.HOME}/.proma-p0-venv/bin/python`
 process.env.PRIME_AGENT_KERNEL_FORKSERVER = '0'
@@ -111,7 +112,7 @@ const mcpTools = listed.tools.map((tool) => ({
 console.log(`[wire] research MCP 工具: ${mcpTools.map((t) => t.name).join(', ')}`)
 
 
-const skillPaths = ['research-loop', 'research-abduce', 'research-probe', 'research-grill', 'research-report']
+const skillPaths = RESEARCH_DEFAULT_SKILL_SLUGS
   .map((name) => join(REPO, 'research', 'skills', name))
 // 必须先于 ResourceLoader 创建：learning 臂的 observer 才能随扩展进入父/RLM child。
 const researchRefine = createHeadlessResearchRefine({ run: RUN, campaignDir })

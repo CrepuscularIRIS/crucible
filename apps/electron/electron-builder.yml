@@ -68,12 +68,13 @@ extraResources:
     to: default-skills
     filter:
       - "**/*"
-  # Research 编排 Skills 保持仓库单一源码，启动时按七项 allowlist 合并进默认 Skills。
+  # Research 编排 Skills 保持仓库单一源码，启动时按八项 allowlist 合并进默认 Skills。
   - from: ../../research/skills
     to: research-skills
     filter:
       - "research-loop/**/*"
       - "research-abduce/**/*"
+      - "research-scoop/**/*"
       - "research-probe/**/*"
       - "research-grill/**/*"
       - "research-report/**/*"

@@ -32,7 +32,8 @@ GRAVEYARD: 已排除的方向及死因
 
 按 phenomenon、mechanism、evaluation、intervention 四轴分别找异名近邻，返回准确题名/
 定位、重叠部分和查询词。任何命中只是 lead，必须由 researcher 通过来源核验；miss
-写 `not_found_under_queries`，不能写“新颖”。
+写 `not_found_under_queries`，不能写“新颖”。（这四轴用于攻击已登记的 claim；登记前的
+撞车门 `research-scoop` 用 problem framing / mechanism / insight / domain 四轴打 Level。）
 
 ### C. Methods skeptic
 
@@ -72,5 +73,23 @@ ABDUCE/PROBE 重写并重新 prereg。
 - 近邻命中先核验再 scope；
 - 驳回的攻击写 `no change, because <可核验理由>`；
 - 只有测量能终结 claim，gauntlet 不能直接 kill。
+
+### 多个 reviewer 的确定性合并
+
+移植自 RC `skills/research-companion/SKILL.md:103-110,148-153`。先合并，再落账；
+不按印象概括。只有一个模型可用：同模型多席一致只说明采样稳定，不是独立确认
+（RS `evaluation/idea_quality/SKILL.md:69-72`），落账时写明席数与“同模型”。
+
+1. **裁决看一致**：所有判断席对同一 claim 的处置（rewrite/scope/demote/no change）
+   一致才采用；分歧 → 取 `scope`/`rewrite` 这一档并标 `panel split`，不由多数或
+   额外一席打破平局。
+2. **红旗取并集，但须带证据**：任一席的红旗都进清账，前提是附上它引用的来源
+   定位或执行 finding；无出处的红旗降为黄旗，只进待核验清单，不能驱动 demote。
+3. **绿旗须一致**：“可以推进”要所有判断席同意；单席不能放行。B Prior-art hunter
+   相当于 RC 的召回席：有发现权，无裁决权。
+4. **分歧即调查项**：席位在近邻覆盖、时机或某条事实上分歧，不取平均；各自带证据
+   并列，交 researcher 核验或写成待人裁决的 ruling。
+5. **One question**：各席给出的下一个可检验问题一致则原文采用；否则选最可检验的
+   一条，注明分歧。查询词与近邻 lead 取并集去重。
 
 一次 gauntlet 后若没有新实验或新证据，不重复同一组意见。下一轮应发生在结果改变之后。

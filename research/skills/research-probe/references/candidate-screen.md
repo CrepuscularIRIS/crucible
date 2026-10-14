@@ -30,10 +30,24 @@
    测候选是否纠正先验，不证明 novelty；文献结论仍由来源核验。
 4. **Q3 figure/verdict spec：** 写轴、每条曲线、每点 N、资产、控制、命令、tier，
    以及三个都能改变动作的结果分支。只有一个有趣分支的是彩票，不是实验。
-5. 先淘汰硬门失败者；对剩余者按 Q2 的先验纠正价值、预计 P(kill)/成本排序。
+5. 先淘汰硬门失败者；剩余者过下文的质量门（仅新颖性任务）；再按 Q2 的先验纠正价值、预计
+   P(kill)/成本排序。
 6. Q5/Q6 不强制杀死候选，只决定可诚实声称的论文/报告上限。
 7. 周期结束复盘预测：首个 verdict 的耗时、复核范围、机制/方法是否真的落地。
    系统性乐观是下一周期要修正的校准结果。
+
+## Q1–Q6 之后：质量门
+
+**只在新颖性任务（交付物是新想法/新方法）跑此门**；世界任务（有 `world_*` 工具 / 探针是
+`spec.observe`）与关于具名系统/评测的经验问题不跑：问题是机制是否为真，"已发表"不说明"真"。新颖性任务里，`RULINGS.md` 已有该候选的 idea-quality
+ruling（`research-scoop` Level ≥3 后、`claim_propose` 前已跑过）就沿用，不重打分。
+
+其余硬门全过的候选，花第一笔测量成本前按 `research-grill` 的
+`references/idea-quality.md` 打 A/B/C 三轴分，附 Nugget 与 Conclusion-First 两项
+检查（移植自 RS `evaluation/idea_quality/SKILL.md:38-107`、RC
+`principles/research-strategy.md:19-33`）。A≤2 或 C≤2、weak、nugget 缺失或结论空洞
+→ 不花测量成本，回 abduce 重写。分数只设门与排序，不证明 novelty，也不终结 claim；
+同模型多评只测方差，报告 n 与“同模型”。
 
 ## 模式组合风险
 
