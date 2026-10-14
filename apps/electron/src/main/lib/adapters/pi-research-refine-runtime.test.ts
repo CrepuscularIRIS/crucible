@@ -6,6 +6,7 @@ import {
   classifyMcpResidual,
   createResearchRefineRuntime,
   installResearchRefineToolTap,
+  REFINE_NOW_REASON,
   type ResearchRefineRuntime,
 } from './pi-research-refine-runtime'
 import type { ToolOutcome } from './pi-research-refine-lifecycle'
@@ -82,26 +83,6 @@ describe('MCP residual 分类（审计 F4）', () => {
     expect(runtime.stream?.state().refinements.size).toBe(0)
   })
 
-  it('global promotion 的 refine_complete 不重复进入 local C3 结算', async () => {
-    const root = mkdtempSync(join(tmpdir(), 'rr-runtime-global-'))
-    tempRoots.push(root)
-    const runtime = createResearchRefineRuntime({ mode: 'learning', artifactDir: root })
-    const calls: string[] = []
-    const session = {
-      async refine(options?: { rollbackId?: string }) {
-        calls.push(JSON.stringify(options ?? {}))
-        return { id: 'unused', appliedEdits: [] }
-      },
-    }
-    await runtime.onRefineComplete?.({
-      id: 'global-1',
-      scope: 'global',
-      appliedEdits: [{ id: 'bad', content: 'H9 band [0,1]', applied: true }],
-    })
-    expect(calls).toEqual([])
-    expect(runtime.stream?.state().events).toEqual([])
-  })
-
   it('复发只登记 rollback，静默边界才调用 Prime refine', async () => {
     const root = mkdtempSync(join(tmpdir(), 'rr-runtime-deferred-'))
     tempRoots.push(root)
@@ -130,5 +111,217 @@ describe('MCP residual 分类（审计 F4）', () => {
     await runtime.flushPendingRollbacks?.(session)
     expect(calls).toEqual(['{"rollbackId":"r1"}'])
     expect(runtime.stream?.state().refinements.get('r1')?.status).toBe('ROLLED_BACK')
+  })
+
+  it('SE0：run=ca_rebound-s0 时 digest 里没有 ca_rebound，且两条落进同一个类', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'rr-runtime-world-'))
+    tempRoots.push(root)
+    const runtime = createResearchRefineRuntime({ mode: 'learning', artifactDir: root, run: 'ca_rebound-s0' })
+    const agent: { afterToolCall?: unknown } = {}
+    installResearchRefineToolTap(agent, runtime)
+    const hook = agent.afterToolCall as (context: unknown) => Promise<unknown>
+    for (const text of ['ca_rebound 的协议标签 step_x 不存在', 'ca_rebound-s0 的协议标签 step_x 不存在']) {
+      await hook({ toolCall: { name: 'mcp__research__probe_run' }, isError: true, result: { content: [{ type: 'text', text }] } })
+    }
+    const state = runtime.stream!.state()
+    expect(state.classes.size).toBe(1)
+    const decision = await runtime.autoRefineReviewer!({ reason: 'turn_interval' })
+    expect(decision.shouldRefine).toBe(true)
+    expect(decision.instructions).not.toContain('ca_rebound')
+    expect(decision.rationale).not.toContain('ca_rebound')
+  })
+
+  it('SE0：本会话 world_* 调用参数里的 world 名同样剥掉', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'rr-runtime-world-args-'))
+    tempRoots.push(root)
+    const runtime = createResearchRefineRuntime({ mode: 'learning', artifactDir: root, run: 'demo' })
+    const agent: { afterToolCall?: unknown } = {}
+    installResearchRefineToolTap(agent, runtime)
+    const hook = agent.afterToolCall as (context: unknown) => Promise<unknown>
+    await hook({
+      toolCall: { name: 'mcp__research__world_observe' },
+      args: { run: 'demo', world: 'na_fatigue', seed: 0, protocol: 'step' },
+      isError: false,
+      result: { content: [{ type: 'text', text: 'ok' }] },
+    })
+    for (let i = 0; i < 2; i += 1) {
+      await hook({
+        toolCall: { name: 'mcp__research__probe_run' },
+        isError: true,
+        result: { content: [{ type: 'text', text: 'na_fatigue 不支持协议 ramp' }] },
+      })
+    }
+    const decision = await runtime.autoRefineReviewer!({ reason: 'turn_interval' })
+    expect(decision.shouldRefine).toBe(true)
+    expect(decision.instructions).not.toContain('na_fatigue')
+  })
+
+  it('SE1：F9 scope 取自 C2 批准的触发类——点名别的工具的 edit 被回滚', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'rr-runtime-f9-'))
+    tempRoots.push(root)
+    const runtime = createResearchRefineRuntime({ mode: 'learning', artifactDir: root })
+    const residual: ToolOutcome = {
+      kind: 'residual', source: 'mcp', tool: 'mcp__research__report_declare', ruleId: '报告不存在: reports/final-report.md', messageExcerpt: '报告不存在: reports/final-report.md',
+    }
+    await runtime.onToolOutcome?.(residual)
+    await runtime.onToolOutcome?.(residual)
+    expect((await runtime.autoRefineReviewer?.({ reason: 'turn_interval' }))?.shouldRefine).toBe(true)
+    await runtime.onRefineComplete?.({
+      id: 'r-f9',
+      appliedEdits: [{ id: 'e1', kind: 'memory', content: 'bands 被拒时用 claim_propose 登记主假设的否定', applied: true }],
+    })
+    const calls: string[] = []
+    await runtime.flushPendingRollbacks?.({
+      async refine(options) { calls.push(JSON.stringify(options ?? {})); return { id: 'rb', appliedEdits: [] } },
+    })
+    expect(calls).toEqual(['{"rollbackId":"r-f9"}'])
+    expect(runtime.stream?.state().refinements.get('r-f9')).toBeUndefined()
+  })
+
+  function recordingSession() {
+    const calls: string[] = []
+    return {
+      calls,
+      async refine(options?: { rollbackId?: string }) {
+        calls.push(JSON.stringify(options ?? {}))
+        return { id: 'rb', appliedEdits: [] }
+      },
+    }
+  }
+
+  it('SE3：没有 C2 令牌的 local refine_complete（kernel refine.run）→ 回滚，记 system residual', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'rr-runtime-token-'))
+    tempRoots.push(root)
+    const runtime = createResearchRefineRuntime({ mode: 'learning', artifactDir: root })
+    await runtime.onRefineComplete?.({
+      id: 'kernel-1', scope: 'local', appliedEdits: [{ id: 'e1', kind: 'memory', content: '先 init 再 probe', applied: true }],
+    })
+    const session = recordingSession()
+    await runtime.flushPendingRollbacks?.(session)
+    expect(session.calls).toEqual(['{"rollbackId":"kernel-1"}'])
+    const state = runtime.stream!.state()
+    expect([...state.classes.keys()]).toEqual(['system§harness_direct_write§refine'])
+    expect(state.refinements.size).toBe(0)
+  })
+
+  it('SE3：global refine_complete 一律回滚（晋升不走 refine，H3）', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'rr-runtime-global-'))
+    tempRoots.push(root)
+    const runtime = createResearchRefineRuntime({ mode: 'learning', artifactDir: root })
+    await runtime.onRefineComplete?.({
+      id: 'global-1', scope: 'global', appliedEdits: [{ id: 'e1', kind: 'memory', content: '先 init 再 probe', applied: true }],
+    })
+    const session = recordingSession()
+    await runtime.flushPendingRollbacks?.(session)
+    expect(session.calls).toEqual(['{"rollbackId":"global-1"}'])
+    expect(runtime.stream!.state().classes.has('system§harness_direct_write§refine')).toBe(true)
+  })
+
+  /** 假会话：refine() 期间按序发出 events（refine_complete），返回最后一个；throws 时发完后抛错。 */
+  function userRefineSession(emitted: Array<{ id: string; content: string }>, options: { throws?: boolean } = {}) {
+    const listeners = new Set<(event: { type: string; result?: unknown }) => void>()
+    const calls: string[] = []
+    return {
+      calls,
+      subscribe(listener: (event: { type: string; result?: unknown }) => void) {
+        listeners.add(listener)
+        return () => { listeners.delete(listener) }
+      },
+      async refine(opts?: { rollbackId?: string }) {
+        calls.push(JSON.stringify(opts ?? {}))
+        if (opts?.rollbackId) return { id: `rb-${opts.rollbackId}`, appliedEdits: [] }
+        let last = { id: 'none', appliedEdits: [] as Array<{ id: string; kind: string; content: string; applied: boolean }> }
+        for (const item of emitted) {
+          last = { id: item.id, appliedEdits: [{ id: `e-${item.id}`, kind: 'memory', content: item.content, applied: true }] }
+          for (const listener of [...listeners]) listener({ type: 'refine_complete', result: { ...last, scope: 'local' } })
+        }
+        if (options.throws) throw new Error('refine failed')
+        return last
+      },
+    }
+  }
+
+  it('SE3：refineNow（runUserRefine）不回滚，但条目永不 VALIDATED，臂为 contaminated', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'rr-runtime-refinenow-'))
+    tempRoots.push(root)
+    const runtime = createResearchRefineRuntime({ mode: 'learning', artifactDir: root })
+    runtime.markContaminated?.(REFINE_NOW_REASON)
+    const session = userRefineSession([{ id: 'user-1', content: '先 init 再 probe' }])
+    await runtime.runUserRefine?.(session)
+    for (let i = 0; i < 4; i += 1) {
+      await runtime.onToolOutcome?.({ kind: 'success', source: 'mcp', tool: 'mcp__research__probe_run' })
+    }
+    await runtime.flushPendingRollbacks?.(session)
+    expect(session.calls).toEqual(['{}'])
+    const state = runtime.stream!.state()
+    expect(state.contaminated).toBe(true)
+    expect([...state.refinements.values()].some((ref) => ref.status === 'VALIDATED')).toBe(false)
+    // 授权只绑在那一次用户 refine 的 id 上：之后的无令牌 refine 照样回滚。
+    await runtime.onRefineComplete?.({
+      id: 'kernel-2', appliedEdits: [{ id: 'e2', kind: 'memory', content: '先 init 再 probe', applied: true }],
+    })
+    await runtime.flushPendingRollbacks?.(session)
+    expect(session.calls).toEqual(['{}', '{"rollbackId":"kernel-2"}'])
+  })
+
+  it('授权按 id 绑定：用户 refine 等待期间先落定的 kernel refine.run 被回滚，用户那次保留（令牌竞争）', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'rr-runtime-race-'))
+    tempRoots.push(root)
+    const runtime = createResearchRefineRuntime({ mode: 'learning', artifactDir: root })
+    runtime.markContaminated?.(REFINE_NOW_REASON)
+    const session = userRefineSession([
+      { id: 'kernel-in-flight', content: '先 init 再 probe' },
+      { id: 'user-2', content: '先 init 再 probe' },
+    ])
+    await runtime.runUserRefine?.(session)
+    expect(session.calls).toEqual(['{}', '{"rollbackId":"kernel-in-flight"}'])
+  })
+
+  it('M1：用户 refine 失败不留下授权——下一次无令牌 local refine 照样回滚', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'rr-runtime-user-fail-'))
+    tempRoots.push(root)
+    const runtime = createResearchRefineRuntime({ mode: 'learning', artifactDir: root })
+    runtime.markContaminated?.(REFINE_NOW_REASON)
+    const session = userRefineSession([], { throws: true })
+    await expect(runtime.runUserRefine!(session)).rejects.toThrow('refine failed')
+    runtime.onRefineFailed?.()
+    await runtime.onRefineComplete?.({
+      id: 'kernel-4', appliedEdits: [{ id: 'e4', kind: 'memory', content: '先 init 再 probe', applied: true }],
+    })
+    await runtime.flushPendingRollbacks?.(session)
+    expect(session.calls).toEqual(['{}', '{"rollbackId":"kernel-4"}'])
+  })
+
+  it('H2：触发类 scope 下，点名 research_kit.wait 的程序性条目不回滚', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'rr-runtime-f9-kit-'))
+    tempRoots.push(root)
+    const runtime = createResearchRefineRuntime({ mode: 'learning', artifactDir: root })
+    const residual: ToolOutcome = {
+      kind: 'residual', source: 'mcp', tool: 'mcp__research__claim_transition', ruleId: 'child 未完成', messageExcerpt: 'child 未完成',
+    }
+    await runtime.onToolOutcome?.(residual)
+    await runtime.onToolOutcome?.(residual)
+    expect((await runtime.autoRefineReviewer?.({ reason: 'turn_interval' }))?.shouldRefine).toBe(true)
+    await runtime.onRefineComplete?.({
+      id: 'r-kit', appliedEdits: [{ id: 'e1', kind: 'memory', content: 'wait for children with research_kit.wait before reading out.md', applied: true }],
+    })
+    const session = recordingSession()
+    await runtime.flushPendingRollbacks?.(session)
+    expect(session.calls).toEqual([])
+    expect(runtime.stream?.state().refinements.get('r-kit')?.status).toBe('PENDING')
+  })
+
+  it('SE3：harness 直写被恢复时的 markContaminated 不授权下一次 refine（只有 refineNow 授权）', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'rr-runtime-restore-'))
+    tempRoots.push(root)
+    const runtime = createResearchRefineRuntime({ mode: 'learning', artifactDir: root })
+    runtime.markContaminated?.('harness_direct_write restored: create memory:x')
+    await runtime.onRefineComplete?.({
+      id: 'kernel-3', appliedEdits: [{ id: 'e3', kind: 'memory', content: '先 init 再 probe', applied: true }],
+    })
+    const session = recordingSession()
+    await runtime.flushPendingRollbacks?.(session)
+    expect(session.calls).toEqual(['{"rollbackId":"kernel-3"}'])
+    expect(runtime.stream!.state().contaminated).toBe(true)
   })
 })

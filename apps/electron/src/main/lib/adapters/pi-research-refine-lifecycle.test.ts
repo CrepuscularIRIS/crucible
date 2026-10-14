@@ -1,6 +1,7 @@
-import { mkdtempSync, rmSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { afterEach, describe, expect, it } from 'bun:test'
 import { createResearchEpisodeStream } from './pi-research-refine-events'
 import type { LintableRefineEdit } from './pi-research-refine-lint'
@@ -8,9 +9,9 @@ import {
   confirmRollback,
   handleRefineComplete,
   observeToolOutcome,
-  promoteValidated,
   type RefineCapableSession,
 } from './pi-research-refine-lifecycle'
+import { createResearchRefineRuntime, installResearchRefineToolTap } from './pi-research-refine-runtime'
 
 const tempRoots: string[] = []
 afterEach(() => {
@@ -127,48 +128,129 @@ describe('refine_complete 结算（C3）', () => {
   })
 })
 
-describe('promotion（C5）', () => {
-  async function validatedStream(stream: ReturnType<typeof makeStream>) {
+describe('SE3 · dispose 只暂存晋升候选，不碰 global（02 §3.6）', () => {
+  function sessionWithLocalHarness(entry: Record<string, unknown> | undefined) {
+    const sessionDir = join(mkdtempSync(join(tmpdir(), 'rr-stage-')), 'sess-1')
+    tempRoots.push(dirname(sessionDir))
+    const artifactDir = join(sessionDir, 'research-refine')
+    mkdirSync(join(sessionDir, 'harness'), { recursive: true })
+    const harness = { schema: 1, entries: { memory: entry ? { e1: entry } : {}, prompt: {}, skill: {}, subagent: {} }, refinements: [] }
+    writeFileSync(join(sessionDir, 'harness', 'harness_state.json'), JSON.stringify(harness, null, 2))
+    return artifactDir
+  }
+  const ENTRY = { id: 'e1', kind: 'memory', title: 'init first', content: '先 init 再 probe', path: 'general', scope: 'local', metadata: {} }
+
+  it('带 1 条 VALIDATED 的会话 dispose → 无 global refine；暂存字节的 sha256 与 local 条目相等', async () => {
+    const artifactDir = sessionWithLocalHarness(ENTRY)
+    const globalFile = join(dirname(dirname(artifactDir)), 'global-harness.json')
+    writeFileSync(globalFile, '{"schema":1}')
+    const runtime = createResearchRefineRuntime({ mode: 'learning', artifactDir })
+    const stream = runtime.stream!
     stream.append({ type: 'refined', refinementId: 'r1', attributedClassIds: [CLASS_ID], entryIds: ['e1'] })
     stream.append({ type: 'validated', refinementId: 'r1', evidenceSeqs: [2, 3, 4] })
+    const session = makeFakeSession()
+    await runtime.beforeDispose?.(session)
+    expect(session.calls).toEqual([])
+    expect(readFileSync(globalFile, 'utf8')).toBe('{"schema":1}')
+    const staged = JSON.parse(readFileSync(join(artifactDir, 'promotion-candidates.json'), 'utf8'))
+    const [candidate] = staged.candidates
+    expect(candidate.refinementId).toBe('r1')
+    expect(candidate.evidenceSeqs).toEqual([2, 3, 4])
+    const local = JSON.stringify(ENTRY)
+    expect(candidate.entries[0].bytes).toBe(local)
+    expect(candidate.entries[0].sha256).toBe(createHash('sha256').update(local).digest('hex'))
+  })
+
+  it('没有 VALIDATED（PENDING 不算）→ 不写暂存文件，零是理想', async () => {
+    const artifactDir = sessionWithLocalHarness(ENTRY)
+    const runtime = createResearchRefineRuntime({ mode: 'learning', artifactDir })
+    runtime.stream!.append({ type: 'refined', refinementId: 'r-pending', attributedClassIds: [CLASS_ID], entryIds: ['e1'] })
+    await runtime.beforeDispose?.(makeFakeSession())
+    expect(existsSync(join(artifactDir, 'promotion-candidates.json'))).toBe(false)
+  })
+})
+
+describe('SE3 · 停滞不算成功（L7）', () => {
+  const PROBE = 'mcp__research__probe_run'
+  it('同参数连续调用只记第一次为 eligible；连续 5 次记一条 stagnation residual', () => {
+    const stream = makeStream()
+    stream.append({ type: 'refined', refinementId: 'r1', attributedClassIds: [`mcp§x§${PROBE}`], entryIds: ['e1'] })
+    for (let i = 0; i < 5; i += 1) {
+      observeToolOutcome(stream, { kind: 'success', source: 'mcp', tool: PROBE, fingerprint: '{"pid":"P1"}' })
+    }
+    const state = stream.state()
+    expect(state.refinements.get('r1')?.status).toBe('PENDING')
+    expect(state.classes.get(`mcp§stagnation§${PROBE}`)?.openResiduals).toHaveLength(1)
+  })
+
+  it('research_kit.wait 连续 6 次 → 不记 stagnation（分块 wait 是协议本身）', () => {
+    const stream = makeStream()
+    // 真实形状：wait 跑在 ipython 里，只经 guard 的 onAllowed 进流，不带参数指纹（L2）。
+    for (let i = 0; i < 6; i += 1) {
+      observeToolOutcome(stream, { kind: 'success', source: 'guard', tool: 'ipython' })
+    }
+    expect([...stream.state().classes.keys()]).toEqual([])
+  })
+
+  it('L3：同参数 research_state ×5，但每两次之间隔着 ipython（guard 来源）→ 不记 stagnation', () => {
+    const stream = makeStream()
+    for (let i = 0; i < 5; i += 1) {
+      observeToolOutcome(stream, { kind: 'success', source: 'mcp', tool: 'mcp__research__research_state', fingerprint: '{"run":"r"}' })
+      observeToolOutcome(stream, { kind: 'success', source: 'guard', tool: 'ipython' })
+    }
+    expect([...stream.state().classes.keys()]).toEqual([])
+  })
+})
+
+describe('SE3 · 合成主线（答辩声称"闭环能跑"之前必须是绿的）', () => {
+  const TOOL = 'mcp__research__report_declare'
+  async function drive(runtime: ReturnType<typeof createResearchRefineRuntime>, calls: Array<{ error?: string; args?: unknown }>) {
+    const agent: { afterToolCall?: unknown } = {}
+    installResearchRefineToolTap(agent, runtime)
+    const hook = agent.afterToolCall as (context: unknown) => Promise<unknown>
+    for (const call of calls) {
+      await hook({
+        toolCall: { name: TOOL },
+        args: call.args ?? {},
+        isError: Boolean(call.error),
+        result: { content: [{ type: 'text', text: call.error ?? 'ok' }] },
+      })
+    }
+  }
+  const MISSING = { error: '报告不存在: reports/final-report.md' }
+
+  function makeRuntime() {
+    const root = mkdtempSync(join(tmpdir(), 'rr-mainline-'))
+    tempRoots.push(root)
+    return createResearchRefineRuntime({ mode: 'learning', artifactDir: join(root, 'research-refine') })
   }
 
-  it('无 VALIDATED 时 zero-refine 收尾（零是理想）', async () => {
-    const stream = makeStream()
+  it('procedural ×2 → C2 批准 → refine_complete → 3 次同类 eligible success → VALIDATED', async () => {
+    const runtime = makeRuntime()
+    await drive(runtime, [MISSING, MISSING])
+    expect((await runtime.autoRefineReviewer!({ reason: 'turn_interval' })).shouldRefine).toBe(true)
+    await runtime.onRefineComplete?.({
+      id: 'r1', appliedEdits: [{ id: 'e1', kind: 'memory', content: 'report_declare cannot find the report unless the path is relative to the run dir', applied: true }],
+    })
+    expect(runtime.stream!.state().refinements.get('r1')?.status).toBe('PENDING')
+    // 同参数重复调用（状态不变）不计成功。
+    await drive(runtime, [{ args: { path: 'REPORT.md' } }, { args: { path: 'REPORT.md' } }, { args: { path: 'REPORT.md' } }])
+    expect(runtime.stream!.state().refinements.get('r1')?.status).toBe('PENDING')
+    await drive(runtime, [{ args: { path: 'REPORT.md', note: 'a' } }, { args: { path: 'REPORT.md', note: 'b' } }])
+    expect(runtime.stream!.state().refinements.get('r1')?.status).toBe('VALIDATED')
+  })
+
+  it('VALIDATED 前同类复发 → rollbackId', async () => {
+    const runtime = makeRuntime()
+    await drive(runtime, [MISSING, MISSING])
+    expect((await runtime.autoRefineReviewer!({ reason: 'turn_interval' })).shouldRefine).toBe(true)
+    await runtime.onRefineComplete?.({
+      id: 'r1', appliedEdits: [{ id: 'e1', kind: 'memory', content: 'report_declare cannot find the report unless the path is relative to the run dir', applied: true }],
+    })
+    await drive(runtime, [{ args: { n: 1 } }, MISSING])
     const session = makeFakeSession()
-    expect(await promoteValidated(stream, session)).toEqual({ promoted: [], rolledBack: [] })
-    expect(session.calls).toEqual([])
-  })
-
-  it('global refine 通过 manifest lint → PROMOTED', async () => {
-    const stream = makeStream()
-    await validatedStream(stream)
-    const session = makeFakeSession([
-      { id: 'g1', appliedEdits: [{ id: 'e1', content: '先 init 再 probe', applied: true }] },
-    ])
-    const outcome = await promoteValidated(stream, session)
-    expect(outcome.promoted).toEqual(['r1'])
-    expect(session.calls[0]).toContain('"global":true')
-    expect(stream.state().refinements.get('r1')?.status).toBe('PROMOTED')
-  })
-
-  it('manifest 不符 → 回滚，不进 global', async () => {
-    const stream = makeStream()
-    await validatedStream(stream)
-    const session = makeFakeSession([
-      { id: 'g1', appliedEdits: [{ id: 'e1', content: 'x' }, { id: 'e-extra', content: 'y' }] },
-    ])
-    const outcome = await promoteValidated(stream, session)
-    expect(outcome.rolledBack).toEqual(['r1'])
-    expect(session.calls[1]).toContain('"rollbackId":"g1"')
-    expect(stream.state().refinements.get('r1')?.status).toBe('ROLLED_BACK')
-  })
-
-  it('未验证的 refinement 在 dispose 后无 global 痕迹（EXPIRED = 无代码检疫）', async () => {
-    const stream = makeStream()
-    stream.append({ type: 'refined', refinementId: 'r-pending', attributedClassIds: [CLASS_ID], entryIds: ['e1'] })
-    const session = makeFakeSession()
-    expect(await promoteValidated(stream, session)).toEqual({ promoted: [], rolledBack: [] })
-    expect(session.calls).toEqual([])
+    await runtime.flushPendingRollbacks?.(session)
+    expect(session.calls).toEqual(['{"rollbackId":"r1"}'])
+    expect(runtime.stream!.state().refinements.get('r1')?.status).toBe('ROLLED_BACK')
   })
 })

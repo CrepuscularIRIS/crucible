@@ -22,8 +22,14 @@ export interface ResearchRefineConfig {
   run?: string
 }
 
-/** residual 来源；lint_violation 由 C3 写入（plan §3）。 */
-export type ResearchResidualSource = 'guard' | 'mcp' | 'gate' | 'reconcile' | 'user' | 'lint_violation'
+/**
+ * residual 来源；lint_violation 由 C3 写入（plan §3）。
+ * system：Traceback / 宿主错误 / harness 直写（02 §3.3 S 行），只记录，永不触发 refine。
+ */
+export type ResearchResidualSource = 'guard' | 'mcp' | 'gate' | 'reconcile' | 'user' | 'lint_violation' | 'system'
+
+/** 只记录、不作 refine 触发源的来源（02 §3.3：拒绝不可学；SE0）。 */
+export const NON_LEARNABLE_SOURCES: readonly ResearchResidualSource[] = ['lint_violation', 'guard', 'system']
 
 /** 一次 failure class 的确定性键。 */
 export interface ResearchRefineFailureClass {
@@ -48,11 +54,17 @@ export function parseFailureClassId(id: string): ResearchRefineFailureClass | un
  */
 export type ResearchRefineEvent =
   | { type: 'residual'; ts: string; seq: number; classId: string; messageExcerpt: string; run?: string }
-  | { type: 'success'; ts: string; seq: number; source: ResearchResidualSource; tool: string }
+  /** fp：调用参数指纹（sha256 前 16 位，不存原文）；同 source 连续同 tool 同 fp = 重复调用，不计成功。 */
+  | { type: 'success'; ts: string; seq: number; source: ResearchResidualSource; tool: string; fp?: string }
   | { type: 'refined'; ts: string; seq: number; refinementId: string; attributedClassIds: string[]; entryIds: string[] }
   | { type: 'validated'; ts: string; seq: number; refinementId: string; evidenceSeqs: number[] }
-  | { type: 'rolled_back'; ts: string; seq: number; refinementId: string; reason: 'lint' | 'refuted' | 'manifest_mismatch' }
+  | { type: 'rolled_back'; ts: string; seq: number; refinementId: string; reason: ResearchRollbackReason }
   | { type: 'promoted'; ts: string; seq: number; refinementId: string }
+  /** 判定输入被篡改（磁盘与宿主内存基线不符）或宿主标记污染（refineNow）：本会话臂 contaminated（H2，SE3）。 */
+  | { type: 'tamper'; ts: string; seq: number; reason: string }
+
+/** unauthorized：没有 C2 令牌的 local refine_complete，或任何 global refine_complete（02 §3.5）。 */
+export type ResearchRollbackReason = 'lint' | 'refuted' | 'manifest_mismatch' | 'unauthorized'
 
 export type ResearchRefinementStatus = 'PENDING' | 'VALIDATED' | 'ROLLED_BACK' | 'PROMOTED'
 
@@ -66,7 +78,7 @@ export interface ResearchRefinementState {
   attributedClassIds: string[]
   /** refine 之后、同 class 的 success/residual 序号（验证分母/分子）。 */
   postSeq: number
-  rolledBackReason?: 'lint' | 'refuted' | 'manifest_mismatch'
+  rolledBackReason?: ResearchRollbackReason
 }
 
 export interface ResearchRefineClassState {
@@ -82,6 +94,8 @@ export interface ResearchRefineState {
   refinements: Map<string, ResearchRefinementState>
   /** 本 run 已发生的 residual 触发型 refine 次数（budget 分子）。 */
   residualRefineCount: number
+  /** 出现过 tamper 事件：不再产生 VALIDATED（粘性）。 */
+  contaminated: boolean
   events: ResearchRefineEvent[]
 }
 
@@ -96,4 +110,6 @@ export const RESEARCH_REFINE_DEFAULTS = {
   validationK: 3,
   /** digest 中每条 residual 的 messageExcerpt 截断长度。 */
   excerptMaxChars: 160,
+  /** 同参数连续调用达到此数记一条 procedural `stagnation` residual（02 §2.1 T1，[INF] 阈值）。 */
+  stagnationRun: 5,
 } as const

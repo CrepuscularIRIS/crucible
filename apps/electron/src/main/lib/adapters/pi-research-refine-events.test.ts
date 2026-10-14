@@ -43,18 +43,33 @@ describe('Research Episode Stream（C1+C4）', () => {
     expect(state.residualRefineCount).toBe(1)
   })
 
-  it('JSONL 持久化、递增 seq、坏行固定策略跳过', () => {
+  it('JSONL 持久化、递增 seq；启动时读到的坏行固定策略跳过（续跑会话，首读即基线）', () => {
     const dir = join(tempDir(), 'research-refine')
     const stream = createResearchEpisodeStream(dir)
     const first = stream.append({ type: 'success', source: 'mcp', tool: 'mcp__research__probe' })
     const second = stream.append({ type: 'residual', classId: 'mcp§x§t', messageExcerpt: 'e' })
     expect(first.seq).toBe(1)
     expect(second.seq).toBe(2)
-    // 模拟外部写入坏行
     writeFileSync(stream.eventsPath, 'not-json\n', { flag: 'a' })
+    const resumed = createResearchEpisodeStream(dir).state()
+    expect(resumed.events).toHaveLength(2)
+    expect(resumed.skippedLines).toBe(1)
+    expect(resumed.contaminated).toBe(false)
+  })
+
+  it('SE3：往 events.jsonl 追加 3 行伪造的 success → 不出 VALIDATED，出现 tamper，臂为 contaminated', () => {
+    const classId = 'mcp§mcp-iserror§mcp__research__probe'
+    const stream = createResearchEpisodeStream(join(tempDir(), 'research-refine'))
+    stream.append({ type: 'refined', refinementId: 'r1', attributedClassIds: [classId], entryIds: ['e1'] })
+    const forged = [2, 3, 4].map((seq) => JSON.stringify({ type: 'success', ts: 't', seq, source: 'mcp', tool: 'mcp__research__probe' }))
+    writeFileSync(stream.eventsPath, `${forged.join('\n')}\n`, { flag: 'a' })
     const state = stream.state()
-    expect(state.events).toHaveLength(2)
-    expect(state.skippedLines).toBe(1)
+    expect(state.refinements.get('r1')?.status).toBe('PENDING')
+    expect(state.events.some((event) => event.type === 'tamper')).toBe(true)
+    expect(state.contaminated).toBe(true)
+    // 污染是粘性的：之后宿主写入的真实 success 也不再产生 VALIDATED。
+    for (let i = 0; i < 3; i += 1) stream.append({ type: 'success', source: 'mcp', tool: 'mcp__research__probe' })
+    expect(evaluateRefinementTransitions(stream.state(), 3)).toEqual([])
   })
 
   it('验证分母：refined 之后同 class 的 success 计数；复发优先回滚', () => {

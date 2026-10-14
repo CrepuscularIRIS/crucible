@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'bun:test'
 import { createResearchEpisodeStream } from './pi-research-refine-events'
 import { createResearchRefineReviewer } from './pi-research-refine-reviewer'
+import { createResearchRefineRuntime, installResearchRefineToolTap } from './pi-research-refine-runtime'
 
 const tempRoots: string[] = []
 afterEach(() => {
@@ -80,12 +81,20 @@ describe('Research Refine Reviewer（C2）', () => {
     expect((await review({ reason: 'turn_interval' })).shouldRefine).toBe(false)
   })
 
-  it('guard 类 residual 可触发（success 分母由 isolation observer 提供）', async () => {
+  it('SE0：同类 guard residual ×3 不批准（拒绝不可学，02 §3.3）', async () => {
     const { stream, review } = makeReviewer()
-    stream.append({ type: 'residual', classId: 'guard§isolation-guard§bash', messageExcerpt: 'deny' })
-    stream.append({ type: 'residual', classId: 'guard§isolation-guard§bash', messageExcerpt: 'deny' })
-    const decision = await review({ reason: 'turn_interval' })
-    expect(decision.shouldRefine).toBe(true)
+    for (let i = 0; i < 3; i += 1) {
+      stream.append({ type: 'residual', classId: 'guard§isolation-guard§bash', messageExcerpt: 'deny' })
+    }
+    expect((await review({ reason: 'turn_interval' })).shouldRefine).toBe(false)
+    expect((await review({ reason: 'compact' })).shouldRefine).toBe(false)
+  })
+
+  it('SE0：system residual 不作触发源', async () => {
+    const { stream, review } = makeReviewer()
+    stream.append({ type: 'residual', classId: 'system§traceback§mcp__research__world_simulate', messageExcerpt: 'Traceback' })
+    stream.append({ type: 'residual', classId: 'system§traceback§mcp__research__world_simulate', messageExcerpt: 'Traceback' })
+    expect((await review({ reason: 'turn_interval' })).shouldRefine).toBe(false)
   })
 
   it('被回滚的 class 复发时，digest 引用被否决的上次尝试', async () => {
@@ -99,5 +108,50 @@ describe('Research Refine Reviewer（C2）', () => {
     const decision = await review({ reason: 'turn_interval' })
     expect(decision.instructions).toContain('r1')
     expect(decision.instructions).toContain('未能阻止复发')
+  })
+})
+
+/** 经真实 tool tap 灌入 MCP 错误（分类在 tap 里发生），再问 reviewer。 */
+async function feedMcpErrors(tool: string, texts: string[]) {
+  const root = mkdtempSync(join(tmpdir(), 'rr-reviewer-tap-'))
+  tempRoots.push(root)
+  const runtime = createResearchRefineRuntime({ mode: 'learning', artifactDir: root })
+  const agent: { afterToolCall?: unknown } = {}
+  installResearchRefineToolTap(agent, runtime)
+  const hook = agent.afterToolCall as (context: unknown) => Promise<unknown>
+  for (const text of texts) {
+    await hook({ toolCall: { name: tool }, isError: true, result: { content: [{ type: 'text', text }] } })
+  }
+  const decision = await runtime.autoRefineReviewer!({ reason: 'turn_interval' })
+  return { decision, state: runtime.stream!.state() }
+}
+
+describe('SE0 · 拒绝不可学（经 tool tap）', () => {
+  it('报告未通过 gate ×2 → 不批准', async () => {
+    const text = '报告未通过 gate，拒绝声明：\n- reconcile: 裸小数 0.31'
+    const { decision } = await feedMcpErrors('mcp__research__report_declare', [text, text])
+    expect(decision.shouldRefine).toBe(false)
+  })
+
+  it('F1 候选模式拒绝 ×2 → 不进 residual 流、不批准', async () => {
+    const text = '候选仿真已移到工作目录：import nbsim 后在 research-work/<run>/sim/ 里跑'
+    const { decision, state } = await feedMcpErrors('mcp__research__world_simulate', [text, text])
+    expect(decision.shouldRefine).toBe(false)
+    expect(state.events.filter((event) => event.type === 'residual')).toHaveLength(0)
+  })
+
+  it('world_simulate Traceback ×2 → 不批准，且归为 system', async () => {
+    const text = 'Traceback (most recent call last):\n  File "world-meter.py", line 88\nKeyError: \'g\''
+    const { decision, state } = await feedMcpErrors('mcp__research__world_simulate', [text, text])
+    expect(decision.shouldRefine).toBe(false)
+    const classIds = [...state.classes.keys()]
+    expect(classIds).toHaveLength(1)
+    expect(classIds[0]?.startsWith('system§')).toBe(true)
+  })
+
+  it('报告不存在（procedural）×2 → 批准', async () => {
+    const text = '报告不存在: reports/final-report.md'
+    const { decision } = await feedMcpErrors('mcp__research__report_declare', [text, text])
+    expect(decision.shouldRefine).toBe(true)
   })
 })

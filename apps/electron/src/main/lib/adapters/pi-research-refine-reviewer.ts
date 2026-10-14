@@ -12,8 +12,10 @@
  */
 import type { ResearchEpisodeStream } from './pi-research-refine-events'
 import {
+  NON_LEARNABLE_SOURCES,
   RESEARCH_REFINE_DEFAULTS,
   parseFailureClassId,
+  type ResearchResidualSource,
 } from './pi-research-refine-types'
 
 export interface AutoRefineReviewDecision {
@@ -80,10 +82,10 @@ export function createResearchRefineReviewer(deps: ReviewerDeps) {
     }
     const threshold = request.reason === 'compact' ? t.compactResidualThreshold : t.residualThreshold
     const open = [...state.classes.values()]
-      // ruling（审计 F1）: lint_violation 类没有 success 发射器，永远凑不满验证
-      // 分母；让它触发 refine 只会把循环卡死在 PENDING。仍作为 residual 记录
-      // （审计轨迹），但不作为 refine 触发源。
-      .filter((cls) => !cls.classId.startsWith('lint_violation§'))
+      // ruling（审计 F1 + 02 §3.3 SE0）: lint_violation 没有 success 发射器；guard
+      // 拒绝与 system 故障（Traceback、harness 直写）学了只会学成绕行。三者照常
+      // 记 residual（审计轨迹、RETRO 计数），但永不作为 refine 触发源。
+      .filter((cls) => !NON_LEARNABLE_SOURCES.includes(parseFailureClassId(cls.classId)?.source as ResearchResidualSource))
       .filter((cls) => cls.openResiduals.length >= threshold)
       .sort((a, b) => (a.openResiduals[0]?.seq ?? 0) - (b.openResiduals[0]?.seq ?? 0))
     const target = open[0]
