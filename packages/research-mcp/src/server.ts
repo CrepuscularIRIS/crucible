@@ -17,11 +17,9 @@
  * 钉死在 <cwd>/.proma-research/<run>/ 内），不跨目录泄漏。
  */
 
-import {
-  closeSync, constants, existsSync, fstatSync, lstatSync, mkdirSync, openSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync,
-} from 'node:fs'
+import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
-import { basename, dirname, join, relative, resolve } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod'
@@ -30,11 +28,15 @@ import { diffKernelEnv, takeKernelEnvSnapshot, treeSha256, type KernelEnvSnapsho
 import { runPreregGate } from '../gates/prereg.js'
 import { runReconcileGate } from '../gates/reconcile.js'
 import { runTraceGate } from '../gates/trace.js'
+import { inspectAudit, readNoFollow, verifySimCitations } from './files.js'
+import { capLines, decideTransition, preregCapLines, type Cap } from './caps.js'
+import { BUILTIN_H0, describeContract, planInit } from './contract.js'
 import {
   ResearchStateError,
   appendEvent,
   assertJournalIntact,
   confined,
+  isTerminal,
   recomputeMetric,
   readJournal,
   replay,
@@ -50,6 +52,7 @@ import {
   type JournalEvent,
   type ObserveSpec,
   type ProbeSpec,
+  type SimCitation,
 } from './state.js'
 
 /**
@@ -57,6 +60,12 @@ import {
  * 里匹配它——这条拒绝属于 integrity（拒绝文本本身就是出口），不可学。
  */
 export const CANDIDATE_MOVED_PREFIX = '候选仿真已移到工作目录'
+
+/** 01 §6.5：带外拒绝内联 triage 台阶全文（历史只有 5/9 会话打开过 triage.md）。 */
+const TRIAGE_STEPS = '强制分诊（research-moves 的 references/triage.md），按台阶爬、不许跳：'
+  + '① 指标伪影（重算路径取错了？换聚合还在吗）→ ② 实现 bug（命令或被测代码错了？）→ ③ 方差（换种子 / 切分还复现吗？残差在噪声带内吗）'
+  + '→ ④ 已知现象（必须给出处线索，否则回 ⑤）→ ⑤ 真实意外。出口都是落账：伪影 / bug → 修好后 prereg_write 新探针；'
+  + '方差 → 按 derive.md 重推频段宽度、新探针；已知 → attack_record(kind=constraint) 并在下个 prereg 加控制臂；真实意外 → claim_propose 一个产生该残差的机制'
 
 /** 每次调用时解析：测试与宿主可在进程启动后变更工作目录。 */
 function serverCwd(): string {
@@ -71,37 +80,6 @@ function resolveRun(run: string): string {
 /** agent 的工作目录 <cwd>/research-work/<run>/：REPORT.md、lessons.md、nbsim 都在这里，状态根之外。 */
 function workDir(run: string): string {
   return join(serverCwd(), 'research-work', sanitizeRunName(run))
-}
-
-type ReportSource = { source: string } & ({ text: string } | { link: 'symlink' | 'hardlink' })
-
-/**
- * 读声明源，不跟随任何链接：末段 O_NOFOLLOW + fstat（普通文件、nlink 1），目录段 realpath 必须等于字面路径。
- * 跟随 = 宿主替 agent 把别处的文件（deny 根里的真相、journal）复制进 run 目录。不存在返回 undefined。
- */
-function readReportSource(file: string): ReportSource | undefined {
-  const source = relative(serverCwd(), file)
-  try {
-    lstatSync(file)
-  } catch {
-    return undefined
-  }
-  if (realpathSync(dirname(file)) !== resolve(realpathSync(serverCwd()), dirname(source))) return { source, link: 'symlink' }
-  let fd: number
-  try {
-    fd = openSync(file, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK)
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ELOOP') return { source, link: 'symlink' }
-    throw error
-  }
-  try {
-    const stat = fstatSync(fd)
-    if (!stat.isFile()) throw new ResearchStateError(`报告不是普通文件: ${source}`)
-    if (stat.nlink > 1) return { source, link: 'hardlink' }
-    return { source, text: readFileSync(fd, 'utf-8') }
-  } finally {
-    closeSync(fd)
-  }
 }
 
 /** 宿主自己的文件：先摘掉同名（可能是链接），再 O_EXCL 新建，绝不写穿。 */
@@ -128,6 +106,21 @@ function assertRunAllowed(run: string): void {
       `攻击写进你自己的 RLM_SESSION_DIR/attacks.md，由父代理经 attack_record 落账`,
     )
   }
+}
+
+/**
+ * 01 §7 ④ 拒绝可见（[HC-Q4]）：被拒的调用在 throw 之前追加到 <run>/rejections.jsonl。
+ * 不进哈希链、不参与 replay；run 目录还不存在（未 init）时不留痕。留痕失败绝不吞掉原拒绝。
+ */
+function recordRejection(op: string, input: Record<string, unknown>, error: unknown): void {
+  try {
+    const root = runDir(serverCwd(), sanitizeRunName(process.env.PROMA_RESEARCH_RUN ?? String(input.run ?? '')))
+    if (!existsSync(root)) return
+    const args = JSON.parse(JSON.stringify(input, (_key, value) => (
+      typeof value === 'string' && value.length > 200 ? `${value.slice(0, 200)}…` : value)))
+    const message = error instanceof Error ? error.message : String(error)
+    appendFileSync(join(root, 'rejections.jsonl'), `${JSON.stringify({ ts: new Date().toISOString(), op, args, error: message.slice(0, 2000) })}\n`, 'utf-8')
+  } catch { /* 留痕是旁注 */ }
 }
 
 function freshRegister(root: string): void {
@@ -256,7 +249,11 @@ const ProbeSpecSchema = z.object({
     action: z.enum(['kill', 'scope', 'support']),
     target: z.string(),
     scopeNote: z.string().optional(),
+    headline: z.string().optional(),
   })),
+  discrimination: z.string().optional(),
+  provenance: z.record(z.string(), z.string()).optional(),
+  sims: z.array(z.object({ path: z.string(), sha256: z.string() })).optional(),
 })
 
 export function buildServer(): McpServer {
@@ -264,6 +261,36 @@ export function buildServer(): McpServer {
     { name: 'proma-research', version: '0.3.1' },
     { capabilities: { tools: {} } },
   )
+  // 一处拦截：每个工具的 handler 抛错都先落 rejections.jsonl（调用点保持 `server.tool(` 字面，RDS 按它解析工具名）
+  const registerTool = server.tool.bind(server) as (...args: unknown[]) => unknown
+  ;(server as unknown as { tool: (...args: unknown[]) => unknown }).tool = (...args: unknown[]) => {
+    const handler = args.pop() as (input: Record<string, unknown>, extra: unknown) => Promise<unknown>
+    return registerTool(...args, async (input: Record<string, unknown>, extra: unknown) => {
+      try {
+        return await handler(input, extra)
+      } catch (error) {
+        recordRejection(String(args[0]), input, error)
+        throw error
+      }
+    })
+  }
+  // schema 层拒绝（zod 入参校验）发生在 handler 之前，上面的拦截看不到 → 包 SDK 的校验步骤。
+  // ponytail: 依赖 SDK 1.29 私有方法 validateToolInput；改名后只告警、不包装（schema 拒绝不进 rejections.jsonl），
+  // 不让整个 research MCP 起不来。由 mode-semantics.test 的 schema 拒绝用例兜住。
+  const sdk = server as unknown as { validateToolInput?: (tool: unknown, args: unknown, name: string) => Promise<unknown> }
+  if (typeof sdk.validateToolInput !== 'function') {
+    console.warn('[research-mcp] SDK 没有 validateToolInput：schema 层拒绝不会写入 rejections.jsonl')
+  } else {
+    const validateToolInput = sdk.validateToolInput.bind(server)
+    sdk.validateToolInput = async (tool, input, name) => {
+      try {
+        return await validateToolInput(tool, input, name)
+      } catch (error) {
+        recordRejection(name, (input ?? {}) as Record<string, unknown>, error)
+        throw error
+      }
+    }
+  }
 
   // meter 在 server 进程内执行（沙箱外）：真值（worlds.py 的 novel 通道参数）
   // 从不出现在工具返回里。PROMA_RESEARCH_DENY 是 world 工具注册的 fail-closed
@@ -419,12 +446,24 @@ export function buildServer(): McpServer {
 
   server.tool(
     'research_init',
-    '初始化一个研究 run（在 .proma-research/<run>/ 建立只追加 journal）',
-    { run: z.string() },
-    async ({ run }) => {
+    '初始化一个研究 run（在 .proma-research/<run>/ 建立只追加 journal）。K0 确认后带 mode（open | score | identify）、'
+    + 'success_predicate、depth（light | full）、recall（on | off | parametric-only）：init 时冻结，切换 = 开新 run；'
+    + 'identify / score 自动登记内置 H0。不带 mode = legacy 规则',
+    {
+      run: z.string(),
+      mode: z.enum(['open', 'score', 'identify']).optional(),
+      success_predicate: z.string().optional(),
+      depth: z.enum(['light', 'full']).optional(),
+      recall: z.enum(['on', 'off', 'parametric-only']).optional(),
+    },
+    async ({ run, ...contractInput }) => {
       const root = resolveRun(run)
+      const existing = existsSync(join(root, 'journal.jsonl')) ? (requireInit(root), replay(root)) : undefined
+      const plan = planInit(existing, contractInput)
       mkdirSync(root, { recursive: true })
-      appendEvent(root, 'run.init', { run: sanitizeRunName(run) })
+      appendEvent(root, 'run.init', { run: sanitizeRunName(run), ...plan.fields })
+      const h0 = plan.fresh && plan.contract ? BUILTIN_H0[plan.contract.mode] : undefined
+      if (h0) appendEvent(root, 'claim.propose', { id: 'H0', ...h0, builtin: true })
       // SE7a K0：kernel 环境快照进 journal（受哈希链保护）；已有可用快照的 run 不重拍，免得重开洗掉漂移
       let envNote = ''
       if (!kernelEnvBaseline(readJournal(root))) {
@@ -433,7 +472,11 @@ export function buildServer(): McpServer {
         if (!snap.available) envNote = `\n⚠ kernel 环境快照不可用（${snap.reason}）：本 run 的环境漂移无法核对`
       }
       freshRegister(root)
-      return { content: [{ type: 'text', text: `run 已初始化: ${root}${envNote}` }] }
+      const contractNote = plan.contract
+        ? `\n契约（已冻结）：${describeContract(plan.contract)}${plan.fields.defaults ? `（${(plan.fields.defaults as string[]).join(', ')} 取默认）` : ''}`
+          + (h0 ? '\n内置 H0 已登记为 LIVE：任何单假设探针都能拿 H0 做互斥的一方' : '')
+        : ''
+      return { content: [{ type: 'text', text: `run 已初始化: ${root}${contractNote}${envNote}` }] }
     },
   )
 
@@ -450,20 +493,26 @@ export function buildServer(): McpServer {
 
   server.tool(
     'claim_propose',
-    '登记一条新假设（PROPOSED→LIVE）。predicts 必须与现有 LIVE/SUPPORTED 假设可判别：不能是其中任一假设 predicts 的子集。graveyard 非空时必须给 conflicts（"none — 攻击未探索的轴"或"graveyard 的 H# 死于 X；本假设以 Y 反驳/绕开"）',
+    '登记一条新假设（PROPOSED→LIVE）。predicts 必须与现有 LIVE/SUPPORTED 假设可判别：不能是其中任一假设 predicts 的子集。graveyard 非空时必须给 conflicts（"none — 攻击未探索的轴"或"graveyard 的 H# 死于 X；本假设以 Y 反驳/绕开"）。'
+    + '可选 parent（派生自哪个 H#：候选的朴素基线 H0′、方向下的变体）与 level（family 机制族 | instance 参数点；identify 下无 parent 默认 family，家族级 REFUTED 要 K3 审计）',
     {
       run: z.string(),
       id: z.string().regex(/^H\d+$/, '假设 id 形如 H1、H2'),
       statement: z.string().min(1),
       predicts: z.array(z.string()).min(1),
       conflicts: z.string().optional(),
+      parent: z.string().optional(),
+      level: z.enum(['family', 'instance']).optional(),
     },
-    async ({ run, id, statement, predicts, conflicts }) => {
+    async ({ run, id, statement, predicts, conflicts, parent, level }) => {
       const root = resolveRun(run)
       requireInit(root)
       const state = replay(root)
       if (state.claims.some((c) => c.id === id)) {
-        throw new ResearchStateError(`假设 ${id} 已存在`)
+        throw new ResearchStateError(`假设 ${id} 已存在${state.claims.find((c) => c.id === id)?.builtin ? '（内置 H0，init 时按 mode 自动登记）' : ''}`)
+      }
+      if (parent !== undefined && !state.claims.some((c) => c.id === parent)) {
+        throw new ResearchStateError(`parent ${parent} 不存在：派生关系只能指向已登记的 claim`)
       }
       const redundant = state.claims
         .filter((c) => c.state === 'LIVE' || c.state === 'SUPPORTED')
@@ -488,6 +537,8 @@ export function buildServer(): McpServer {
       appendEvent(root, 'claim.propose', {
         id, statement, predicts,
         ...(conflicts ? { conflicts } : {}),
+        ...(parent ? { parent } : {}),
+        ...(level ? { level } : {}),
       })
       freshRegister(root)
       return { content: [{ type: 'text', text: `${id} 已登记为 LIVE` }] }
@@ -496,21 +547,26 @@ export function buildServer(): McpServer {
 
   server.tool(
     'claim_transition',
-    '迁移假设状态。终态（SUPPORTED/REFUTED/SCOPED）必须点名一个已落地探针，且观测值落在该探针预登记时写下的针对此假设的分支频段内',
+    '迁移假设状态。终态（SUPPORTED/REFUTED/SCOPED）必须点名一个已落地探针，且观测值落在该探针预登记时写下的针对此假设的分支频段内。'
+    + 'mode run：迁移必须执行预登记写的动作（support→SUPPORTED、kill→REFUTED、scope→SCOPED）；SCOPED 必须带 scoped_statement（narrowed，仍留在竞争里）；'
+    + 'SUPPORTED 与家族级 REFUTED 带 audit（K3 审计产物 .rlm-jobs/<run>/…/out.md）。缺 audit、support 带与对手不互斥、频段只有手写出处、缺 headline / discrimination → 不拒，落成 CONTESTED + lead',
     {
       run: z.string(),
       id: z.string(),
       to: z.enum(['CONTESTED', 'LIVE', 'SUPPORTED', 'REFUTED', 'SCOPED']),
       byProbe: z.string().optional(),
       note: z.string().optional(),
+      scoped_statement: z.string().optional(),
+      audit: z.string().optional(),
     },
-    async ({ run, id, to, byProbe, note }) => {
+    async ({ run, id, to, byProbe, note, scoped_statement: scopedStatement, audit }) => {
       const root = resolveRun(run)
       requireInit(root)
       const state = replay(root)
+      const contract = state.contract
       const claim = state.claims.find((c) => c.id === id)
       if (!claim) throw new ResearchStateError(`未知 claim: ${id}`)
-      // P3.5：graveyard 复活必须点名新证据来源——没有新证据的复活是对死人的鞭尸
+      // P3.5：graveyard 复活必须点名新证据来源——没有新证据的复活是对死人的鞭尸（narrowed 放宽回 LIVE 同理）
       const TERMINAL = ['SUPPORTED', 'REFUTED', 'SCOPED'] as const
       if (to === 'LIVE' && (TERMINAL as readonly string[]).includes(claim.state)) {
         if (!note || note.trim() === '') {
@@ -519,9 +575,16 @@ export function buildServer(): McpServer {
           )
         }
       }
-      if (to === claim.state && (TERMINAL as readonly string[]).includes(to)) {
+      if (to === claim.state && isTerminal(to, contract)) {
         throw new ResearchStateError(`${id} 已是 ${to}，终态不能自迁移`)
       }
+      if (contract && to === 'SCOPED' && !scopedStatement?.trim()) {
+        throw new ResearchStateError(
+          `SCOPED = narrowed（${id} 收窄后仍留在竞争里、可再入 bands）：必须带 scoped_statement 写明收窄后仍存活的陈述 → 补上后重调`,
+        )
+      }
+      let caps: Cap[] = []
+      let auditRecord: SimCitation | undefined
       if (to === 'SUPPORTED' || to === 'REFUTED' || to === 'SCOPED') {
         if (!byProbe) {
           throw new ResearchStateError('终态迁移必须点名依据探针（byProbe）')
@@ -538,15 +601,31 @@ export function buildServer(): McpServer {
         }
         const metric = probe.metric
         if (metric === undefined) throw new ResearchStateError('探针没有重算指标')
-        if (!spec.branches.some((b) => b.target === id && inBand(metric, b.band))) {
-          throw new ResearchStateError(
-            `观测值 ${metric} 不落在任何针对 ${id} 的预登记分支频段内；不得事后解释 → 强制分诊：打开 research-moves 的 references/triage.md，按台阶（伪影→bug→方差→已知→真实意外）判定后以三种落地之一终结`,
-          )
+        const inBandBranches = spec.branches.filter((b) => b.target === id && inBand(metric, b.band))
+        if (inBandBranches.length === 0) {
+          throw new ResearchStateError(`观测值 ${metric} 不落在任何针对 ${id} 的预登记分支频段内；不得事后解释 → ${TRIAGE_STEPS}`)
+        }
+        if (contract) {
+          ;({ caps, audit: auditRecord } = decideTransition(
+            spec, claim, to, metric, inBandBranches, state, audit ? inspectAudit(serverCwd(), run, audit) : undefined,
+          ))
         }
       }
-      appendEvent(root, 'claim.transition', { id, to, ...(byProbe ? { by_probe: byProbe } : {}), ...(note ? { note } : {}) })
+      const capped = caps.length > 0
+      appendEvent(root, 'claim.transition', {
+        id,
+        to: capped ? 'CONTESTED' : to,
+        ...(byProbe ? { by_probe: byProbe } : {}),
+        ...(note ? { note } : {}),
+        ...(capped ? { requested: to, lead: caps.map((cap) => cap.code) } : {}),
+        ...(contract && to === 'SCOPED' ? { scoped_statement: scopedStatement } : {}),
+        ...(auditRecord ? { audit: auditRecord } : {}),
+      })
       freshRegister(root)
-      return { content: [{ type: 'text', text: `${id} → ${to}` }] }
+      const text = capped
+        ? `${id} → CONTESTED（lead：请求的 ${to} 被封顶。封顶不是拒绝：${id} 留在竞争里，结论按 lead 读）\n${capLines(caps)}`
+        : `${id} → ${to}`
+      return { content: [{ type: 'text', text }] }
     },
   )
 
@@ -554,12 +633,15 @@ export function buildServer(): McpServer {
 
   server.tool(
     'prereg_write',
-    '预登记一个探针（时间戳 + sha256 冻结）。结构性拒绝装饰性探针：必须有互斥频段对与 kill/scope 分支。bands 至少两个 claim：LIVE/CONTESTED，或 SUPPORTED 作为被挑战对手（至少一个须是 LIVE/CONTESTED；落地后可凭此探针把 SUPPORTED 迁到 REFUTED/SCOPED；迁到 CONTESTED 不需要探针）。必须在 probe_run 之前',
+    '预登记一个探针（时间戳 + sha256 冻结）。结构性拒绝装饰性探针：必须有互斥频段对与 kill/scope 分支。bands 至少两个 claim：LIVE/CONTESTED，或 SUPPORTED 作为被挑战对手（至少一个须是 LIVE/CONTESTED；落地后可凭此探针把 SUPPORTED 迁到 REFUTED/SCOPED；迁到 CONTESTED 不需要探针）。必须在 probe_run 之前。'
+    + 'mode run 另收：discrimination（判别度 d/σ/r*）、branches[].headline（该分支命中时报告首句）、provenance{H#: sim:<记录>|measured:P#|asserted|invented}、'
+    + 'sims[{path: "sim/<id>.json", sha256}]（research-work/<run>/sim/ 下的仿真记录，宿主核对后冻结）；缺项不拒，只让相应结论封顶 lead（返回值里列出）；内置 H0 可入 bands，SCOPED（narrowed）也可',
     { run: z.string(), spec: ProbeSpecSchema },
-    async ({ run, spec }) => {
+    async ({ run, spec: input }) => {
       const root = resolveRun(run)
       requireInit(root)
       const state = replay(root)
+      const spec = input.sims ? { ...input, sims: verifySimCitations(serverCwd(), run, input.sims) } : input
       validateProbeSpec(spec as unknown as ProbeSpec, state, { worldTask: worldIsolationReady })
       if (spec.observe) {
         assertCellUnobserved(root, spec.observe)
@@ -583,9 +665,12 @@ export function buildServer(): McpServer {
         pid: spec.pid,
         spec_sha256: digest,
         prereg_path: `prereg/${spec.pid}.json`,
+        // 点名的 claim：清偿这些 claim 的攻击债（01 §7.2，债按 claim 计）
+        claims: [...new Set([...Object.keys(spec.bands), ...spec.branches.map((b) => b.target)])].sort(),
       })
       freshRegister(root)
-      return { content: [{ type: 'text', text: `${spec.pid} 已预登记（sha256 ${digest.slice(0, 12)}…）` }] }
+      const capNote = state.contract ? preregCapLines(spec as unknown as ProbeSpec, state) : []
+      return { content: [{ type: 'text', text: [`${spec.pid} 已预登记（sha256 ${digest.slice(0, 12)}…）`, ...capNote].join('\n') }] }
     },
   )
 
@@ -665,7 +750,7 @@ export function buildServer(): McpServer {
 
   server.tool(
     'attack_record',
-    '记录一次对抗性质疑（typed）：new_h（混合/总体替代解释）/ constraint（被忽略的约束）/ no_change（结果其实不改变信念）',
+    '记录一次对抗性质疑（typed）：new_h（混合/总体替代解释）/ constraint（被忽略的约束）/ no_change（结果其实不改变信念）。target 是被攻击的 H#：mode run 里 new_h / constraint 记为该 claim 的攻击债，只有点名它的 prereg 或 report_declare 能清偿',
     {
       run: z.string(),
       target: z.string(),
@@ -681,7 +766,11 @@ export function buildServer(): McpServer {
       const gid = `G${state.attacks.length + 1}`
       appendEvent(root, 'attack.record', { gid, target, kind, text })
       freshRegister(root)
-      return { content: [{ type: 'text', text: `${gid} 已记录` }] }
+      const owed = replay(root).debts?.filter((debt) => debt.target === target).map((debt) => debt.gid) ?? []
+      const debtNote = owed.length > 0
+        ? `；${target} 未偿攻击债 ${owed.length} 条（${owed.join(' ')}）：点名 ${target} 的 prereg 清偿，或在报告 scope 段写明；登记别的 claim 清不掉`
+        : ''
+      return { content: [{ type: 'text', text: `${gid} 已记录${debtNote}` }] }
     },
   )
 
@@ -696,7 +785,7 @@ export function buildServer(): McpServer {
       const normalizedPath = path.replace(/\\/g, '/')
       const workPath = `research-work/${sanitizeRunName(run)}/${normalizedPath}`
       // agent 只在 research-work 写；run 目录里已有的普通文件只认旧 run（迁移前写在状态根内的报告）
-      const found = readReportSource(confined(workDir(run), normalizedPath)) ?? readReportSource(confined(root, normalizedPath))
+      const found = readNoFollow(serverCwd(), confined(workDir(run), normalizedPath)) ?? readNoFollow(serverCwd(), confined(root, normalizedPath))
       if (!found) {
         throw new ResearchStateError(`报告不存在：先把报告写成 ${workPath}（研究工作目录内、.proma-research/ 之外），再调 report_declare`)
       }

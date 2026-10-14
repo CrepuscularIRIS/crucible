@@ -10,7 +10,7 @@
 
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { replay, verifyJournalChain, type JournalEvent } from '../src/state'
+import { readJournal, replay, verifyJournalChain, type JournalEvent } from '../src/state'
 import { fail, ok, type GateResult } from './lib'
 
 export function runTraceGate(runRoot: string): GateResult {
@@ -32,7 +32,11 @@ export function runTraceGate(runRoot: string): GateResult {
   if (!replayed.probes.some((p) => p.status === 'LANDED')) {
     reasons.push('空 run：没有任何已落地探针')
   }
-  if (replayed.graveyard.length === 0 && !replayed.claims.some((c) => c.state === 'SUPPORTED')) {
+  // mode run：narrowed SCOPED 与 lead 不进坟场，但同样是"信念被证据改变"——按带 by_probe 的迁移数
+  const changedByEvidence = replayed.contract
+    ? readJournal(runRoot).some((event) => event.op === 'claim.transition' && event.by_probe)
+    : replayed.graveyard.length > 0 || replayed.claims.some((c) => c.state === 'SUPPORTED')
+  if (!changedByEvidence) {
     reasons.push('空 run：没有任何假设走到终态（信念从未被证据改变过）')
   }
 
@@ -130,8 +134,10 @@ function checkAdversarialObligation(
   // "晚于"以只追加 journal 的条目序为准（同毫秒写入合法；时间戳只拒倒填）
   const lastTerminalIndex = new Map<string, number>()
   let runLastTerminalIndex = -1
+  // mode run：narrowed SCOPED 与 lead（CONTESTED + by_probe）同样是信念定格点，对抗者也得看过
+  const settles = (event: JournalEvent) => (replayed.contract ? Boolean(event.by_probe) : TERMINAL_STATES.has(String(event.to)))
   events.forEach((event, index) => {
-    if (event.op !== 'claim.transition' || !TERMINAL_STATES.has(String(event.to))) return
+    if (event.op !== 'claim.transition' || !settles(event)) return
     const id = String(event.id)
     lastTerminalIndex.set(id, Math.max(lastTerminalIndex.get(id) ?? -1, index))
     runLastTerminalIndex = Math.max(runLastTerminalIndex, index)

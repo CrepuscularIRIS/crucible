@@ -31,6 +31,23 @@ export interface PreregBranch {
   target: string
   /** scope 时的适用范围说明 */
   scopeNote?: string
+  /** 01 K2-6：该分支命中时报告的第一句（HYPOTHETICAL）；mode run 里缺 → 该分支封顶 lead */
+  headline?: string
+}
+
+/** 01 §3.0：run 的冻结字段（K0 写一次；切换 = 新 run）。没有它的 run 走 legacy 规则。 */
+export type ResearchMode = 'open' | 'score' | 'identify'
+export interface RunContract {
+  mode: ResearchMode
+  successPredicate: string
+  depth: 'light' | 'full'
+  recall: 'on' | 'off' | 'parametric-only'
+}
+
+/** IR-D3：prereg 引用的仿真记录（<cwd>/research-work/<run>/sim/*.json），宿主核对 sha256 后冻结。 */
+export interface SimCitation {
+  path: string
+  sha256: string
 }
 
 /** 计量观测探针：测量本身即探针，由 server 经 meter 执行（扣预算），不经模型写的命令。 */
@@ -60,6 +77,12 @@ export interface ProbeSpec {
   metricSpec: string
   /** 每个 LIVE claim 的预测频段 */
   bands: Record<string, Band>
+  /** 01 K2-6 判别度（Δ/σ、r*）；mode run 里缺 → support 结论封顶 lead（只查存在，不查语义） */
+  discrimination?: string
+  /** 01 I4 band 出处：`sim:<记录>` / `measured:P#` / `asserted` / `invented`；未标按 asserted */
+  provenance?: Record<string, string>
+  /** IR-D3 仿真记录引用 */
+  sims?: SimCitation[]
   /** 结果分支：至少一个 kill/scope，否则探针是装饰性的 */
   branches: PreregBranch[]
 }
@@ -108,6 +131,16 @@ export interface ClaimRecord {
   note?: string
   /** 与 graveyard 的关系声明（Arbor 四行契约第 4 行）：graveyard 非空时登记必填 */
   conflicts?: string
+  /** IR-D1 派生关系 */
+  parent?: string
+  /** family（机制族）/ instance（参数点）；家族级 REFUTED 要 K3 审计 */
+  level?: 'family' | 'instance'
+  /** research_init 按 mode 自动登记的 H0 */
+  builtin?: boolean
+  /** SCOPED = narrowed（mode run）：收窄后仍存活的陈述 */
+  scopedStatement?: string
+  /** 被封顶的终态请求：claim 停在 CONTESTED，按 lead 读 */
+  lead?: { requested: ClaimState; byProbe: string; caps: string[] }
 }
 
 export interface ProbeRecord {
@@ -128,8 +161,12 @@ export interface ResearchState {
   gateVerdicts: Array<{ ts: string; passed: boolean; report: string }>
   /** server 侦测到的 journal 篡改（P3.3；重启后基线重置，见 README 天花板） */
   tampers: Array<{ ts: string; expected: string; actual: string }>
-  /** 已进入终态（REFUTED/SCOPED/SUPPORTED）的 claim —— grill 对抗者必须看得到 */
+  /** 已进入终态（REFUTED/SCOPED/SUPPORTED；mode run 里 SCOPED 是 narrowed，不进）的 claim —— grill 对抗者必须看得到 */
   graveyard: ClaimRecord[]
+  /** 01 §3.0 冻结字段；legacy run 没有 */
+  contract?: RunContract
+  /** mode run：按 claim 计的未偿攻击债（new_h / constraint；点名该 claim 的 prereg 或 report_declare 清偿） */
+  debts?: Array<{ gid: string; target: string; kind: string }>
 }
 
 export interface WorldJournalSummary {
@@ -304,6 +341,17 @@ export function resetJournalBaselinesForTest(): void {
 
 const TERMINAL_STATES: ReadonlySet<ClaimState> = new Set(['SUPPORTED', 'REFUTED', 'SCOPED'])
 
+/** 终态：mode run 里 SCOPED 是 narrowed（留在 LIVE 竞争，01 §12 Q1=(a)），legacy 沿用旧语义。 */
+export function isTerminal(claimState: ClaimState, contract?: RunContract): boolean {
+  return contract && claimState === 'SCOPED' ? false : TERMINAL_STATES.has(claimState)
+}
+
+/** 仍在竞争的 claim：可入 bands、是 support 互斥检查的对手。 */
+export function isAlive(claimState: ClaimState, contract?: RunContract): boolean {
+  return claimState === 'LIVE' || claimState === 'CONTESTED' || claimState === 'SUPPORTED'
+    || (contract !== undefined && claimState === 'SCOPED')
+}
+
 /** 从 journal 重放整个状态。gate 与 MCP 共用这一份实现——改这里两边同步变。 */
 export function replay(root: string): ResearchState {
   const events = readJournal(root)
@@ -321,6 +369,16 @@ export function replay(root: string): ResearchState {
     switch (event.op) {
       case 'run.init':
         state.run = String(event.run ?? '')
+        // 契约只认第一条带 mode 的 run.init（server 拒绝改写；重开不带字段）
+        if (event.mode && !state.contract) {
+          state.contract = {
+            mode: event.mode as ResearchMode,
+            successPredicate: String(event.success_predicate ?? ''),
+            depth: event.depth as RunContract['depth'],
+            recall: event.recall as RunContract['recall'],
+          }
+          state.debts = []
+        }
         break
       case 'claim.propose': {
         const id = String(event.id ?? '')
@@ -331,6 +389,9 @@ export function replay(root: string): ResearchState {
           predicts: Array.isArray(event.predicts) ? event.predicts.map(String) : [],
           state: 'LIVE',
           ...(event.conflicts ? { conflicts: String(event.conflicts) } : {}),
+          ...(event.parent ? { parent: String(event.parent) } : {}),
+          ...(event.level ? { level: event.level as ClaimRecord['level'] } : {}),
+          ...(event.builtin ? { builtin: true } : {}),
         })
         break
       }
@@ -346,6 +407,10 @@ export function replay(root: string): ResearchState {
         }
         if (!state.probes.some((p) => p.pid === pid)) {
           state.probes.push({ pid, status: 'PREREG', preregSha256: String(event.spec_sha256 ?? '') })
+        }
+        if (state.debts && Array.isArray(event.claims)) {
+          const named = new Set(event.claims.map(String))
+          state.debts = state.debts.filter((debt) => !named.has(debt.target))
         }
         break
       }
@@ -379,13 +444,20 @@ export function replay(root: string): ResearchState {
         if (!claim) throw new ResearchStateError(`journal 损坏：未知 claim ${String(event.id)}`)
         const to = String(event.to) as ClaimState
         const byProbe = event.by_probe ? String(event.by_probe) : undefined
-        if (TERMINAL_STATES.has(to)) {
+        if (TERMINAL_STATES.has(to) || Array.isArray(event.lead)) {
           const probe = state.probes.find((p) => p.pid === byProbe)
           if (!probe || probe.status !== 'LANDED') {
             throw new ResearchStateError(`journal 损坏：${claim.id} 终态迁移没有已落地 probe 依据`)
           }
           claim.byProbe = byProbe
-          // 同一 claim 二次终态（如 SUPPORTED→REFUTED）只保留最后一次
+        }
+        delete claim.lead
+        if (Array.isArray(event.lead)) {
+          claim.lead = { requested: String(event.requested) as ClaimState, byProbe: String(byProbe), caps: event.lead.map(String) }
+        }
+        if (to === 'SCOPED' && event.scoped_statement) claim.scopedStatement = String(event.scoped_statement)
+        if (isTerminal(to, state.contract)) {
+          // 同一 claim 二次终态（如 SUPPORTED→REFUTED）只保留最后一次；note 取迁移前的（legacy register 逐字不变）
           state.graveyard = [...state.graveyard.filter((g) => g.id !== claim.id), { ...claim, state: to }]
         }
         claim.state = to
@@ -400,8 +472,13 @@ export function replay(root: string): ResearchState {
           text: String(event.text ?? ''),
           ts: event.ts,
         })
+        if (state.debts && (event.kind === 'new_h' || event.kind === 'constraint')) {
+          state.debts.push({ gid: String(event.gid ?? ''), target: String(event.target ?? ''), kind: String(event.kind) })
+        }
         break
       case 'report.declare':
+        // 余债落成报告的 scope 段（01 §7.2 合法出口）
+        if (state.debts) state.debts = []
         state.reports.push({
           path: String(event.path ?? ''),
           sha256: String(event.sha256 ?? ''),
@@ -551,11 +628,15 @@ export function validateProbeSpec(
   }
   // SUPPORTED 可进 bands 当被挑战的对手（GLM ca-rebound-s0：H5 SUPPORTED 后唯一 LIVE 的 H7
   // 无从判别）；但至少要有一个 LIVE/CONTESTED——全是 SUPPORTED 的探针只是在确认已信之事。
-  const isOpen = (s?: ClaimState) => s === 'LIVE' || s === 'CONTESTED'
+  // mode run：SCOPED 是 narrowed，照常入 bands（GLM：P2=34 恰等于 null 却把 null 收窄出局，[HC-Q2]）
+  const contract = state.contract
+  const isOpen = (s?: ClaimState) => s !== undefined && s !== 'SUPPORTED' && isAlive(s, contract)
   for (const [claimId, band] of bandEntries) {
     const claim = state.claims.find((c) => c.id === claimId)
-    if (!claim || (!isOpen(claim.state) && claim.state !== 'SUPPORTED')) {
-      throw new ResearchStateError(`bands 引用了非 LIVE claim: ${claimId}（只收 LIVE/CONTESTED/SUPPORTED；REFUTED/SCOPED 须先带 note 复活）`)
+    if (!claim || !isAlive(claim.state, contract)) {
+      throw new ResearchStateError(contract
+        ? `bands 引用了已死 claim: ${claimId}（REFUTED 须先带 note 复活；SCOPED/narrowed 可直接入 bands）`
+        : `bands 引用了非 LIVE claim: ${claimId}（只收 LIVE/CONTESTED/SUPPORTED；REFUTED/SCOPED 须先带 note 复活）`)
     }
     const [lo, hi] = band
     if (!Number.isFinite(lo) || !Number.isFinite(hi) || lo > hi) {
@@ -581,9 +662,12 @@ export function validateProbeSpec(
   }
   if (!hasDisjointBandPair(spec.bands)) {
     throw new ResearchStateError(
-      '所有频段两两重叠：无论结果落在哪，信念都不会改变，这是装饰性探针。至少要有一对互斥频段。',
+      '所有频段两两重叠：无论结果落在哪，信念都不会改变，这是装饰性探针。至少要有一对互斥频段。'
+      + '选择原则（experimental-tactics）：先写对手的预测差、单一承重干预、最强的平凡对照、先测上下界'
+      + ' → 加 H0（mode run 已内置）做互斥的一方，或换协议',
     )
   }
+  validateProvenance(spec, state)
   const killOrScope = (spec.branches ?? []).filter((b) => b.action === 'kill' || b.action === 'scope')
   if (killOrScope.length === 0) {
     throw new ResearchStateError('branches 缺少 kill/scope 分支——探针必须有能力否定某个假设')
@@ -625,6 +709,32 @@ export function validateProbeSpec(
           + `[${bLo}, ${bHi}] 的对侧——注册即注定 kill，是稻草人假设 → research-abduce：修正 predicts 或重写频段，使两者方向一致`,
         )
       }
+    }
+  }
+}
+
+/** sim 出处标签能指向的引用：完整路径、或 sim/ 下的文件名（去不去 .json 都行）。 */
+export function simRefMatches(ref: string, citation: SimCitation): boolean {
+  const file = citation.path.split('/').pop() ?? ''
+  return ref === citation.path || ref === file || ref === file.replace(/\.json$/, '') || citation.path.endsWith(`/${ref}`)
+}
+
+/**
+ * band 出处标签里可核对的两种必须属实：`measured:P#` 的 P# 已落地，`sim:<ref>` 指向本 prereg 引用的仿真记录。
+ * 其余（asserted / invented / 自由文本 / 未标）都按 asserted 处理——只封顶，不拒（01 §7.5-4）。
+ */
+function validateProvenance(spec: ProbeSpec, state: ResearchState): void {
+  for (const [claimId, raw] of Object.entries(spec.provenance ?? {})) {
+    const tag = String(raw).trim()
+    const measured = /^measured:(P\d+)$/.exec(tag)
+    if (measured && state.probes.find((p) => p.pid === measured[1])?.status !== 'LANDED') {
+      throw new ResearchStateError(`${claimId} 的频段出处 ${tag}：${measured[1]} 不是已落地探针 → 改标 asserted，或引用已落地的 P#`)
+    }
+    const sim = /^sim:(.+)$/.exec(tag)
+    if (sim && !(spec.sims ?? []).some((citation) => simRefMatches(sim[1], citation))) {
+      throw new ResearchStateError(
+        `${claimId} 的频段出处 ${tag} 没有对应的仿真记录引用 → 在 spec.sims 里列出 {path: "sim/<id>.json", sha256}（research-work/<run>/sim/ 下），或改标 asserted`,
+      )
     }
   }
 }

@@ -4,7 +4,7 @@
  * 旧实现的四条实测教训全部固化成规则：
  * - F1（review 与 reconcile 死锁）：结论行（`- H1: SUPPORTED`）枚举的是 register
  *   状态，不是证据性断言——只要求它与重放状态**一致**，不要求每个 LIVE claim
- *   都有 artifact。未检验的 LIVE 假设存在时，报告依然有解。
+ *   都有 artifact。未检验的 LIVE 假设存在时，报告依然有解。被封顶的 claim 可写 `LEAD`。
  * - F6/F7（频段豁免）：严格两数值 `[lo, hi]` 是预登记内容，豁免出处对账；
  *   任意方括号（`准确率 [0.91]`）不豁免。
  * - F8（零小数位容差）：`约 1 (P1)` 买不到 ±0.5——容差上限为 |重算值| 的 1%。
@@ -80,7 +80,7 @@ export function runReconcileGate(runRoot: string, reportOverride?: ReconcileRepo
       const actual = id ? knownClaims.get(id) : undefined
       if (!actual) {
         reasons.push(`第 ${lineNo} 行结论引用了未知假设 ${id ?? '(无)'}`)
-      } else if (claimedState !== actual.state) {
+      } else if (claimedState !== actual.state && !(claimedState === 'LEAD' && actual.lead)) {
         reasons.push(`第 ${lineNo} 行结论 ${id}: ${claimedState} 与 register 实际状态 ${actual.state} 不符`)
       }
       continue
