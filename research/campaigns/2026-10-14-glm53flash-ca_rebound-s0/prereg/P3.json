@@ -1,0 +1,217 @@
+{
+  "pid": "P3",
+  "question": "真细胞在超极化条件+去极化测试 (-30uA/250ms then +12uA) 的 metered spike_count（reps=2 平均）判别可用性再武装放大（H6：条件解除失活→释放/测试期额外回弹，候选中心 19.0）vs 无放大（H5/H2：基线候选 15.2）vs 慢失活 T 型（H1：候选 17.4）vs 强负偏置测量伪影（H4：预测 ≤10；本探针提供 H4 的正式 kill 分支，修正 P1 写反的取向）。load-bearing variable：-95 mV 钳制 250ms 期间附加电流可用性（h 门/恢复变量）的再武装量；对照：参考基线 15.0 与 slow_na 15.33（免费模拟）。severity 检查：若 H6 为假（真细胞为 H5/H2 类无放大机制），观测仍可能落入 H6 带内下段 [16,22]（重叠区宽 7）——故该区间只 scope 不 support，H6 的支持签名收窄到 [23,27]（H5 带外），杀伤翼在 <16；主要判别力在两翼，重叠区由 held-out 释放族预报另行定序。",
+  "observe": {
+    "world": "ca_rebound",
+    "seed": 0,
+    "protocol": "hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",
+    "reps": 2
+  },
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H1": [
+      11,
+      24
+    ],
+    "H4": [
+      0,
+      10
+    ],
+    "H5": [
+      9,
+      22
+    ],
+    "H6": [
+      16,
+      27
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0,
+        8
+      ],
+      "action": "scope",
+      "target": "H6",
+      "scopeNote": "低于全部假设带（H4 带下缘亦下）：不迁移，triage 台阶 3（方差/未知负偏置残差）优先"
+    },
+    {
+      "band": [
+        9,
+        10
+      ],
+      "action": "kill",
+      "target": "H6",
+      "scopeNote": "低于 H6 带下缘 16 达 6 单位：250ms 超极化未产生再武装放大，可用性状态机制被否；9-10 同时与 H4 预测上限 10 相容，不构成 H4 的杀伤"
+    },
+    {
+      "band": [
+        11,
+        15
+      ],
+      "action": "kill",
+      "target": "H4"
+    },
+    {
+      "band": [
+        11,
+        15
+      ],
+      "action": "kill",
+      "target": "H6"
+    },
+    {
+      "band": [
+        11,
+        15
+      ],
+      "action": "scope",
+      "target": "H1",
+      "scopeNote": "基线区（候选 15.2）：H1/H5 带内重叠，无判别，不迁移"
+    },
+    {
+      "band": [
+        11,
+        15
+      ],
+      "action": "scope",
+      "target": "H5",
+      "scopeNote": "基线区：H5 带内，与 H1 无法区分，不迁移"
+    },
+    {
+      "band": [
+        16,
+        22
+      ],
+      "action": "kill",
+      "target": "H4"
+    },
+    {
+      "band": [
+        16,
+        22
+      ],
+      "action": "scope",
+      "target": "H5",
+      "scopeNote": "H5/H6 频段重叠区且处基线上半：双方均不迁移，判别推迟到 >22 放大签名"
+    },
+    {
+      "band": [
+        16,
+        22
+      ],
+      "action": "scope",
+      "target": "H6",
+      "scopeNote": "H6 带内下段但与无放大假设重叠：不 support（H6 若为假观测仍大概率落此），>22 才支持"
+    },
+    {
+      "band": [
+        16,
+        22
+      ],
+      "action": "scope",
+      "target": "H1",
+      "scopeNote": "H1 带内：不定序，不迁移"
+    },
+    {
+      "band": [
+        23,
+        24
+      ],
+      "action": "kill",
+      "target": "H4"
+    },
+    {
+      "band": [
+        23,
+        24
+      ],
+      "action": "kill",
+      "target": "H5"
+    },
+    {
+      "band": [
+        23,
+        24
+      ],
+      "action": "support",
+      "target": "H6"
+    },
+    {
+      "band": [
+        23,
+        24
+      ],
+      "action": "scope",
+      "target": "H1",
+      "scopeNote": "H1 带内顶部（距其候选中心 17.4 +2.3σ）：不定序，H1 的生死由与 H6 的参数化区分另行裁决"
+    },
+    {
+      "band": [
+        25,
+        27
+      ],
+      "action": "kill",
+      "target": "H4"
+    },
+    {
+      "band": [
+        25,
+        27
+      ],
+      "action": "kill",
+      "target": "H5"
+    },
+    {
+      "band": [
+        25,
+        27
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        25,
+        27
+      ],
+      "action": "support",
+      "target": "H6"
+    },
+    {
+      "band": [
+        28,
+        200
+      ],
+      "action": "kill",
+      "target": "H4"
+    },
+    {
+      "band": [
+        28,
+        200
+      ],
+      "action": "kill",
+      "target": "H5"
+    },
+    {
+      "band": [
+        28,
+        200
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        28,
+        200
+      ],
+      "action": "kill",
+      "target": "H6"
+    }
+  ],
+  "frozenAt": "2026-10-14T11:03:37.033Z"
+}

@@ -1,0 +1,296 @@
+{
+  "run": "ca-rebound-s0",
+  "claims": [
+    {
+      "id": "H1",
+      "statement": "真细胞的附加电流是一条 T 型低阈值钙电流：快速去极化激活 m-gate（V1/2≈-60 mV、τ≈10 ms、幂 2）+ 慢去失活 h-gate（V1/2≈-70 mV、τ≈120 ms）、E≈+40 mV；超极化条件解除 h 失活，释放/测试期产生额外回弹爆发，去极化条件期间持续激活抬高计数。",
+      "predicts": [
+        "long step (10 uA, 300 ms) metered spike_count ∈ [28, 43]（候选模拟 33.0，参考基线 23；含计量偏差余量）",
+        "depolarising conditioning + test (+15/250 then +12) spike_count ∈ [40, 53]（候选 43.2，基线 34）",
+        "hyperpol conditioning + depol test (-30/250 then +12) spike_count ∈ [16.5, 26]（候选 17.4）"
+      ],
+      "state": "REFUTED",
+      "byProbe": "P4",
+      "note": "P4 metered weak-test = 8（reps=1）落在预登记 kill 频段 [3,8]：250ms 超极化条件再武装后，+6uA 弱测试期未出现纯 T 型窗点燃（8 仅比基线候选 6 高 2，且低于 H1 带下缘 12 达 4 单位）。结合 P2（depol-cond 34 < H1 带 [40,53]）与 P3（hyperpol-cond 13.5 < H1 带 [16.5,26]）：H1 登记参数化（慢失活 T 型、条件期持续激活）的三个可检验签名全部反向——慢失活 h 门若在世，250ms 强去极化条件应留增量、超极化条件应产生回弹放大，两者均未观测到。"
+    },
+    {
+      "id": "H4",
+      "statement": "伪影/混杂对手：真细胞没有任何附加电流与 slow_na（即参考模型 {extra:[], slow_na:false}），且计量观测噪声为单向、大负值偏置（单 rep 常见 -10 或更深的向下跳变）；此前与将观测到的全部“真实−候选”差异都由该测量伪影产生，而非未建模电流。",
+      "predicts": [
+        "hyperpol conditioning + depol test (-30/250 then +12) 单 rep 观测 ≤ 10（基线候选点预测 15 - 1.5σ_noise）",
+        "depolarising conditioning + test (+15/250 then +12) 单 rep 观测 ≤ 24（基线点预测 34 - 1.5σ）",
+        "long step (10 uA, 300 ms) 单 rep 观测 ≤ 13（基线点预测 23 - 1.5σ）"
+      ],
+      "state": "REFUTED",
+      "conflicts": "none — 攻击未探索的轴：H1/H3 均假定增量由附加电流的伏秒特性产生，H4 攻击其测量学前提（格间噪声幅度与单 rep 计数可比性）",
+      "byProbe": "P3",
+      "note": "P3 metered hyperpol-cond+test = 13.5（2 reps 均值）落在预登记 kill 频段 [11,15]：观测远高于 H4 的强负偏置预测（≤10，其带上缘之上 3.5 单位 ≈ 2σ_reps2）。三个独立格点（P1=32, P2=34, P3=13.5）均无 -10 级负向跳变迹象，\"计量噪声单向大负偏置、全部真实−候选差异由伪影产生\"的主张被否证。"
+    },
+    {
+      "id": "H3",
+      "statement": "真细胞的附加电流是一条超极化激活的内向电流（Ih/HCN 型）：m-gate 在 -75 mV 以下激活（mk<0）、τ≈100 ms、pow 1、E≈-30 mV，超极化期产生 sag 与内向净流，脉冲结束时以慢去激活尾电流驱动回弹；去极化步期静默（无持续贡献）。",
+      "predicts": [
+        "long step (10 uA, 300 ms) metered spike_count ∈ [27, 42]（候选 30.7）",
+        "hyperpol conditioning + depol test (-30/250 then +12) spike_count ∈ [16.5, 26]（候选 17.3）",
+        "depolarising conditioning + test (+15/250 then +12) spike_count ∈ [36, 49]（候选 39.0）"
+      ],
+      "state": "SCOPED",
+      "conflicts": "none — 攻击未探索的轴：H1 假定快速激活/慢去失活的低阈值钙流，H3 以超极化激活、去极化期静默的不同门控结构反驳同一批观测格",
+      "byProbe": "P2",
+      "note": "P2 metered depol-cond+test = 34（2 reps 均值）落在预登记 scope 频段 [33,36]（判别失败带）。收窄：登记的强 Ih 参数化（E=-30 在去极化期有 +5 增量，预测带 [36,49]）与观测不符——只有去极化条件期贡献 ≈0 的 Ih 变体仍存活；Ih 家族要解释 P1 long-step=32 必须依赖 AHP 期激活，其参数化身份并入 H6 的可用性状态框架裁决。"
+    },
+    {
+      "id": "H2",
+      "statement": "真细胞没有任何附加电流：唯一候选差异是 single-switch 模型形态伪影 slow_na=true（无持久 Na 失活；剂量-反应和 conditioning-方向依赖全部由该单开关与测量噪声承载，即参考基线或其 slow_na 版本已足够解释观测）。",
+      "predicts": [
+        "long step (10 uA, 300 ms) metered spike_count ∈ [17, 32]（参考基线 23；slow_na-only 候选 24.5 同带）",
+        "depolarising conditioning + test (+15/250 then +12) spike_count ∈ [28, 43]（基线 34；slow_na 候选 33.7）",
+        "hyperpol conditioning + depol test (-30/250 then +12) spike_count ∈ [9.5, 24]（基线 15；slow_na 候选 15.3）"
+      ],
+      "state": "SCOPED",
+      "conflicts": "none — 攻击未探索的轴：H1/H3 均预设存在附加电流通道，H2 否定该前提（“无附加电流”作为机制断言而非取反：其全部可观测后果由单一模型形态开关承载）",
+      "byProbe": "P2",
+      "note": "P2 metered depol-cond+test = 34（2 reps 均值）落在预登记 scope 频段 [33,36]。收窄：基线/slow_na 中心（33.7-34）与 P2 观测完全一致，但 P1 long-step=32 落在其频段 [17,32] 顶部（点预测 23 的 +2.4σ），单靠无附加电流模型无法同时解释两个格点——H2 仅在“无内向增量”子命题上与 P2 相容，作为完整机制主张降格为部分解释，与 H6 在超极化条件协议上的判别推迟到 P3。"
+    },
+    {
+      "id": "H5",
+      "statement": "真细胞的附加电流是一条持续激活、无非失活状态依赖的去极化激活内向流（persistent Na/Ca 型）：m-gate 去极化激活（V1/2≈-60、τ≈10 ms、pow 1）、无慢 h 门、E≈-30 mV；它在去极化步全程持续提供内向净流，但超极化条件不产生任何解除失活/激活蓄积，故超极化释放无额外回弹放大。",
+      "predicts": [
+        "long step (10 uA, 300 ms) metered spike_count ∈ [25, 40]（候选 30.7）",
+        "depolarising conditioning + test (+15/250 then +12) spike_count ∈ [33, 48]（候选 38.6）",
+        "held-out 超极化释放族（hyperpol -X then release）的候选模拟 ≈ 参考基线行为（超极化不产生额外放大；可免费用 brief step 代理检验：候选 brief-step ≈ 基线 6±2）"
+      ],
+      "state": "SUPPORTED",
+      "conflicts": "none — 攻击未探索的轴：H1 的超极化放大依赖 h 门去失活状态，H5 无任何状态依赖（同一批去极化观测下两者中心差 4.6，held-out 超极化释放族上二者预测彻底分叉）",
+      "byProbe": "P4",
+      "note": "P4 metered weak-test = 8（reps=1）落在预登记 support 频段 [3,8]：≈基线候选 6（+2，1σ1 内），+6uA 弱测试对超极化条件不敏感——与 H5\"无状态依赖\"的核心主张一致；且 H5 候选 8.7 与观测 8 几乎重合（+10uA 步 +4.3 内向流也与 P1=32 相容：27.7+4.3=32.0 精确复现）。三个计量格点（32/34/13.5）+ 弱测试格点（8）与 H5 框架无冲突；其 predicts 的去极化条件 [33,48] 与 P2=34 相容（带内下段）。"
+    },
+    {
+      "id": "H6",
+      "statement": "真细胞的附加电流是具有可用性状态依赖的瞬变内向流（快失活 T 型样）：静息态携带高可用性储备，步进初期提供瞬变内向净流（+10 uA 步 +5~9 spikes）；强去极化在数十 ms 内清空可用性且短间隙（0–150 ms）内不恢复，故 +15 uA 条件期与紧跟的测试期无增量；超极化条件解除失活（再武装），释放/测试期产生随条件时长与深度增长的回弹放大。",
+      "predicts": [
+        "P1 观测 long step (10 uA, 300 ms) = 32 落在本假设中心带（该机制从静息可用性储备出发，步进初期瞬变内向流 +5~9，复现 +9 残差）",
+        "P2 观测 depolarising conditioning + test = 34 落在本假设中心带（+15 uA 条件在 ~60ms 内清空可用性且 0 间隙不恢复，条件期增量被清除，恰好回落基线）",
+        "hyperpol conditioning + depol test (-30/250 then +12) spike_count ∈ [16, 27]（-95 mV 强力再武装可用性 → 释放/测试期回弹，快失活变体候选模拟 19.0）",
+        "brief hyperpol conditioning + test (-30/40ms then +12) spike_count ∈ [11, 20]（40 ms 条件部分再武装，显著弱于 250 ms 条件——动力学签名；同族变体模拟 18.0，慢失活变体 17.4，均落带内）",
+        "held-out 超极化释放族随条件幅度单调上升（-25 < -30 < -35 < -40，可用性恢复随超极化深度增强）"
+      ],
+      "state": "REFUTED",
+      "conflicts": "point名 H1/H3/H5/H2：P2 观测 34 落在它们全部频段外（H1[37,50]/H3[36,49]/H5[33,48] 均预测去极化条件期有持续增量、H2[22,41] 中心亦无法解释 long-step +9 残差）；H6 以“条件态清空可用性”的结构反驳三者的无状态/慢失活假设，并吸收 H1 的 T 型家族为特例（H1 参数化变体将由 P3 动力学探针裁决）",
+      "byProbe": "P3",
+      "note": "P3 metered hyperpol-cond+test = 13.5（2 reps 均值）落在预登记 kill 频段 [11,15]，低于 H6 带下缘 16 达 2.5 单位：250 ms 超极化条件未产生可用性再武装放大（观测 ≈ 基线候选 15.2）。H6 的\"超极化再武装→释放/测试回弹放大\"核心签名失败——其只解释了 P1/P2 残差模式（成立的部分：depol 条件期清空机制仍与 P2=34 一致），但整个假设作为机制主张被否证。"
+    },
+    {
+      "id": "H7",
+      "statement": "真细胞的附加电流是一条去极化激活、带去极化累积失活的持续 Na 型内向流：m-gate 去极化激活（V1/2≈-60、τ≈10 ms、pow 1、E≈-30 mV），失活由去极化驱动累积（τ_inact≈150-300 ms）、恢复为时间依赖且静息或超极化下 120-250 ms 内近完全恢复；静息直接步进享受高可用性储备（步内部分衰减），强去极化条件期清空可用性且 0 间隙测试无增量，超极化条件不产生额外回弹放大。",
+      "predicts": [
+        "long step (10 uA, 300 ms) metered spike_count ∈ [24, 40]（候选 28.3：起始足量、步内部分衰减）",
+        "depolarising conditioning + test (+15/250 then +12) spike_count ∈ [30, 46]（候选 38.0：250ms 条件期已大部分失活，test 期无增量——精确匹配观测回落）",
+        "paired long pulses ≥ 26 且总计数不塌回基线 26 以下（候选 30.0：第二脉冲部分衰减但非全消）",
+        "hyperpol conditioning + depol test ∈ [12, 20] 且对条件时长不敏感（40ms 与 250ms 条件同带：失活恢复为时间依赖、静息/超极化 200ms 内近完全恢复，无超极化再武装放大）",
+        "held-out 超极化释放族 ≈ 基线释放行为（同 H5 方向：无状态依赖放大）"
+      ],
+      "state": "LIVE",
+      "conflicts": "point名 H5（G6）：H5 的“无失活/全程持续”条款预测条件期持续增量（ca_p 候选 depol-cond 38.6、P2 观测 34=基线的回落需要外挂偏置校正），H7 以去极化累积失活结构反驳该条款并吸收其全部相容证据；与坟场 H6 不同：H7 的失活由去极化驱动、超极化不产生再武装放大（H6 死于超极化再武装签名缺失，H7 不含该签名）"
+    }
+  ],
+  "probes": [
+    {
+      "pid": "P1",
+      "status": "LANDED",
+      "preregSha256": "ec1e10dfc435762218475e87c86588241b802b18663e698c708e6c983a3efa00",
+      "exitCode": 0,
+      "metric": 32
+    },
+    {
+      "pid": "P2",
+      "status": "LANDED",
+      "preregSha256": "e1d90f087f90347b39b5128276eda22ee4caf1eefcdc41edc01d946f3dd1e523",
+      "exitCode": 0,
+      "metric": 34
+    },
+    {
+      "pid": "P3",
+      "status": "LANDED",
+      "preregSha256": "f8ba4027f696cdf132f6ded9747a729cc1612cbeedf5c8184ac7a4e5d0b30172",
+      "exitCode": 0,
+      "metric": 13.5
+    },
+    {
+      "pid": "P4",
+      "status": "LANDED",
+      "preregSha256": "7c8c69eb55289432d85779cbdbd64e1b8867ba31bd7b043da69e1432626ad6e0",
+      "exitCode": 0,
+      "metric": 8
+    }
+  ],
+  "attacks": [
+    {
+      "gid": "G1",
+      "target": "H5",
+      "kind": "no_change",
+      "text": "no_change | H5 | [占据度] 按 P2 预登记分支表，观测 34 对 H5 的正式动作是\"无\"：34 落在 H5 带 [33,45]（prereg P2）内但没有任何 branch 覆盖 [31,36]——相邻 [33,36] 的 scopeNote 原文即\"落在H3/H5带下缘与H2带上缘的重叠区，无一支持或杀伤，判别失败\"；P2 的 [37,40] support 带未被命中（H5 登记候选 38.6，观测低 4.6≈1.8σ_reps2，且 34 精确等于无附加电流基线点值 34.0）。SUPPORTED note 把\"与 predicts [33,48] 相容（带内下段）\"计为支持，是把该探针预登记的判别失败区重新计为相容性证据——P2 对 H5 的信念更新应为零。",
+      "ts": "2026-10-14T11:35:54.663Z"
+    },
+    {
+      "gid": "G2",
+      "target": "H5",
+      "kind": "no_change",
+      "text": "no_change | H5 | [占据度] P4=8 对\"H5 vs H2/基线\"判别力为零：+2 spikes = 0.55σ_rep1（σ_rep1≈3.7，由 P2 severity 自述\"中心差 4.2–4.6 ≈ 1.7σ_reps2\"反推），似然比≈1；P4 prereg 自己写明\"[3,8] 的 support 对 H5 是弱支持\"。同一观测对 H1 按\"带外 4 单位\"计 kill（余量仅≈1.1σ_rep1、单 rep），对 H5 按带内计 support——两个判定共享一个 ±1σ 级宽带的两个侧翼，任一侧都不构成独立证据。",
+      "ts": "2026-10-14T11:36:02.077Z"
+    },
+    {
+      "gid": "G3",
+      "target": "H5",
+      "kind": "constraint",
+      "text": "constraint | H5 | [占据度] H5 的存在性前提（\"存在附加电流\"）实际只挂在 P1=32 单 rep 高于无电流基线 23 的 +9（≈2.5σ_rep1）上，而 graveyard 中 H2 仅被 SCOPED 未被 REFUTED：无附加电流/slow_na 解释对四格点的拟合为 P1 +2.4σ、P2 0σ（34=34.0）、P3 ≈−0.6σ、P4 +0.5σ；H6 的 REFUTED note 亦自承 P1 残差\"与静息态瞬变相容\"。且\"附加电流是一条…\"预设单一通道，四格点至多约束三个标量（静息步增量/条件期增量/释放差），无法排除\"基线误设+小修正\"的混合构成。falsifier（若 H2 类无附加电流解释成立）：用剩余预算 2（已用 6/8）把 P1 加测至 reps=2，mean 应回落 ≤26；若 ≥29 则该解释死、\"存在附加内向修正\"才成立——这是唯一能了结 H2/H5 存在性分界的观测，其缺位时 SUPPORTED 对存在性前提是超额声明。",
+      "ts": "2026-10-14T11:36:10.519Z"
+    },
+    {
+      "gid": "G4",
+      "target": "H5",
+      "kind": "constraint",
+      "text": "constraint | H5 | [占据度] \"在去极化步全程持续提供内向净流\"与\"步进起始瞬变\"的判别协议 paired long pulses (12uA/300ms, 60ms gap, 12uA/300ms) 在主协议表内（非 held-out）、基线候选 26、候选模拟已在 ledger（10:23：32 与 30.33，H5 框架侧 ≈30–32），成本 1——但真细胞从未在该协议被计量。falsifier：meter 该协议 reps=1：总 count ≥30 且第二/第一脉冲计数比≈基线比值，则\"持续\"获直接支持；总 count ≤28（第二脉冲塌回基线水平）则 +9 残差应归因起始瞬变，\"全程持续\"条款被否证（graveyard H6 的\"静息储备\"成分据此以瞬变形式部分复活）。",
+      "ts": "2026-10-14T11:36:18.090Z"
+    },
+    {
+      "gid": "G5",
+      "target": "H5",
+      "kind": "constraint",
+      "text": "constraint | H5 | [占据度] graveyard H3 的 SCOPED 存活分支（\"去极化条件期贡献≈0、靠脉冲间 AHP 期激活在步内累积贡献 +9 的 Ih 变体\"）从未被任何落地探针压死：它对 P1 的门控方向与 H5 相反（超极化激活 vs 去极化激活），对 P3 的判别取决于 τ——τ≈100ms 变体已被 P3=13.5<16 压制，但 τ∈[200,400]ms 的中段参数化在 P1（步内 300ms 有贡献）与 P3（250ms 条件不足以蓄积）之间存在未扫描存活窗。falsifier：held-out \"hyperpol -25 then release\" 与 \"hyperpol -40 then release\" 两点 forecast——两点评测均 ≤基线+1.5 则 AHP-Ih 分支死、H5 的机制唯一性成立；两点呈深度单调上升则 H3 分支复活、H5 非唯一。",
+      "ts": "2026-10-14T11:36:23.177Z"
+    },
+    {
+      "gid": "G6",
+      "target": "H5",
+      "kind": "new_h",
+      "text": "new_h | H5 | [机制/混合解释] 去极化累积-时间恢复失活的持续 Na 型流（m-gate 同 H5：V1/2≈-60、τ≈10ms、pow 1、E=-30；另加去极化驱动失活 τ_inact≈150–300ms，恢复为时间依赖、静息或超极化下 120–250ms 内近完全恢复）：预测 P1 +7~9（起始足量、步内部分衰减）、P2 增量≈0（250ms +15uA 条件期已基本失活，test 无增量——精确匹配观测 34=基线 34.0，而 H5 登记候选预测 +4.9≈1.8σ_reps2 偏高）、P3≈15.2（test 前可用性已恢复至新鲜水平，无放大）、P4≈8.5——四格点拟合不劣于 H5 且在 P2 上严格更优，又不触发 H1/H6 的超极化再武装放大（其被否证的机制不同）。判别观测：条件时长阶梯 \"depolarising conditioning + test (+15 uA/500 ms, then +12 uA)\"（meter 若拒新标签则退为 P2 加测 reps=3）：H5 预测条件时长不敏感（mean ≥36.5），本变体预测单调衰减（≤35.5）——\"无失活/全程持续\"核心条款的正反在此一举。",
+      "ts": "2026-10-14T11:36:31.887Z"
+    },
+    {
+      "gid": "G7",
+      "target": "H5",
+      "kind": "constraint",
+      "text": "constraint | H5 | [机制] \"超极化不产生任何解除失活/激活蓄积、无额外回弹放大\"是对全部 (深度×时长) 的全称否定，但只在 (−30uA→约−95mV, 250ms) 单点（P3）及其加 gap 变体（P4）被检验；graveyard H6 的 REFUTED 只针对其登记参数化（快失活、-95mV 有效再武装），H6 自含的深度单调 predicts（-25<-30<-35<-40）从未被检验——再武装阈值深于 -95mV 或 τ_rearm>250ms 的机制与 H5 在全部已落地探针下不可区分。falsifier：held-out \"hyperpol -40 then release\" forecast：H5 预测 ≈基线水平（count ≤15.5，无深度依赖）；若 ≥19 则\"任何超极化\"全称句被否证且 H6 族复活。",
+      "ts": "2026-10-14T11:36:39.286Z"
+    },
+    {
+      "gid": "G8",
+      "target": "H5",
+      "kind": "constraint",
+      "text": "constraint | H5 | [测量] H4 被否证的只是\"单向大负偏置\"变体，不能反向担保噪声模型：全部 band 宽度（含 H5 的 P4 support 带 [3,8]）建立在由候选中心差反推的事后 σ（σ_reps2≈2.6）上，run 内没有任何独立噪声计量；若真实 σ_rep1≈5，则 P1=32 仅 1.8σ、P4=8 仅 0.4σ，H5 全部证据退化为噪声级，H1 的 P4 kill（余量 4 单位≈1.1σ、单 rep）同样失效。falsifier（若 σ 被低估）：对 P2 追加 reps=2，跨批均值漂移应 ≤2.6；若两批均值差 ≥4，σ 系统性低估，P2/P3/P4 全部频段需重开，H5 的 SUPPORTED 失去频段地基。",
+      "ts": "2026-10-14T11:36:44.599Z"
+    },
+    {
+      "gid": "G9",
+      "target": "H5",
+      "kind": "constraint",
+      "text": "constraint | H5 | [测量] SUPPORTED transition note 的两处定量支柱账目不实：(a) \"H5 候选 8.7 与观测 8 几乎重合\"——P4 prereg 自列对照为\"ca_t 候选 8.7、ca_t_fast 8.7\"（T 型钙族变体的模拟值），H5 登记参数化在 P4 协议上的候选模拟在转 SUPPORTED（11:12）时刻不存在（11:14 才落 8.6667，属事后补）；(b) \"27.7+4.3=32.0 精确复现\"中 27.7 与 4.3 在 ledger/register 均无来源条目，且把阈值化、非线性的 spike_count 按\"+uA 内向流\"线性分解违反指标语义。falsifier：免费模拟 H5 登记参数 (m-gate V1/2=-60、E=-30) 在 P4 协议的 spike_count——若 ≠8.7（如 ≈11–13），note 的\"几乎重合\"系误引 T 型族数值、SUPPORTED 依据需重写；若 =8.7，则 P4 prereg 的\"ca_t\"标注错误——两份在案文件必有其一失实。",
+      "ts": "2026-10-14T11:36:53.838Z"
+    },
+    {
+      "gid": "G10",
+      "target": "H5",
+      "kind": "constraint",
+      "text": "constraint | H5 | [框架] H5 第三条 predict（held-out 超极化释放族候选≈基线）与 P4 prereg 明文的裁决程序（\"最终定序由 held-out 释放族预报的全体一致性裁决\"）均未执行即转 SUPPORTED：ledger 无任何 \"hyperpol -25/-30/-35/-40 then release\" 的真细胞观测或候选模拟，run 的 world_forecast（唯一一次终局评分）未使用，而预算尚余 2。falsifier：先免费模拟 H5 候选 \"hyperpol -30 then release\" 并提交 world_forecast——真值 ≥基线+3（≥18）则\"超极化不产生额外放大\"核心句被否证；≤15.5 才构成对 SUPPORTED 的实际执行。",
+      "ts": "2026-10-14T11:36:59.278Z"
+    },
+    {
+      "gid": "G11",
+      "target": "H5",
+      "kind": "constraint",
+      "text": "constraint | H5 | [框架] 第三 predict 的免费代理检验按其自登容差已经失败：\"候选 brief-step ≈ 基线 6±2\"——H5 提出（10:31）后、转 SUPPORTED（11:12）前唯一一次 brief-step 候选模拟（10:48）=8.33，|8.33−6|=2.33 越出 ±2；若该条目不属于 H5 变体，则该 predict 连候选侧都从未实例化。两种读法均未通过：候选读法越界，真细胞读法（metered brief-step ≈6±2）从未观测。falsifier：meter \"brief step (12 uA, 40 ms)\" reps=1（成本 1）：≤8 则 H5 参数化须收窄为弱 g 变体；≥10 则真细胞在\"无状态依赖\"机制下仍高出基线 ≥4，\"≈基线行为\"表述被否证、仅定性框架残存。",
+      "ts": "2026-10-14T11:37:04.894Z"
+    }
+  ],
+  "reports": [
+    {
+      "path": "REPORT.md",
+      "sha256": "08dc30d39579ca3f3e79a83ae52ec918bf68818eb2e1bcc0e05f353802bf1400",
+      "ts": "2026-10-14T11:54:16.815Z"
+    }
+  ],
+  "gateVerdicts": [
+    {
+      "ts": "2026-10-14T11:54:16.815Z",
+      "passed": true,
+      "report": "REPORT.md"
+    }
+  ],
+  "tampers": [],
+  "graveyard": [
+    {
+      "id": "H3",
+      "statement": "真细胞的附加电流是一条超极化激活的内向电流（Ih/HCN 型）：m-gate 在 -75 mV 以下激活（mk<0）、τ≈100 ms、pow 1、E≈-30 mV，超极化期产生 sag 与内向净流，脉冲结束时以慢去激活尾电流驱动回弹；去极化步期静默（无持续贡献）。",
+      "predicts": [
+        "long step (10 uA, 300 ms) metered spike_count ∈ [27, 42]（候选 30.7）",
+        "hyperpol conditioning + depol test (-30/250 then +12) spike_count ∈ [16.5, 26]（候选 17.3）",
+        "depolarising conditioning + test (+15/250 then +12) spike_count ∈ [36, 49]（候选 39.0）"
+      ],
+      "state": "SCOPED",
+      "conflicts": "none — 攻击未探索的轴：H1 假定快速激活/慢去失活的低阈值钙流，H3 以超极化激活、去极化期静默的不同门控结构反驳同一批观测格",
+      "byProbe": "P2"
+    },
+    {
+      "id": "H2",
+      "statement": "真细胞没有任何附加电流：唯一候选差异是 single-switch 模型形态伪影 slow_na=true（无持久 Na 失活；剂量-反应和 conditioning-方向依赖全部由该单开关与测量噪声承载，即参考基线或其 slow_na 版本已足够解释观测）。",
+      "predicts": [
+        "long step (10 uA, 300 ms) metered spike_count ∈ [17, 32]（参考基线 23；slow_na-only 候选 24.5 同带）",
+        "depolarising conditioning + test (+15/250 then +12) spike_count ∈ [28, 43]（基线 34；slow_na 候选 33.7）",
+        "hyperpol conditioning + depol test (-30/250 then +12) spike_count ∈ [9.5, 24]（基线 15；slow_na 候选 15.3）"
+      ],
+      "state": "SCOPED",
+      "conflicts": "none — 攻击未探索的轴：H1/H3 均预设存在附加电流通道，H2 否定该前提（“无附加电流”作为机制断言而非取反：其全部可观测后果由单一模型形态开关承载）",
+      "byProbe": "P2"
+    },
+    {
+      "id": "H4",
+      "statement": "伪影/混杂对手：真细胞没有任何附加电流与 slow_na（即参考模型 {extra:[], slow_na:false}），且计量观测噪声为单向、大负值偏置（单 rep 常见 -10 或更深的向下跳变）；此前与将观测到的全部“真实−候选”差异都由该测量伪影产生，而非未建模电流。",
+      "predicts": [
+        "hyperpol conditioning + depol test (-30/250 then +12) 单 rep 观测 ≤ 10（基线候选点预测 15 - 1.5σ_noise）",
+        "depolarising conditioning + test (+15/250 then +12) 单 rep 观测 ≤ 24（基线点预测 34 - 1.5σ）",
+        "long step (10 uA, 300 ms) 单 rep 观测 ≤ 13（基线点预测 23 - 1.5σ）"
+      ],
+      "state": "REFUTED",
+      "conflicts": "none — 攻击未探索的轴：H1/H3 均假定增量由附加电流的伏秒特性产生，H4 攻击其测量学前提（格间噪声幅度与单 rep 计数可比性）",
+      "byProbe": "P3"
+    },
+    {
+      "id": "H6",
+      "statement": "真细胞的附加电流是具有可用性状态依赖的瞬变内向流（快失活 T 型样）：静息态携带高可用性储备，步进初期提供瞬变内向净流（+10 uA 步 +5~9 spikes）；强去极化在数十 ms 内清空可用性且短间隙（0–150 ms）内不恢复，故 +15 uA 条件期与紧跟的测试期无增量；超极化条件解除失活（再武装），释放/测试期产生随条件时长与深度增长的回弹放大。",
+      "predicts": [
+        "P1 观测 long step (10 uA, 300 ms) = 32 落在本假设中心带（该机制从静息可用性储备出发，步进初期瞬变内向流 +5~9，复现 +9 残差）",
+        "P2 观测 depolarising conditioning + test = 34 落在本假设中心带（+15 uA 条件在 ~60ms 内清空可用性且 0 间隙不恢复，条件期增量被清除，恰好回落基线）",
+        "hyperpol conditioning + depol test (-30/250 then +12) spike_count ∈ [16, 27]（-95 mV 强力再武装可用性 → 释放/测试期回弹，快失活变体候选模拟 19.0）",
+        "brief hyperpol conditioning + test (-30/40ms then +12) spike_count ∈ [11, 20]（40 ms 条件部分再武装，显著弱于 250 ms 条件——动力学签名；同族变体模拟 18.0，慢失活变体 17.4，均落带内）",
+        "held-out 超极化释放族随条件幅度单调上升（-25 < -30 < -35 < -40，可用性恢复随超极化深度增强）"
+      ],
+      "state": "REFUTED",
+      "conflicts": "point名 H1/H3/H5/H2：P2 观测 34 落在它们全部频段外（H1[37,50]/H3[36,49]/H5[33,48] 均预测去极化条件期有持续增量、H2[22,41] 中心亦无法解释 long-step +9 残差）；H6 以“条件态清空可用性”的结构反驳三者的无状态/慢失活假设，并吸收 H1 的 T 型家族为特例（H1 参数化变体将由 P3 动力学探针裁决）",
+      "byProbe": "P3"
+    },
+    {
+      "id": "H1",
+      "statement": "真细胞的附加电流是一条 T 型低阈值钙电流：快速去极化激活 m-gate（V1/2≈-60 mV、τ≈10 ms、幂 2）+ 慢去失活 h-gate（V1/2≈-70 mV、τ≈120 ms）、E≈+40 mV；超极化条件解除 h 失活，释放/测试期产生额外回弹爆发，去极化条件期间持续激活抬高计数。",
+      "predicts": [
+        "long step (10 uA, 300 ms) metered spike_count ∈ [28, 43]（候选模拟 33.0，参考基线 23；含计量偏差余量）",
+        "depolarising conditioning + test (+15/250 then +12) spike_count ∈ [40, 53]（候选 43.2，基线 34）",
+        "hyperpol conditioning + depol test (-30/250 then +12) spike_count ∈ [16.5, 26]（候选 17.4）"
+      ],
+      "state": "REFUTED",
+      "byProbe": "P4"
+    },
+    {
+      "id": "H5",
+      "statement": "真细胞的附加电流是一条持续激活、无非失活状态依赖的去极化激活内向流（persistent Na/Ca 型）：m-gate 去极化激活（V1/2≈-60、τ≈10 ms、pow 1）、无慢 h 门、E≈-30 mV；它在去极化步全程持续提供内向净流，但超极化条件不产生任何解除失活/激活蓄积，故超极化释放无额外回弹放大。",
+      "predicts": [
+        "long step (10 uA, 300 ms) metered spike_count ∈ [25, 40]（候选 30.7）",
+        "depolarising conditioning + test (+15/250 then +12) spike_count ∈ [33, 48]（候选 38.6）",
+        "held-out 超极化释放族（hyperpol -X then release）的候选模拟 ≈ 参考基线行为（超极化不产生额外放大；可免费用 brief step 代理检验：候选 brief-step ≈ 基线 6±2）"
+      ],
+      "state": "SUPPORTED",
+      "conflicts": "none — 攻击未探索的轴：H1 的超极化放大依赖 h 门去失活状态，H5 无任何状态依赖（同一批去极化观测下两者中心差 4.6，held-out 超极化释放族上二者预测彻底分叉）",
+      "byProbe": "P4"
+    }
+  ]
+}

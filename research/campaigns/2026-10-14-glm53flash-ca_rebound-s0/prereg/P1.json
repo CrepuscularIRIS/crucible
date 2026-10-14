@@ -1,0 +1,101 @@
+{
+  "pid": "P1",
+  "question": "真细胞在 long step (10 uA, 300 ms) 的 metered spike_count 判别 H1(T型钙) vs H3(真Ih) vs H2(无附加电流/slow_na) vs H4(测量伪影对手)。load-bearing variable：附加电流在 +10 uA 去极化步内的持续内向贡献（T型持续激活 vs Ih静默 vs 无）；对照：参考基线候选 mean 23（免费 world_simulate）。若被检假设为假，本测试大概率仍通过吗？——H4 为假时（无偏置伪影）其带[0,13]以高概率不被命中，判别有效；H1/H3 中心仅差2.3，单 rep 判别该两主假设的效力有限，预期主要杀伤 H4/H2，H1 vs H3 由 P2 裁决。",
+  "observe": {
+    "world": "ca_rebound",
+    "seed": 0,
+    "protocol": "long step (10 uA, 300 ms)",
+    "reps": 1
+  },
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H1": [
+      27,
+      44
+    ],
+    "H2": [
+      14,
+      32
+    ],
+    "H3": [
+      26,
+      42
+    ],
+    "H4": [
+      0,
+      13
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0,
+        13
+      ],
+      "action": "kill",
+      "target": "H4"
+    },
+    {
+      "band": [
+        14,
+        32
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        27,
+        42
+      ],
+      "action": "support",
+      "target": "H1",
+      "scopeNote": "计数27-32：杀H2/H4，H1与H3同带、与depol-cond(P2)基线候选拟合竞争，此探针不定序"
+    },
+    {
+      "band": [
+        27,
+        42
+      ],
+      "action": "support",
+      "target": "H3",
+      "scopeNote": "计数27-32：杀H2/H4，H3与H1同带、由P2定序"
+    },
+    {
+      "band": [
+        43,
+        44
+      ],
+      "action": "scope",
+      "target": "H1",
+      "scopeNote": "计数43-44：落在H3带外但在H1带缘(+2.5σ)，仅当depol-cond同向偏高才支持H1，先收窄H1至偏强参数化"
+    },
+    {
+      "band": [
+        45,
+        400
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        45,
+        400
+      ],
+      "action": "kill",
+      "target": "H3"
+    },
+    {
+      "band": [
+        45,
+        400
+      ],
+      "action": "scope",
+      "target": "H1",
+      "scopeNote": "带外高端：超出H1候选中心+2.5σ，走triage，不迁移"
+    }
+  ],
+  "frozenAt": "2026-10-14T10:26:08.174Z"
+}

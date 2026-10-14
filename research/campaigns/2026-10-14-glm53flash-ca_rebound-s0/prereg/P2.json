@@ -1,0 +1,148 @@
+{
+  "pid": "P2",
+  "question": "真细胞在去极化条件+测试 (+15/250ms then +12uA) 的 metered spike_count（reps=2 平均）判别去极化步内持续内向流强度：H1(T型钙,持续激活,候选43.2) vs H3(真Ih,去极化期静默但E=-30仍有弱持续分量,候选39.0) vs H5(持续非失活内向流,候选38.6) vs H2(无附加电流,候选33.7) vs H4(测量伪影对手,预测≤26)。load-bearing variable：+15uA 条件期内附加电流的持续内向净流幅度；对照：参考基线候选 34 / slow_na 候选 33.7（免费模拟）。severity 检查：若 H1 为假（真细胞是 H3/H5），本测试会把它误判为 H1 吗？——中心差 4.2-4.6 ≈ 1.7σ_reps2，存在误判风险，故 41-45 区间只 scope H1 不 support；仅 46-50 才支持 H1。H4 为假时其带 [0,26] 以高概率不被命中（本探针对 H4 的杀伤是强判别的）。",
+  "observe": {
+    "world": "ca_rebound",
+    "seed": 0,
+    "protocol": "depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",
+    "reps": 2
+  },
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H1": [
+      37,
+      50
+    ],
+    "H2": [
+      22,
+      41
+    ],
+    "H3": [
+      31,
+      44
+    ],
+    "H4": [
+      0,
+      26
+    ],
+    "H5": [
+      32,
+      45
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        0,
+        26
+      ],
+      "action": "kill",
+      "target": "H4"
+    },
+    {
+      "band": [
+        27,
+        30
+      ],
+      "action": "kill",
+      "target": "H4"
+    },
+    {
+      "band": [
+        27,
+        30
+      ],
+      "action": "kill",
+      "target": "H5"
+    },
+    {
+      "band": [
+        46,
+        200
+      ],
+      "action": "kill",
+      "target": "H3"
+    },
+    {
+      "band": [
+        46,
+        200
+      ],
+      "action": "kill",
+      "target": "H5"
+    },
+    {
+      "band": [
+        46,
+        200
+      ],
+      "action": "kill",
+      "target": "H2"
+    },
+    {
+      "band": [
+        46,
+        200
+      ],
+      "action": "scope",
+      "target": "H1",
+      "scopeNote": "均值46-50：超出H1候选中心+2.5σ，走triage不迁移；>50所有假设带外"
+    },
+    {
+      "band": [
+        41,
+        45
+      ],
+      "action": "scope",
+      "target": "H1",
+      "scopeNote": "均值41-45：H3/H5带外被杀，但落在H1候选中心+2.5σ内；H1仅收窄至偏强参数化，待held-out族区分"
+    },
+    {
+      "band": [
+        37,
+        40
+      ],
+      "action": "support",
+      "target": "H3",
+      "scopeNote": "均值37-40：与H3/H5候选中心一致、H1偏低2σ，H3 vs H5由depol-protocol以外的held-out释放族证据定序"
+    },
+    {
+      "band": [
+        37,
+        40
+      ],
+      "action": "support",
+      "target": "H5",
+      "scopeNote": "均值37-40：与H5候选中心一致，H5与H3由held-out释放族定序"
+    },
+    {
+      "band": [
+        33,
+        36
+      ],
+      "action": "scope",
+      "target": "H3",
+      "scopeNote": "均值33-36：落在H3/H5带下缘与H2带上缘的重叠区，无一支持或杀伤，判别失败记 scope"
+    },
+    {
+      "band": [
+        33,
+        36
+      ],
+      "action": "scope",
+      "target": "H2",
+      "scopeNote": "均值33-36：与H2上缘重叠，不迁移"
+    },
+    {
+      "band": [
+        31,
+        32
+      ],
+      "action": "scope",
+      "target": "H3",
+      "scopeNote": "均值31-32：H3带下缘外，收窄H3至弱分量下限，不杀"
+    }
+  ],
+  "frozenAt": "2026-10-14T10:35:11.226Z"
+}

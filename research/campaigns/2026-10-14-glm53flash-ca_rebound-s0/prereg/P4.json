@@ -1,0 +1,102 @@
+{
+  "pid": "P4",
+  "question": "真细胞在 hyperpol pre-pulse + weak test (-30/250ms, gap, +6uA) 的 metered spike_count（reps=1）判别状态依赖内向流（H1/H6 家族：超极化再武装后 +6uA 弱测试期纯 T 型窗点燃，弱刺激即可爆发→高计数；H1 候选 10.7 因钠窗残留而偏低）vs 无状态依赖持续流（H5：+6uA 测试与是否超极化条件无关，≈基线 6）vs H2 剩余子命题（无附加电流：≈基线 6）。load-bearing variable：+6uA 弱测试期电压窗（约 -60~-45mV，T 型窗但低于钠窗）内向净流；对照：基线候选 6.0、ca_t 候选 8.7、ca_t_fast 8.7（免费模拟）。severity 检查：若 H5 为假（真细胞有状态依赖电流），单 rep 观测仍可能落 [3,8]（基线带与 H5 带重叠宽 6）——故 [3,8] 的 support 对 H5 是弱支持，最终定序由 held-out 释放族预报的全体一致性裁决；但 [3,8] 对 H1 是强杀伤（其带下缘 12 之下 3 个单位）。",
+  "observe": {
+    "world": "ca_rebound",
+    "seed": 0,
+    "protocol": "hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",
+    "reps": 1
+  },
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H1": [
+      12,
+      19
+    ],
+    "H5": [
+      3,
+      10
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        3,
+        8
+      ],
+      "action": "kill",
+      "target": "H1"
+    },
+    {
+      "band": [
+        3,
+        8
+      ],
+      "action": "support",
+      "target": "H5",
+      "scopeNote": "≈基线候选 6±2.5σ1：无状态依赖放大，H5 预测带中心区"
+    },
+    {
+      "band": [
+        9,
+        10
+      ],
+      "action": "kill",
+      "target": "H5",
+      "scopeNote": "H5 带上缘弱增量（+3~4）：超出基线 2σ，纯持续流假说存疑，走 triage 台阶 3 后若可复现则收窄至弱增量变体"
+    },
+    {
+      "band": [
+        9,
+        10
+      ],
+      "action": "scope",
+      "target": "H1",
+      "scopeNote": "H1 带外但接近其带下缘：H1 不迁移（正式判定推迟），若后续 held-out 释放族同向弱化可作收窄素材"
+    },
+    {
+      "band": [
+        11,
+        11
+      ],
+      "action": "scope",
+      "target": "H1",
+      "scopeNote": "两带间 gap 值：H5 带外上 1 个单位、H1 带外下 1 个单位，任何迁移都会被拒——走 triage 台阶 3（方差），不迁移"
+    },
+    {
+      "band": [
+        12,
+        19
+      ],
+      "action": "kill",
+      "target": "H5"
+    },
+    {
+      "band": [
+        12,
+        19
+      ],
+      "action": "support",
+      "target": "H1",
+      "scopeNote": "显著回弹放大：纯 T 型窗（无钠窗）被弱测试点燃——状态依赖内向流存活，H1 带内"
+    },
+    {
+      "band": [
+        20,
+        200
+      ],
+      "action": "kill",
+      "target": "H5"
+    },
+    {
+      "band": [
+        20,
+        200
+      ],
+      "action": "kill",
+      "target": "H1"
+    }
+  ],
+  "frozenAt": "2026-10-14T11:10:58.135Z"
+}
