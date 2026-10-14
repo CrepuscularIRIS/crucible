@@ -28,6 +28,7 @@ dash.md
 research/campaigns
 # 比赛原始材料只用于宿主侧阅读与提交，不进入产品运行时镜像
 Race
+mindset
 logs
 open-webui-data
 *.db

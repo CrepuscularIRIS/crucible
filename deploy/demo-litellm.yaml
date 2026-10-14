@@ -1,0 +1,12 @@
+# 演示专用网关：只放 GLM 5.3 Flash，独立 key，绑 docker0 网桥（容器可达，公网不可达）。
+# 共享的 127.0.0.1:4001 不动、不重启。客户端走 chat-completions（/v1/chat/completions），
+# 不走 Responses：LiteLLM 的 Responses 流在 reasoning 之后不发 message item，Prime 会丢正文。
+model_list:
+  - model_name: glm-5.3-flash
+    litellm_params: {model: anthropic/glm-5.3-flash, api_key: os.environ/ZHIPU_API_KEY0, api_base: os.environ/ZHIPU_BASE_URL, order: 1, rpm: 60, allowed_openai_params: [reasoning_effort, thinking]}
+  - model_name: glm-5.3-flash
+    litellm_params: {model: anthropic/glm-5.3-flash, api_key: os.environ/ZHIPU_API_KEY1, api_base: os.environ/ZHIPU_BASE_URL, order: 2, rpm: 60, allowed_openai_params: [reasoning_effort, thinking]}
+  - model_name: glm-5.3-flash
+    litellm_params: {model: anthropic/glm-5.3-flash, api_key: os.environ/ZHIPU_API_KEY2, api_base: os.environ/ZHIPU_BASE_URL, order: 3, rpm: 60, allowed_openai_params: [reasoning_effort, thinking]}
+general_settings:
+  master_key: os.environ/DEMO_LITELLM_KEY
