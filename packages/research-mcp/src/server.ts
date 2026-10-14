@@ -139,7 +139,7 @@ const ProbeSpecSchema = z.object({
 
 export function buildServer(): McpServer {
   const server = new McpServer(
-    { name: 'proma-research', version: '0.3.0' },
+    { name: 'proma-research', version: '0.3.1' },
     { capabilities: { tools: {} } },
   )
 
