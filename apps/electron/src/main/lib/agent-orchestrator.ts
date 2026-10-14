@@ -63,7 +63,8 @@ import { permissionService } from './agent-permission-service'
 import type { PermissionResult, CanUseToolOptions } from './agent-permission-service'
 import { resolvePlanningDeletionPermission } from './planning-permission-policy'
 import { isResearchMutatingTool } from './research-permission-policy'
-import { resolveResearchIsolationConfig } from './research-isolation-guard'
+import { resolveKernelVenvDir, resolveResearchIsolationConfig } from './research-isolation-guard'
+import { getManagedResearchSubagentHarnessPath } from './managed-research-subagents'
 import { mergeManagedResearchMcpServer } from './managed-research-mcp'
 import { askUserService } from './agent-ask-user-service'
 import { exitPlanService, type ExitPlanPermissionResult } from './agent-exit-plan-service'
@@ -1019,7 +1020,14 @@ export class AgentOrchestrator {
 
       // 10. 构建 MCP 服务器配置 + 记忆工具 + 生图工具 + 自定义工具
       const mcpServers = this.buildMcpServers(workspaceSlug, agentCwd)
-      const researchIsolation = resolveResearchIsolationConfig(mcpServers, agentCwd)
+      // 02 SE2a ⑤：宿主 state 根（refine 证据、会话 JSONL、受管角色、Prime global harness、kernel venv、工作区 skills/）。
+      const kernelVenvDir = resolveKernelVenvDir()
+      const researchIsolation = resolveResearchIsolationConfig(mcpServers, agentCwd, undefined, [
+        ...['session-artifacts', 'sessions', 'research-roles'].map((dir) => join(getSdkConfigDir(), dir)),
+        dirname(getManagedResearchSubagentHarnessPath()),
+        ...(kernelVenvDir ? [kernelVenvDir] : []),
+        ...(workspaceSlug ? [getWorkspaceSkillsDir(workspaceSlug)] : []),
+      ])
       let piBuiltinTools: unknown[] = []
       let piMcpTools: unknown[] = []
       const piSdk = await import('@earendil-works/pi-coding-agent')

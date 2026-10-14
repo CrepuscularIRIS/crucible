@@ -1,6 +1,6 @@
 import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { delimiter, join } from 'node:path'
 import { afterEach, describe, expect, it } from 'bun:test'
 
 interface LifecycleModule {
@@ -23,6 +23,7 @@ interface LifecycleModule {
     | { behavior: 'deny'; message: string }
   >
   requireEnvironmentSecret(env: NodeJS.ProcessEnv, name: string): string
+  researchRepoDenyRoots(cwd: string, repoRoot?: string): string[]
   createResearchIpythonAuthorizer(neuronbenchRoot: string, cwd: string): (input: {
     input: Record<string, unknown>
   }) => Promise<
@@ -216,9 +217,54 @@ describe('研究脚本生命周期', () => {
       KEEP_ME: 'yes',
       PROMA_RESEARCH_CWD: '/campaign/project',
       PROMA_RESEARCH_RUN: 'fixed-run',
-      PROMA_RESEARCH_DENY: '/bench/neuronbench',
       NEURONBENCH_ROOT: '/bench/neuronbench',
     })
+  })
+
+  it('F1 · 03 §4.1：MCP env 与 guard 的 deny 根都含 research/eval、research/campaigns、mindset；MCP env 带 PROMA_KERNEL_PYTHON', async () => {
+    const lifecycle = await loadLifecycle()
+    expect(lifecycle).not.toBeNull()
+    if (!lifecycle) return
+    const repo = join(import.meta.dir, '..', '..', '..')
+    const repoDirs = ['research/eval', 'research/campaigns', 'mindset'].map((dir) => join(repo, dir))
+    // 本 checkout 里三个目录都在（mindset 不进 git、不进镜像：缺席时由 researchRepoDenyRoots 跳过，见下一条）
+    for (const dir of repoDirs) expect(existsSync(dir)).toBe(true)
+
+    const env = lifecycle.buildResearchMcpEnv({
+      baseEnv: { PRIME_AGENT_KERNEL_PYTHON: '/venv/bin/python' },
+      cwd: '/campaign/project',
+      run: 'fixed-run',
+      neuronbenchRoot: '/bench/neuronbench',
+    })
+    expect(env.PROMA_RESEARCH_DENY?.split(delimiter)).toEqual(['/bench/neuronbench', ...repoDirs])
+    expect(env.PROMA_KERNEL_PYTHON).toBe('/venv/bin/python')
+
+    let handler: ((event: { toolName: string; input: Record<string, unknown> }) => unknown) | undefined
+    lifecycle.researchIsolationExtension('/bench/neuronbench', '/campaign/project')({
+      on(_event, next) {
+        handler = next
+      },
+    })
+    const authorize = lifecycle.createResearchIpythonAuthorizer('/bench/neuronbench', '/campaign/project')
+    for (const dir of repoDirs) {
+      expect(await handler?.({ toolName: 'bash', input: { command: `cat ${dir}/x.md` } })).toMatchObject({ block: true })
+      await expect(authorize({ input: { code: `open("${dir}/x.md").read()` } })).resolves.toMatchObject({ behavior: 'deny' })
+    }
+  })
+
+  it('仓库 deny 根只取存在的目录（sandbox 要求 deny 路径存在；镜像里没有 campaigns/mindset），且不含 cwd 所在目录', async () => {
+    const lifecycle = await loadLifecycle()
+    expect(lifecycle).not.toBeNull()
+    if (!lifecycle) return
+    const repo = mkdtempSync(join(tmpdir(), 'proma-repo-deny-'))
+    tempRoots.push(repo)
+    mkdirSync(join(repo, 'research', 'eval'), { recursive: true })
+    expect(lifecycle.researchRepoDenyRoots('/campaign/project', repo)).toEqual([join(repo, 'research', 'eval')])
+
+    mkdirSync(join(repo, 'research', 'campaigns', 'r1', 'project'), { recursive: true })
+    mkdirSync(join(repo, 'mindset'))
+    expect(lifecycle.researchRepoDenyRoots(join(repo, 'research', 'campaigns', 'r1', 'project'), repo))
+      .toEqual([join(repo, 'research', 'eval'), join(repo, 'mindset')])
   })
 
   it('无头评测的 ipython 策略拒绝 benchmark/meter 直连，普通研究代码可执行', async () => {

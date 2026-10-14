@@ -1,9 +1,13 @@
 import { cpSync, existsSync, mkdirSync, mkdtempSync, realpathSync, renameSync, rmSync } from 'node:fs'
-import { basename, dirname, isAbsolute, join, normalize, relative, resolve, sep } from 'node:path'
+import { basename, delimiter, dirname, isAbsolute, join, normalize, relative, resolve, sep } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import {
   buildResearchIsolationConfig,
   classifyResearchToolCall,
+  resolveKernelVenvDir,
+  type ResearchIsolationConfig,
 } from '../src/main/lib/research-isolation-guard'
+import { getManagedResearchSubagentHarnessPath } from '../src/main/lib/managed-research-subagents'
 import {
   createResearchIsolationExtension,
   type ResearchIsolationObserver,
@@ -49,14 +53,47 @@ export type ResearchIpythonPermissionResult =
   | { behavior: 'allow'; updatedInput: Record<string, unknown> }
   | { behavior: 'deny'; message: string }
 
+const REPO_ROOT = fileURLToPath(new URL('../../..', import.meta.url))
+
+/**
+ * 03 §4.1：benchmark run 的 deny 根加上仓库里写着答案的三处（meter/生成器、旧 run、审计与设计文档）。
+ * 只取存在的目录——sandbox 要求每个 deny 路径存在（research-mcp `sandbox.ts` resolveResearchDenyRoots），
+ * 而镜像经 .dockerignore 不含 research/campaigns 与 mindset、干净 checkout 也没有 mindset；
+ * 并跳过 cwd 所在的目录，否则 agent 连自己的工作目录都读不了。
+ */
+export function researchRepoDenyRoots(cwd: string, repoRoot: string = REPO_ROOT): string[] {
+  return ['research/eval', 'research/campaigns', 'mindset']
+    .map((dir) => join(repoRoot, dir))
+    .filter((dir) => existsSync(dir) && !pathsOverlap(dir, resolve(cwd)))
+}
+
 export function buildResearchMcpEnv(input: ResearchMcpEnvInput): NodeJS.ProcessEnv {
+  const pinnedKernel = input.baseEnv.PRIME_AGENT_KERNEL_PYTHON?.trim()
   return {
     ...input.baseEnv,
     PROMA_RESEARCH_CWD: input.cwd,
     PROMA_RESEARCH_RUN: input.run,
-    PROMA_RESEARCH_DENY: input.neuronbenchRoot,
+    PROMA_RESEARCH_DENY: [input.neuronbenchRoot, ...researchRepoDenyRoots(input.cwd)].join(delimiter),
     NEURONBENCH_ROOT: input.neuronbenchRoot,
+    // 02 §11.2 接口 4：MCP 的 K0/K7 环境快照用它（SE7a，轨道 D）；未 pin 时与 Prime bootstrap 同一默认 venv。
+    PROMA_KERNEL_PYTHON: pinnedKernel || join(resolveKernelVenvDir(input.baseEnv) as string, 'bin', 'python'),
   }
+}
+
+/**
+ * 无头战役的 guard 配置：deny 根同 MCP env；宿主 state 根（02 SE2a ⑤）取战役目录约定
+ * （三个战役脚本都是 cwd = <campaignDir>/project，sessions 与 session-artifacts 在 campaignDir 下）、
+ * Prime global harness 与 kernel venv。无头没有工作区 skills/，skill 直接从仓库 research/skills 加载。
+ */
+function headlessResearchIsolationConfig(neuronbenchRoot: string, cwd: string): ResearchIsolationConfig {
+  const campaignDir = dirname(resolve(cwd))
+  const kernelVenv = resolveKernelVenvDir()
+  return buildResearchIsolationConfig([neuronbenchRoot, ...researchRepoDenyRoots(cwd)], cwd, [
+    join(campaignDir, 'sessions'),
+    join(campaignDir, 'session-artifacts'),
+    dirname(getManagedResearchSubagentHarnessPath()),
+    ...(kernelVenv ? [kernelVenv] : []),
+  ])
 }
 
 export function requireEnvironmentSecret(env: NodeJS.ProcessEnv, name: string): string {
@@ -88,7 +125,7 @@ export function createResearchIpythonAuthorizer(
   neuronbenchRoot: string,
   cwd: string,
 ): (request: ResearchIpythonPermissionInput) => Promise<ResearchIpythonPermissionResult> {
-  const config = buildResearchIsolationConfig([neuronbenchRoot], cwd)
+  const config = headlessResearchIsolationConfig(neuronbenchRoot, cwd)
   return async (request) => {
     const decision = classifyResearchToolCall('ipython', request.input, config)
     if (decision) return { behavior: 'deny', message: decision.reason }
@@ -107,7 +144,7 @@ export function researchIsolationExtension(
   cwd: string,
   observer?: ResearchIsolationObserver,
 ): ReturnType<typeof createResearchIsolationExtension> {
-  return createResearchIsolationExtension(buildResearchIsolationConfig([neuronbenchRoot], cwd), observer)
+  return createResearchIsolationExtension(headlessResearchIsolationConfig(neuronbenchRoot, cwd), observer)
 }
 
 export interface HeadlessResearchRefine {

@@ -62,6 +62,36 @@ describe('Pi research 隔离扩展', () => {
     expect(denied[0]?.tool).toBe('bash')
     expect(allowed).toEqual(['ipython'])
   })
+  it('edit 按 path 参数分类：改 journal.jsonl 被拒并记 guard residual，放行也通知 observer（SE2a）', async () => {
+    let handler: ((event: { toolName: string; input: Record<string, unknown> }) => unknown) | undefined
+    const pi = {
+      on(_event: string, next: typeof handler) {
+        handler = next
+      },
+    } as unknown as ExtensionAPI
+    const denied: Array<{ tool: string; reason: string }> = []
+    const allowed: string[] = []
+    createResearchIsolationExtension({
+      cwd: '/home/test/project',
+      denyRoots: ['/home/test/oss/neuronbench'],
+      stateRoots: ['/home/test/project/.proma-research'],
+    }, {
+      onDenied: (toolName, reason) => denied.push({ tool: toolName, reason }),
+      onAllowed: (toolName) => allowed.push(toolName),
+    })(pi)
+
+    expect(await handler?.({
+      toolName: 'edit',
+      input: { path: '.proma-research/r1/journal.jsonl', edits: [{ oldText: 'a', newText: 'b' }] },
+    })).toMatchObject({ block: true })
+    expect(await handler?.({
+      toolName: 'edit',
+      input: { path: 'research-work/r1/REPORT.md', edits: [{ oldText: 'a', newText: 'b' }] },
+    })).toBeUndefined()
+
+    expect(denied).toEqual([{ tool: 'edit', reason: expect.stringContaining('world_* MCP') }])
+    expect(allowed).toEqual(['edit'])
+  })
 })
 
 describe('rlm child 的 MCP 只读守卫（P0 检查 ②，与 PROMA_RESEARCH_DENY 无关）', () => {
