@@ -10,7 +10,7 @@
 
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { replay, type JournalEvent } from '../src/state'
+import { replay, verifyJournalChain, type JournalEvent } from '../src/state'
 import { fail, ok, type GateResult } from './lib'
 
 export function runTraceGate(runRoot: string): GateResult {
@@ -47,6 +47,10 @@ export function runTraceGate(runRoot: string): GateResult {
       reasons.push('register.json 与 journal 重放结果不一致（状态文件被手改，或缺少最后一次 server 写入） → 手改 register 无效：journal 是唯一事实源，用 MCP 工具重做状态变更')
     }
   }
+
+  // 哈希链：离线跑 gate（无 server 内存基线）时同样能发现会话外改动
+  const broken = verifyJournalChain(runRoot)
+  if (broken) reasons.push(`journal 哈希链断裂：${broken}`)
 
   // journal 时间戳单调不减（事后补写/倒填的时间戳是伪造的第一现场）
   const events = readFileSync(journalFile, 'utf-8').split('\n')

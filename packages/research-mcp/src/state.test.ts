@@ -2,13 +2,18 @@
  * 状态核心测试：五条科学约束的结构拒绝 + journal 重放。
  */
 
-import { mkdirSync, mkdtempSync, rmSync } from 'node:fs'
+import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import {
   appendEvent,
+  assertJournalIntact,
   confined,
+  observeCellMatches,
+  resetJournalBaselinesForTest,
+  sha256,
+  verifyJournalChain,
   hasDisjointBandPair,
   recomputeMetric,
   replay,
@@ -169,5 +174,64 @@ describe('约束 6：稻草人频段方向（ARFT A.6）', () => {
     appendEvent(dir, 'claim.propose', { id: 'H2', statement: 'B', predicts: ['error increase does not occur'] })
     expect(() => validateProbeSpec(validSpec({ bands: { H1: [0, 0.3], H2: [0.5, 1.0] } }), replay(dir)))
       .not.toThrow()
+  })
+})
+
+describe('journal 哈希链（报告 §4.3 主张的实现）', () => {
+  function chainedRun(name: string): string {
+    const dir = join(root, name)
+    mkdirSync(dir, { recursive: true })
+    appendEvent(dir, 'run.init', { run: name })
+    appendEvent(dir, 'claim.propose', { id: 'H1', statement: 'A', predicts: ['x 升'] })
+    appendEvent(dir, 'claim.propose', { id: 'H2', statement: 'B', predicts: ['x 降'] })
+    return dir
+  }
+
+  it('每条事件的 prev 是上一行原文的 sha256', () => {
+    const dir = chainedRun('chain-shape')
+    const lines = readFileSync(join(dir, 'journal.jsonl'), 'utf-8').trim().split('\n')
+    expect(JSON.parse(lines[0]).prev).toBe(sha256(''))
+    expect(JSON.parse(lines[2]).prev).toBe(sha256(lines[1]))
+    expect(verifyJournalChain(dir)).toBeUndefined()
+  })
+
+  it('server 重启后（基线清空）改中间一行仍被侦测并污染 run', () => {
+    const dir = chainedRun('chain-restart')
+    const file = join(dir, 'journal.jsonl')
+    const lines = readFileSync(file, 'utf-8').trim().split('\n')
+    lines[1] = lines[1].replace('"statement":"A"', '"statement":"A-forged"')
+    writeFileSync(file, `${lines.join('\n')}\n`, 'utf-8')
+    resetJournalBaselinesForTest()
+    expect(verifyJournalChain(dir)).toMatch(/第 3 行/)
+    expect(() => assertJournalIntact(dir)).toThrow(/哈希链/)
+  })
+
+  it('链开始之后的事件不许丢 prev（手工追加一行会断链）', () => {
+    const dir = chainedRun('chain-append')
+    appendFileSync(join(dir, 'journal.jsonl'), `${JSON.stringify({ ts: 't', op: 'claim.transition', id: 'H1', to: 'LIVE' })}\n`)
+    expect(verifyJournalChain(dir)).toMatch(/缺少 prev/)
+  })
+
+  it('旧格式 journal（无 prev）照常可读，新事件从此处接上链', () => {
+    const dir = join(root, 'chain-legacy')
+    mkdirSync(dir, { recursive: true })
+    writeFileSync(join(dir, 'journal.jsonl'), `${JSON.stringify({ ts: 't0', op: 'run.init', run: 'legacy' })}\n`)
+    resetJournalBaselinesForTest()
+    appendEvent(dir, 'claim.propose', { id: 'H1', statement: 'A', predicts: ['x'] })
+    expect(verifyJournalChain(dir)).toBeUndefined()
+    expect(replay(dir).claims).toHaveLength(1)
+  })
+})
+
+describe('计量格子匹配（先登记后测量的键）', () => {
+  const cell = { world: 'h_sag', seed: 0, protocol: 'brief step (12 uA, 40 ms)', blockers: 'TTX' }
+  it('新事件按 blockers 精确匹配', () => {
+    expect(observeCellMatches({ ts: 't', op: 'world.observe', ...cell }, cell)).toBe(true)
+    expect(observeCellMatches({ ts: 't', op: 'world.observe', ...cell, blockers: '' }, cell)).toBe(false)
+  })
+  it('旧事件没有 blockers 字段：不知道当时阻断了什么，对该协议的任何 blockers 都算看过', () => {
+    const { blockers: _omit, ...legacy } = cell
+    expect(observeCellMatches({ ts: 't', op: 'world.observe', ...legacy }, cell)).toBe(true)
+    expect(observeCellMatches({ ts: 't', op: 'world.observe', ...legacy }, { ...cell, blockers: undefined })).toBe(true)
   })
 })

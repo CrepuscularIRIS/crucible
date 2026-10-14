@@ -33,13 +33,27 @@ export interface PreregBranch {
   scopeNote?: string
 }
 
-/** 预登记探针规约（冻结内容，sha256 锁定）。 */
+/** 计量观测探针：测量本身即探针，由 server 经 meter 执行（扣预算），不经模型写的命令。 */
+export interface ObserveSpec {
+  world: string
+  seed: number
+  protocol: string
+  reps?: number
+  blockers?: string
+}
+
+/** 预登记探针规约（冻结内容，sha256 锁定）。evalCommand 与 observe 二选一。 */
 export interface ProbeSpec {
   pid: string
   /** 这个探针要判别什么问题 */
   question: string
-  /** 受认可执行路径：冻结的命令字符串（执行时不得改写） */
-  evalCommand: string
+  /** 受认可执行路径：冻结的命令字符串（执行时不得改写）；非世界任务用 */
+  evalCommand?: string
+  /**
+   * 世界任务唯一合法的探针形态。demo2r（2026-08-28）实测：沙箱按设计碰不到世界，
+   * shell 探针只能回显常量或重读已发生的观测，预登记于是只约束了"重读"而非测量。
+   */
+  observe?: ObserveSpec
   /** 指标重算方式：json 路径或正则；禁止模型代码（宿主不执行模型写的程序） */
   metricKind: 'json' | 'regex'
   /** json: 点路径（如 results.accuracy）；regex: 单捕获组 */
@@ -191,9 +205,41 @@ function rememberJournalBaseline(root: string): void {
   journalBaselines.set(root, existsSync(file) ? sha256(readFileSync(file, 'utf-8')) : '')
 }
 
+function journalLines(root: string): string[] {
+  const file = journalPath(root)
+  if (!existsSync(file)) return []
+  return readFileSync(file, 'utf-8').split('\n').filter((line) => line.trim() !== '')
+}
+
+/**
+ * 哈希链校验：每条事件的 prev = 上一行原文的 sha256（首行对空串）。改任何一行，
+ * 下一行的 prev 就对不上——server 重启、内存基线清空后照样能侦测。
+ * 旧格式 journal（无 prev）照常可读：链从第一条带 prev 的事件开始，此后不许断。
+ * ponytail: 没有外部锚点——重算整条链或截掉尾部仍可绕过；锚点可以是 report.declare 的 sha。
+ * 返回第一处断链的说明；完好时返回 undefined。
+ */
+export function verifyJournalChain(root: string): string | undefined {
+  const lines = journalLines(root)
+  let started = false
+  for (const [index, line] of lines.entries()) {
+    const prev = (JSON.parse(line) as JournalEvent).prev
+    if (prev === undefined) {
+      if (started) return `第 ${index + 1} 行缺少 prev（链开始后不许断，疑似会话外手工追加）`
+      continue
+    }
+    started = true
+    if (prev !== sha256(index === 0 ? '' : lines[index - 1])) {
+      return `第 ${index + 1} 行的 prev 与第 ${index} 行原文不符（此前内容被改动）`
+    }
+  }
+  return undefined
+}
+
 export function appendEvent(root: string, op: JournalEvent['op'], payload: Record<string, unknown>): JournalEvent {
   assertJournalIntact(root)
-  const event: JournalEvent = { ts: new Date().toISOString(), op, ...payload }
+  const lines = journalLines(root)
+  const prev = sha256(lines.length === 0 ? '' : lines[lines.length - 1])
+  const event: JournalEvent = { ts: new Date().toISOString(), op, ...payload, prev }
   mkdirSync(root, { recursive: true })
   appendFileSync(journalPath(root), `${JSON.stringify(event)}\n`, 'utf-8')
   rememberJournalBaseline(root)
@@ -212,26 +258,40 @@ export function assertJournalIntact(root: string): void {
   const file = journalPath(root)
   if (!existsSync(file)) return
   if (!journalBaselines.has(root)) {
+    // 首次见到（含 server 重启后）：内存基线为空，靠哈希链判断此前是否被改过
+    const broken = verifyJournalChain(root)
+    if (broken) {
+      poisonRun(root, { reason: broken })
+      throw new ResearchStateError(
+        `journal 哈希链断裂：${broken}。已记录 tamper 事件并污染本 run——整轮作废，需重开 run。`,
+      )
+    }
     rememberJournalBaseline(root)
     return
   }
   const expected = journalBaselines.get(root) ?? ''
   const actual = sha256(readFileSync(file, 'utf-8'))
   if (expected === actual) return
-  // 篡改现场先留痕（这条追加是 server 侧诚实记录），再污染并拒绝当次操作
-  const event: JournalEvent = {
-    ts: new Date().toISOString(),
-    op: 'tamper.detected',
-    expected: expected.slice(0, 16),
-    actual: actual.slice(0, 16),
-  }
+  poisonRun(root, { expected: expected.slice(0, 16), actual: actual.slice(0, 16) })
+  throw new ResearchStateError(
+    `journal 在会话外被改动（期望 sha256 ${expected.slice(0, 12)}…，实际 ${actual.slice(0, 12)}…）；`
+    + '已记录 tamper 事件并污染本 run（哈希链随之断裂，重启后同样拒绝）。',
+  )
+}
+
+/** 篡改现场先留痕（server 侧诚实记录，不接链——断链本身就是证据），再污染。 */
+function poisonRun(root: string, detail: Record<string, string>): void {
+  const file = journalPath(root)
+  const event = { ts: new Date().toISOString(), op: 'tamper.detected', ...detail }
   appendFileSync(file, `${JSON.stringify(event)}\n`, 'utf-8')
   journalBaselines.set(root, sha256(readFileSync(file, 'utf-8')))
   poisonedRoots.add(root)
-  throw new ResearchStateError(
-    `journal 在会话外被改动（期望 sha256 ${expected.slice(0, 12)}…，实际 ${actual.slice(0, 12)}…）；`
-    + '已记录 tamper 事件并污染本 run。若确为人工修复，请重启 server 后以当前文件为新基线。',
-  )
+}
+
+/** 测试用：模拟 server 重启（内存基线与污染标记清空）。 */
+export function resetJournalBaselinesForTest(): void {
+  journalBaselines.clear()
+  poisonedRoots.clear()
 }
 
 const TERMINAL_STATES: ReadonlySet<ClaimState> = new Set(['SUPPORTED', 'REFUTED', 'SCOPED'])
@@ -412,11 +472,57 @@ function predictsDirection(predicts: string[]): 'up' | 'down' | undefined {
   return up === down ? undefined : (up ? 'up' : 'down')
 }
 
-/** 预登记的结构性检查：互斥频段 + kill/scope 分支 + 分支目标存在。 */
-export function validateProbeSpec(spec: ProbeSpec, state: ResearchState): void {
-  if (!spec.pid || !spec.question || !spec.evalCommand) {
-    throw new ResearchStateError('prereg 缺少 pid / question / evalCommand')
+/**
+ * world.observe 事件是否落在这个计量格子（world, seed, protocol, blockers）上。
+ * 旧事件（0.3.0 之前）不记 blockers：不知道当时阻断了什么，对该协议的任何 blockers 都算看过。
+ */
+export function observeCellMatches(
+  event: JournalEvent,
+  cell: { world: string; seed: number; protocol: string; blockers?: string },
+): boolean {
+  if (event.world !== cell.world || event.seed !== cell.seed || event.protocol !== cell.protocol) return false
+  if (!('blockers' in event)) return true
+  return String(event.blockers) === (cell.blockers ?? '')
+}
+
+function validateObserveSpec(observe: ObserveSpec, metricKind: string, metricSpec: string): void {
+  if (typeof observe.world !== 'string' || observe.world.trim() === ''
+    || typeof observe.protocol !== 'string' || observe.protocol.trim() === '') {
+    throw new ResearchStateError('observe 探针缺少 world / protocol（协议标签先用 world_simulate 的 mode=info 获取）')
   }
+  if (!Number.isInteger(observe.seed)) throw new ResearchStateError('observe.seed 必须是整数')
+  if (observe.reps !== undefined && (!Number.isInteger(observe.reps) || observe.reps < 1 || observe.reps > 20)) {
+    throw new ResearchStateError('observe.reps 必须是 1–20 的整数')
+  }
+  // meter 返回里只有 spike_count 是测量；cost/reps/test_start_index 是登记时就已知的常量
+  if (metricKind !== 'json' || metricSpec !== 'spike_count') {
+    throw new ResearchStateError('observe 探针只能取 metricKind=json、metricSpec=spike_count（其余字段是已知常量，取它们等于回显）')
+  }
+}
+
+/**
+ * 预登记的结构性检查：互斥频段 + kill/scope 分支 + 分支目标存在。
+ * worldTask：本 server 注册了世界计量时为真——此时探针只能是 observe。
+ */
+export function validateProbeSpec(
+  spec: ProbeSpec,
+  state: ResearchState,
+  options: { worldTask?: boolean } = {},
+): void {
+  if (!spec.pid || !spec.question) {
+    throw new ResearchStateError('prereg 缺少 pid / question')
+  }
+  if (Boolean(spec.evalCommand) === Boolean(spec.observe)) {
+    throw new ResearchStateError('prereg 必须且只能给出 evalCommand 或 observe 之一')
+  }
+  if (options.worldTask && !spec.observe) {
+    throw new ResearchStateError(
+      '世界任务的探针必须是计量观测（spec.observe = {world, seed, protocol, reps}）：'
+      + '沙箱碰不到世界，shell 命令只能回显或重读已发生的观测，预登记就约束不到测量本身 '
+      + '→ research-probe：把要判别的那次观测写进 observe，由 probe_run 执行并扣预算',
+    )
+  }
+  if (spec.observe) validateObserveSpec(spec.observe, spec.metricKind, spec.metricSpec)
   if (!/^P\d+$/.test(spec.pid)) {
     throw new ResearchStateError(`探针 id 形如 P1、P2（收到: ${spec.pid}）`)
   }
@@ -473,7 +579,7 @@ export function validateProbeSpec(spec: ProbeSpec, state: ResearchState): void {
   // 恒等回显探针（ARFT C.1 预登记剧场）：常量输出让频段必中，SUPPORTED 是结构性保送。
   // 这条挡不住复杂蓄意造假（语义层由 trace/对抗证据兜底），挡住的是最常见的那次——
   // 把已观测数字直接 print 回来。band-direction 检查同理：只判结构可判的倒置。
-  if (isConstantOutputCommand(spec.evalCommand)) {
+  if (spec.evalCommand && isConstantOutputCommand(spec.evalCommand)) {
     throw new ResearchStateError(
       `${spec.pid} 的 evalCommand 是常量输出（${spec.evalCommand}）：不读输入、不算数的命令不是测量，`
       + '频段必中等于没有判别力 → research-probe：改成真正读取数据/执行对比的命令',

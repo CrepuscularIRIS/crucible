@@ -89,6 +89,23 @@ describe('计量接口（EVAL-PLAN §1.3）', () => {
     }
   })
 
+  it('PROMA_EVAL_BUDGET 非正整数时 world 工具不注册（NaN 预算会让上限恒不触发）', async () => {
+    if (!process.env.PROMA_RESEARCH_DENY) return
+    const configured = process.env.PROMA_EVAL_BUDGET
+    process.env.PROMA_EVAL_BUDGET = '8abc'
+    const isolatedClient = new Client({ name: 'bad-budget-test', version: '1.0.0' })
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair()
+    try {
+      await Promise.all([isolatedClient.connect(clientTransport), buildServer().connect(serverTransport)])
+      const names = (await isolatedClient.listTools()).tools.map((tool) => tool.name)
+      expect(names).toContain('research_init')
+      expect(names).not.toContain('world_observe')
+    } finally {
+      await isolatedClient.close()
+      process.env.PROMA_EVAL_BUDGET = configured
+    }
+  })
+
   it.skipIf(!meterAvailable)('meter 独立记账：预算耗尽时 observe 拒绝，且报错给路由', () => {
     const ledger = join(researchCwd, 'ledger-a.jsonl')
     const first = meter(ledger, 1, ['observe', 'h_sag', '0', 'brief step (12 uA, 40 ms)', '--reps', '1'])
@@ -210,10 +227,8 @@ describe('计量接口（EVAL-PLAN §1.3）', () => {
     })).rejects.toThrow('终局已裁决')
   }, 60_000)
 
-  it.skipIf(!meterAvailable)('单 world 后端冒烟：observe → probe → transition → report declare 三 gate 全绿', async () => {
-    const run = 'meter-e1-smoke'
-    const root = join(researchCwd, '.proma-research', run)
-    const ledger = join(root, 'world-ledger.jsonl')
+  /** 两条可判别假设 + 一个 observe 探针预登记（测量本身即探针）。 */
+  async function preregObserveProbe(run: string, pid = 'P1'): Promise<void> {
     await callTool('research_init', { run })
     await callTool('claim_propose', {
       run, id: 'H1', statement: '观测尖峰数为非负', predicts: ['spike_count ≥ 0'],
@@ -224,11 +239,11 @@ describe('计量接口（EVAL-PLAN §1.3）', () => {
     await callTool('prereg_write', {
       run,
       spec: {
-        pid: 'P1',
+        pid,
         question: '真实观测的 spike_count 是否非负？',
-        evalCommand: `python3 -c 'import json; rows=[json.loads(x) for x in open(${JSON.stringify(ledger)}) if x.strip()]; print("value="+str([r for r in rows if r.get("cmd")=="observe"][-1]["spike_count"]))'`,
-        metricKind: 'regex',
-        metricSpec: 'value=([0-9.]+)',
+        observe: { world: 'h_sag', seed: 0, protocol: 'brief step (12 uA, 40 ms)', reps: 1 },
+        metricKind: 'json',
+        metricSpec: 'spike_count',
         bands: { H1: [0, 1000], H2: [-1000, -0.001] },
         branches: [
           { band: [0, 1000], action: 'support', target: 'H1' },
@@ -237,13 +252,26 @@ describe('计量接口（EVAL-PLAN §1.3）', () => {
         ],
       },
     })
-    await callTool('world_observe', {
-      run, world: 'h_sag', seed: 0,
-      protocol: 'brief step (12 uA, 40 ms)', reps: 1,
-    })
+  }
+
+  function journalOf(run: string): Array<Record<string, unknown>> {
+    return readFileSync(join(researchCwd, '.proma-research', run, 'journal.jsonl'), 'utf-8')
+      .trim().split('\n').map((line) => JSON.parse(line) as Record<string, unknown>)
+  }
+
+  it.skipIf(!meterAvailable)('单 world 后端冒烟：prereg(observe) → probe_run 真实计量 → transition → declare 三 gate 全绿', async () => {
+    const run = 'meter-e1-smoke'
+    const root = join(researchCwd, '.proma-research', run)
+    await preregObserveProbe(run)
     const probeText = await callTool('probe_run', { run, pid: 'P1' })
     const metric = Number(probeText.match(/重算指标 = (-?[0-9.]+)/)?.[1])
     expect(Number.isFinite(metric)).toBe(true)
+    // 指标就是这次计量本身：journal 里同一 pid 的 world.observe 与落地值一致，且扣了预算
+    const observed = journalOf(run).filter((e) => e.op === 'world.observe')
+    expect(observed).toHaveLength(1)
+    expect(observed[0].pid).toBe('P1')
+    expect(observed[0].cost).toBe(1)
+    expect(Number(observed[0].spike_count)).toBe(metric)
     await callTool('claim_transition', {
       run, id: 'H2', to: 'REFUTED', byProbe: 'P1', note: 'P1 的真实观测为非负',
     })
@@ -260,6 +288,202 @@ describe('计量接口（EVAL-PLAN §1.3）', () => {
     ].join('\n'), 'utf-8')
     const declared = await callTool('report_declare', { run, path: 'REPORT.md' })
     expect(declared).toContain('三道 gate 全绿')
+  }, 60_000)
+
+  it.skipIf(!meterAvailable)('世界任务里 shell 探针被结构性拒绝：证据只能来自计量，不能来自回显或重读', async () => {
+    const run = 'meter-shell-probe'
+    await callTool('research_init', { run })
+    await callTool('claim_propose', { run, id: 'H1', statement: 'a', predicts: ['spike_count ≥ 0'] })
+    await callTool('claim_propose', { run, id: 'H2', statement: 'b', predicts: ['spike_count < 0'] })
+    await expect(callTool('prereg_write', {
+      run,
+      spec: {
+        pid: 'P1',
+        question: 'demo2r 第二轮的写法',
+        evalCommand: 'python3 -c "import json; print(json.dumps({\'spike_count\': 40.0}))"',
+        metricKind: 'json',
+        metricSpec: 'spike_count',
+        bands: { H1: [36, 44], H2: [-10, -1] },
+        branches: [{ band: [-10, -1], action: 'kill', target: 'H1' }],
+      },
+    })).rejects.toThrow('observe')
+    expect(journalOf(run).some((e) => e.op === 'prereg.write')).toBe(false)
+  })
+
+  it.skipIf(!meterAvailable)('已观测过的格子不能再登记：同 (world,seed,protocol) 的计量是确定性的，先看后登记就是回忆', async () => {
+    const run = 'meter-observed-cell'
+    await callTool('research_init', { run })
+    await callTool('claim_propose', { run, id: 'H1', statement: 'a', predicts: ['spike_count ≥ 0'] })
+    await callTool('claim_propose', { run, id: 'H2', statement: 'b', predicts: ['spike_count < 0'] })
+    const spec = (protocol: string, pid: string) => ({
+      pid, question: 'q', observe: { world: 'h_sag', seed: 0, protocol, reps: 1 },
+      metricKind: 'json', metricSpec: 'spike_count',
+      bands: { H1: [0, 1000], H2: [-1000, -0.001] },
+      branches: [{ band: [-1000, -0.001], action: 'kill', target: 'H1' }],
+    })
+    // 从未观测的协议可以登记（测试预算为 1，先登记再观测别的格子）
+    await callTool('prereg_write', { run, spec: spec('long step (10 uA, 300 ms)', 'P2') })
+    await callTool('world_observe', { run, world: 'h_sag', seed: 0, protocol: 'brief step (12 uA, 40 ms)', reps: 1 })
+    await expect(callTool('prereg_write', { run, spec: spec('brief step (12 uA, 40 ms)', 'P1') })).rejects.toThrow('已观测')
+  })
+
+  it.skipIf(!meterAvailable)('一个格子只能有一个预登记，且登记后不能再被自由观测：杜绝多份矛盾登记后挑着跑', async () => {
+    const run = 'meter-cell-lock'
+    await callTool('research_init', { run })
+    await callTool('claim_propose', { run, id: 'H1', statement: 'a', predicts: ['spike_count ≥ 0'] })
+    await callTool('claim_propose', { run, id: 'H2', statement: 'b', predicts: ['spike_count < 0'] })
+    const spec = (pid: string, reps: number) => ({
+      pid, question: 'q', observe: { world: 'h_sag', seed: 0, protocol: 'brief step (12 uA, 40 ms)', reps },
+      metricKind: 'json', metricSpec: 'spike_count',
+      bands: { H1: [0, 1000], H2: [-1000, -0.001] },
+      branches: [{ band: [-1000, -0.001], action: 'kill', target: 'H1' }],
+    })
+    await callTool('prereg_write', { run, spec: spec('P1', 1) })
+    await expect(callTool('prereg_write', { run, spec: spec('P2', 2) })).rejects.toThrow('已有预登记')
+    await expect(callTool('world_observe', {
+      run, world: 'h_sag', seed: 0, protocol: 'brief step (12 uA, 40 ms)', reps: 1,
+    })).rejects.toThrow('已有预登记')
+  })
+
+  it.skipIf(!meterAvailable)('reps 超过剩余预算的 observe 登记直接拒绝，不白占格子', async () => {
+    const run = 'meter-prereg-over-budget'
+    await callTool('research_init', { run })
+    await callTool('claim_propose', { run, id: 'H1', statement: 'a', predicts: ['spike_count ≥ 0'] })
+    await callTool('claim_propose', { run, id: 'H2', statement: 'b', predicts: ['spike_count < 0'] })
+    await expect(callTool('prereg_write', {
+      run,
+      spec: {
+        pid: 'P1', question: 'q', observe: { world: 'h_sag', seed: 0, protocol: 'brief step (12 uA, 40 ms)', reps: 5 },
+        metricKind: 'json', metricSpec: 'spike_count',
+        bands: { H1: [0, 1000], H2: [-1000, -0.001] },
+        branches: [{ band: [-1000, -0.001], action: 'kill', target: 'H1' }],
+      },
+    })).rejects.toThrow('budget')
+  })
+
+  it.skipIf(!meterAvailable)('meter 没测成（未入账观测）的 FAILED 探针不锁格子：可换新 pid 重新登记', async () => {
+    const configuredMeter = process.env.PROMA_EVAL_METER
+    const brokenMeter = join(researchCwd, 'broken-meter.py')
+    writeFileSync(brokenMeter, 'import sys\nsys.exit(3)\n')
+    process.env.PROMA_EVAL_METER = brokenMeter
+    const isolatedClient = new Client({ name: 'broken-meter', version: '1.0.0' })
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair()
+    try {
+      await Promise.all([isolatedClient.connect(clientTransport), buildServer().connect(serverTransport)])
+      const call = async (name: string, args: Record<string, unknown>) => {
+        const result = await isolatedClient.callTool({ name, arguments: args })
+        const text = ((result.content ?? []) as Array<{ text?: string }>).map((c) => c.text ?? '').join('')
+        if (result.isError) throw new Error(text)
+        return text
+      }
+      const run = 'meter-broken-release'
+      await call('research_init', { run })
+      await call('claim_propose', { run, id: 'H1', statement: 'a', predicts: ['spike_count ≥ 0'] })
+      await call('claim_propose', { run, id: 'H2', statement: 'b', predicts: ['spike_count < 0'] })
+      const spec = (pid: string) => ({
+        pid, question: 'q', observe: { world: 'h_sag', seed: 0, protocol: 'brief step (12 uA, 40 ms)', reps: 1 },
+        metricKind: 'json', metricSpec: 'spike_count',
+        bands: { H1: [0, 1000], H2: [-1000, -0.001] },
+        branches: [{ band: [-1000, -0.001], action: 'kill', target: 'H1' }],
+      })
+      await call('prereg_write', { run, spec: spec('P1') })
+      await expect(call('probe_run', { run, pid: 'P1' })).rejects.toThrow()
+      await call('prereg_write', { run, spec: spec('P2') })
+    } finally {
+      await isolatedClient.close()
+      if (configuredMeter === undefined) delete process.env.PROMA_EVAL_METER
+      else process.env.PROMA_EVAL_METER = configuredMeter
+    }
+  })
+
+  it.skipIf(!meterAvailable)('预算非法只关世界计量，不放开 shell 探针', async () => {
+    const configured = process.env.PROMA_EVAL_BUDGET
+    process.env.PROMA_EVAL_BUDGET = '0'
+    const isolatedClient = new Client({ name: 'bad-budget-shell', version: '1.0.0' })
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair()
+    try {
+      await Promise.all([isolatedClient.connect(clientTransport), buildServer().connect(serverTransport)])
+      const call = async (name: string, args: Record<string, unknown>) => {
+        const result = await isolatedClient.callTool({ name, arguments: args })
+        const text = ((result.content ?? []) as Array<{ text?: string }>).map((c) => c.text ?? '').join('')
+        if (result.isError) throw new Error(text)
+        return text
+      }
+      const run = 'meter-bad-budget-shell'
+      await call('research_init', { run })
+      await call('claim_propose', { run, id: 'H1', statement: 'a', predicts: ['x ≥ 0'] })
+      await call('claim_propose', { run, id: 'H2', statement: 'b', predicts: ['x < 0'] })
+      await expect(call('prereg_write', {
+        run,
+        spec: {
+          pid: 'P1', question: 'q', evalCommand: 'echo \'{"x":1}\'', metricKind: 'json', metricSpec: 'x',
+          bands: { H1: [0, 10], H2: [-10, -1] }, branches: [{ band: [-10, -1], action: 'kill', target: 'H1' }],
+        },
+      })).rejects.toThrow('observe')
+    } finally {
+      await isolatedClient.close()
+      process.env.PROMA_EVAL_BUDGET = configured
+    }
+  })
+
+  it.skipIf(!meterAvailable)('observe 探针只能取 spike_count：cost/reps 是已知常量，取它们等于回显', async () => {
+    const run = 'meter-metric-allowlist'
+    await callTool('research_init', { run })
+    await callTool('claim_propose', { run, id: 'H1', statement: 'a', predicts: ['spike_count ≥ 0'] })
+    await callTool('claim_propose', { run, id: 'H2', statement: 'b', predicts: ['spike_count < 0'] })
+    await expect(callTool('prereg_write', {
+      run,
+      spec: {
+        pid: 'P1', question: 'q', observe: { world: 'h_sag', seed: 0, protocol: 'brief step (12 uA, 40 ms)', reps: 1 },
+        metricKind: 'json', metricSpec: 'cost',
+        bands: { H1: [0.5, 1.5], H2: [5, 6] },
+        branches: [{ band: [5, 6], action: 'kill', target: 'H1' }],
+      },
+    })).rejects.toThrow('spike_count')
+  })
+
+  it.skipIf(!meterAvailable)('observe 探针与 world_observe 共用一份预算：耗尽后 probe_run 拒绝且不扣费', async () => {
+    const run = 'meter-probe-budget'
+    await preregObserveProbe(run)
+    // 测试预算为 1：在另一个格子上先用掉（已登记的格子不许自由观测）
+    await callTool('world_observe', { run, world: 'h_sag', seed: 0, protocol: 'long step (10 uA, 300 ms)', reps: 1 })
+    await expect(callTool('probe_run', { run, pid: 'P1' })).rejects.toThrow('budget exhausted')
+    expect(journalOf(run).filter((e) => e.op === 'world.observe')).toHaveLength(1)
+  })
+
+  it.skipIf(!meterAvailable)('forecast 之后 observe 探针不可再执行：预登记不能排在终局评分之后补跑', async () => {
+    const run = 'meter-probe-after-forecast'
+    await preregObserveProbe(run)
+    const info = JSON.parse(await callTool('world_simulate', { run, world: 'h_sag', seed: 0, mode: 'info' })) as { test_protocol_labels: string[] }
+    const counts = Object.fromEntries(info.test_protocol_labels.map((label) => [label, 1]))
+    await callTool('world_forecast', { run, world: 'h_sag', seed: 0, counts })
+    await expect(callTool('probe_run', { run, pid: 'P1' })).rejects.toThrow('终局已裁决')
+  }, 60_000)
+
+  it.skipIf(!meterAvailable)('报告可以引用终局误差：标 (F) 且与 journal 一致才放行', async () => {
+    const run = 'meter-cite-forecast'
+    const root = join(researchCwd, '.proma-research', run)
+    await preregObserveProbe(run)
+    const probeText = await callTool('probe_run', { run, pid: 'P1' })
+    const metric = Number(probeText.match(/重算指标 = (-?[0-9.]+)/)?.[1])
+    await callTool('claim_transition', { run, id: 'H2', to: 'REFUTED', byProbe: 'P1', note: '非负' })
+    await callTool('attack_record', { run, target: 'H1', kind: 'constraint', text: '单次观测' })
+    const info = JSON.parse(await callTool('world_simulate', { run, world: 'h_sag', seed: 0, mode: 'info' })) as { test_protocol_labels: string[] }
+    const counts = Object.fromEntries(info.test_protocol_labels.map((label) => [label, 1]))
+    const mse = Number((JSON.parse(await callTool('world_forecast', { run, world: 'h_sag', seed: 0, counts })) as Record<string, unknown>).spike_forecast_mse)
+    const report = (cited: string) => [
+      '# 引用终局误差', '', `spike_count 为 ${metric} (P1)。`, `终局预报误差为 ${cited} (F)。`, '', '- H1: LIVE', '- H2: REFUTED',
+    ].join('\n')
+
+    writeFileSync(join(root, 'REPORT.md'), report((mse + 1).toFixed(3)), 'utf-8')
+    await expect(callTool('report_declare', { run, path: 'REPORT.md' })).rejects.toThrow('(F)')
+
+    // 同一行的 (F) 不能替别的裸小数背书
+    writeFileSync(join(root, 'REPORT.md'), report(`${mse.toFixed(3)} (F)，准确率 0.91 也`).replace(' (F)。', '。'), 'utf-8')
+    await expect(callTool('report_declare', { run, path: 'REPORT.md' })).rejects.toThrow('0.91')
+
+    writeFileSync(join(root, 'REPORT.md'), report(mse.toFixed(3)), 'utf-8')
+    expect(await callTool('report_declare', { run, path: 'REPORT.md' })).toContain('三道 gate 全绿')
   }, 60_000)
 
   it.skipIf(!detectSandboxSupply().available)('真值不可达：PROMA_RESEARCH_DENY 后沙箱内读被禁文件为空', async () => {

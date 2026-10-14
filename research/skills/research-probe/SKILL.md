@@ -56,7 +56,15 @@ FAILED 重登一个，代价远小于一条作废的证据链。（赛事模板 
      就重新设计。机制型实验的 negative control 必须预测**下游 outcome metric**回到
      baseline；“把 X 置零后 X=0”只检验定义，不检验机制。
      （纪律：schema 只查 question 非空，这句话的存在与诚实由你负责）
-   - **evalCommand**：一条确定性命令，指标进 stdout（json 或单行）；
+   - **测量方式，二选一**【结构】：
+     - **observe**（世界任务**只收**这一种）：`{world, seed, protocol, reps}`——要判别的
+       那次计量观测本身。`probe_run` 由 server 经 meter 执行、扣同一份预算，raw 就是这次
+       测量；只收 `metricKind: "json"`、`metricSpec: "spike_count"`【结构】。
+       **已观测过的格子（同 world/seed/protocol/blockers）登记即被拒**【结构】：同格计量
+       是确定性的，看过再登记等于给已知数字画频段。探索用 `world_simulate` 免费比候选。
+       **一个格子只许一个预登记，登记后只能经 `probe_run` 测量**【结构】：不能对同一格子
+       登记多份频段，也不能先 `world_observe` 偷看已登记的格子。
+     - **evalCommand**（非世界任务）：一条确定性命令，指标进 stdout（json 或单行）；
    - **bands**：每条被检验假设的频段——**必须存在一对不重叠**【结构】；
      **必须有宽度**【结构】——宽度就是你执行前真实的不确定性，写窄是自欺，
      写宽会显示在报告校准段（`research_kit.calibration`）；
@@ -64,7 +72,8 @@ FAILED 重登一个，代价远小于一条作废的证据链。（赛事模板 
    - **metricKind + metricSpec**：从 stdout 重算指标的规约——`json`（点路径，
      如 `results.accuracy`）或 `regex`（单捕获组）【结构：schema 必填】。
    ✓ 成功条件：prereg_write 返回 pid（sha256 已冻结）。
-4. **`probe_run`**：只运行冻结命令。非零退出记 FAILED、不落地——不是惩罚，
+4. **`probe_run`**：只执行冻结的测量（observe 走计量、evalCommand 走沙箱）。
+   预算耗尽或终局已裁决时 observe 探针被拒、不扣费。非零退出记 FAILED、不落地——不是惩罚，
    是保护：崩溃与干净结果不可区分，FAILED 永不做终态依据。改命令 = 新探针。
    ✓ 成功条件：锚里探针行出现 LANDED + metric（或 FAILED）。
 5. **应用 branches**：`claim_transition` 把被杀/被收窄的送进坟场。
@@ -83,7 +92,7 @@ FAILED 重登一个，代价远小于一条作废的证据链。（赛事模板 
 具体选择父会话、RLM 或 Collaboration，遵守 research-loop 的
 `references/delegation.md`。child 不写 prereg、不执行 probe、不迁移 claim。
 
-## 命令纪律（沙箱契约，全部【结构】）
+## 命令纪律（evalCommand 的沙箱契约，全部【结构】）
 
 bwrap 内执行：文件系统只读（中间文件只能写 `/tmp`，结果走 stdout）；无网络；
 环境只有 `PATH/HOME=/tmp/LANG`（拿不到宿主密钥，也别试图读）；超时（默认

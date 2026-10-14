@@ -30,6 +30,8 @@ gate 红了改报告或补实验，绝不动 journal 与 register
 
 1. **结果数字**：一律 `value (P#)`，value 来自 `metric_recompute`（可按引用值
    小数位四舍五入）。没有 (P#) 出处的小数整行被拒。例：`accuracy 达到 0.83 (P1)`。
+   世界任务的终局误差写 `value (F)`，value 照抄 `world_forecast` 返回的
+   `spike_forecast_mse`，gate 与 journal 对账。例：`终局预报误差 6.595 (F)`。
 2. **频段**：预登记内容写严格两数值 `[lo, hi]`，豁免出处对账；任意别的方括号
    （`准确率 [0.91]`）不豁免。
 3. **结论行**：`- H1: SUPPORTED` 逐 claim 一行，状态与 register **逐字一致**。

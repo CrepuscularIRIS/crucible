@@ -10,7 +10,8 @@
  * 1. 信念状态读写：claim/probe 状态迁移，全部走只追加 journal；
  * 2. 从原始文件重算指标：json 点路径 / 正则，永不执行模型代码；
  * 3. 预登记落盘：时间戳 + sha256，先登记后执行；
- * 4. 受认可的执行路径：probe_run 只执行预登记时冻结的命令字符串。
+ * 4. 受认可的执行路径：probe_run 只执行预登记时冻结的测量——世界任务是 observe
+ *    （server 经 meter 计量，扣预算），其余是沙箱内的冻结命令字符串。
  *
  * 与 Arbor 的 MCP 一致做无状态化：每个工具显式携带 run 名（单一路径分量，
  * 钉死在 <cwd>/.proma-research/<run>/ 内），不跨目录泄漏。
@@ -39,9 +40,11 @@ import {
   sha256,
   stableStringify,
   summarizeWorldJournal,
+  observeCellMatches,
   validateProbeSpec,
   writeRegisterSnapshot,
   type Band,
+  type ObserveSpec,
   type ProbeSpec,
 } from './state.js'
 
@@ -109,10 +112,20 @@ function inBand(value: number, band: Band): boolean {
 // 智谱 Anthropic 端点对工具 schema 严格校验，这类写法会整包 400（1210）。
 const BandSchema = z.array(z.number())
 
+const ObserveSpecSchema = z.object({
+  world: z.string(),
+  seed: z.number().int(),
+  protocol: z.string(),
+  reps: z.number().int().optional(),
+  blockers: z.string().optional(),
+})
+
 const ProbeSpecSchema = z.object({
   pid: z.string(),
   question: z.string(),
-  evalCommand: z.string(),
+  // 二选一（语义校验在 validateProbeSpec）：世界任务只收 observe
+  evalCommand: z.string().optional(),
+  observe: ObserveSpecSchema.optional(),
   metricKind: z.enum(['json', 'regex']),
   metricSpec: z.string(),
   bands: z.record(z.string(), BandSchema),
@@ -126,9 +139,112 @@ const ProbeSpecSchema = z.object({
 
 export function buildServer(): McpServer {
   const server = new McpServer(
-    { name: 'proma-research', version: '0.2.4' },
+    { name: 'proma-research', version: '0.3.0' },
     { capabilities: { tools: {} } },
   )
+
+  // meter 在 server 进程内执行（沙箱外）：真值（worlds.py 的 novel 通道参数）
+  // 从不出现在工具返回里。PROMA_RESEARCH_DENY 是 world 工具注册的 fail-closed
+  // 前置；kernel 无法结构性沙箱化，因此评测脚本另以权限策略阻断直连，并由
+  // liveness 把实际 benchmark 读取/import 当作泄漏指标。预算与终局以 journal 为准。
+  let worldIsolationReady = true
+  let budgetValid = true
+  try {
+    resolveResearchDenyRoots()
+  } catch (error) {
+    worldIsolationReady = false
+    console.error(`[proma-research] world_* 未注册（fail closed）：${error instanceof Error ? error.message : String(error)}`)
+  }
+  const METER = process.env.PROMA_EVAL_METER
+    ?? new URL('../../../research/eval/world-meter.py', import.meta.url).pathname
+  // 回落值与 NeuronBench 官方 baseline 对齐（agent.py budget=8）；曾为 40，漏传 env 时硬上限静默放宽
+  const EVAL_BUDGET = Number(process.env.PROMA_EVAL_BUDGET?.trim() || 8)
+  if (!Number.isInteger(EVAL_BUDGET) || EVAL_BUDGET < 1) {
+    // NaN 会让 `spent + reps > budget` 恒假——非法预算必须 fail closed，而不是不设上限。
+    // 只关计量；worldTask（shell 探针禁令）仍由 deny 根决定，不随预算放开
+    budgetValid = false
+    console.error(`[proma-research] world_* 未注册（fail closed）：PROMA_EVAL_BUDGET 非正整数（${process.env.PROMA_EVAL_BUDGET}）`)
+  }
+
+  /** 计量前置检查（不写 journal）：终局后关闭；预算以权威 journal 为准。 */
+  function assertObserveAllowed(root: string, reps: number): void {
+    const worldState = summarizeWorldJournal(readJournal(root))
+    if (worldState.forecastCount > 0) {
+      throw new ResearchStateError('终局已裁决；world_observe 不再开放——下一步：report_declare')
+    }
+    if (worldState.spent + reps > EVAL_BUDGET) {
+      throw new ResearchStateError(
+        `budget exhausted: spent=${worldState.spent} + reps=${reps} > budget=${EVAL_BUDGET}；`
+        + '下一步：用已落地的观测收窄假设，或 report_declare 终局',
+      )
+    }
+  }
+
+  /**
+   * 先登记后测量的结构保证：同一 (world, seed, protocol, blockers) 的计量是确定性的
+   * （实测同格三次均为 32.0），看过的格子再登记，频段就是照着答案画的。
+   */
+  function assertCellUnobserved(root: string, observe: ObserveSpec): void {
+    const blockers = observe.blockers ?? ''
+    const seen = readJournal(root).some((event) => event.op === 'world.observe' && observeCellMatches(event, observe))
+    if (seen) {
+      throw new ResearchStateError(
+        `该格子已观测过（${observe.world}/seed ${observe.seed}/${observe.protocol}${blockers ? `/${blockers}` : ''}）：`
+        + '同格计量是确定性的，看过再登记等于给已知答案画频段 → research-probe：换一个未观测的协议/阻断剂组合，'
+        + '或用 world_simulate 免费比较候选后再登记',
+      )
+    }
+  }
+
+  /**
+   * 一个格子只许一个预登记，且登记后只能由 probe_run 测量：否则可以先登记多份矛盾频段、
+   * 再自由观测、最后只跑与答案相符的那份（第二轮评审实测路径）。
+   */
+  function assertCellUnreserved(root: string, observe: ObserveSpec): void {
+    const events = readJournal(root)
+    const holder = replay(root).probes.find((probe) => {
+      // meter 没测成（FAILED 且没有入账的观测）不算占用：什么都没看见，换新 pid 重登记是正当的
+      if (probe.status === 'FAILED'
+        && !events.some((event) => event.op === 'world.observe' && event.pid === probe.pid)) return false
+      const file = join(root, 'prereg', `${probe.pid}.json`)
+      if (!existsSync(file)) return false
+      const frozen = JSON.parse(readFileSync(file, 'utf-8')) as ProbeSpec
+      return frozen.observe !== undefined
+        && frozen.observe.world === observe.world && frozen.observe.seed === observe.seed
+        && frozen.observe.protocol === observe.protocol
+        && (frozen.observe.blockers ?? '') === (observe.blockers ?? '')
+    })
+    if (holder) {
+      throw new ResearchStateError(
+        `该格子已有预登记 ${holder.pid}（${observe.world}/seed ${observe.seed}/${observe.protocol}）：`
+        + `一个格子只测一次，且只能经 probe_run ${holder.pid} 测量 → 换一个协议/阻断剂组合`,
+      )
+    }
+  }
+
+  /** 唯一的计量执行路径：world_observe 与 observe 探针共用。返回 meter stdout（原始记录）。 */
+  function runMeterObserve(root: string, observe: ObserveSpec, pid?: string): string {
+    const spent = summarizeWorldJournal(readJournal(root)).spent
+    const args = ['observe', observe.world, String(observe.seed), observe.protocol]
+    if (observe.reps) args.push('--reps', String(observe.reps))
+    if (observe.blockers) args.push('--blockers', observe.blockers)
+    const proc = spawnSync(
+      'python3',
+      [METER, '--ledger', join(root, 'world-ledger.jsonl'), '--budget', String(EVAL_BUDGET), '--budget-spent', String(spent), ...args],
+      { encoding: 'utf-8', timeout: 120_000 },
+    )
+    if (proc.status !== 0) {
+      throw new ResearchStateError(`${proc.stderr?.trim() || proc.stdout?.trim() || 'meter 执行失败'} → 用已落地的观测收窄假设（research-probe），或 report_declare 终局`)
+    }
+    const result = JSON.parse(proc.stdout) as Record<string, unknown>
+    appendEvent(root, 'world.observe', {
+      world: observe.world, seed: observe.seed, protocol: observe.protocol, reps: observe.reps ?? 1,
+      blockers: observe.blockers ?? '',
+      cost: result.cost, spike_count: result.spike_count,
+      ...(pid ? { pid } : {}),
+    })
+    return proc.stdout
+  }
 
   // ── 类别 1：信念状态读写 ────────────────────────────────────────────
 
@@ -265,7 +381,18 @@ export function buildServer(): McpServer {
       const root = resolveRun(run)
       requireInit(root)
       const state = replay(root)
-      validateProbeSpec(spec as unknown as ProbeSpec, state)
+      validateProbeSpec(spec as unknown as ProbeSpec, state, { worldTask: worldIsolationReady })
+      if (spec.observe) {
+        assertCellUnobserved(root, spec.observe)
+        assertCellUnreserved(root, spec.observe)
+        // 登记即占格子：一份永远跑不动的登记会把格子永久锁死，所以预算在登记时先过一遍
+        const remaining = EVAL_BUDGET - summarizeWorldJournal(readJournal(root)).spent
+        if ((spec.observe.reps ?? 1) > remaining) {
+          throw new ResearchStateError(
+            `budget exhausted: reps=${spec.observe.reps ?? 1} > 剩余预算 ${remaining}（budget=${EVAL_BUDGET}）→ 降低 reps 或 report_declare 终局`,
+          )
+        }
+      }
       if (state.probes.some((p) => p.pid === spec.pid)) {
         throw new ResearchStateError(`探针 ${spec.pid} 已存在`)
       }
@@ -298,6 +425,8 @@ export function buildServer(): McpServer {
         throw new ResearchStateError(`探针 ${pid} 不存在或状态不允许执行（当前: ${probe?.status ?? '不存在'}）→ 先 prereg_write 登记探针，再 probe_run`)
       }
       const spec = readFrozenSpec(root, pid)
+      if (spec.observe) return runObserveProbe(root, pid, spec, spec.observe)
+      if (!spec.evalCommand) throw new ResearchStateError(`${pid} 的预登记既无 evalCommand 也无 observe`)
       // 红线：模型写的命令只在沙箱执行；bwrap 缺失时结构性拒绝（fail closed）
       requireSandbox()
       appendEvent(root, 'probe.start', { pid })
@@ -414,23 +543,59 @@ export function buildServer(): McpServer {
     },
   )
 
-  // ── EVAL-PLAN §1.3 · 计量接口：世界只经 meter 可达 ─────────────────────
-  // meter 在 server 进程内执行（沙箱外）：真值（worlds.py 的 novel 通道参数）
-  // 从不出现在工具返回里。PROMA_RESEARCH_DENY 是 world 工具注册的 fail-closed
-  // 前置；kernel 无法结构性沙箱化，因此评测脚本另以权限策略阻断直连，并由
-  // liveness 把实际 benchmark 读取/import 当作泄漏指标。预算与终局以 journal 为准。
-  let worldIsolationReady = true
-  try {
-    resolveResearchDenyRoots()
-  } catch (error) {
-    worldIsolationReady = false
-    console.error(`[proma-research] world_* 未注册（fail closed）：${error instanceof Error ? error.message : String(error)}`)
+  /**
+   * observe 探针：预登记冻结的那次观测由 server 经 meter 执行（扣同一份预算）。
+   * 先登记后测量在结构上成立——探针的 raw 就是这次测量本身，不存在可回显的中间层；
+   * 已观测过的格子不可登记（assertCellUnobserved），因为同格计量是确定性的。
+   */
+  function runObserveProbe(root: string, pid: string, spec: ProbeSpec, observe: ObserveSpec) {
+    if (!worldIsolationReady) {
+      throw new ResearchStateError('本 server 未注册世界计量（PROMA_RESEARCH_DENY 未配置），observe 探针无法执行')
+    }
+    if (!budgetValid) {
+      throw new ResearchStateError(`PROMA_EVAL_BUDGET 非正整数（${process.env.PROMA_EVAL_BUDGET}），世界计量已关闭`)
+    }
+    assertObserveAllowed(root, observe.reps ?? 1)
+    // 落盘目录先备好：probe.start 之后到 probe.land 之间不做可失败的准备工作，避免探针卡在 RUNNING
+    const probeDir = confined(root, join('probes', pid))
+    mkdirSync(join(probeDir, 'raw'), { recursive: true })
+    appendEvent(root, 'probe.start', { pid })
+    const startedAt = new Date().toISOString()
+    let stdout: string
+    let metric: number
+    try {
+      stdout = runMeterObserve(root, observe, pid)
+      // 内存里先重算并落 journal，再写旁路文件：测量一旦入账，探针就不能因写盘失败被烧掉
+      metric = recomputeMetric(stdout, spec.metricKind, spec.metricSpec)
+    } catch (error) {
+      appendEvent(root, 'probe.land', { pid, exit_code: 1, metric: null })
+      freshRegister(root)
+      writeProvenance(probeDir, { pid, observe, executor: 'world-meter', startedAt, endedAt: new Date().toISOString(), landed: false })
+      throw error
+    }
+    appendEvent(root, 'probe.land', { pid, exit_code: 0, metric })
+    freshRegister(root)
+    writeFileSync(join(probeDir, 'raw', 'output.txt'), stdout, 'utf-8')
+    writeProvenance(probeDir, {
+      pid,
+      observe,
+      executor: 'world-meter',
+      startedAt,
+      endedAt: new Date().toISOString(),
+      landed: true,
+      metric,
+      metricSource: { kind: spec.metricKind, spec: spec.metricSpec, raw: 'raw/output.txt' },
+    })
+    return { content: [{ type: 'text' as const, text: `${pid} 已落地（计量观测），重算指标 = ${metric}` }] }
   }
 
-  if (worldIsolationReady) {
-    const METER = process.env.PROMA_EVAL_METER
-      ?? new URL('../../../research/eval/world-meter.py', import.meta.url).pathname
-    const EVAL_BUDGET = Number(process.env.PROMA_EVAL_BUDGET ?? 40)
+  /** provenance 是 journal 的旁注副本；journal 先落，provenance 后写，写失败不影响裁决。 */
+  function writeProvenance(probeDir: string, record: Record<string, unknown>): void {
+    writeFileSync(join(probeDir, 'provenance.json'), `${JSON.stringify(record, null, 2)}\n`, 'utf-8')
+  }
+
+  // ── EVAL-PLAN §1.3 · 计量接口：世界只经 meter 可达 ─────────────────────
+  if (worldIsolationReady && budgetValid) {
 
     server.tool(
       'world_observe',
@@ -446,35 +611,10 @@ export function buildServer(): McpServer {
     async ({ run, world, seed, protocol, reps, blockers }) => {
       const root = resolveRun(run)
       requireInit(root)
-      const requestedReps = reps ?? 1
-      const worldState = summarizeWorldJournal(readJournal(root))
-      if (worldState.forecastCount > 0) {
-        throw new ResearchStateError('终局已裁决；world_observe 不再开放——下一步：report_declare')
-      }
-      if (worldState.spent + requestedReps > EVAL_BUDGET) {
-        throw new ResearchStateError(
-          `budget exhausted: spent=${worldState.spent} + reps=${requestedReps} > budget=${EVAL_BUDGET}；`
-          + '下一步：用已落地的观测收窄假设，或 report_declare 终局',
-        )
-      }
-      const ledger = join(root, 'world-ledger.jsonl')
-      const args = ['observe', world, String(seed), protocol]
-      if (reps) args.push('--reps', String(reps))
-      if (blockers) args.push('--blockers', blockers)
-      const proc = spawnSync(
-        'python3',
-        [METER, '--ledger', ledger, '--budget', String(EVAL_BUDGET), '--budget-spent', String(worldState.spent), ...args],
-        { encoding: 'utf-8', timeout: 120_000 },
-      )
-      if (proc.status !== 0) {
-        throw new ResearchStateError(`${proc.stderr?.trim() || proc.stdout?.trim() || 'meter 执行失败'} → 用已落地的观测收窄假设（research-probe），或 report_declare 终局`)
-      }
-      const result = JSON.parse(proc.stdout) as Record<string, unknown>
-      appendEvent(root, 'world.observe', {
-        world, seed, protocol, reps: reps ?? 1,
-        cost: result.cost, spike_count: result.spike_count,
-      })
-      return { content: [{ type: 'text', text: proc.stdout }] }
+      assertObserveAllowed(root, reps ?? 1)
+      assertCellUnreserved(root, { world, seed, protocol, blockers })
+      const stdout = runMeterObserve(root, { world, seed, protocol, reps, blockers })
+      return { content: [{ type: 'text', text: stdout }] }
     },
   )
 

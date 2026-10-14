@@ -45,6 +45,13 @@ export function buildManagedResearchMcpServer(
     ...(normalizedValue(env.NEURONBENCH_ROOT) && {
       NEURONBENCH_ROOT: normalizedValue(env.NEURONBENCH_ROOT),
     }),
+    // 预算与计量入口是评测契约的一部分；漏传时 server 回落默认值，硬上限静默失效
+    ...(normalizedValue(env.PROMA_EVAL_BUDGET) && {
+      PROMA_EVAL_BUDGET: normalizedValue(env.PROMA_EVAL_BUDGET),
+    }),
+    ...(normalizedValue(env.PROMA_EVAL_METER) && {
+      PROMA_EVAL_METER: normalizedValue(env.PROMA_EVAL_METER),
+    }),
   } as Record<string, string>
 
   return {

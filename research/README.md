@@ -91,7 +91,7 @@ bun <crucible>/packages/research-mcp/gates/trace.ts     .proma-research/<run>
 |---|---|
 | 信念状态读写 | `research_init` · `research_state`（含 graveyard）· `claim_propose` · `claim_transition` |
 | 预登记落盘 | `prereg_write`（时间戳 + sha256 冻结） |
-| 受认可执行 | `probe_run`（bwrap 沙箱内只跑冻结命令：只读 FS、断网、清环境；非零退出/超时不落地） |
+| 受认可执行 | `probe_run`：`observe` 探针由 server 经 meter 执行冻结的那次计量（扣预算，世界任务只收这一种）；`evalCommand` 探针在 bwrap 沙箱内只跑冻结命令（只读 FS、断网、清环境；非零退出/超时不落地） |
 | 从 raw 重算 | `metric_recompute`（json 点路径 / 正则；永不执行模型代码） |
 
 对抗证据：`attack_record`（typed：new_h / constraint / no_change）；
@@ -115,8 +115,8 @@ bun <crucible>/packages/research-mcp/gates/trace.ts     .proma-research/<run>
 | gate | 检查 | 旧教训来源 |
 |---|---|---|
 | `prereg` | 每个被执行探针先有预登记（journal 顺序 + 时间戳 + sha256 一致）；频段互斥 + kill/scope 分支；空 run 不通过 | 先登记后执行 |
-| `reconcile` | 报告每个数字带 (P#) 出处且与重算值一致（舍入容差按引用值小数位，上限 1%）；结论行与 register 一致；裸 `H\d+` 引用必须存在 | 幻觉数字 / F1 死锁 / F7-F9 |
-| `trace` | journal 重放结果与 register.json 逐字一致（手改即红）；终态可追溯到落地探针；时间戳单调；world 预算快照/一次终局/终局后关闭可重放；空 run 不通过 | **四道 gate 曾对捏造战役全绿** |
+| `reconcile` | 报告每个数字带 (P#) 出处且与重算值一致；终局误差带 (F) 与 journal 的 world.forecast 一致；整数不拦（天花板）（舍入容差按引用值小数位，上限 1%）；结论行与 register 一致；裸 `H\d+` 引用必须存在 | 幻觉数字 / F1 死锁 / F7-F9 |
+| `trace` | journal 哈希链完好；journal 重放结果与 register.json 逐字一致（手改即红）；终态可追溯到落地探针；时间戳单调；world 预算快照/一次终局/终局后关闭可重放；空 run 不通过 | **四道 gate 曾对捏造战役全绿** |
 
 ## 沙箱注意事项
 
@@ -128,10 +128,13 @@ bun <crucible>/packages/research-mcp/gates/trace.ts     .proma-research/<run>
 
 ## 防篡改与它的天花板（P3.3）
 
-server 在内存记住 journal 的 sha256 基线，每个工具调用先校验；会话外改动会被
-全部工具拒绝并落 `tamper.detected` 事件，该 run 在本 server 生命周期内永久污染。
-**天花板**：server 重启后基线重置（届时靠 trace 的逐字重放兜底）；与 agent 同权限
-的进程终究能伪造一切——真正的墙是把 agent 本身关进沙箱，本阶段明确不做。
+两层：① 每条事件带 `prev`（上一行原文的 sha256），改任何一行下一行即断链——server
+重启后首次访问与离线 trace gate 都会校验；② server 在内存记住整份 journal 的 sha256
+基线，每个工具调用先校验。任一层发现改动：全部工具拒绝并落 `tamper.detected`，该 run
+作废（断链在重启后依然可见）。2026-10 之前的 journal 无 `prev`，链从第一条带 `prev`
+的事件开始。
+**天花板**：链没有外部锚点——重算整条链或截掉尾部仍可绕过；与 agent 同权限的进程终究
+能伪造一切——真正的墙是把 agent 本身关进沙箱，本阶段明确不做。
 
 `gates/gates.test.ts` 是全绿集成测试：一份诚实产物（含未检验 LIVE 假设）
 三道同时通过，四种蓄意破坏分别变红。**改任何 gate 前先跑它。**

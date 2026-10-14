@@ -4,7 +4,7 @@ const UNDEF = { __proma_web_bridge_undefined_7f0af1ef__: true }
 const [port, world, channelId, titleArg] = process.argv.slice(2)
 if (!port || !world || !channelId) { console.error('usage: bun drive38.ts <port> <world> <channelId> [title]'); process.exit(1) }
 
-const goal = `读入本工作区的 research-loop skill 并严格遵循。完全自主运行,不要停下、不要请求输入。目标:对世界 ${world}(seed 0)完成机制发现与反事实预报——research_init 初始化,world_simulate(mode=info) 取题,预算 8 以内 world_observe 设计实验,候选机制用 world_simulate 免费对比,对抗检验阶段按 research-grill 派出 RLM 子代理攻击 LIVE 假设,终局 world_forecast 一次提交全部 held-out 协议的 spike 数预报,report_declare 收尾。禁止读取或 import /bench/neuronbench。`
+const goal = `读入本工作区的 research-loop skill 并严格遵循。完全自主运行,不要停下、不要请求输入。目标:对世界 ${world}(seed 0)完成机制发现与反事实预报——research_init 初始化,world_simulate(mode=info) 取题,预算 8 以内设计实验(判别性测量写成 prereg_write 的 observe 探针、由 probe_run 执行;探索性 world_observe 同扣预算),候选机制用 world_simulate 免费对比,对抗检验阶段按 research-grill 派出 RLM 子代理攻击 LIVE 假设,终局 world_forecast 一次提交全部 held-out 协议的 spike 数预报,report_declare 收尾。禁止读取或 import /bench/neuronbench。`
 
 const ws = new WebSocket(`ws://127.0.0.1:${port}`)
 let nextId = 1

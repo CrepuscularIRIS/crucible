@@ -18,6 +18,8 @@ describe('受管 Research MCP', () => {
       PROMA_RESEARCH_MCP_ENTRY: '/crucible/packages/research-mcp/src/server.ts',
       PROMA_RESEARCH_DENY: '/bench/neuronbench',
       NEURONBENCH_ROOT: '/bench/neuronbench',
+      PROMA_EVAL_BUDGET: '8',
+      PROMA_EVAL_METER: '/crucible/research/eval/world-meter.py',
     })
 
     expect(MANAGED_RESEARCH_MCP_NAME).toBe('research')
@@ -30,6 +32,9 @@ describe('受管 Research MCP', () => {
         PROMA_RESEARCH_CWD: '/workspace/session-a',
         PROMA_RESEARCH_DENY: '/bench/neuronbench',
         NEURONBENCH_ROOT: '/bench/neuronbench',
+        // 2026-08-28 demo2r 实测：漏透传预算让 server 回落默认值，11/8 未被拦截
+        PROMA_EVAL_BUDGET: '8',
+        PROMA_EVAL_METER: '/crucible/research/eval/world-meter.py',
       },
       required: true,
       startup_timeout_sec: 30,
