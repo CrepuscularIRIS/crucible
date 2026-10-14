@@ -1,0 +1,1 @@
+integrity|本模块只读；写信念状态一律走 research MCP 工具

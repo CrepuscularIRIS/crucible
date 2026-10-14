@@ -1,0 +1,10 @@
+integrity|预登记落盘之前，被登记的命令绝不以任何方式先运行
+integrity|**已观测过的格子（同 world/seed/protocol/blockers）登记即被拒**【结构】
+integrity|FAILED 永不做终态依据。改命令 = 新探针。
+integrity|child 不写 prereg、不执行 probe、不迁移 claim。
+integrity|bwrap 内执行：文件系统只读（中间文件只能写 `/tmp`，结果走 stdout）；无网络；
+epistemic|**必须存在一对不重叠**【结构】
+epistemic|**必须有宽度**【结构】
+epistemic|**必须有 kill 或 scope**【结构】
+epistemic|kill 或 support 分支只靠 `asserted` / `invented` 带
+epistemic|**封顶，不阻止**

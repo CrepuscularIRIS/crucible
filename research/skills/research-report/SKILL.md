@@ -1,7 +1,7 @@
 ---
 name: research-report
 description: Use when 用户要结论，或坟场与 SUPPORTED 已足以回答战役问题、且每个进结论的主张都已挨过攻击时。
-version: 0.4.4
+version: 0.4.5
 ---
 
 # research-report —— 报告纪律
@@ -83,6 +83,24 @@ failure boundary、prediction error 与 post-transition adversary；按
 9. **裁决汇总**：项目根 `RULINGS.md` 的全部 `Ruling:` 行按文件顺序照抄
    （追加式文件，顺序即时序）——死在工作区里的决定等于秘密决定，这是
    它们唯一浮出水面的地方。（纪律：declare 不读此文件，只能靠你。）
+
+**未偿债 scope 段**（宿主渲染上线前由你按锚手写）：把攻击债分三类列出——已偿 / 主动 scope /
+因预算不足 scope。全面对冲的标题本身是一条 finding：优先"在假设 A1..An 下，H 是机制"并列出假设，
+而不是"H 可能有贡献"。
+
+### identify 模式（锚 `MODE: identify`）追加
+
+- **预报**：`终局预报误差 <value> (F)`；逐 held-out 的预报值与 `(sim:H#)` / `(extrap)` 来源、仿真记录 id
+  写在 `research-work/<run>/forecast.md`，REPORT 只引用该路径——不要为了过 reconcile 把小数改成整数
+  （"格式化掉出处"是 finding，不是修复）。
+- **等价类**：有 RULING `equiv{H#…}` 时，结论写"在 <协议集> 下 H5 与 H7 不可分（max min |Δpred|/σ 见
+  sim 记录）"，不挑胜者。
+- **网格 claim**：自由参数只写网格（"g ∈ {…} 均复现"），不写点估计为真。
+- **检出限**：reps < `r*` 的结论写"在 r 次、该精度下未检出；该协议下效应 ≤ x"，从不写"不存在"。
+- **框定行**："本 claim 关于 {这一类细胞 | seed-<s> 这个实现}"。
+- **未覆盖协议**：列出没进过 nbsim 矩阵或没被计量过的协议段 / 阻断剂组合。
+- **报告审计**：identify 的 light 也开 1 个 W2（`research_kit.new_job(run, "report", "audit")`）：
+  每句引 journal seq，或标 `UNSOURCED`。
 
 报告较长、claim→证据链复杂时，可按 research-loop 的
 `references/delegation.md` 让 `analyst` 做 AUDIT，或让 `reviewer` 对已写报告做

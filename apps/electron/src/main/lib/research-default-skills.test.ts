@@ -104,10 +104,98 @@ function unknownNbsimNames(sources: string[], stripSrc: string): string[] {
   return [...unknown]
 }
 
+/** 一张卡（SKILL.md + references/**）的全文；SE5 的锚只许出现在这里，不算路由块。 */
+function skillText(skillsRoot: string, slug: string): string {
+  const parts = [readFileSync(join(skillsRoot, slug, 'SKILL.md'), 'utf-8')]
+  const refs = join(skillsRoot, slug, 'references')
+  if (existsSync(refs)) {
+    for (const file of readdirSync(refs, { recursive: true }) as string[]) {
+      if (file.endsWith('.md')) parts.push(readFileSync(join(refs, file), 'utf-8'))
+    }
+  }
+  return parts.join('\n')
+}
+
+/** SE5（02§4.5 C2）：每张卡的 integrity-anchors.txt —— 行行带标签、不收棘轮措辞、逐字仍在卡里。 */
+function anchorProblems(skillsRoot: string): string[] {
+  const problems: string[] = []
+  for (const slug of RESEARCH_DEFAULT_SKILL_SLUGS) {
+    const file = join(skillsRoot, slug, 'integrity-anchors.txt')
+    if (!existsSync(file)) {
+      problems.push(`${slug}: 缺 integrity-anchors.txt`)
+      continue
+    }
+    const card = skillText(skillsRoot, slug)
+    for (const line of readFileSync(file, 'utf-8').split('\n').filter((l) => l.trim())) {
+      const m = line.match(/^(integrity|epistemic)\|(.+)$/)
+      if (!m) problems.push(`${slug}: 无标签 ${line}`)
+      else if (/遭遇战|会战/.test(line)) problems.push(`${slug}: 棘轮措辞 ${line}`)
+      else if (!card.includes(m[2]!)) problems.push(`${slug}: 锚不在卡里 ${m[2]}`)
+    }
+  }
+  return problems
+}
+
+/** F1-A8①（03 §10.1）：候选模式与"held-out 不可模拟"是 F1 之前的用法，卡片与路由块不许再教。 */
+const DEPRECATED_USAGES = ['world_simulate(mode=candidate)', 'held-out 不可模拟', '免费 `world_simulate`']
+function deprecatedUsages(sources: string[]): string[] {
+  return DEPRECATED_USAGES.filter((phrase) => sources.some((source) => source.includes(phrase)))
+}
+
+/** 锚的 NEXT 行点名的卡（research-<slug>/references/<card>.md）必须真实存在：NEXT 是深卡唯一会被读到的入口（01 §6.5）。 */
+function missingCardsNamedBy(src: string, skillsRoot: string): string[] {
+  return [...src.matchAll(/(research-[a-z-]+)\/references\/([\w-]+\.md)/g)]
+    .map((m) => `${m[1]}/references/${m[2]}`)
+    .filter((path) => !existsSync(join(skillsRoot, path)))
+}
+
 const KIT_INIT = join(researchSkillsRoot, 'research-kit/src/research_kit/__init__.py')
+const KIT_ANCHOR_PARTS = join(researchSkillsRoot, 'research-kit/src/research_kit/anchor_parts.py')
 const HEADLESS_KERNEL_PYTHON = join(process.env.HOME ?? '', '.proma-p0-venv/bin/python')
 const NBSIM_STRIP = join(repoRoot, 'research/eval/nbsim_strip.py')
 const SERVER_SRC = join(repoRoot, 'packages/research-mcp/src/server.ts')
+
+type Channel = Record<string, number | null>
+
+/** 卡片里所有通道形状的对象（带 `"mvh"` 的 `{…}`；通道对象内部没有嵌套花括号）。不靠 JSON.parse：写坏的 JSON 也得查。 */
+function cardChannels(sources: string[]): Channel[] {
+  const channels: Channel[] = []
+  for (const source of sources) {
+    for (const [object] of source.matchAll(/\{[^{}]*"mvh"[^{}]*\}/g)) {
+      channels.push(Object.fromEntries([...object.matchAll(/"(\w+)"\s*:\s*(-?\d+(?:\.\d+)?)/g)].map(([, k, v]) => [k!, Number(v)])))
+    }
+  }
+  return channels
+}
+
+/**
+ * 卡片通道与某个隐藏通道"像"：可比字段过半落在容差内——电压 ±10 mV、斜率同号且差 ≤3、时间常数 2 倍内。
+ * 任一方没有失活门（hvh 不是数）就不比 h 字段。阈值是押的（01 末节 C3），宁可误报。
+ */
+function resembles(card: Channel, hidden: Channel): boolean {
+  const volt = (a: number, b: number) => Math.abs(a - b) <= 10
+  const slope = (a: number, b: number) => Math.sign(a) === Math.sign(b) && Math.abs(a - b) <= 3
+  const tau = (a: number, b: number) => a > 0 && b > 0 && Math.max(a / b, b / a) <= 2
+  const rules: Record<string, (a: number, b: number) => boolean> = { E: volt, mvh: volt, mk: slope, mtau: tau, hvh: volt, hk: slope, htau: tau }
+  const gated = typeof card.hvh === 'number' && typeof hidden.hvh === 'number'
+  const fields = Object.keys(rules).filter((k) => (gated || !k.startsWith('h')) && typeof card[k] === 'number' && typeof hidden[k] === 'number')
+  const close = fields.filter((k) => rules[k]!(card[k] as number, hidden[k] as number))
+  return fields.length >= 3 && close.length * 2 > fields.length
+}
+
+/** 测试时从 NEURONBENCH_ROOT 派生全部隐藏通道（nbsim_strip.truth_fingerprints，不手抄任何真值）。 */
+function hiddenChannels(benchmarkRoot: string): Channel[] {
+  const code = [
+    'import json, sys',
+    'from pathlib import Path',
+    `sys.path.insert(0, ${JSON.stringify(join(repoRoot, 'research/eval'))})`,
+    'import nbsim_strip',
+    'print(json.dumps(list(nbsim_strip.truth_fingerprints(Path(sys.argv[1]))["channels"].values())))',
+  ].join('\n')
+  const proc = spawnSync('python3', ['-c', code, benchmarkRoot], { encoding: 'utf-8' })
+  if (proc.status !== 0) throw new Error(`派生隐藏通道失败（exit ${proc.status}）`)
+  return JSON.parse(proc.stdout) as Channel[]
+}
 
 describe('受管 research 默认 Skills', () => {
   it('allowlist 恰好包含八个战役 Skill，排除开发期 writing skill', () => {
@@ -320,6 +408,132 @@ describe('受管 research 默认 Skills', () => {
     expect(unknownNbsimNames(cardSources(), readFileSync(NBSIM_STRIP, 'utf-8'))).toEqual([])
   })
 
+  it('F1-A8①：卡片与路由块不教弃用用法（候选模式 / held-out 不可模拟）；旧 research-probe:64 的写法变红', () => {
+    expect(deprecatedUsages(['探索用 `world_simulate` 免费比候选。'])).toEqual([])
+    expect(deprecatedUsages(['探索用免费 `world_simulate` 比候选'])).toEqual(['免费 `world_simulate`'])
+    expect(deprecatedUsages(['先 world_simulate(mode=candidate) 再说'])).toEqual(['world_simulate(mode=candidate)'])
+    expect(deprecatedUsages(cardSources())).toEqual([])
+    // 03 §9.3 #21：research-probe 的探索指向工作目录里的 nbsim
+    expect(readFileSync(join(researchSkillsRoot, 'research-probe/SKILL.md'), 'utf-8')).toContain('探索用工作目录里的 nbsim 免费比候选')
+  })
+
+  it('SE5：八张卡的 integrity 锚带标签、无棘轮措辞、逐字仍在卡里；删一条即红', () => {
+    expect(anchorProblems(researchSkillsRoot)).toEqual([])
+    const fixture = mkdtempSync(join(tmpdir(), 'proma-anchors-'))
+    tempRoots.push(fixture)
+    cpSync(researchSkillsRoot, fixture, { recursive: true, filter: (src) => !src.includes('__pycache__') })
+    const anchorsFile = join(fixture, 'research-probe/integrity-anchors.txt')
+    const firstIntegrity = readFileSync(anchorsFile, 'utf-8').split('\n').find((l) => l.startsWith('integrity|'))!
+    const probeCard = join(fixture, 'research-probe/SKILL.md')
+    writeFileSync(probeCard, readFileSync(probeCard, 'utf-8').replaceAll(firstIntegrity.slice('integrity|'.length), ''))
+    expect(anchorProblems(fixture).some((p) => p.startsWith('research-probe: 锚不在卡里'))).toBe(true)
+    writeFileSync(anchorsFile, `${firstIntegrity}\n没有标签的一行\nepistemic|遭遇战 2 起步\n`)
+    const problems = anchorProblems(fixture)
+    expect(problems.some((p) => p.includes('无标签'))).toBe(true)
+    expect(problems.some((p) => p.includes('棘轮措辞'))).toBe(true)
+    // oracle-rescue 夹具的 RED 从未实测，标 unmeasured
+    expect(readFileSync(join(researchSkillsRoot, 'research-probe/test-pressure-oracle-rescue.md'), 'utf-8')).toContain('unmeasured')
+  })
+
+  it('SE8：W5 brief 模板含 other: 段与"本 run 全局"；triage 的 bug 级保留新探针出口并补 #26 那句；held-out 锚已登记', () => {
+    const w5 = readFileSync(join(researchSkillsRoot, 'research-loop/references/w5-lessons.md'), 'utf-8')
+    expect(w5).toContain('## other:')
+    expect(w5).toContain('本 run 全局')
+    expect(w5).toContain('through-seq:')
+    const triage = readFileSync(join(researchSkillsRoot, 'research-moves/references/triage.md'), 'utf-8')
+    const bugRow = triage.split('\n').find((l) => l.startsWith('| **伪影 / bug**'))!
+    expect(bugRow).toContain('`prereg_write` 一个**新探针**')
+    expect(bugRow).toContain('永不作终态依据')
+    expect(bugRow).toContain('只有系统 bug（MCP、meter、`world_simulate`、nbsim 生成器）才暂停该分支')
+    expect(readFileSync(join(researchSkillsRoot, 'research-loop/integrity-anchors.txt'), 'utf-8'))
+      .toContain('integrity|held-out 不可观测；forecast 只一次')
+  })
+
+  it('A8③ + P3a：world-engine.md 有 I0–I9、两条 r* 公式、sim 引用、只示范符号的 hk 规则（参考模型自己的 Na 失活门）与 m∞/h∞ 打印检查，且不写 world 专属提示', () => {
+    const engine = readFileSync(join(researchSkillsRoot, 'research-loop/references/world-engine.md'), 'utf-8')
+    for (let i = 0; i <= 9; i++) expect(engine).toContain(`## I${i}`)
+    expect(engine).toContain('r* = ⌈(2/d)²⌉')
+    expect(engine).toContain('r* = ⌈ln 0.05 / ln(1 − p)⌉')
+    expect(engine).toContain('held-out 不可观测；forecast 只一次')
+    expect(engine).toContain('sims[{path, sha256}]')
+    expect(engine).toContain('research-work/<run>/nbsim')
+    expect(engine).toContain('永不凭一组参数否定一个家族')
+    // HIGH-3：不给完整的新增通道例子（任何带失活的例子都像某个 world）；只示范符号，用参考模型自己的 Na h 门
+    expect(engine).not.toMatch(/```json/)
+    expect(cardChannels([engine])).toEqual([])
+    for (const mark of ['Na 失活门', 'hk > 0', 'h_inf(-40, vh, +1) < h_inf(-95, vh, +1)']) expect(engine).toContain(mark)
+    for (const mark of ['m∞', 'h∞', '-95', '-65', '-40']) expect(engine).toContain(mark)
+    for (const leak of ['TTX', 'T 型', 'ca_rebound', 'rebound']) expect(engine).not.toContain(leak)
+  })
+
+  it.skipIf(!process.env.NEURONBENCH_ROOT?.trim())('HIGH-3：卡片与路由块里没有与任何隐藏通道相像的新增通道（隐藏通道在测试时从 NEURONBENCH_ROOT 派生）', () => {
+    const hidden = hiddenChannels(process.env.NEURONBENCH_ROOT!.trim())
+    expect(hidden.length).toBeGreaterThan(0)
+    // 检测器自检：每个隐藏通道挪 5 mV 后必须被认作"像"——否则下面的空结果没有意义
+    for (const h of hidden) {
+      const shifted = { ...h, E: (h.E as number) + 5, mvh: (h.mvh as number) - 5 }
+      expect(resembles(shifted, h)).toBe(true)
+    }
+    const hits: string[] = []
+    cardChannels(cardSources()).forEach((card, i) => hidden.forEach((h, j) => {
+      if (resembles(card, h)) hits.push(`卡片通道 #${i} ≈ 隐藏通道 #${j}`) // 只报序号，不回显任何真值
+    }))
+    expect(hits).toEqual([])
+  })
+
+  it('HIGH-2：probe 卡与 world-engine 点名 prereg 的结构字段（MCP 只读它们，写进 question 等于没写）；出处标签 sim:<记录 id>；k3 封顶表与宿主的 CONTESTED + lead 一致', () => {
+    const serverSrc = readFileSync(SERVER_SRC, 'utf-8')
+    const probe = readFileSync(join(researchSkillsRoot, 'research-probe/SKILL.md'), 'utf-8')
+    const engine = readFileSync(join(researchSkillsRoot, 'research-loop/references/world-engine.md'), 'utf-8')
+    for (const field of ['discrimination', 'provenance', 'sims', 'headline', 'scoped_statement']) {
+      expect(serverSrc).toContain(`${field}: z.`) // 名字确实是 MCP 收的字段
+      expect(probe).toMatch(new RegExp(`\`(?:branches\\[\\]\\.)?${field}`)) // 以代码字面点名（headline 写作 branches[].headline）
+    }
+    for (const field of ['discrimination', 'provenance', 'sims', 'headline']) expect(engine).toMatch(new RegExp(`\`(?:branches\\[\\]\\.)?${field}`))
+    expect(probe).toContain('sim:<记录 id>')
+    expect(engine).toContain('sim:<记录 id>')
+    const k3 = readFileSync(join(researchSkillsRoot, 'research-probe/references/k3-audit.md'), 'utf-8')
+    expect(k3).toContain('sim:<记录 id>')
+    expect(k3).toContain('CONTESTED + lead')
+    expect(k3).not.toContain('claim 留 LIVE')
+    for (const source of cardSources()) {
+      expect(source).not.toMatch(/sim:H#`?\s*[·/]\s*`?measured/) // 旧标签形式：MCP 只认 sim:<记录 id>
+      expect(source).not.toMatch(/在 `question` 里标|question 另写/) // 结构字段不写进 question
+    }
+  })
+
+  it('P3a：K3 审计卡覆盖 SUPPORTED 与家族级 REFUTED，只靠 asserted 带的结论封顶 lead；probe 卡能走到它', () => {
+    const k3 = readFileSync(join(researchSkillsRoot, 'research-probe/references/k3-audit.md'), 'utf-8')
+    for (const mark of ['家族级 REFUTED', 'asserted', '`lead`', 'claim_transition{audit}', 'self-reviewed']) {
+      expect(k3).toContain(mark)
+    }
+    expect(readFileSync(join(researchSkillsRoot, 'research-probe/SKILL.md'), 'utf-8')).toContain('references/k3-audit.md')
+  })
+
+  it('P2 + IR-C2：research-loop 无棘轮；K0 一次停顿持久化到工作区 pending 路径；forks=wait 例外与 forks.md 单独成批', () => {
+    const loop = readFileSync(join(researchSkillsRoot, 'research-loop/SKILL.md'), 'utf-8')
+    expect(loop).not.toMatch(/遭遇战|会战/)
+    for (const ref of ['intake-check.md', 'forks.md', 'world-engine.md', 'w5-lessons.md']) expect(loop).toContain(`references/${ref}`)
+    expect(loop).toContain('⑤ `forks: wait`')
+    const excuse = loop.split('\n').find((l) => l.includes('用户没回消息'))!
+    expect(excuse).toContain('forks: wait')
+    const k0 = readFileSync(join(researchSkillsRoot, 'research-loop/references/intake-check.md'), 'utf-8')
+    for (const mark of ['.research-pending/K0-intake.md', 'status: pending_user', 'mode:', 'success_predicate:', 'forks:', 'seed:', '副作用信封', 'N_identify', 'research_init{mode']) {
+      expect(k0).toContain(mark)
+    }
+    const forks = readFileSync(join(researchSkillsRoot, 'research-loop/references/forks.md'), 'utf-8')
+    for (const mark of ['AskUserQuestion', '同一批', '研究分叉 F-a', '解决：… ｜ 成本：… ｜ 仍不确定：…', 'U#:']) {
+      expect(forks).toContain(mark)
+    }
+  })
+
+  it('P2：锚 NEXT 点名的卡都存在（kit 源码里的 research-<slug>/references/<card>.md）', () => {
+    const src = readFileSync(KIT_ANCHOR_PARTS, 'utf-8')
+    expect(src).toContain('research-loop/references/world-engine.md') // 解析失效时别让下面空转
+    expect(missingCardsNamedBy(src, researchSkillsRoot)).toEqual([])
+    expect(missingCardsNamedBy('见 research-loop/references/nope.md', researchSkillsRoot)).toEqual(['research-loop/references/nope.md'])
+  })
+
   it('SE7c：skill-creator / find-skills / tool-builder 默认停用（研究 skill 只走 02§4.4 这条路径）', () => {
     for (const slug of ['skill-creator', 'find-skills', 'tool-builder']) {
       expect(isDefaultInactiveSkill(slug)).toBe(true)
@@ -421,14 +635,14 @@ describe('受管 research 默认 Skills', () => {
 
   it('所有改动过的默认 Research Skills 都递增了 patch 版本', () => {
     const expectedVersions: Record<string, string> = {
-      'research-loop': '0.5.7',
-      'research-abduce': '0.5.3',
-      'research-probe': '0.6.3',
-      'research-grill': '0.4.4',
-      'research-report': '0.4.4',
-      'research-kit': '0.4.2',
-      'research-moves': '0.2.3',
-      'research-scoop': '0.1.1',
+      'research-loop': '0.6.1',
+      'research-abduce': '0.5.4',
+      'research-probe': '0.6.5',
+      'research-grill': '0.4.5',
+      'research-report': '0.4.5',
+      'research-kit': '0.5.1',
+      'research-moves': '0.2.4',
+      'research-scoop': '0.1.2',
     }
     for (const [slug, version] of Object.entries(expectedVersions)) {
       const skill = readFileSync(join(researchSkillsRoot, slug, 'SKILL.md'), 'utf-8')

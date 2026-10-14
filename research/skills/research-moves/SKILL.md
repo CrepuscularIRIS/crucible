@@ -1,7 +1,7 @@
 ---
 name: research-moves
 description: Use when 信念锚出现 ⚠、探针落带外被 server 拒、正要写频段却说不出宽度的推导、或打算投入改进某组件却不知它的贡献上界时。
-version: 0.2.3
+version: 0.2.4
 ---
 
 # research-moves —— 认知移动库

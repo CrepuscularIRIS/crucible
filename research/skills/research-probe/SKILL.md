@@ -1,7 +1,7 @@
 ---
 name: research-probe
 description: Use when 存在 ≥2 条 LIVE 假设有可判别差异、而没有覆盖这个差异的已落地探针时；或 triage 出口要求重新预登记一个探针时。
-version: 0.6.3
+version: 0.6.5
 ---
 
 # research-probe —— 判别性探针
@@ -29,7 +29,7 @@ FAILED 重登一个，代价远小于一条作废的证据链。（赛事模板 
 1. **对象确认**：`research_state` 或锚，找到要判别的 LIVE 假设对（≥2 条）。
    **自查：LIVE 集里有伪影/混杂类无聊对手吗？** 没有 → 先回 research-abduce。
    ✓ 成功条件：能说出这个探针判别哪一对假设。
-2. **SELECT——先比再登**：写出 ≥2 个候选设计（遭遇战 2 个起步，会战更多），
+2. **SELECT——先比再登**：写出 ≥2 个候选设计（depth=light 2 个起步，full 更多），
    第一次为某个研究方向花真实测量成本前，先做
    `references/candidate-screen.md` 六问；失败的是候选问题，不是等待更多 GPU 的
    探针。候选通过后再写设计。
@@ -56,12 +56,14 @@ FAILED 重登一个，代价远小于一条作废的证据链。（赛事模板 
      就重新设计。机制型实验的 negative control 必须预测**下游 outcome metric**回到
      baseline；“把 X 置零后 X=0”只检验定义，不检验机制。
      （纪律：schema 只查 question 非空，这句话的存在与诚实由你负责）
+     判别度、仿真引用、出处、报告首句只写在这里**不算**——宿主只读下面的结构字段。
    - **测量方式，二选一**【结构】：
      - **observe**（世界任务**只收**这一种）：`{world, seed, protocol, reps}`——要判别的
        那次计量观测本身。`probe_run` 由 server 经 meter 执行、扣同一份预算，raw 就是这次
        测量；只收 `metricKind: "json"`、`metricSpec: "spike_count"`【结构】。
        **已观测过的格子（同 world/seed/protocol/blockers）登记即被拒**【结构】：同格计量
-       是确定性的，看过再登记等于给已知数字画频段。探索用 `world_simulate` 免费比候选。
+       是确定性的，看过再登记等于给已知数字画频段。探索用工作目录里的 nbsim 免费比候选
+       （`research-loop` 的 `references/world-engine.md` I2–I4：矩阵、Δ/σ 与 `r*`）。
        **一个格子只许一个预登记，登记后只能经 `probe_run` 测量**【结构】：不能对同一格子
        登记多份频段，也不能先 `world_observe` 偷看已登记的格子。
      - **evalCommand**（非世界任务）：一条确定性命令，指标进 stdout（json 或单行）；
@@ -71,12 +73,24 @@ FAILED 重登一个，代价远小于一条作废的证据链。（赛事模板 
    - **branches**：每个频段对每条假设的处置，**必须有 kill 或 scope**【结构】；
    - **metricKind + metricSpec**：从 stdout 重算指标的规约——`json`（点路径，
      如 `results.accuracy`）或 `regex`（单捕获组）【结构：schema 必填】。
+   - **有 mode 的 run 另填四个结构字段**（缺项不拒；命中分支的 kill / support 落成 `CONTESTED + lead`，
+     见 `references/k3-audit.md` 封顶表；写进 `question` 的同名内容宿主读不到）：
+     - `discrimination`：一句写 `d`、`σ`、`r*`、本次 reps、所用仿真记录 id（缺 → support 封顶）；
+     - `sims[{path, sha256}]`：每个用到的仿真记录，`path` = `sim/<id>.json`（`research-work/<run>/sim/` 下），
+       `sha256` ≥ 12 位——宿主复算，不符即拒；
+     - `provenance{H#: …}`：每条 band 的出处，取 `sim:<记录 id>`（`<id>` = `sims` 里那条记录的文件名去
+       `.json`；不在 `sims` 里即拒）· `measured:P#`（已落地探针）· `asserted` · `invented`；
+       kill / support 目标带不是 `sim:` / `measured:` → 封顶；
+     - `branches[].headline`：该分支命中时报告的第一句（`HYPOTHETICAL`；缺 → 该分支封顶）。
    ✓ 成功条件：prereg_write 返回 pid（sha256 已冻结）。
 4. **`probe_run`**：只执行冻结的测量（observe 走计量、evalCommand 走沙箱）。
    预算耗尽或终局已裁决时 observe 探针被拒、不扣费。非零退出记 FAILED、不落地——不是惩罚，
    是保护：崩溃与干净结果不可区分，FAILED 永不做终态依据。改命令 = 新探针。
    ✓ 成功条件：锚里探针行出现 LANDED + metric（或 FAILED）。
-5. **应用 branches**：`claim_transition` 把被杀/被收窄的送进坟场。
+5. **应用 branches**：`claim_transition` 把被杀/被收窄的送进坟场。有 mode 的 run 里 SCOPED 是
+   narrowed，必须带 `scoped_statement`（收窄后仍存活的陈述；它留在竞争里、可再入 bands）。迁到
+   SUPPORTED、或否定一个**机制家族**之前，先过 `references/k3-audit.md`（W2 审计，迁移带 `audit`）；
+   被封顶的迁移落成 `CONTESTED + lead`，claim 仍是活对手（锚的 `LEAD` 段）。
    落带外 → server 拒绝并路由：**立即打开 `research-moves` 的
    `references/triage.md` 执行强制分诊**（伪影→bug→方差→已知→真实意外，
    以 journal 落地终结，没有第四个出口）。
@@ -132,6 +146,7 @@ bwrap 内执行：文件系统只读（中间文件只能写 `/tmp`，结果走 
 
 ## 参考索引
 
+- `references/k3-audit.md` —— 迁移前审计：SUPPORTED 与家族级 REFUTED，封顶表
 - `references/candidate-screen.md` —— 六问候选 gate 与贡献上限
 - `references/coherence-dry-run.md` —— 数据流、微型演算、退化输入、claim 映射、
   独立朴素基线

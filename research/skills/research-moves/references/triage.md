@@ -25,7 +25,7 @@ LIVE 假设的 predicts 冲突。
 
 | 判定 | 出口（必须执行，不是建议） |
 |---|---|
-| **伪影 / bug**（台阶 1–2） | 修好命令或代码后 `prereg_write` 一个**新探针**（改命令 = 新探针），question 里写明旧探针 P# 的失效原因。旧探针不适用 branches，不做终态依据。 |
+| **伪影 / bug**（台阶 1–2） | 修好命令或代码后 `prereg_write` 一个**新探针**（改命令 = 新探针），question 里写明旧探针 P# 的失效原因。旧探针不适用 branches，不做终态依据。另在 RULINGS.md 记一行系统故障草稿（S 台账，`S-draft: <组件> · <P#>`）；这种探针永不作终态依据，永不写进 lessons.md，也不进 refine；只有系统 bug（MCP、meter、`world_simulate`、nbsim 生成器）才暂停该分支——你自己的命令或代码写错，修好就继续。 |
 | **方差**（台阶 3） | 频段宽度写错了：按 `derive.md` 重推一个宽度诚实的频段，`prereg_write` 新探针。这次带外会显示在报告的校准段（`research_kit.calibration`）——照实写。 |
 | **已知**（台阶 4） | 落成 `attack_record`（kind=constraint："残差由已知现象 X 产生，设计未控制它"，附出处线索）→ 下一个 prereg 带对应控制臂；若它使 claim 在本战役不可判 → 收窄声明素材送 research-report。 |
 | **真实意外**（台阶 5） | **强制 `claim_propose`**：statement 主张一个产生该残差的机制，predicts 引用观测值（"观测 X=v 落在全部 LIVE 频段外；本假设主张机制 M 产生它，另预测 Y"），conflicts 点名它冲击的假设。 |

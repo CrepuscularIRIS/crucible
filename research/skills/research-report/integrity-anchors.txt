@@ -1,0 +1,6 @@
+integrity|数字只能来自 metric_recompute 且必须带 (P#) 出处；写完 REPORT 同一回合内 declare；
+integrity|gate 红了改报告或补实验，绝不动 journal 与 register
+integrity|没有 (P#) 出处的小数整行被拒。
+integrity|不要为了过 reconcile 把小数改成整数
+epistemic|LIVE 且未检验照写 LIVE——这不丢人；把 LIVE 写成 SUPPORTED 才丢人。
+epistemic|从不写"不存在"

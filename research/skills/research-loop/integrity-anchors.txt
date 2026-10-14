@@ -1,0 +1,6 @@
+integrity|信念只经 MCP 工具改变 · 预登记之前不观测 · 只有落地测量能终结 claim · 用户喊停即停
+integrity|**战役完成 = `mcp__research__report_declare` 收到三道 gate 裁决事件。**
+integrity|父会话始终是唯一 Research 状态写入者。
+integrity|held-out 不可观测；forecast 只一次
+integrity|永不静默批准
+epistemic|频段有宽度、互斥对、kill/scope 分支

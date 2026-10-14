@@ -87,15 +87,16 @@ research_kit.field(job, "verdict")                             # 按字段取，
   写到 `<job>-self/out.md`，末行 `STATUS: ok SELF_REVIEWED PATH: …`——它被接受，但结论
   只按降级（`lead`）使用，RULING 标 `self-reviewed`。
 - **第二轮 = 新作业目录**，把上一轮 out.md 列为输入；不续聊旧 child。
+- **仿真输出**：brief 要求 child 仿真时，它的第二个合法输出是
+  `research-work/<run>/sim/<nonce>-<id>.json`，out.md 只列这些路径。
 
 ## 两种调用的不变量
 
 - **父会话是唯一 Research 状态写入者。** child 不调用会改变 claim、prereg、
   probe、attack、report 或 journal 的 Research MCP 工具，也不改
   `.proma-research/`（作业目录 `.rlm-jobs/` 在它之外，out.md 照写）。父会话读取 report 后自己裁决、落账。
-- **RLM：** 用 Prime 原生
-  `rlm.harness.get('subagent', 'proma-research-<role>', global_=True).content` 读取
-  完整角色契约，写进作业目录的 `brief.md`，按上文"RLM 作业"spawn（`name` 用
+- **RLM：** 读路由块给出的 `research-roles/proma-research-<role>.md`（宿主受管的角色契约，
+  绝对路径在每回合的路由块里），连同任务写进作业目录的 `brief.md`，按上文"RLM 作业"spawn（`name` 用
   `new_job` 给的 nonce 名）；省略 `model`。
   `rlm()` 返回准入句柄，不返回研究答案。同一 turn 内 `wait`，再从 out.md 读结果。
 - **Collaboration：** `delegate_agent` 传对应 `role`，省略 `modelId`；需要结果

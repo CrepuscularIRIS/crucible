@@ -16,6 +16,7 @@ from itertools import combinations
 from pathlib import Path
 from typing import Any
 
+from . import anchor_parts
 from .jobs import collect, field, job_name, new_job, parse_status, wait
 
 LAST: str = ""
@@ -80,11 +81,13 @@ def counters(run: str) -> dict[str, Any]:
     - ``landed_since_transition``：最近一次信念变化（claim.transition 或
       claim.propose）之后成功落地（exit 0）的探针数。连续落地而信念不动 =
       装饰性探针流。
-    - ``attack_debt``：未清偿的 new_h/constraint 攻击数（清偿事件按 kind 分开，
+    - ``attack_debt``：未清偿的 new_h/constraint 攻击数。mode run 读 register 的
+      ``debts``（MCP 按 claim 记）；legacy 按 journal 代理计（清偿事件按 kind 分开，
       见 ``_CLEARS_*``）。债未清不开新方向（research-loop 纪律的可数形式）。
     - ``deaths_by_probe``：REFUTED/SCOPED 按 by_probe 分组。同一探针杀死多条
       假设，说明它们可能不是独立机制。
-    - ``live`` / ``graveyard``：存量。
+    - ``live`` / ``graveyard``：存量；mode run 的 ``live`` 是活集（含 lead / narrowed /
+      SUPPORTED，与 MCP ``isAlive`` 一致），legacy 只数 LIVE。
     - ``concluded``：已有通过的 gate 裁决（战役已结案，提示不再触发）。
     """
     events = _journal(run)
@@ -116,18 +119,22 @@ def counters(run: str) -> dict[str, Any]:
             or (e.get("kind") == "constraint" and i > last_constraint_clear)
         )
     )
+    reg = _register(run)
+    if isinstance(reg.get("debts"), list):
+        # mode run：MCP 按 claim 记债（点名该 claim 的 prereg / report_declare 才清），以它为准
+        attack_debt = len(reg["debts"])
     deaths: dict[str, int] = {}
     for e in events:
         if e.get("op") == "claim.transition" and e.get("to") in ("REFUTED", "SCOPED"):
             pid = str(e.get("by_probe") or "?")
             deaths[pid] = deaths.get(pid, 0) + 1
-    reg = _register(run)
     verdicts = reg.get("gateVerdicts", [])
+    mode = anchor_parts.intake(reg, events)["mode"]
     return {
         "landed_since_transition": landed_since,
         "attack_debt": attack_debt,
         "deaths_by_probe": deaths,
-        "live": sum(1 for c in reg.get("claims", []) if c.get("state") == "LIVE"),
+        "live": len(anchor_parts.alive_claims(reg, mode)),
         "graveyard": len(reg.get("graveyard", [])),
         "concluded": bool(verdicts) and bool(verdicts[-1].get("passed")),
     }
@@ -168,28 +175,43 @@ def _counter_lines(c: dict[str, Any]) -> list[str]:
 
 
 def anchor(run: str) -> str:
-    """紧凑信念锚（≈1k token）：LIVE 一行一条 · graveyard 禁令体 · 探针 · 攻击计数
-    · 元认知计数器（命中阈值时带 ⚠ 调度提示）。
+    """紧凑信念锚（≈1k token）：MODE/谓词 · LIVE · 约束块（坟场禁令 · LIVE (narrowed) · 等价类 ·
+    lessons）· 探针 · 攻击计数 · 元认知计数器（命中阈值时带 ⚠）· nugget · NEXT 行。
 
     graveyard 按 Arbor constraints-block 的教训渲染成**禁令**而非数据：
-    重提共享同一隐藏假设的想法必须在 conflicts 里明确反驳该教训。
+    重提共享同一隐藏假设的想法必须在 conflicts 里明确反驳该教训。有 mode 的 run 里活集与 MCP
+    `isAlive` 一致（LIVE ∪ CONTESTED ∪ SUPPORTED ∪ narrowed SCOPED）：被封顶的终态请求渲染成 LEAD 段、
+    SCOPED 渲染成 LIVE (narrowed)，都不进禁令，也都算进 NEXT 的存活数。
     """
+    root = _root(run)
     reg = _register(run)
-    lines: list[str] = [f"== 信念锚 · {reg.get('run', run)} =="]
+    events = _journal(run)
+    info = anchor_parts.intake(reg, events)
+    base = anchor_parts.base_dir(root)
+    through, lessons = anchor_parts.read_lessons(base, root.name)
+    nugget, equiv = anchor_parts.read_rulings(base)
+    lines: list[str] = [f"== 信念锚 · {reg.get('run', run)} ==", anchor_parts.mode_line(info)]
 
-    live = [c for c in reg.get("claims", []) if c.get("state") == "LIVE"]
+    alive = anchor_parts.alive_claims(reg, info["mode"])
+    narrowed = [c for c in alive if c.get("state") == "SCOPED"]
+    lead = [c for c in alive if c.get("lead") and c.get("state") == "CONTESTED"]
+    live = [c for c in alive if c not in narrowed and c not in lead]
     lines.append(f"LIVE ({len(live)}):")
     for c in live:
         predicts = " | ".join(c.get("predicts", []))
-        lines.append(f"  {c['id']}: {c.get('statement', '')} → {predicts}")
+        tag = "" if c.get("state") == "LIVE" else f" [{c.get('state')}]"
+        lines.append(f"  {c['id']}{tag}: {c.get('statement', '')} → {predicts}")
+    lines.extend(anchor_parts.lead_lines(lead))
 
-    graveyard = reg.get("graveyard", [])
+    alive_ids = {c["id"] for c in alive} if info["mode"] else set()
+    graveyard = [g for g in reg.get("graveyard", []) if g["id"] not in alive_ids]
     if graveyard:
         lines.append(f"GRAVEYARD ({len(graveyard)}) —— 以下方向已死，禁止换装重提；"
                      "复活/相邻想法必须点名反驳其死因：")
         for g in graveyard:
             by = f"（{g.get('byProbe')}）" if g.get("byProbe") else ""
             lines.append(f"  {g['id']} {g.get('state', '')}{by}: {g.get('statement', '')}")
+    lines.extend(anchor_parts.constraint_lines(narrowed, equiv, lessons))
 
     probes = reg.get("probes", [])
     if probes:
@@ -201,7 +223,16 @@ def anchor(run: str) -> str:
     attacks = reg.get("attacks", [])
     lines.append(f"ATTACKS: {len(attacks)} 条 typed 攻击在案")
 
-    lines.extend(_counter_lines(counters(run)))
+    c = counters(run)
+    lines.extend(_counter_lines(c))
+    if nugget:
+        lines.append(f"NUGGET: {nugget}")
+    elif info["mode"] == "open" and not c["concluded"]:
+        lines.append("⚠ nugget 行为空 → RULINGS.md 写一行 nugget: <一句洞见>（HYPOTHETICAL，O7）")
+    synthesis = None if c["concluded"] else anchor_parts.synthesis_line(events, through, root.name)
+    if synthesis:
+        lines.append(synthesis)
+    lines.append(anchor_parts.next_line(info["mode"], reg, events, c, root.name, equiv))
 
     global LAST
     LAST = "\n".join(lines)

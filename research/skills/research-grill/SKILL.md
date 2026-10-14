@@ -1,7 +1,7 @@
 ---
 name: research-grill
 description: Use when LIVE 或 SUPPORTED 假设尚未挨过对抗攻击、有新落地证据未被攻击检验、或候选要花高成本前需要独立 idea gauntlet 时。
-version: 0.4.4
+version: 0.4.5
 ---
 
 # research-grill —— 对抗检验
@@ -57,6 +57,9 @@ Collaboration child。信息不对称是结构：对抗者看得到主张与证�
 
    Collaboration 的落点放项目根下（如 `<项目根>/.grill-drops/H1/attacks.md`）。
 
+   identify（锚 `MODE: identify`）把模板的四镜头换成三个：**可辨识性**（两组参数给出同样的读数？）/
+   **噪声模型**（读数分布与仿真同族吗？）/ **未覆盖协议**（哪个协议段或阻断剂组合没进矩阵？）。
+
    ✓ 成功条件：spawn 前 prompt 里已有字面绝对路径；没有任何"从环境变量找"
    或"稍后告诉你"的指示。
 3. **回收原文**：父会话直接攻击时保留四镜头原句；RLM 在 `wait` 返回后用
@@ -67,7 +70,7 @@ Collaboration child。信息不对称是结构：对抗者看得到主张与证�
    `continue_delegation`。不要短间隔轮询。
    ✓ 成功条件：拿到攻击行原文（跳过 `#` 开头的 SCOPE-ONLY 行——那是收窄
    声明素材，送 research-report，不落 attack_record）。
-4. **逐条落账**：站得住的攻击逐条 `attack_record`：
+4. **逐条落账**：站得住的攻击逐条 `attack_record`，带 `target: H#`（债绑定到被攻击的 claim）：
    - `new_h`：混合/总体替代解释 → 回 `research-abduce` 登记成正式假设，
      conflicts 点名它攻击的主张；
    - `constraint`：被设计忽略的边界条件 → 进下一个 prereg 的控制臂；

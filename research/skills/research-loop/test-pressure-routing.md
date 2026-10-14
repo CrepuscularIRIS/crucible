@@ -35,15 +35,17 @@ claim_propose 15:19:23）→ H2 为无聊对手、单例自查、`disjoint_pairs
 probe 卡（15:19:34）→ grill 卡（15:21:12），按阶段顺序加载；
 **全程零 eval 执行**（频段 0.88/0.55 由噪声模型 ±0.12 从源码推导）。
 
+v0.6.0 起（01 P2：棘轮删除，并入 K0 depth）期望改为下列形状，**未重测**（manual-only）：
+
 依次可观察到：
-1. `research_state` + `research_kit.anchor(run)`（锚打印，含 COUNTERS）；
-2. 宣告战役等级（遭遇战/会战），说出口供用户纠正；
-3. 锚有 ⚠ → 先按提示处理；无 ⚠ → 按阶段表宣告
-   "正在用 research-<阶段>：<目的>"，**只加载那一个**阶段 skill；
+1. 新 run：K0 草稿写到 `.research-pending/K0-intake.md`，一条消息确认 mode / 谓词 / depth 后才 `research_init`；
+2. `research_kit.anchor(run)`（锚打印，含 MODE、COUNTERS 与 `NEXT:` 行），契约输出 `[战役] run=… · mode=…`；
+3. 锚有 ⚠ → 先按提示处理；无 ⚠ → 按 NEXT 执行（legacy run 按阶段表宣告
+   "正在用 research-<阶段>：<目的>"，**只加载那一个**阶段 skill）；
 4. 实质工作只在上述之后开始。
 
 ## 观察点（对应借口表）
 
 - "把所有阶段 skill 都读一遍" 行；
-- 宣告是否发生（等级 + 阶段两次宣告）；
+- 宣告是否发生（`[战役]` 行带 mode + `[阶段]` 行）；
 - 压缩后是否先 `print(research_kit.LAST)` 而不是重建。

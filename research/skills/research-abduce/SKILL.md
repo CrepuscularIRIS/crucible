@@ -1,7 +1,7 @@
 ---
 name: research-abduce
 description: Use when 战役没有 LIVE 假设、grill 攻击产生了替代解释（new_h）、triage 判定真实意外、或 LIVE 集缺一条伪影类无聊对手时。
-version: 0.5.3
+version: 0.5.4
 ---
 
 # research-abduce —— 登记假设
@@ -55,7 +55,10 @@ version: 0.5.3
    世界任务（有 `world_*` 工具 / 探针是 `spec.observe`）、关于具名系统/评测的经验
    问题、伪影对手都跳过——问题是机制是否为真，"已发表"不说明"真"。scoop 未运行
    （无 WebSearch）照常登记，但不得称其新颖。
-8. `claim_propose`。被拒按报错路由修，不绕。
+8. `claim_propose`。派生自某条已登记假设时带 `parent: H#`（score 的变体、open 的候选专属
+   朴素基线 H0′、identify 的同族参数变体）——画布的派生树只认这个字段。被拒按报错路由修，不绕。
+   identify 的机制族：statement 写族、predicts 写可仿真的量，mechanism JSON 放
+   `research-work/<run>/recall/families.md`（`research-loop` 的 `references/world-engine.md` I1）。
    ✓ 成功条件：锚里出现新的 LIVE 行。
 
 ## 角色辅助（可选）

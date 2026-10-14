@@ -11,7 +11,7 @@ description: >-
   claim with evidence (research-grill), to score idea quality (research-grill
   references/idea-quality.md), for artifact/confound rival hypotheses, or for a
   general literature review.
-version: 0.1.1
+version: 0.1.2
 ---
 
 # research-scoop: prior-work collision gate

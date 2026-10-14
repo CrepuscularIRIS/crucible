@@ -1,7 +1,7 @@
 ---
 name: research-kit
 description: Use when 在 kernel 里需要读信念状态时——立锚/计数器、构造对抗者视图、比较探针判别力、出校准账本、回收子代理攻击；或给 rlm 窗口建作业目录、阻塞等待并回收 out.md。
-version: 0.4.2
+version: 0.5.1
 ---
 
 # research-kit —— kernel 侧只读工具箱
@@ -23,7 +23,7 @@ gate 抓住【结构】；本模块写不了，也不要绕。
 ## API
 
 ```python
-research_kit.anchor(run)             # ~1k token 信念锚（含 COUNTERS 与 ⚠ 提示）；存 research_kit.LAST
+research_kit.anchor(run)             # ~1k token 信念锚：MODE/谓词 · LIVE · 约束块 · COUNTERS/⚠ · NUGGET · NEXT；存 research_kit.LAST
 research_kit.LAST                    # 上次 anchor 结果（kernel 变量，跨压缩存活）
 research_kit.counters(run)           # 元认知计数器 dict：落地未迁移/攻击债/同探针死亡/存量
 research_kit.claim_view(run, "H1")   # 对抗者上下文：claim+证据+graveyard，无 notes
@@ -47,6 +47,20 @@ research_kit.parse_status(line)          # 解析 STATUS 行（out.md 末行或�
 run 名——同一 cell 里含 `.proma-research` 的路径会让隔离守卫连带拦下写 brief.md。
 读的是派生缓存 `register.json`；`counters`（及 anchor 的 COUNTERS 段）额外
 只读 `journal.jsonl`。与 `research_state` 有分歧时以后者为准。
+
+## 锚里的 P2 段（都只读）
+
+| 段 | 来源 | 意思 |
+|---|---|---|
+| `MODE:` | `research_init` 冻结的 mode / 成功谓词 / depth（journal 的 run.init） | 没有 mode = `legacy`，走 research-loop 阶段表 |
+| `LIVE (n)` | 有 mode 的 run：活集（与 MCP `isAlive` 同一定义）里不是 lead / narrowed 的；非 LIVE 带 `[状态]` | legacy 只列 LIVE |
+| `LEAD (n)` | CONTESTED 且带 `lead{requested, caps}` 的 claim（终态请求被宿主封顶） | 仍是活对手：不进坟场禁令，计入 NEXT 的存活数；补上 caps 指的东西后可重迁 |
+| `LIVE (narrowed)` | SCOPED 的 claim（有 mode 的 run；显示 scoped_statement） | 收窄后的活对手，可入 bands；不进坟场禁令 |
+| `COUNTERS` | 攻击债：有 mode 的 run 读 register 的 `debts`（按 claim）；LIVE= 是活集大小 | legacy 照旧按 journal 计 |
+| `EQUIV (RULING)` | `RULINGS.md` 最新一行 `equiv{H#, …}` | 等价类出口；覆盖全部 LIVE 时算"收缩到等价类" |
+| `LESSONS` | `research-work/<run>/lessons.md` 的 `- [global\|direction\|leaf] …` 行 | 本 run 教训；global = 本 run 全局 |
+| `NUGGET:` | `RULINGS.md` 最新一行 `nugget: …` | open 下为空时打 ⚠ |
+| `NEXT:` | 状态 + mode | 一步动作 · in 路径 · out 路径 · why；`NEXT: synthesize lessons` 按 lessons.md 的 `through-seq:` 与 journal 计数 |
 ⚠ 提示的调度表在 `research-moves` 的 SKILL.md。
 
 ## collect_attacks 的落点约定
