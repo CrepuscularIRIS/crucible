@@ -9,6 +9,8 @@ import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import { IPC_CHANNELS, CHANNEL_IPC_CHANNELS, CHAT_IPC_CHANNELS, AGENT_IPC_CHANNELS, ENVIRONMENT_IPC_CHANNELS, INSTALLER_IPC_CHANNELS, PROXY_IPC_CHANNELS, GITHUB_RELEASE_IPC_CHANNELS, SYSTEM_PROMPT_IPC_CHANNELS, CHAT_TOOL_IPC_CHANNELS, FEISHU_IPC_CHANNELS, DINGTALK_IPC_CHANNELS, WECHAT_IPC_CHANNELS, AUTOMATION_IPC_CHANNELS, PLANNING_IPC_CHANNELS, AGENT_ISLAND_IPC_CHANNELS } from '@proma/shared'
 import { USER_PROFILE_IPC_CHANNELS, SETTINGS_IPC_CHANNELS, SCRATCH_PAD_IPC_CHANNELS, APP_ICON_IPC_CHANNELS, DOCK_BADGE_IPC_CHANNELS, STORAGE_IPC_CHANNELS } from '../types'
 import { parseAgentSendIpcArguments } from '../common/agent-send-input'
+import { RESEARCH_RECORD_IPC_CHANNELS } from '../types/research-record'
+import type { ResearchArchiveEntry, ResearchInterveneInput, ResearchInterveneResult, ResearchRecordSnapshot } from '../types/research-record'
 import type {
   RuntimeStatus,
   GitRepoStatus,
@@ -553,6 +555,18 @@ export interface ElectronAPI {
   getRefineState: (sessionId: string) => Promise<import('@proma/shared').AgentRefineState>
   /** 读取 RLM（ipython kernel）供给状态（P0.1） */
   getRlmSupply: () => Promise<import('@proma/shared').AgentRlmSupplyState>
+  /** 研究记录（04 §2，轨道 R1）：会话的实时快照（无 run 目录时 null），并开始推送 */
+  getResearchRecord: (sessionId: string) => Promise<ResearchRecordSnapshot | null>
+  /** 停止该会话的研究记录推送（画布卸载时调用） */
+  releaseResearchRecord: (sessionId: string) => Promise<void>
+  /** 白名单根下的研究归档 */
+  listResearchArchives: (sessionId?: string) => Promise<ResearchArchiveEntry[]>
+  /** 打开归档（只读回放，路径须在白名单根内） */
+  openResearchArchive: (path: string, sessionId?: string) => Promise<ResearchRecordSnapshot>
+  /** 记一次人的干预并翻闸门；返回的 send 由调用方用现有发送 API 执行 */
+  interveneResearch: (input: ResearchInterveneInput) => Promise<ResearchInterveneResult>
+  /** 研究记录变化推送 */
+  onResearchRecordChanged: (callback: (data: { sessionId: string; snapshot: ResearchRecordSnapshot | null }) => void) => () => void
 
   /** 迁移 Chat 对话记录到 Agent 会话 */
   migrateChatToAgent: (conversationId: string, agentSessionId: string) => Promise<void>
@@ -1778,6 +1792,26 @@ const electronAPI: ElectronAPI = {
   },
   getRlmSupply: (): Promise<import('@proma/shared').AgentRlmSupplyState> => {
     return ipcRenderer.invoke(AGENT_IPC_CHANNELS.GET_RLM_SUPPLY)
+  },
+  getResearchRecord: (sessionId: string) => {
+    return ipcRenderer.invoke(RESEARCH_RECORD_IPC_CHANNELS.GET_RECORD, sessionId)
+  },
+  releaseResearchRecord: (sessionId: string) => {
+    return ipcRenderer.invoke(RESEARCH_RECORD_IPC_CHANNELS.RELEASE_RECORD, sessionId)
+  },
+  listResearchArchives: (sessionId?: string) => {
+    return ipcRenderer.invoke(RESEARCH_RECORD_IPC_CHANNELS.LIST_ARCHIVES, sessionId)
+  },
+  openResearchArchive: (path: string, sessionId?: string) => {
+    return ipcRenderer.invoke(RESEARCH_RECORD_IPC_CHANNELS.OPEN_ARCHIVE, path, sessionId)
+  },
+  interveneResearch: (input: ResearchInterveneInput) => {
+    return ipcRenderer.invoke(RESEARCH_RECORD_IPC_CHANNELS.INTERVENE, input)
+  },
+  onResearchRecordChanged: (callback: (data: { sessionId: string; snapshot: ResearchRecordSnapshot | null }) => void) => {
+    const listener = (_: unknown, data: { sessionId: string; snapshot: ResearchRecordSnapshot | null }): void => callback(data)
+    ipcRenderer.on(RESEARCH_RECORD_IPC_CHANNELS.RECORD_CHANGED, listener)
+    return () => { ipcRenderer.removeListener(RESEARCH_RECORD_IPC_CHANNELS.RECORD_CHANGED, listener) }
   },
   deleteAgentSession: (id: string) => {
     return ipcRenderer.invoke(AGENT_IPC_CHANNELS.DELETE_SESSION, id)

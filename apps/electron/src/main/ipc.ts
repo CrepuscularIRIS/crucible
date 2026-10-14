@@ -282,8 +282,11 @@ import {
   cleanupStaleAttachedPaths,
   searchAgentSessionMessages,
   searchAgentSessionReferences,
+  resolveAgentCwd,
 } from './lib/agent-session-manager'
-import { runAgent, stopAgent, generateAgentTitle, saveFilesToAgentSession, saveFilesToWorkspaceFiles, isAgentSessionActive, isAgentSessionBusy, reserveAgentSessionStart, queueAgentMessage, enqueueAgentQueuedMessage, cancelAgentQueuedMessage, moveAgentQueuedMessage, clearAgentQueuedMessages, updateAgentPermissionMode, rewindAgentSession, setVisibleAgentSession , refineAgentSession, getAgentRefineState } from './lib/agent-service'
+import { runAgent, stopAgent, generateAgentTitle, saveFilesToAgentSession, saveFilesToWorkspaceFiles, isAgentSessionActive, isAgentSessionBusy, reserveAgentSessionStart, queueAgentMessage, enqueueAgentQueuedMessage, cancelAgentQueuedMessage, moveAgentQueuedMessage, clearAgentQueuedMessages, updateAgentPermissionMode, rewindAgentSession, setVisibleAgentSession , refineAgentSession, getAgentRefineState, agentEventBus } from './lib/agent-service'
+import { configureResearchRecord, getRecord as getResearchRecord, releaseRecord as releaseResearchRecord, handleAgentEvent as handleResearchAgentEvent, handleAskUserAnswered as handleResearchAskUserAnswered, intervene as interveneResearch, listArchives as listResearchArchives, openArchive as openResearchArchive } from './lib/research-record-service'
+import { RESEARCH_RECORD_IPC_CHANNELS, type ResearchInterveneInput } from '../types/research-record'
 import { permissionService } from './lib/agent-permission-service'
 import { askUserService } from './lib/agent-ask-user-service'
 import { exitPlanService } from './lib/agent-exit-plan-service'
@@ -2265,6 +2268,29 @@ export function registerIpcHandlers(): void {
     }
   )
 
+  // 研究记录（04 §2 / §3.7，轨道 R1）：快照 + 推送 + 干预。推送走 webContents.send，web-bridge 自动镜像。
+  configureResearchRecord({
+    resolveCwd: (sessionId) => {
+      const meta = getAgentSessionMeta(sessionId)
+      const ws = meta?.workspaceId ? getAgentWorkspace(meta.workspaceId) : undefined
+      return resolveAgentCwd(ws, sessionId, meta?.agentCwdMode, meta?.activeWorktree)
+    },
+    isRunning: isAgentSessionActive,
+    push: (sessionId, snapshot) => {
+      for (const win of BrowserWindow.getAllWindows()) {
+        if (!win.isDestroyed()) win.webContents.send(RESEARCH_RECORD_IPC_CHANNELS.RECORD_CHANGED, { sessionId, snapshot })
+      }
+    },
+    // 开发时 app 路径 = apps/electron → 仓库的 research/campaigns；打包后不存在即忽略
+    archiveRoots: [join(app.getAppPath(), '..', '..', 'research', 'campaigns')],
+  })
+  agentEventBus.on(handleResearchAgentEvent)
+  ipcMain.handle(RESEARCH_RECORD_IPC_CHANNELS.GET_RECORD, (_, sessionId: string) => getResearchRecord(sessionId))
+  ipcMain.handle(RESEARCH_RECORD_IPC_CHANNELS.RELEASE_RECORD, (_, sessionId: string) => releaseResearchRecord(sessionId))
+  ipcMain.handle(RESEARCH_RECORD_IPC_CHANNELS.LIST_ARCHIVES, (_, sessionId?: string) => listResearchArchives(sessionId))
+  ipcMain.handle(RESEARCH_RECORD_IPC_CHANNELS.OPEN_ARCHIVE, (_, path: string, sessionId?: string) => openResearchArchive(path, sessionId))
+  ipcMain.handle(RESEARCH_RECORD_IPC_CHANNELS.INTERVENE, (_, input: ResearchInterveneInput) => interveneResearch(input))
+
   // RLM（P0.1）：读取 ipython kernel 供给状态，供 UI 显示可用性/引导安装
   ipcMain.handle(
     AGENT_IPC_CHANNELS.GET_RLM_SUPPLY,
@@ -3192,6 +3218,7 @@ export function registerIpcHandlers(): void {
       const sessionId = askUserService.respondToAskUser(requestId, answers)
 
       if (sessionId) {
+        handleResearchAskUserAnswered(sessionId, requestId, answers)
         event.sender.send(AGENT_IPC_CHANNELS.STREAM_EVENT, {
           sessionId,
           payload: { kind: 'proma_event', event: { type: 'ask_user_resolved', requestId } },

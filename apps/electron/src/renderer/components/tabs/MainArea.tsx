@@ -34,6 +34,8 @@ import { interfaceVariantAtom } from '@/atoms/theme'
 import { cn } from '@/lib/utils'
 import { browserPanelMinimizedMapAtom, browserPanelOpenMapAtom, browserPendingNavigationMapAtom, browserStateMapAtom } from '@/atoms/browser-atoms'
 import { BrowserPanel } from '@/components/browser/BrowserPanel'
+import { researchCanvasOpenMapAtom } from '@/atoms/research-atoms'
+import { ResearchCanvasPane } from '@/components/research/ResearchCanvasPane'
 
 export function MainArea(): React.ReactElement {
   // 记录每个会话上次停留的视图（对话 / 预览），供切回时重建预览 Tab
@@ -111,6 +113,12 @@ export function MainArea(): React.ReactElement {
   const scratchPanelOpen = useAtomValue(scratchPadPanelOpenAtom)
   const showScratchPanel =
     activeTab?.type === 'agent' && scratchPanelOpen && activeView === 'conversations' && !showBrowserPanel
+  // 研究画布占草稿的槽位：与浏览器、草稿互斥，可与预览并排（04 §3.1 / Q8）
+  const [researchCanvasOpenMap, setResearchCanvasOpenMap] = useAtom(researchCanvasOpenMapAtom)
+  const showResearchCanvas =
+    !!previewSessionId && (researchCanvasOpenMap.get(previewSessionId) ?? false) &&
+    activeView === 'conversations' && !showBrowserPanel && !showScratchPanel
+  const showSecondRightPanel = showScratchPanel || showResearchCanvas
 
   // 关闭动画状态：当 previewOpen 从 true → false 时，播放退出动画再移除 DOM
   // 在 render 阶段同步派生 closing，避免中间帧出现 flex: 1 1 auto 导致左侧瞬间跳到 100% 宽
@@ -136,8 +144,8 @@ export function MainArea(): React.ReactElement {
 
   const showPreview = (previewOpen || closing) && previewSessionId && activeView === 'conversations'
   const showPreviewClosingOnly = closing && !previewOpen
-  const showPreviewPane = !!showPreview && !(showPreviewClosingOnly && showScratchPanel)
-  const showBothRightPanels = showPreviewPane && showScratchPanel
+  const showPreviewPane = !!showPreview && !(showPreviewClosingOnly && showSecondRightPanel)
+  const showBothRightPanels = showPreviewPane && showSecondRightPanel
 
   const handlePreviewDragStart = React.useCallback((e: React.MouseEvent) => {
     e.preventDefault()
@@ -243,7 +251,7 @@ export function MainArea(): React.ReactElement {
 
   // 左侧容器宽度：右侧工作区打开时固定占 splitRatio；其他情况（含 closing 动画期间）
   // 直接 1 1 auto 占满——closing 时右侧 absolute 脱离 flex 流，所以左侧自然占 100%。
-  const showRightPanel = showBrowserPanel || showScratchPanel || showPreviewPane
+  const showRightPanel = showBrowserPanel || showSecondRightPanel || showPreviewPane
   const leftFlexStyle: React.CSSProperties = showRightPanel
     ? { flex: `0 0 calc(${splitRatio * 100}% - 6px)` }
     : { flex: '1 1 auto' }
@@ -299,13 +307,13 @@ export function MainArea(): React.ReactElement {
           {/* 右侧：预览/草稿工作区。Preview 和草稿可在同一右侧槽位内并排显示。 */}
           {showRightPanel && (
             <div
-              className={cn(closing && !showScratchPanel ? 'animate-preview-slide-out' : 'flex flex-1 min-w-0')}
-              style={closing && !showScratchPanel ? closingOverlayStyle : undefined}
+              className={cn(closing && !showSecondRightPanel ? 'animate-preview-slide-out' : 'flex flex-1 min-w-0')}
+              style={closing && !showSecondRightPanel ? closingOverlayStyle : undefined}
               onAnimationEnd={(e) => {
                 if (closing && e.target === e.currentTarget) setClosingState(false)
               }}
             >
-              {!(closing && !showScratchPanel) && (
+              {!(closing && !showSecondRightPanel) && (
                 <div
                   className="w-[8px] cursor-col-resize bg-border/40 hover:bg-primary/30 active:bg-primary/50 transition-colors flex-shrink-0 self-stretch"
                   onMouseDown={handlePreviewDragStart}
@@ -344,6 +352,14 @@ export function MainArea(): React.ReactElement {
                 {showScratchPanel && (
                   <div className="min-w-0 h-full overflow-hidden" style={scratchPaneStyle}>
                     <ScratchPadPane onClose={handleCloseScratchPanel} />
+                  </div>
+                )}
+                {showResearchCanvas && previewSessionId && (
+                  <div className="min-w-0 h-full overflow-hidden" style={scratchPaneStyle}>
+                    <ResearchCanvasPane
+                      sessionId={previewSessionId}
+                      onClose={() => setResearchCanvasOpenMap((previous) => { const next = new Map(previous); next.set(previewSessionId, false); return next })}
+                    />
                   </div>
                 )}
               </div>
