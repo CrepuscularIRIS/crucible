@@ -17,13 +17,16 @@
  * 钉死在 <cwd>/.proma-research/<run>/ 内），不跨目录泄漏。
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import {
+  closeSync, constants, existsSync, fstatSync, lstatSync, mkdirSync, openSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync,
+} from 'node:fs'
 import { spawnSync } from 'node:child_process'
-import { join } from 'node:path'
+import { basename, dirname, join, relative, resolve } from 'node:path'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod'
 import { requireSandbox, resolveResearchDenyRoots, runSandboxedEval } from './sandbox.js'
+import { diffKernelEnv, takeKernelEnvSnapshot, treeSha256, type KernelEnvSnapshot } from './env-snapshot.js'
 import { runPreregGate } from '../gates/prereg.js'
 import { runReconcileGate } from '../gates/reconcile.js'
 import { runTraceGate } from '../gates/trace.js'
@@ -44,9 +47,16 @@ import {
   validateProbeSpec,
   writeRegisterSnapshot,
   type Band,
+  type JournalEvent,
   type ObserveSpec,
   type ProbeSpec,
 } from './state.js'
+
+/**
+ * 候选模式拒绝的首行固定前缀（02 §11.4 接口 6，D → A）：轨道 A 在 NON_LEARNABLE_MCP_RESIDUALS
+ * 里匹配它——这条拒绝属于 integrity（拒绝文本本身就是出口），不可学。
+ */
+export const CANDIDATE_MOVED_PREFIX = '候选仿真已移到工作目录'
 
 /** 每次调用时解析：测试与宿主可在进程启动后变更工作目录。 */
 function serverCwd(): string {
@@ -56,6 +66,48 @@ function serverCwd(): string {
 function resolveRun(run: string): string {
   assertRunAllowed(run)
   return runDir(serverCwd(), sanitizeRunName(run))
+}
+
+/** agent 的工作目录 <cwd>/research-work/<run>/：REPORT.md、lessons.md、nbsim 都在这里，状态根之外。 */
+function workDir(run: string): string {
+  return join(serverCwd(), 'research-work', sanitizeRunName(run))
+}
+
+type ReportSource = { source: string } & ({ text: string } | { link: 'symlink' | 'hardlink' })
+
+/**
+ * 读声明源，不跟随任何链接：末段 O_NOFOLLOW + fstat（普通文件、nlink 1），目录段 realpath 必须等于字面路径。
+ * 跟随 = 宿主替 agent 把别处的文件（deny 根里的真相、journal）复制进 run 目录。不存在返回 undefined。
+ */
+function readReportSource(file: string): ReportSource | undefined {
+  const source = relative(serverCwd(), file)
+  try {
+    lstatSync(file)
+  } catch {
+    return undefined
+  }
+  if (realpathSync(dirname(file)) !== resolve(realpathSync(serverCwd()), dirname(source))) return { source, link: 'symlink' }
+  let fd: number
+  try {
+    fd = openSync(file, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK)
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ELOOP') return { source, link: 'symlink' }
+    throw error
+  }
+  try {
+    const stat = fstatSync(fd)
+    if (!stat.isFile()) throw new ResearchStateError(`报告不是普通文件: ${source}`)
+    if (stat.nlink > 1) return { source, link: 'hardlink' }
+    return { source, text: readFileSync(fd, 'utf-8') }
+  } finally {
+    closeSync(fd)
+  }
+}
+
+/** 宿主自己的文件：先摘掉同名（可能是链接），再 O_EXCL 新建，绝不写穿。 */
+function writeFresh(file: string, text: string): void {
+  rmSync(file, { force: true })
+  writeFileSync(file, text, { encoding: 'utf-8', flag: 'wx' })
 }
 
 /**
@@ -105,6 +157,76 @@ function readFrozenSpec(root: string, pid: string): ProbeSpec {
 
 function inBand(value: number, band: Band): boolean {
   return value >= band[0] && value <= band[1]
+}
+
+/** 宿主复算 nbsim 树 sha：目录没了记 missing；万一仍抛记 unreadable——verify 必须落 journal（审查 H-A）。 */
+function currentTreeSha(path: string): string {
+  try {
+    return treeSha256(path) ?? 'missing'
+  } catch (error) {
+    return `unreadable:${error instanceof Error ? error.message : String(error)}`
+  }
+}
+
+/** K0 基线：第一条可用的 env.snapshot（之后再 init 不覆盖它）。 */
+function kernelEnvBaseline(events: JournalEvent[]): KernelEnvSnapshot | undefined {
+  return events.find((event) => event.op === 'env.snapshot' && !('unavailable' in event)) as KernelEnvSnapshot | undefined
+}
+
+interface ReportCap {
+  /** 写进 gate.verdict.caps 的机器码 */
+  code: 'env_drift' | 'world_env_mismatch' | 'forecast_missing' | 'report_link'
+  /** 报告里已有这段就不再追加（重复 declare 不叠行） */
+  marker: string
+  /** 追加到报告末尾的宿主文本：不带小数、不带 H#，以后离线重跑 reconcile 也不会红 */
+  line: string
+}
+
+/**
+ * K7 的封顶项（gate 通过之后算；只封顶，不拒）：
+ * - env_drift（02 SE7a）：K0 快照与现在的 kernel 环境不同，写 env.drift，结论按 lead 读；
+ *   K7 时拿不到快照也算漂移（无法核对 = 不能当没变）。K0 本就不可用时不核对、不封顶。
+ * - world_env_mismatch（03 A6）：forecast 时宿主复算 nbsim 树 sha 不符。
+ * - forecast_missing：碰过 world 的 run 没有 world.forecast——三道 gate 不看终局，
+ *   不能让一份没有 held-out 预报的报告静默地以"完整"结束。
+ * - report_link（审查 H1 余项）：declare 的报告源是符号链接或多重硬链接——拒绝跟随（不复制），
+ *   记 report.link；此后本 run 每次声明都封顶（有人试过让报告与别的文件共享内容）。
+ */
+function reportCaps(root: string): ReportCap[] {
+  const caps: ReportCap[] = []
+  const baseline = kernelEnvBaseline(readJournal(root))
+  if (baseline) {
+    const now = takeKernelEnvSnapshot(process.env.PROMA_KERNEL_PYTHON, serverCwd())
+    const changed = now.available ? diffKernelEnv(baseline, now.snapshot) : [`unavailable: ${now.reason}`]
+    if (changed.length > 0) {
+      // 重复 declare：同一漂移只记一次，封顶行指向那一条
+      let seq = readJournal(root).findLastIndex((event) => event.op === 'env.drift'
+        && JSON.stringify(event.changed) === JSON.stringify(changed)) + 1
+      if (seq === 0) {
+        appendEvent(root, 'env.drift', { changed })
+        seq = readJournal(root).length
+      }
+      const marker = '⚠ kernel 环境在 run 中变化'
+      caps.push({ code: 'env_drift', marker, line: `${marker}（journal seq ${seq}）：本报告的结论按 \`lead\` 读` })
+    }
+  }
+  const events = readJournal(root)
+  // 任何一次不符都封顶：篡改后再 info 重建出同 sha 的树，最后一次 verify 会是 match:true（审查 H3）
+  const verifyIndex = events.findIndex((event) => event.op === 'world.env.verify' && event.match === false)
+  if (verifyIndex >= 0) {
+    const marker = '⚠ 工作目录里的 nbsim 在 run 中被改动'
+    caps.push({ code: 'world_env_mismatch', marker, line: `${marker}（journal seq ${verifyIndex + 1}）：由它仿真得出的数字按 \`lead\` 读` })
+  }
+  const linkIndex = events.findIndex((event) => event.op === 'report.link')
+  if (linkIndex >= 0) {
+    const marker = '⚠ 报告文件是链接'
+    caps.push({ code: 'report_link', marker, line: `${marker}（journal seq ${linkIndex + 1}）：本 run 曾试图从链接声明报告，结论按 \`lead\` 读` })
+  }
+  if (events.some((event) => event.op.startsWith('world.')) && !events.some((event) => event.op === 'world.forecast')) {
+    const marker = '⚠ 本 run 未提交 world_forecast'
+    caps.push({ code: 'forecast_missing', marker, line: `${marker}：报告不含 held-out 终局预报，按未完成的 world 任务读` })
+  }
+  return caps
 }
 
 // zod 仅供 MCP 参数解包；严格的语义校验在 validateProbeSpec（state.ts）。
@@ -191,7 +313,7 @@ export function buildServer(): McpServer {
       throw new ResearchStateError(
         `该格子已观测过（${observe.world}/seed ${observe.seed}/${observe.protocol}${blockers ? `/${blockers}` : ''}）：`
         + '同格计量是确定性的，看过再登记等于给已知答案画频段 → research-probe：换一个未观测的协议/阻断剂组合，'
-        + '或用 world_simulate 免费比较候选后再登记',
+        + '或先免费仿真比较候选再登记（仿真入口见 world_simulate 的 mode=info）',
       )
     }
   }
@@ -246,6 +368,53 @@ export function buildServer(): McpServer {
     return proc.stdout
   }
 
+  /**
+   * F1-T2：经 meter 的 `env` 子命令在 <cwd>/research-work/<run>/nbsim 生成 / 复用剥离真相的仿真包，
+   * 宿主自己复算树 sha 写进 world.env（同一份不重复记）。meter 没有 env 子命令（轨道 E 未合入）
+   * 或生成失败 → 返回 undefined，info 与候选模式都按旧行为走（接口 7 的回落）。
+   */
+  function ensureSimEnv(root: string, run: string, world: string, seed: number, ledger: string) {
+    const out = join(workDir(run), 'nbsim')
+    mkdirSync(dirname(out), { recursive: true })
+    // 审查 H3：meter 会把改过 / 删掉的树换成干净的同 sha 树，forecast 时的 verify 就看不见篡改。
+    // 重建前宿主先复算上一份 world.env；不符就在这里记 verify{match:false}（meter 的 replaced 只作附注）
+    const prev = readJournal(root).findLast((event) => event.op === 'world.env')
+    const before = prev ? currentTreeSha(String(prev.path)) : undefined
+    const proc = spawnSync(
+      'python3',
+      [METER, '--ledger', ledger, '--budget', String(EVAL_BUDGET), 'env', world, String(seed), '--out', out],
+      { encoding: 'utf-8', timeout: 120_000 },
+    )
+    let meta: Record<string, unknown> = {}
+    try {
+      if (proc.status === 0) meta = JSON.parse(proc.stdout) as Record<string, unknown>
+    } catch { /* 输出不是 JSON：与失败同样回落 */ }
+    const replaced = typeof meta.replaced === 'string' ? meta.replaced : undefined
+    // 换 world 时 meter 也会挪开旧树（task.json 不同）：那不是篡改，篡改已由 before 复算看见（审查 MEDIUM）
+    if (prev && (before !== prev.sha256 || (replaced && prev.world === world))) {
+      appendEvent(root, 'world.env.verify', {
+        match: false, expected: prev.sha256, actual: before, at: 'info', ...(replaced ? { replaced } : {}),
+      })
+    }
+    const path = typeof meta.path === 'string' ? meta.path : undefined
+    const digest = path ? treeSha256(path) : undefined
+    if (!path || !digest) {
+      console.error(`[proma-research] nbsim 未生成，world_simulate 按旧行为（候选模式可用）：${proc.stderr?.trim().split('\n').pop() ?? proc.error?.message ?? 'meter env 无输出'}`)
+      return undefined
+    }
+    const last = readJournal(root).findLast((event) => event.op === 'world.env')
+    if (last?.sha256 !== digest || last?.path !== path) {
+      appendEvent(root, 'world.env', {
+        world, seed, path, sha256: digest,
+        nb_commit: meta.nb_commit, generator_version: meta.generator_version,
+        ...(typeof meta.sha256 === 'string' && meta.sha256 !== digest ? { meter_sha256: meta.sha256 } : {}),
+      })
+    }
+    // 只给 sys.path，不给 pip install -e：后者会触发 SE7a 的 env.drift 封顶与 guard 的装包拒绝
+    const importHint = `import sys; sys.path.insert(0, ${JSON.stringify(dirname(path))}); import ${basename(path)}`
+    return { path, sha256: digest, import_hint: importHint }
+  }
+
   // ── 类别 1：信念状态读写 ────────────────────────────────────────────
 
   server.tool(
@@ -256,8 +425,15 @@ export function buildServer(): McpServer {
       const root = resolveRun(run)
       mkdirSync(root, { recursive: true })
       appendEvent(root, 'run.init', { run: sanitizeRunName(run) })
+      // SE7a K0：kernel 环境快照进 journal（受哈希链保护）；已有可用快照的 run 不重拍，免得重开洗掉漂移
+      let envNote = ''
+      if (!kernelEnvBaseline(readJournal(root))) {
+        const snap = takeKernelEnvSnapshot(process.env.PROMA_KERNEL_PYTHON, serverCwd())
+        appendEvent(root, 'env.snapshot', snap.available ? { ...snap.snapshot } : { unavailable: snap.reason })
+        if (!snap.available) envNote = `\n⚠ kernel 环境快照不可用（${snap.reason}）：本 run 的环境漂移无法核对`
+      }
       freshRegister(root)
-      return { content: [{ type: 'text', text: `run 已初始化: ${root}` }] }
+      return { content: [{ type: 'text', text: `run 已初始化: ${root}${envNote}` }] }
     },
   )
 
@@ -511,37 +687,70 @@ export function buildServer(): McpServer {
 
   server.tool(
     'report_declare',
-    '声明报告并当庭过三道 gate（P3.2：declare 即裁决）：prereg/reconcile/trace 全绿才写入声明与 gate.verdict；任何一道红则拒绝声明并逐条给出理由',
+    '声明报告并当庭过三道 gate（P3.2：declare 即裁决）：path 是 <cwd>/research-work/<run>/ 下的报告文件（默认写 REPORT.md）；'
+    + '宿主把它复制进 run 目录（不跟随链接）再跑 prereg/reconcile/trace，全绿才写入声明与 gate.verdict；任何一道红则拒绝声明并逐条给出理由',
     { run: z.string(), path: z.string() },
     async ({ run, path }) => {
       const root = resolveRun(run)
       requireInit(root)
       const normalizedPath = path.replace(/\\/g, '/')
-      const reportPath = confined(root, normalizedPath)
-      if (!existsSync(reportPath)) throw new ResearchStateError(`报告不存在: ${path}`)
-      const digest = sha256(readFileSync(reportPath, 'utf-8'))
-
-      // 先裁决后落笔：红报告不产生任何 journal 事件（声明失败 ≠ 声明了一个坏报告）
-      const verdicts = [
-        runPreregGate(root),
-        runReconcileGate(root, { path: normalizedPath, sha256: digest }),
-        runTraceGate(root),
-      ]
-      const failures = verdicts.flatMap((v) => v.failures)
-      if (failures.length > 0) {
-        const lines = failures.map((f) => `✗ [${f.gate}] ${f.reason}`)
+      const workPath = `research-work/${sanitizeRunName(run)}/${normalizedPath}`
+      // agent 只在 research-work 写；run 目录里已有的普通文件只认旧 run（迁移前写在状态根内的报告）
+      const found = readReportSource(confined(workDir(run), normalizedPath)) ?? readReportSource(confined(root, normalizedPath))
+      if (!found) {
+        throw new ResearchStateError(`报告不存在：先把报告写成 ${workPath}（研究工作目录内、.proma-research/ 之外），再调 report_declare`)
+      }
+      if ('link' in found) {
+        appendEvent(root, 'report.link', { path: found.source, link: found.link })
         throw new ResearchStateError(
-          `报告未通过 gate，拒绝声明：\n${lines.join('\n')}`
-          + '\n→ 逐条修复 REPORT.md（或回 research-probe 补实验）后重调 report_declare'
-          + '（Proma 工具名 mcp__research__report_declare）；终局只能由 declare 裁决',
+          `报告源是${found.link === 'symlink' ? '符号链接' : '多重硬链接'}，拒绝跟随：${found.source}。`
+          + `把正文直接写成普通文件 ${workPath} 后重调 report_declare；已记 report.link，本 run 之后的声明按 \`lead\` 封顶（report_link）`,
         )
       }
 
-      appendEvent(root, 'report.declare', { path: normalizedPath, sha256: digest })
-      appendEvent(root, 'gate.verdict', { passed: true, report: normalizedPath, prereg: true, reconcile: true, trace: true })
-      freshRegister(root)
-      return {
-        content: [{ type: 'text', text: `报告已声明（sha256 ${digest.slice(0, 12)}…）；三道 gate 全绿：prereg ✓ reconcile ✓ trace ✓` }],
+      // 先在 run 目录里落一份暂存副本，gate 就跑在它上面；红则删掉——run 目录里的 REPORT.md 永远是最后一次声明的
+      const copy = join(root, 'REPORT.md')
+      const staging = join(root, '.REPORT.md.declaring')
+      try {
+        writeFresh(staging, found.text)
+        const verdicts = [
+          runPreregGate(root),
+          runReconcileGate(root, { path: basename(staging), sha256: sha256(found.text) }),
+          runTraceGate(root),
+        ]
+        const failures = verdicts.flatMap((v) => v.failures)
+        if (failures.length > 0) {
+          const lines = failures.map((f) => `✗ [${f.gate}] ${f.reason}`)
+          throw new ResearchStateError(
+            `报告未通过 gate，拒绝声明：\n${lines.join('\n')}`
+            + `\n→ 逐条修复 ${workPath}（或回 research-probe 补实验）后重调 report_declare`
+            + '（Proma 工具名 mcp__research__report_declare）；终局只能由 declare 裁决',
+          )
+        }
+
+        // K7 封顶（gate 只封顶结论，不拒）：理由进 journal，宿主文本在算 sha256 之前追加到副本末尾（源不动）
+        const caps = reportCaps(root)
+        const missing = caps.filter((cap) => !found.text.includes(cap.marker))
+        const declaredText = missing.length > 0
+          ? `${found.text.trimEnd()}\n\n${missing.map((cap) => cap.line).join('\n')}\n`
+          : found.text
+        if (missing.length > 0) writeFresh(staging, declaredText)
+        renameSync(staging, copy) // 换名：copy 处原有的链接只是被替换，不被写穿
+        const declaredDigest = sha256(declaredText)
+        appendEvent(root, 'report.declare', { path: 'REPORT.md', sha256: declaredDigest, source: found.source })
+        appendEvent(root, 'gate.verdict', {
+          passed: true, report: 'REPORT.md', prereg: true, reconcile: true, trace: true,
+          ...(caps.length > 0 ? { caps: caps.map((cap) => cap.code) } : {}),
+        })
+        freshRegister(root)
+        const capNote = caps.length > 0
+          ? `\n封顶（结论按 lead 读或报告不完整；宿主文本已追加到 run 目录的 REPORT.md 末尾）：${caps.map((cap) => cap.code).join(', ')}`
+          : ''
+        return {
+          content: [{ type: 'text', text: `报告已声明（sha256 ${declaredDigest.slice(0, 12)}…）；三道 gate 全绿：prereg ✓ reconcile ✓ trace ✓${capNote}` }],
+        }
+      } finally {
+        rmSync(staging, { force: true })
       }
     },
   )
@@ -623,7 +832,7 @@ export function buildServer(): McpServer {
 
     server.tool(
       'world_simulate',
-    '对自提候选机制跑生成模型（免费、不触真细胞、不扣预算）：给出 {extra:[{name,g,E,mvh,mk,mtau,mpow,hvh?,hk?,htau?,hpow?}], slow_na} 与协议标签，返回候选的 test 窗尖峰数。mode=info 时返回题面（text_prior、协议池、held-out 标签、参考模型）',
+    'mode=info（默认）返回题面（text_prior、协议池、held-out 标签、参考模型），可用时另给 sim_env：工作目录里剥离真相的 nbsim 仿真包（任意协议段、阻断剂、held-out，reps 不设上限，免费）。mode=candidate 是旧的候选仿真（给 {extra:[{name,g,E,mvh,mk,mtau,mpow,hvh?,hk?,htau?,hpow?}], slow_na} 与协议标签），本 run 已有 sim_env 时拒绝并指向 nbsim',
     {
       run: z.string(),
       world: z.string(),
@@ -650,7 +859,18 @@ export function buildServer(): McpServer {
         )
         if (proc.status !== 0) throw new ResearchStateError(proc.stderr?.trim() || 'meter info 失败')
         appendEvent(root, 'world.info', { world, seed })
-        return { content: [{ type: 'text', text: proc.stdout }] }
+        const simEnv = ensureSimEnv(root, run, world, seed, ledger)
+        // problem() 原样透传；sim_env 只加在返回包装上（03 §5：不扩张 meter 的 info 键集合）
+        const text = simEnv ? JSON.stringify({ ...JSON.parse(proc.stdout), sim_env: simEnv }) : proc.stdout
+        return { content: [{ type: 'text', text }] }
+      }
+      // 两条仿真路径会给出不同的数（MCP 版只认标签、reps ≤20、无种子）；本 run 有 nbsim 就只留一条。拒绝不写 journal
+      const simEnvEvent = readJournal(root).findLast((event) => event.op === 'world.env')
+      if (simEnvEvent) {
+        throw new ResearchStateError(
+          `${CANDIDATE_MOVED_PREFIX}：import nbsim（路径见 world_simulate(mode=info) 的 sim_env；本 run：${String(simEnvEvent.path)}）；`
+          + 'nbsim.simulate(mech, segments, reps, seed=…, block=…)，reps 不设上限，可仿真任意协议段与 held-out',
+        )
       }
       if (!protocol || !mechanism) {
         throw new ResearchStateError('候选模拟需要 protocol 与 mechanism（JSON 字符串）→ 先 mode=info 拿协议标签')
@@ -715,6 +935,14 @@ export function buildServer(): McpServer {
         spike_forecast_mse: result.spike_forecast_mse,
         budget_spent: worldState.spent,
       })
+      // 03 A6：forecast 时宿主复算工作目录 nbsim 的树 sha；不符只在 declare 时封顶，不拒。
+      // ponytail: info 之后篡改、仿真、再还原，到 forecast 时树已复原——按设计看不见；
+      // 上限是只在 info / forecast 两个时点复算，升级路径是 kernel 侧每次 import nbsim 时上报树 sha。
+      const simEnvEvent = readJournal(root).findLast((event) => event.op === 'world.env')
+      if (simEnvEvent) {
+        const actual = currentTreeSha(String(simEnvEvent.path))
+        appendEvent(root, 'world.env.verify', { match: actual === simEnvEvent.sha256, expected: simEnvEvent.sha256, actual })
+      }
       // 邻近反馈：forecast 成功 ≠ 终局。机器可读的下一步指令，避免长上下文里遗忘 declare。
       return {
         content: [{

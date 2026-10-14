@@ -85,6 +85,14 @@ export interface JournalEvent {
     | 'world.observe'
     | 'world.simulate'
     | 'world.forecast'
+    // 02 SE7a：K0 kernel 环境快照（research_init）与 K7 重算出的漂移（report_declare，只封顶）。
+    | 'env.snapshot'
+    | 'env.drift'
+    // 03 F1-T2：工作目录 nbsim 的生成记录（info）与 forecast 时的宿主复算（不符只封顶）。
+    | 'world.env'
+    | 'world.env.verify'
+    // 审查 H1 余项：declare 的报告源是符号链接 / 多重硬链接（拒绝跟随；此后本 run 的声明封顶）。
+    | 'report.link'
   [key: string]: unknown
 }
 

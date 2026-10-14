@@ -63,6 +63,18 @@ describe('受管 Research MCP', () => {
     })
   })
 
+  it('SE7a：把 kernel python 传给 MCP 做 K0/K7 环境快照（显式 > Prime 钉死 > Prime 默认 venv）', () => {
+    const entry = { PROMA_RESEARCH_MCP_ENTRY: '/runtime/research-server.ts' }
+    const kernelPython = (env: Record<string, string>) =>
+      (buildManagedResearchMcpServer('/ws', { ...entry, ...env })?.env as Record<string, string>).PROMA_KERNEL_PYTHON
+    expect(kernelPython({ PROMA_KERNEL_PYTHON: '/a/python', PRIME_AGENT_KERNEL_PYTHON: '/b/python' })).toBe('/a/python')
+    expect(kernelPython({ PRIME_AGENT_KERNEL_PYTHON: '/b/python', HOME: '/home/u' })).toBe('/b/python')
+    expect(kernelPython({ PRIME_AGENT_KERNEL_VENV: '/venvs/k', HOME: '/home/u' })).toBe('/venvs/k/bin/python')
+    expect(kernelPython({ HOME: '/home/u' })).toBe('/home/u/.prime/agent/kernel-venv/bin/python')
+    // 什么都推不出来时不注入：MCP 记 env.snapshot{unavailable}，不阻止
+    expect(kernelPython({})).toBeUndefined()
+  })
+
   it('能力摘要让新工作区立即看见受管 MCP，但不泄露运行机路径', () => {
     expect(listManagedResearchMcpCapability({
       PROMA_RESEARCH_MCP_ENTRY: '/private/runtime/research-server.ts',

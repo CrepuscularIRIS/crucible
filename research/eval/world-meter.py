@@ -15,6 +15,10 @@
   python3 world-meter.py --ledger L --budget B observe   WORLD SEED LABEL [--reps R] [--blockers b1,b2]
   python3 world-meter.py --ledger L --budget B simulate  WORLD SEED LABEL --mechanism JSON [--reps R]
   python3 world-meter.py --ledger L --budget B forecast  WORLD SEED --counts JSON
+  python3 world-meter.py --ledger L --budget B env       WORLD SEED --out DIR
+    （F1：在 DIR 生成剥离真相的 nbsim 包，只读；同 sha 已存在则复用。stdout =
+     {path, sha256, nb_commit, generator_version, files}，被改过的旧目录挪到旁边时另带 replaced；
+     不扣预算、不写 ledger、不含 world 名）
 """
 from __future__ import annotations
 
@@ -125,7 +129,7 @@ def main() -> None:
         help="由 Research MCP 从权威 journal 重放得到；ledger 仅为展示",
     )
     sub = ap.add_subparsers(dest="cmd", required=True)
-    for name in ("info", "observe", "simulate", "forecast"):
+    for name in ("info", "observe", "simulate", "forecast", "env"):
         p = sub.add_parser(name)
         p.add_argument("world")
         p.add_argument("seed", type=int)
@@ -137,6 +141,8 @@ def main() -> None:
                 p.add_argument("--mechanism", required=True, help="JSON: {extra:[{...Chan}], slow_na:bool}")
         if name == "forecast":
             p.add_argument("--counts", required=True, help="JSON: 每个 held-out 协议的预测 test-window 尖峰数")
+        if name == "env":
+            p.add_argument("--out", required=True, help="nbsim 目录，通常 <cwd>/research-work/<run>/nbsim")
     args = ap.parse_args()
 
     entries = _load_ledger(args.ledger)
@@ -144,6 +150,15 @@ def main() -> None:
     # 不得覆盖——server 传入的过期计数曾让并发 observe 全部放行（12/8 事故）。
     spent = max(_spent(entries), args.budget_spent or 0)
     base = {"ts": _now(), "cmd": args.cmd, "world": args.world, "seed": args.seed}
+
+    if args.cmd == "env":
+        import nbsim_strip  # 同目录；生成器与泄漏检查见 03 §3
+        try:
+            out = nbsim_strip.build(Path(_NB_ROOT), args.world, Path(args.out))
+        except (ValueError, nbsim_strip.AllowlistError) as e:
+            raise SystemExit(f"env 失败：{e}")
+        print(json.dumps(out, ensure_ascii=False))
+        return
 
     if args.cmd == "info":
         world = nb.load_world(args.world, seed=args.seed)

@@ -23,6 +23,19 @@ function resolveStartupTimeout(value: string | undefined): number {
 }
 
 /**
+ * 研究会话 kernel 的 python：显式 PROMA_KERNEL_PYTHON > PRIME_AGENT_KERNEL_PYTHON >
+ * Prime 默认 venv（PRIME_AGENT_KERNEL_VENV 或 ~/.prime/agent/kernel-venv）。
+ * ponytail: 不跟 Prime 的 XDG 回落目录（只在主目录不可写时启用）；推错时 MCP 记 unavailable，不阻止。
+ */
+function resolveKernelPython(env: RuntimeEnvironment): string | undefined {
+  const explicit = normalizedValue(env.PROMA_KERNEL_PYTHON) ?? normalizedValue(env.PRIME_AGENT_KERNEL_PYTHON)
+  if (explicit) return explicit
+  const venv = normalizedValue(env.PRIME_AGENT_KERNEL_VENV)
+    ?? (normalizedValue(env.HOME) && `${normalizedValue(env.HOME)}/.prime/agent/kernel-venv`)
+  return venv ? `${venv}/bin/python` : undefined
+}
+
+/**
  * 从部署环境构造 Research MCP。入口路径由交付环境提供，仓库不写死开发机路径；
  * cwd 则按每个 Agent 会话动态绑定，避免多个会话共享研究账本。
  */
@@ -52,6 +65,8 @@ export function buildManagedResearchMcpServer(
     ...(normalizedValue(env.PROMA_EVAL_METER) && {
       PROMA_EVAL_METER: normalizedValue(env.PROMA_EVAL_METER),
     }),
+    // 02 SE7a：K0/K7 kernel 环境快照用的 python，与 Prime kernel/bootstrap 的解析顺序一致
+    ...(resolveKernelPython(env) && { PROMA_KERNEL_PYTHON: resolveKernelPython(env) }),
   } as Record<string, string>
 
   return {

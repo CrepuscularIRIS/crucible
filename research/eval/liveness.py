@@ -29,6 +29,9 @@ KIT_RE = re.compile(r"research_kit\.(\w+)\s*\(")
 MOVE_RE = re.compile(r"references/(triage|reframe|oracle|derive)\.md")
 BENCHMARK_IMPORT_RE = re.compile(r"(?:^|[;\n]\s*)(?:from|import)\s+neuronbench\b", re.I)
 METER_EXEC_RE = re.compile(r"world-meter\.py", re.I)
+# F1（03 §6）：工作目录 nbsim 的使用面。nbsim 是剥离真相的仿真包，不是泄漏。
+NBSIM_IMPORT_RE = re.compile(r"(?:^|[;\n]\s*)(?:from|import)\s+nbsim\b")
+NBSIM_SIMULATE_RE = re.compile(r"\bnbsim\.simulate\s*\(")
 
 
 def truth_leak_categories(code: str) -> list[str]:
@@ -78,9 +81,15 @@ def analyze(events: list[dict], eval_pattern: str | None = None) -> dict:
     first_prereg: str | None = None
     first_exec: str | None = None      # 首次执行评测命令（F1 侦测用）
     truth_leaks: list[str] = []
+    # 会话头的 rlmDepth > 0（或 parentSession）= rlm child 会话；父 / 子分开计数
+    side = "parent"
+    nbsim = {"parent": {"import": 0, "simulate": 0}, "child": {"import": 0, "simulate": 0}}
 
     for ev in events:
         ts = ev.get("timestamp", "")
+        if ev.get("type") == "session":
+            side = "child" if (ev.get("rlmDepth") or 0) > 0 or ev.get("parentSession") else "parent"
+            continue
         if ev.get("type") == "child_usage_attributed":
             children.append(ts)
             continue
@@ -111,6 +120,8 @@ def analyze(events: list[dict], eval_pattern: str | None = None) -> dict:
                         value for value in arguments.values() if isinstance(value, str))
                 else:
                     code = json.dumps(arguments, ensure_ascii=False)
+                nbsim[side]["import"] += len(NBSIM_IMPORT_RE.findall(code))
+                nbsim[side]["simulate"] += len(NBSIM_SIMULATE_RE.findall(code))
                 for category in truth_leak_categories(code):
                     if category not in truth_leaks:
                         truth_leaks.append(category)
@@ -147,6 +158,7 @@ def analyze(events: list[dict], eval_pattern: str | None = None) -> dict:
         "routing_ok": bool(loop_ts and first_mcp and loop_ts < first_mcp),
         # 调度层活性：只调 research_state 而不 anchor，⚠ 计数器层是死的（P5.1 F3）
         "anchor_used": kit.get("anchor", 0) > 0,
+        "nbsim": nbsim,
         "truth_leak": {
             "detected": bool(truth_leaks),
             "matches": truth_leaks,
@@ -177,6 +189,9 @@ def main() -> int:
     print(f"rlm() 子代理落账                 : {report['rlm_children']}")
     leak = report["truth_leak"]
     print(f"kernel/bash 真值访问             : {'FAIL ' + ','.join(leak['matches']) if leak['detected'] else 'PASS'}")
+    nbs = report["nbsim"]
+    print(f"nbsim import / simulate(（父｜子） : {nbs['parent']['import']}/{nbs['parent']['simulate']}"
+          f" | {nbs['child']['import']}/{nbs['child']['simulate']}")
     preview = report["prereg_preview"]
     print(f"预登记前执行评测命令（F1）        : "
           f"{'未测（需 --eval-pattern=）' if preview is None else ('⚠ 违规' if preview else '否')}")

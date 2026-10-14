@@ -16,6 +16,7 @@ import { fileURLToPath } from 'node:url'
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js'
+import { treeSha256 } from './env-snapshot'
 import { buildServer } from './server'
 import { detectSandboxSupply, resetSandboxSupplyCacheForTest, runSandboxedEval } from './sandbox'
 
@@ -39,6 +40,8 @@ beforeAll(async () => {
 })
 
 afterAll(() => {
+  // F1：meter env 生成的 nbsim 是只读的（文件 0444、目录 0555），先恢复写权限再删
+  spawnSync('chmod', ['-R', 'u+w', researchCwd])
   rmSync(researchCwd, { recursive: true, force: true })
   delete process.env.PROMA_RESEARCH_CWD
   if (originalDeny === undefined) delete process.env.PROMA_RESEARCH_DENY
@@ -160,7 +163,14 @@ describe('计量接口（EVAL-PLAN §1.3）', () => {
     })
     expect(problemKeysProcess.status).toBe(0)
     const problemKeys = new Set(JSON.parse(problemKeysProcess.stdout) as string[])
-    expect(Object.keys(info).every((key) => problemKeys.has(key))).toBe(true)
+    // sim_env 是 server 的返回包装（F1-T2），不是 meter info 的键；problem() 本身不扩张
+    expect(Object.keys(info).filter((key) => key !== 'sim_env').every((key) => problemKeys.has(key))).toBe(true)
+    // 轨道 E 的生成器已合入时：宿主复算的树 sha（D）与 meter 报告的（E）是同一个数
+    const simEnv = info.sim_env as { path: string; sha256: string } | undefined
+    if (simEnv) {
+      expect(simEnv.sha256).toBe(treeSha256(simEnv.path)!)
+      expect(simEnv.sha256).toBe(JSON.parse(readFileSync(join(simEnv.path, 'MANIFEST.json'), 'utf-8')).tree_sha256)
+    }
     expect(String(info.text_prior).length).toBeGreaterThan(0)
     expect(Array.isArray(info.test_protocol_labels)).toBe(true)
     const journal = readFileSync(join(researchCwd, '.proma-research', 'meter-info', 'journal.jsonl'), 'utf-8')

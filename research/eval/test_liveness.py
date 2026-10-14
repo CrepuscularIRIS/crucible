@@ -1,11 +1,15 @@
-"""P6.0b liveness 的 truth-leak 回归测试。"""
+"""P6.0b liveness 的 truth-leak 回归测试；F1-T4 的 nbsim 活性与 journal_metrics 仿真计数。"""
 
 from __future__ import annotations
 
+import json
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
-from research.eval.liveness import analyze
+from journal_metrics import bundle_metrics
+from liveness import analyze
 
 
 def assistant_tool(code: str, tool: str = "ipython") -> dict:
@@ -75,6 +79,46 @@ class TruthLeakTests(unittest.TestCase):
             "detected": False,
             "matches": [],
         })
+
+
+class NbsimLivenessTests(unittest.TestCase):
+    CODE = "import sys; sys.path.insert(0, 'research-work/r1')\nimport nbsim\nr = nbsim.simulate(m, seg, 64, seed=1)"
+
+    def test_parent_nbsim_import_and_simulate_are_counted(self) -> None:
+        report = analyze([assistant_tool(self.CODE)])
+        self.assertEqual(report.get("nbsim"), {
+            "parent": {"import": 1, "simulate": 1},
+            "child": {"import": 0, "simulate": 0},
+        })
+
+    def test_child_session_counts_separately(self) -> None:
+        header = {"type": "session", "id": "c", "timestamp": "t", "cwd": "/w", "rlmDepth": 1}
+        report = analyze([header, assistant_tool(self.CODE)])
+        self.assertEqual(report.get("nbsim"), {
+            "parent": {"import": 0, "simulate": 0},
+            "child": {"import": 1, "simulate": 1},
+        })
+
+    def test_nbsim_import_is_not_a_truth_leak(self) -> None:
+        report = analyze([assistant_tool(self.CODE)])
+        self.assertFalse(report["truth_leak"]["detected"])
+
+
+class JournalMetricsSimSourceTests(unittest.TestCase):
+    def test_sim_calls_read_world_env_and_sim_records(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            arm = Path(tmp) / "campaign" / "arm"
+            (arm / "run").mkdir(parents=True)
+            sim = arm / "research-work" / "r1" / "sim"
+            sim.mkdir(parents=True)
+            for i in range(3):
+                (sim / f"s{i}.json").write_text(json.dumps({"counts_mean": 1.0, "reps": 64}))
+            events = [{"op": "run.init", "run": "r1", "ts": "2026-10-14T00:00:00Z"},
+                      {"op": "world.env", "sha256": "ab" * 32, "ts": "2026-10-14T00:01:00Z"}]
+            (arm / "run" / "journal.jsonl").write_text("".join(json.dumps(e) + "\n" for e in events))
+            metrics = bundle_metrics(arm)
+        self.assertEqual(metrics["sim_calls"], 3)
+        self.assertEqual(metrics["sim_env"], "ab" * 6)
 
 
 if __name__ == "__main__":

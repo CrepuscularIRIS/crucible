@@ -4,7 +4,9 @@
 Recomputes, with zero LLM calls, the claims the report makes about a run:
   - forecast traceability (declared forecast vs journal-observed means)
   - held-out protocols (forecast protocols never simulated = honest generalization)
-  - duplicate simulate rate, claim funnel, attack kinds
+  - simulation volume: legacy MCP `world.simulate` events + F1 nbsim records
+    (BUNDLE/research-work/<run>/sim/*.json) and the `world.env` sha; duplicate
+    simulate rate (legacy events only), claim funnel, attack kinds
   - prereg / report sha256 integrity, gate verdict
   - external nudges (user messages that are not runtime context)
 
@@ -87,6 +89,13 @@ def nudge_count(session_path: Path) -> tuple[int, int]:
     return nudges, total
 
 
+def _is_sim_record(path: Path) -> bool:
+    try:
+        return "counts_mean" in json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, TypeError):
+        return False
+
+
 def find_run_dirs(bundle: Path) -> list[Path]:
     """Expand a campaign dir to every arm dir holding run/journal.jsonl
     (corpus layout: CAMPAIGN/ARM/run — plus-litellm-r2, 38max-direct-r1, …)."""
@@ -119,6 +128,7 @@ def bundle_metrics(bundle: Path) -> dict:
     forecast: dict | None = None
     gate: dict | None = None
     ts_first = ts_last = None
+    sim_env: str | None = None
     from datetime import datetime
 
     for e in ops:
@@ -130,6 +140,8 @@ def bundle_metrics(bundle: Path) -> dict:
         if op == "world.simulate":
             sims[e.get("protocol", "?")].append(e.get("mean_spike_count"))
             sim_modes[e.get("mode", "?")] += 1
+        elif op == "world.env":  # F1: nbsim generated; free simulation happens in the kernel, not here
+            sim_env = (e.get("sha256") or "")[:12] or None
         elif op == "claim.propose":
             claims.setdefault(e["id"], None)
         elif op == "claim.transition":
@@ -167,6 +179,8 @@ def bundle_metrics(bundle: Path) -> dict:
         mse_in_report = any(f"{mse:.{p}f}" in txt for p in range(0, 7))  # reports write "≈37"/"35.5"/full
 
     total_sims = sum(sim_modes.values())
+    # F1: kernel-side nbsim runs are not journaled per call; their decision-point records are (03 §6)
+    sim_records = sum(1 for f in bundle.glob("research-work/*/sim/*.json") if _is_sim_record(f))
     unique_protos = len(sims)
     dup_rate = 1 - unique_protos / total_sims if total_sims else 0.0
 
@@ -190,7 +204,8 @@ def bundle_metrics(bundle: Path) -> dict:
 
     return {
         "bundle": f"{campaign}/{arm}",
-        "sim_calls": total_sims,
+        "sim_calls": total_sims + sim_records,
+        "sim_env": sim_env,
         "unique_protocols": unique_protos,
         "repl_rate": round(dup_rate, 3),
         "claims_proposed": len(claims),
@@ -213,7 +228,7 @@ def bundle_metrics(bundle: Path) -> dict:
 
 
 COLS = [
-    ("bundle", "bundle"), ("sim_calls", "sims"), ("unique_protocols", "uniq"),
+    ("bundle", "bundle"), ("sim_calls", "sims"), ("sim_env", "env"), ("unique_protocols", "uniq"),
     ("repl_rate", "repl"), ("claims_proposed", "claims"), ("claims_final", "final"),
     ("attacks", "attacks"), ("forecast_mse_declared", "MSE"),
     ("mse_in_report", "mse∈rep"), ("fc_max_dev", "fc_dev"), ("heldout_protocols", "heldout"),
