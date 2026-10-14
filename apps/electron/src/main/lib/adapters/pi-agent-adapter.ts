@@ -93,6 +93,7 @@ import {
   detectIpythonKernelSupply,
   installSessionIpythonPermission,
 } from './pi-ipython-rlm'
+import { installPostCompactionRlmGate } from './pi-post-compaction-rlm'
 import { mergePromaManagedSkillPaths, resolvePrimeNativeSkillPaths } from './pi-managed-skills'
 import { summarizePrimeRefineArtifacts } from './pi-refine-state'
 import type { AgentRefineEntrySummary, AgentRefineNowResult, AgentRefineState } from '@proma/shared'
@@ -2326,6 +2327,7 @@ export class PiAgentAdapter implements AgentProviderAdapter {
     }
     installRuntimeGuardHooks(session, () => hooks.runtimeGuard)
     installCurrentSessionCompactionHooks(session)
+    if (rlmSupply.available) installPostCompactionRlmGate(session)
 
     // Prime 的 session artifacts 与 sessions 目录同级：…/session-artifacts/<sdkSessionId>/harness
     const harnessDir = join(dirname(input.piSessionDir), 'session-artifacts', session.sessionId, 'harness')
