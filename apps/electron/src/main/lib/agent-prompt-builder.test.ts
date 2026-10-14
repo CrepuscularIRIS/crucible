@@ -1,4 +1,7 @@
 import { describe, expect, it } from 'bun:test'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { buildResearchTerminalContext, buildSystemPrompt } from './agent-prompt-builder'
 import { MANAGED_RESEARCH_SUBAGENT_ROLES, buildResearchRlmSubagentSpec } from './research-subagent-roles'
 import { getResearchRolesDir } from './managed-research-subagents'
@@ -18,8 +21,10 @@ describe('Research 父会话终局契约', () => {
     expect(context).toContain('research-grill/references/idea-quality.md')
     expect(context).toContain('await rlm(')
     expect(context).toContain('compaction')
-    // ponytail: 每回合付费，行数与字符上限即回归闸
+    // ponytail: 每回合付费，行数与字符上限即回归闸。角色目录随机器而变（CI / 长 home 目录），
+    // 换成固定的 49 字符代表路径再量，预算只管我们写的文字。
     const block = context.slice(context.indexOf('<research_routing>'))
+      .replaceAll(getResearchRolesDir(), '/home/someone/.proma/agent-sdk-cfg/research-roles')
     expect(block.split('\n').length).toBeLessThanOrEqual(25)
     expect(block.length).toBeLessThanOrEqual(2200)
   })
@@ -66,6 +71,48 @@ describe('Research 父会话终局契约', () => {
     const block = buildResearchTerminalContext(true).split('<research_routing>')[1]!
     expect(block).toContain(`${getResearchRolesDir()}/proma-research-<role>.md`)
     expect(block).not.toContain('rlm.harness.get')
+  })
+
+  it('P2：路由块先按锚的 NEXT 行走；K0 是唯一一次停顿，写 workspace pending 路径，research_init 在回复之后', () => {
+    const context = buildResearchTerminalContext(true)
+    const block = context.split('<research_routing>')[1]!
+    expect(block.split('\n')[1]).toContain('`NEXT:`')
+    const k0 = block.split('\n').find((l) => l.startsWith('- No run yet'))!
+    for (const s of ['K0', 'mode', 'predicate', 'depth', 'forks', '.research-pending/K0-intake.md', 'status: pending_user', 'ONE stop', '`research_init`']) {
+      expect(k0).toContain(s)
+    }
+    // 终局契约同步写明唯一的中途停顿
+    expect(context.split('<research_routing>')[0]).toContain('K0')
+  })
+
+  it('P2：mode 感知——新颖性门只属于 open；identify 先做 Δ/σ（nbsim + r* 两条公式 + 只封顶不阻止）；score 的 dev 数自报', () => {
+    const lines = buildResearchTerminalContext(true).split('<research_routing>')[1]!.split('\n')
+    expect(lines.find((l) => l.startsWith('Mode'))).toMatch(/identify.*score.*open/)
+    expect(lines.find((l) => l.startsWith('Novelty task ='))).toContain('open')
+    const ds = lines.find((l) => l.startsWith('- identify'))!
+    for (const s of ['Δ/σ', '`import nbsim`', 'sim_env', 'r*=⌈(2/d)²⌉', '⌈ln0.05/ln(1−p)⌉', 'research-work/<run>/sim/', 'sim:<id>', 'lead', 'still run']) {
+      expect(ds).toContain(s)
+    }
+    expect(ds).toContain('before `prereg_write`')
+    expect(lines.find((l) => l.startsWith('- score'))).toContain('(dev, self-reported)')
+  })
+
+  it('F1-A8①：路由块不出现弃用用法（候选模式 / held-out 不可模拟 / 免费 world_simulate）', () => {
+    const block = buildResearchTerminalContext(true).split('<research_routing>')[1]!
+    for (const bad of ['mode=candidate', '不可模拟', 'not simulable', '免费 `world_simulate`']) expect(block).not.toContain(bad)
+  })
+
+  it('K0 pending 在 → 每回合上下文带回同一次确认；没有 cwd 或没有 pending 时不带', () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'k0-ctx-'))
+    try {
+      expect(buildResearchTerminalContext(true, undefined, cwd)).not.toContain('<research_k0_pending>')
+      mkdirSync(join(cwd, '.research-pending'))
+      writeFileSync(join(cwd, '.research-pending', 'K0-intake.md'), 'status: pending_user\nmode: identify\n')
+      expect(buildResearchTerminalContext(true, undefined, cwd)).toContain('<research_k0_pending>')
+      expect(buildResearchTerminalContext(true, 'analyst', cwd)).toBe('')
+    } finally {
+      rmSync(cwd, { recursive: true, force: true })
+    }
   })
 
   it('普通会话不注入 Research 终局契约', () => {

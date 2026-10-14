@@ -1094,6 +1094,7 @@ export class AgentOrchestrator {
       const researchTerminalContext = buildResearchTerminalContext(
         Boolean(researchIsolation),
         sessionMeta?.delegationRole,
+        agentCwd,
       )
       const contextualMessage = [dynamicCtx, researchTerminalContext, enrichedMessage].filter(Boolean).join('\n\n')
 

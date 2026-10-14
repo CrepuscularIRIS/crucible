@@ -16,6 +16,7 @@ import { buildLegacyProjectMigrationPrompt as buildLegacyProjectMigrationRequire
 import type { BrowserUserContextSnapshot } from './browser-controller'
 import { buildResearchSubagentSystemPrompt } from './research-subagent-roles'
 import { getResearchRolesDir } from './managed-research-subagents'
+import { renderK0PendingBlock } from './adapters/pi-research-k0'
 
 const WORKFLOW_PROMPT = `## 工作流
 - 需要多个步骤、多个文件或并行/委派时，先用 TaskCreate 建立 3–7 个可见进度项；仅用 TaskUpdate 追加更新，完成后收束状态。
@@ -48,43 +49,50 @@ interface SystemPromptContext {
  *
  * 不能放进 ResourceLoader 的 append system prompt：Prime RLM child 会复用父会话的
  * ResourceLoader，继承后会与“child 只回传、不得写 Research 状态”的契约冲突。
+ * agentCwd 给出时另带 `<research_k0_pending>`（01 §5.2 K0 停顿持久化：resume 回到同一次确认）。
  */
 export function buildResearchTerminalContext(
   researchIsolation: boolean,
   delegationRole?: AgentDelegationRole,
+  agentCwd?: string,
 ): string {
   if (!researchIsolation || delegationRole) return ''
+  const k0Pending = agentCwd ? renderK0PendingBlock(agentCwd) : ''
   return `<research_terminal_contract>
-本父会话处于 research 隔离模式，以下三条不可协商：
+本父会话处于 research 隔离模式，以下四条不可协商：
 - 写完 REPORT.md **不等于**终局。终局唯一成立条件：真实调用 \`mcp__research__report_declare\` 并收到 gate 裁决结果。
 - \`mcp__research__world_forecast\` 成功后、收到 gate 裁决前，战役未完成；自评“gate 全绿”无效，必须调用 \`mcp__research__report_declare\` 收口。
 - 不得凭记忆声称工具不存在：先按上述完整工具名真实调用；若运行时确实返回注册或连接错误，如实报告原始错误，不得伪造裁决或自行宣布完成。
+- 中途只许停一次：K0 intake（写好 \`.research-pending/K0-intake.md\` 后呈现给用户、结束本轮）；其余不确定写 RULING 继续。宿主不代用户批准，用户回复前的 research_init 会被拦。
 </research_terminal_contract>
 
-${buildResearchRoutingBlock(getResearchRolesDir())}`
+${buildResearchRoutingBlock(getResearchRolesDir())}${k0Pending ? `\n\n${k0Pending}` : ''}`
 }
 
 /**
- * 精简版 mindset/调研/01 §5.2 路由表（§5.3 选项 A+C）；每回合付费，保持 ≤25 行、≤2200 字符。
+ * 精简版路由表（01 §6.5 锚 NEXT + §3.0 mode + 03 §9.2 Δ/σ 卡）；每回合付费，保持 ≤25 行、≤2200 字符。
  * deep 行点名已安装的 research_kit 并禁止自写作业助手：P0 验收 run 里模型在 /root/jobs 自写了
  * job 助手，child 的 out.md 因此没有 STATUS 行。角色 spec 的路径由宿主写（SE6，02 §3.5 M3）。
+ * 只点名已发布的动词（01 §10.1）：Δ/σ 是 P3a 的手算 fallback（discriminate 到 P3b 才有）。
  */
 function buildResearchRoutingBlock(rolesDir: string): string {
   return `<research_routing>
-Act on the FIRST trigger that holds, at its depth. deep = rlm child via \`import research_kit\` (no hand-written job helpers): \`job, name = research_kit.new_job(run, step, target)\`, brief.md = ${rolesDir}/proma-research-<role>.md + inputs, \`await rlm(<do brief.md>, name=name)\`, same turn \`await research_kit.wait([job])\`, \`research_kit.field\`; only you write state. mid = reason here. shallow = mechanical.
-Novelty task = the deliverable is a new idea or method; only then run research-scoop and idea-quality. world tasks and empirical questions about a named system skip them.
-- Session start / unsure → research-loop: \`research_init\` or \`research_state\` + anchor — shallow
-- After compaction → first cell spawns the checker named in <post_compaction_rlm_required>; wait, resume from its file, then research-loop — shallow
-- ⚠ in anchor / result outside band / transition refused → research-moves; out-of-band forces triage — mid (reframe: deep)
-- No LIVE claim → research-abduce + discovery-methods → \`claim_propose\` — deep. Novelty task: before claim_propose of a mechanism (not the artifact rival) run research-scoop (queries mid; full-text check deep; Level ≤2 → abduce or reframe.md; not run → claim_propose, never call it novel), then Level ≥3 → research-grill/references/idea-quality.md (mid; weak / nugget missing / hollow → abduce)
-- Novelty task, "has this been done?" of a LIVE claim → research-scoop; Level ≤2 → \`claim_transition\` to CONTESTED, note "scooped: <paper id>"
-- Gate verdicts → RULINGS.md
-- ≥2 rival claims (≥1 LIVE/CONTESTED) that differ observably, no covering probe → research-probe: SELECT + dry-run deep; \`prereg_write\` mid
+Do the anchor's \`NEXT:\` line; else the FIRST trigger that holds, at its depth. deep = rlm child via \`import research_kit\` (no hand-written job helpers): \`job, name = research_kit.new_job(run, step, target)\`, brief.md = ${rolesDir}/proma-research-<role>.md + inputs, \`await rlm(<do brief.md>, name=name)\`, same turn \`await research_kit.wait([job])\`, \`research_kit.field\`. mid = here.
+Mode (K0): identify = a named system's mechanism · score = a metric · open = new idea/method.
+Novelty task = open mode only (research-scoop, idea-quality); world tasks and a named system skip them.
+- No run yet → research-loop K0: mode · predicate · depth · forks → .research-pending/K0-intake.md (status: pending_user), ONE stop; \`research_init\` after the reply — mid
+- After compaction → spawn the checker in <post_compaction_rlm_required> first, resume from its file — shallow
+- ⚠ / out-of-band / refused → research-moves (out-of-band: triage) — mid
+- No LIVE claim → research-abduce → \`claim_propose\` — deep. Novelty task: before claim_propose of a mechanism (not the artifact rival) run research-scoop (Level ≤2 → abduce; not run → claim_propose, never call it novel), Level ≥3 → research-grill/references/idea-quality.md
+- Novelty task, LIVE claim done before? → research-scoop; Level ≤2 → CONTESTED
+- identify, before \`prereg_write\` → Δ/σ by hand: \`import nbsim\` (sim_env), ≥64 reps, d=|Δ|/σ, r*=⌈(2/d)²⌉ (0 baseline: ⌈ln0.05/ln(1−p)⌉), min-r* cell; save research-work/<run>/sim/, cite sim:<id>; reps<r* → still run, detection limit, lead — mid
+- score → tag dev numbers (dev, self-reported); H0 = incumbent
+- ≥2 rivals differ observably, no covering probe → research-probe (SELECT + dry-run deep)
 - pid not yet run → \`probe_run\` — shallow, no mid-run edits
 - New landed result → \`metric_recompute\` → \`claim_transition\` — mid
-- LIVE/SUPPORTED unattacked, or new evidence → research-grill → \`attack_record\` — short attacks mid; bounded audit deep
-- ≥2 probes without belief change / budget ≤2 reps → research-moves research-judgment: Continue/Pivot/Kill — mid
-- User wants the answer / graveyard suffices → research-report → \`report_declare\` — mid
+- LIVE/SUPPORTED unattacked or new evidence → research-grill → \`attack_record\` — mid
+- ≥2 probes, no belief change / budget ≤2 → research-moves judgment — mid
+- Gate verdicts → RULINGS.md. Answer wanted → research-report (in research-work/<run>/) → \`report_declare\` — mid
 </research_routing>`
 }
 

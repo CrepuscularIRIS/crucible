@@ -117,6 +117,16 @@ import {
 } from './pi-ipython-rlm'
 import { installPostCompactionRlmGate } from './pi-post-compaction-rlm'
 import { installRlmChildWatchdog } from './pi-rlm-child-watchdog'
+import * as researchPauseModule from './pi-research-pause-extension'
+import {
+  createResearchChildTracker,
+  pauseExtensionFactory,
+  refreshResearchGate,
+  shouldStopForResearchPause,
+  type ResearchChildTracker,
+} from './pi-research-runtime-control'
+import { createK0IntakeExtension } from './pi-research-k0'
+import { setResearchChildCanceller } from '../research-control'
 import { installIdleChildNoticePolicy } from './pi-idle-child-notice'
 import { mergePromaManagedSkillPaths, narrowResearchSkillPaths, resolvePrimeNativeSkillPaths } from './pi-managed-skills'
 import { summarizePrimeRefineArtifacts } from './pi-refine-state'
@@ -139,6 +149,8 @@ export interface PiResidentHookSlots {
   requestDispatcher?: Dispatcher
   compactionRequestRef?: { value: boolean }
   canUseTool?: PiAgentQueryOptions['canUseTool']
+  /** 本 query 由用户消息开启的时刻：K0 闸据此判断 pending 是否已被用户回复过 */
+  userReplyAt?: number
 }
 
 /** 常驻会话：同一会话跨 query 复用 AgentSession（Track B #1），空闲超时后释放。 */
@@ -161,6 +173,8 @@ export interface PiResidentSession {
   markResearchContaminated?: (reason: string) => void
   /** query 结束后 child 完成通知只进 UI、不开新轮（§12 Q2 c）；RLM 未启用时为 undefined。 */
   idleChildNotice?: ReturnType<typeof installIdleChildNoticePolicy>
+  /** 研究会话的 rlm child 登记（IR-C3 取消 + P2 转发）；非研究 / RLM 未启用时为 undefined。 */
+  researchChildren?: ResearchChildTracker
   dispose(): Promise<void>
 }
 
@@ -1435,6 +1449,8 @@ function wrapCustomToolDefinitions(
 export function installRuntimeGuardHooks(
   session: AgentSession,
   getGuard: () => AgentRuntimeGuard | undefined,
+  /** IR-C1 ②：研究暂停在回合边界停（不清队列：暂停期间到达的通知留给"继续"那一轮）。 */
+  shouldStopForResearch?: () => boolean,
 ): void {
   const previousAfterToolCall = session.agent.afterToolCall
   session.agent.afterToolCall = async (context, signal) => {
@@ -1475,6 +1491,7 @@ export function installRuntimeGuardHooks(
     if (getGuard()?.shouldStopBeforeNextTurn()) {
       session.agent.clearAllQueues()
     }
+    if (shouldStopForResearch?.()) return true
     return previousShouldStopBeforeTurn?.() ?? false
   }
 }
@@ -1487,6 +1504,16 @@ export class PiAgentAdapter implements AgentProviderAdapter {
     isBusy: (resident) => resident.session.hasRunningRlmChildren(),
     onDispose: (key, reason) => console.log(`[Pi SDK] 常驻会话释放: ${key} (${reason})`),
   })
+
+  constructor() {
+    // IR-C3：画布"终止 / 取消子任务"经 research-control 调到这里（空闲时也作用于常驻会话）。
+    setResearchChildCanceller((sessionId, names) => { this.cancelResearchChildren(sessionId, names) })
+  }
+
+  /** IR-C3：按 job_name（= rlm child 的 sessionName）取消研究子任务；names 缺省 = 全部。返回被取消的名字。 */
+  cancelResearchChildren(sessionId: string, names?: string[]): string[] {
+    return this.residentSessions.get(sessionId)?.session.researchChildren?.cancel(names) ?? []
+  }
 
   async *query(input: PiAgentQueryOptions): AsyncIterable<SDKMessage> {
     const active = createActivePiSession()
@@ -1593,6 +1620,9 @@ export class PiAgentAdapter implements AgentProviderAdapter {
       resident.hooks.requestDispatcher = requestProxyDispatcher
       resident.hooks.compactionRequestRef = { value: false }
       resident.hooks.canUseTool = input.canUseTool
+      resident.hooks.userReplyAt = Date.now()
+      // 应用重启 / 画布外写入的未结束 pause、K0 的 forks 行：本轮第一个工具调用前就生效。
+      if (input.researchIsolation) refreshResearchGate(input.sessionId, input.cwd ?? process.cwd())
       const compactionRequestRef = resident.hooks.compactionRequestRef
       const { session, sessionManager, resourceLoader, model } = resident
       let pendingCompactionContinuation: string | undefined
@@ -2049,6 +2079,7 @@ export class PiAgentAdapter implements AgentProviderAdapter {
             const pendingInterrupt = active.pendingInterruptPrompts.shift()
             nextInterrupt = pendingInterrupt
             if (pendingInterrupt) {
+              resident.hooks.userReplyAt = Date.now()
               nextPrompt = { content: pendingInterrupt.content, skipSkillExpansion: true }
             } else if (pendingCompactionContinuation) {
               nextPrompt = { content: pendingCompactionContinuation, skipSkillExpansion: true }
@@ -2294,6 +2325,14 @@ export class PiAgentAdapter implements AgentProviderAdapter {
       ...(harnessGuard
         ? [createResearchHarnessGuardExtension(harnessGuard, onHarnessRestore)]
         : []),
+      // IR-C1 ①：暂停 / 询问的只读闸门 + forks=wait 的 F-a；前端扩展缺失时为软暂停。
+      ...(input.researchIsolation
+        ? [pauseExtensionFactory(researchPauseModule, input.sessionId, cwd)].filter((f) => f !== undefined)
+        : []),
+      // K0 唯一一次停顿：research_init 必须晚于用户回复；成功后 pending 移进 run。
+      ...(input.researchIsolation
+        ? [createK0IntakeExtension({ cwd, userReplyAt: () => hooks.userReplyAt ?? 0 })]
+        : []),
       ...(openAIReasoningProfile
         ? [createOpenAIReasoningRequestExtension({
           profile: openAIReasoningProfile,
@@ -2464,14 +2503,22 @@ export class PiAgentAdapter implements AgentProviderAdapter {
         () => providerStreamFn(requestModel, context, options),
       )
     }
-    installRuntimeGuardHooks(session, () => hooks.runtimeGuard)
+    installRuntimeGuardHooks(
+      session,
+      () => hooks.runtimeGuard,
+      input.researchIsolation ? () => shouldStopForResearchPause(input.sessionId, cwd) : undefined,
+    )
+    if (input.researchIsolation) refreshResearchGate(input.sessionId, cwd)
     installCurrentSessionCompactionHooks(session)
     let disposeRlmChildWatchdog: (() => void) | undefined
     let idleChildNotice: PiResidentSession['idleChildNotice']
+    let researchChildren: ResearchChildTracker | undefined
     if (rlmSupply.available) {
       installPostCompactionRlmGate(session)
       disposeRlmChildWatchdog = installRlmChildWatchdog(session)
-      // ponytail: renderer 还没有 rlm_child_update（P2）；先进主进程日志，通知本体停在 Prime 里，下一条消息消费。
+      // P2：研究会话的 rlm_child_update 经 onResearchChildUpdate 转给 UI（IR-C3 ②），同一登记表供取消。
+      if (input.researchIsolation) researchChildren = createResearchChildTracker(session, input.sessionId)
+      // 空闲时结束的 child：通知本体停在 Prime 里，下一条消息消费；这里只记日志。
       idleChildNotice = installIdleChildNoticePolicy(session, (notice) => console.log(
         `[Pi SDK] 空闲时 rlm child 结束（不开新轮）: ${notice.sessionName ?? notice.id} ${notice.status}`
         + (notice.statusLine ? ` · ${notice.statusLine}` : ''),
@@ -2494,6 +2541,7 @@ export class PiAgentAdapter implements AgentProviderAdapter {
       ...(researchRefineMode && { researchRefineMode }),
       ...((researchHostStatus || researchRefineRuntime) && { markResearchContaminated }),
       idleChildNotice,
+      researchChildren,
       // 审计 F2：learning 臂 dispose 前先排空 C5 promotion（VALIDATED → global），
       // 再交 Prime 销毁会话；失败也要 dispose，promotion 结果以事件流为准。
       dispose: async () => {
@@ -2512,6 +2560,7 @@ export class PiAgentAdapter implements AgentProviderAdapter {
           }
           unsubscribeHarnessGuard?.()
           disposeRlmChildWatchdog?.()
+          researchChildren?.dispose()
           session.dispose()
         }
       },
