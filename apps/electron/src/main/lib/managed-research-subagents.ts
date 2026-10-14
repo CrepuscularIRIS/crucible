@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import { mkdirSync } from 'node:fs'
+import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
-import { getSdkConfigDir } from './config-paths'
 import { readJsonFileSafe, writeJsonFileAtomic } from './safe-file'
 import {
   MANAGED_RESEARCH_SUBAGENT_ROLES,
@@ -123,8 +123,20 @@ function canUpgradeManagedEntry(entry: Record<string, unknown>): boolean {
   return recordedDigest !== undefined && recordedDigest === managedEntryDigest(entry)
 }
 
-export function getManagedResearchSubagentHarnessPath(): string {
-  return join(getSdkConfigDir(), 'harness', 'harness_state.json')
+/**
+ * 必须与 Prime 读取的全局 harness 同一路径：`rlm.harness.get(..., global_=True)` 解析
+ * RLM_GLOBAL_HARNESS_STATE_DIR ← getGlobalHarnessStateDir() ← getAgentDir()
+ * （prime-agent `config.ts:getAgentDir/expandTildePath` · `core/refinement/refinement.ts`）。
+ * 写到 Proma 的 sdk-config 下时 Prime 读到 None，research-grill 的 reviewer 委派当场失败。
+ */
+export function getManagedResearchSubagentHarnessPath(env: NodeJS.ProcessEnv = process.env): string {
+  // 逐字对齐 Prime TS getAgentDir()：只认 PRIME_AGENT_CODING_AGENT_DIR，展开 ~，不 trim。
+  // kernel 总拿到 TS 算出的 RLM_GLOBAL_HARNESS_STATE_DIR，Python 侧的 PI_ 回退在会话里不生效。
+  const raw = env.PRIME_AGENT_CODING_AGENT_DIR
+  const agentDir = !raw
+    ? join(homedir(), '.prime', 'agent')
+    : raw === '~' ? homedir() : raw.startsWith('~/') ? homedir() + raw.slice(1) : raw
+  return join(agentDir, 'harness', 'harness_state.json')
 }
 
 export function seedManagedResearchSubagents(

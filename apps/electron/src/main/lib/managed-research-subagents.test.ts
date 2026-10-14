@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdtempSync, readFileSync, rmSync, writeFileSync, mkdirSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { homedir, tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import {
   MANAGED_RESEARCH_SUBAGENT_VERSION,
+  getManagedResearchSubagentHarnessPath,
   seedManagedResearchSubagents,
 } from './managed-research-subagents'
 
@@ -103,5 +104,15 @@ describe('受管 Research RLM subagent specs', () => {
       .toBe('非受管同名条目')
     expect(requireEntry(updated.entries.subagent, 'proma-research-coder').title)
       .toBe('用户改过的标题')
+  })
+})
+
+describe('受管 reviewer spec 的落盘路径', () => {
+  it('与 Prime 全局 harness 同一路径（否则 rlm.harness.get 返回 None）', () => {
+    expect(getManagedResearchSubagentHarnessPath({})).toBe(join(homedir(), '.prime/agent/harness/harness_state.json'))
+    expect(getManagedResearchSubagentHarnessPath({ PRIME_AGENT_CODING_AGENT_DIR: '/x' })).toBe('/x/harness/harness_state.json')
+    // Prime TS 不读 PI_CODING_AGENT_DIR：只设它时必须仍落到默认目录
+    expect(getManagedResearchSubagentHarnessPath({ PI_CODING_AGENT_DIR: '/y' })).toBe(join(homedir(), '.prime/agent/harness/harness_state.json'))
+    expect(getManagedResearchSubagentHarnessPath({ PRIME_AGENT_CODING_AGENT_DIR: '~/p' })).toBe(join(homedir(), 'p/harness/harness_state.json'))
   })
 })
