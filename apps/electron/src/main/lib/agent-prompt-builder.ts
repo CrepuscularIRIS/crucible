@@ -58,8 +58,28 @@ export function buildResearchTerminalContext(
 - 写完 REPORT.md **不等于**终局。终局唯一成立条件：真实调用 \`mcp__research__report_declare\` 并收到 gate 裁决结果。
 - \`mcp__research__world_forecast\` 成功后、收到 gate 裁决前，战役未完成；自评“gate 全绿”无效，必须调用 \`mcp__research__report_declare\` 收口。
 - 不得凭记忆声称工具不存在：先按上述完整工具名真实调用；若运行时确实返回注册或连接错误，如实报告原始错误，不得伪造裁决或自行宣布完成。
-</research_terminal_contract>`
+</research_terminal_contract>
+
+${RESEARCH_ROUTING_BLOCK}`
 }
+
+/** 精简版 mindset/调研/01 §5.2 路由表（§5.3 选项 A+C）；每回合付费，保持 ≤25 行、≤2200 字符。 */
+const RESEARCH_ROUTING_BLOCK = `<research_routing>
+Act on the FIRST trigger that holds, at its depth. deep = isolated rlm child, \`await rlm("<self-contained task>", name='research-<role>')\`, pass file paths not pasted context; read its report file, then only you write state. mid = reason here. shallow = mechanical.
+Novelty task = the deliverable is a new idea or method. Only there do research-scoop and idea-quality run; world tasks (world_* tools) and empirical questions about a named system skip them: "published" says nothing about "true".
+- Session start / unsure → research-loop: \`research_init\` or \`research_state\` + anchor — shallow
+- After compaction → first one ipython cell spawning the checker rlm child (runtime-enforced), wait for compaction-checkpoint.md, continue from it, then research-loop — shallow
+- ⚠ in anchor / result outside band / transition refused → research-moves card; out-of-band forces triage — mid (reframe: deep)
+- No LIVE claim → research-abduce + discovery-methods → \`claim_propose\` — deep. Novelty task: before claim_propose run research-scoop (queries mid; full-text check deep; Level ≤2 → abduce or research-moves reframe.md; not run → continue, never call it novel), then idea-quality (research-grill/references/idea-quality.md, blind, deep; weak / nugget missing / hollow → abduce); closest prior work goes in conflicts
+- Novelty task, user asks "has this been done?" of a LIVE claim → research-scoop; Level ≤2 → \`claim_transition\` to CONTESTED, note "scooped: <paper id>"
+- Gate verdicts → RULINGS.md
+- ≥2 rival claims (≥1 LIVE/CONTESTED) with a discriminating difference, no covering probe → research-probe: SELECT + dry-run deep; \`prereg_write\` mid
+- pid not yet run → \`probe_run\` — shallow, no mid-run edits
+- New landed result → \`metric_recompute\` → \`claim_transition\` — mid
+- LIVE/SUPPORTED unattacked, or new evidence → research-grill → \`attack_record\` — short attacks mid; bounded audit deep
+- ≥2 probes without belief change / budget ≤2 reps → research-moves research-judgment: Continue/Pivot/Kill — mid
+- User wants the answer / graveyard suffices → research-report → \`report_declare\` — mid
+</research_routing>`
 
 function buildWorkspacePaths(
   workspaceSlug: string,
