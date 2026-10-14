@@ -33,7 +33,8 @@ describe('Research 父会话终局契约', () => {
     expect(novelty).toContain('before claim_propose')
     expect(novelty.indexOf('research-scoop')).toBeGreaterThan(-1)
     expect(novelty.indexOf('idea-quality')).toBeGreaterThan(novelty.indexOf('research-scoop'))
-    expect(novelty).toContain('not run → continue')
+    expect(novelty).toContain('not run → claim_propose')
+    expect(novelty).toContain('not the artifact rival')
     expect(lines.find((l) => l.startsWith('- pid not yet run'))).not.toContain('world_observe')
   })
 

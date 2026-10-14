@@ -280,4 +280,14 @@ describe('SUPPORTED 被挑战（GLM ca-rebound-s0 §5）', () => {
     await expect(callTool('claim_transition', { run, id: 'H1', to: 'SUPPORTED', byProbe: 'P1' }))
       .rejects.toThrow(/已是 SUPPORTED/)
   })
+
+  it('CONTESTED 假设的 predicts 子集可再登记（scoop → CONTESTED → reframe 的出口）', async () => {
+    const run = 'reframe'
+    await callTool('research_init', { run })
+    await callTool('claim_propose', { run, id: 'H1', statement: 'A', predicts: ['acc rises'] })
+    await callTool('claim_transition', { run, id: 'H1', to: 'CONTESTED', note: 'scooped: 2401.00001' })
+    await callTool('claim_propose', { run, id: 'H2', statement: 'A 换到不同轴', predicts: ['acc rises'] })
+    const state = JSON.parse(await callTool('research_state', { run })) as { claims: Array<{ id: string; state: string }> }
+    expect(state.claims.find((c) => c.id === 'H2')?.state).toBe('LIVE')
+  })
 })

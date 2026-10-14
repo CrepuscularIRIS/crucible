@@ -45,8 +45,8 @@ ruling（`research-scoop` Level ≥3 后、`claim_propose` 前已跑过）就沿
 其余硬门全过的候选，花第一笔测量成本前按 `research-grill` 的
 `references/idea-quality.md` 打 A/B/C 三轴分，附 Nugget 与 Conclusion-First 两项
 检查（移植自 RS `evaluation/idea_quality/SKILL.md:38-107`、RC
-`principles/research-strategy.md:19-33`）。A≤2 或 C≤2、weak、nugget 缺失或结论空洞
-→ 不花测量成本，回 abduce 重写。分数只设门与排序，不证明 novelty，也不终结 claim；
+`principles/research-strategy.md:19-33`）。weak、nugget 缺失或结论空洞 → 不花测量
+成本，回 abduce 重写；A≤2 或 C≤2 只把结论封顶为 borderline，可继续。分数只设门与排序，不证明 novelty，也不终结 claim；
 同模型多评只测方差，报告 n 与“同模型”。
 
 ## 模式组合风险

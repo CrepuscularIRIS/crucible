@@ -70,7 +70,7 @@ Novelty task = the deliverable is a new idea or method. Only there do research-s
 - Session start / unsure → research-loop: \`research_init\` or \`research_state\` + anchor — shallow
 - After compaction → first one ipython cell spawning the checker rlm child (runtime-enforced), wait for compaction-checkpoint.md, continue from it, then research-loop — shallow
 - ⚠ in anchor / result outside band / transition refused → research-moves card; out-of-band forces triage — mid (reframe: deep)
-- No LIVE claim → research-abduce + discovery-methods → \`claim_propose\` — deep. Novelty task: before claim_propose run research-scoop (queries mid; full-text check deep; Level ≤2 → abduce or research-moves reframe.md; not run → continue, never call it novel), then idea-quality (research-grill/references/idea-quality.md, blind, deep; weak / nugget missing / hollow → abduce); closest prior work goes in conflicts
+- No LIVE claim → research-abduce + discovery-methods → \`claim_propose\` — deep. Novelty task: before claim_propose of a mechanism (not the artifact rival) run research-scoop (queries mid; full-text check deep; Level ≤2 → abduce or reframe.md; not run → claim_propose, never call it novel), then Level ≥3 → research-grill/references/idea-quality.md (mid; weak / nugget missing / hollow → abduce); closest prior work goes in conflicts
 - Novelty task, user asks "has this been done?" of a LIVE claim → research-scoop; Level ≤2 → \`claim_transition\` to CONTESTED, note "scooped: <paper id>"
 - Gate verdicts → RULINGS.md
 - ≥2 rival claims (≥1 LIVE/CONTESTED) with a discriminating difference, no covering probe → research-probe: SELECT + dry-run deep; \`prereg_write\` mid

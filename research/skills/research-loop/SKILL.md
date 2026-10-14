@@ -83,7 +83,7 @@ gate 是裁决不是续命。
    ✓ 成功条件：本阶段规定的问题类型无悬空项。
 6. **压缩发生后**：运行时注入了 `<post_compaction_rlm_required>` 块时，第一个
    ipython cell 只 spawn 压缩核对 child——`await rlm(..., name="compaction-check")`，
-   提示词照抄该块；spawn 之前任何别的 cell（包括 print）都会被闸门拦下。等
+   提示词照抄该块并填上 `<key claims>`；spawn 之前任何别的 cell（包括 print）都会被闸门拦下。等
    `compaction-checkpoint.md` 写出后，再 `print(research_kit.LAST)` 找回锚
    + 读 `RULINGS.md` 尾部找回战役等级，再决定要不要重新 `anchor()`——不要凭对话
    记忆重建信念状态。

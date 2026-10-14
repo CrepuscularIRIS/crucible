@@ -104,8 +104,9 @@ these files, not the conversation.
      truncation are `unverified`.
    - **6** per paper `level = 5 - matched axes`; overall = the minimum level.
    The child returns a status; the parent reads step56.md and checks each quote
-   against `papers/` before accepting it. Any status other than `DONE`
-   (`OUT_OF_ROLE`, `NEEDS_CONTEXT`, `BLOCKED`), or a child that cannot run: do 5b/6
+   against `papers/` before accepting it. `DONE_WITH_CONCERNS` counts as done (copy the
+   concerns into the ruling). Any other status (`OUT_OF_ROLE`, `NEEDS_CONTEXT`,
+   `BLOCKED`), or a child that cannot run: do 5b/6
    in the parent and write `single-context verdict` in the ruling.
 7. **Delta (parent).** Write the delta sentence (template below) against the closest
    paper, taking its phrasing from the 5b record, or state that no delta holds and
