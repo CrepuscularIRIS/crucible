@@ -1,10 +1,11 @@
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
 import { describe, expect, it } from 'bun:test'
 import {
   PROMA_PRIME_NATIVE_SKILL_SLUGS,
   mergePromaManagedSkillPaths,
+  narrowResearchSkillPaths,
   resolvePrimeNativeSkillPaths,
 } from './pi-managed-skills'
 import { createPromaManagedResourceLoaderOptions } from './pi-resource-loader-overrides'
@@ -56,6 +57,31 @@ describe('Prime 原生 Skills 受管接线', () => {
       expect(loader.getSkills().skills.map((skill: { name: string }) => skill.name).sort()).toEqual(
         [...PROMA_PRIME_NATIVE_SKILL_SLUGS].sort(),
       )
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+
+  it('SE7b：研究会话的 native skill 路径里没有 refine（跳过 reviewer 的显式路径），非研究会话照旧', () => {
+    const research = resolvePrimeNativeSkillPaths(undefined, { research: true }).map((path) => basename(path))
+    expect(research).not.toContain('refine')
+    expect(research).toEqual(PROMA_PRIME_NATIVE_SKILL_SLUGS.filter((slug) => slug !== 'refine'))
+    expect(resolvePrimeNativeSkillPaths().map((path) => basename(path))).toContain('refine')
+  })
+
+  it('SE7b（M6）：研究会话只加载 bundled 研究 slug；未知 slug（带 pyproject.toml）不加载并被列出', () => {
+    const root = mkdtempSync(join(tmpdir(), 'proma-research-skills-'))
+    try {
+      for (const slug of ['research-loop', 'research-kit', 'foo']) {
+        mkdirSync(join(root, slug), { recursive: true })
+        writeFileSync(join(root, slug, 'SKILL.md'), `---\nname: ${slug}\n---\n`)
+      }
+      writeFileSync(join(root, 'foo', 'pyproject.toml'), '[project]\nname = "foo"\n')
+      const narrowed = narrowResearchSkillPaths([root])
+      expect(narrowed.paths.map((path) => basename(path)).sort()).toEqual(['research-kit', 'research-loop'])
+      expect(narrowed.unknown).toEqual(['foo'])
+      // 非研究会话不调用 narrow：整棵工作区 skills 根照旧交给 loader
+      expect(mergePromaManagedSkillPaths([root], [])).toEqual([root])
     } finally {
       rmSync(root, { recursive: true, force: true })
     }

@@ -15,6 +15,7 @@ import type { ProjectInstructionSource } from './project-instruction-resolver'
 import { buildLegacyProjectMigrationPrompt as buildLegacyProjectMigrationRequirement } from './project-instruction-migration'
 import type { BrowserUserContextSnapshot } from './browser-controller'
 import { buildResearchSubagentSystemPrompt } from './research-subagent-roles'
+import { getResearchRolesDir } from './managed-research-subagents'
 
 const WORKFLOW_PROMPT = `## 工作流
 - 需要多个步骤、多个文件或并行/委派时，先用 TaskCreate 建立 3–7 个可见进度项；仅用 TaskUpdate 追加更新，完成后收束状态。
@@ -60,26 +61,32 @@ export function buildResearchTerminalContext(
 - 不得凭记忆声称工具不存在：先按上述完整工具名真实调用；若运行时确实返回注册或连接错误，如实报告原始错误，不得伪造裁决或自行宣布完成。
 </research_terminal_contract>
 
-${RESEARCH_ROUTING_BLOCK}`
+${buildResearchRoutingBlock(getResearchRolesDir())}`
 }
 
-/** 精简版 mindset/调研/01 §5.2 路由表（§5.3 选项 A+C）；每回合付费，保持 ≤25 行、≤2200 字符。 */
-const RESEARCH_ROUTING_BLOCK = `<research_routing>
-Act on the FIRST trigger that holds, at its depth. deep = rlm child: \`job, name = research_kit.new_job(run, step, target)\`, paths in job/brief.md, \`await rlm(<prompt>, name=name)\`, \`await research_kit.wait([job])\` same turn, \`research_kit.field\`; only you write state. mid = reason here. shallow = mechanical.
-Novelty task = the deliverable is a new idea or method. Only there do research-scoop and idea-quality run; world tasks (world_* tools) and empirical questions about a named system skip them: "published" says nothing about "true".
+/**
+ * 精简版 mindset/调研/01 §5.2 路由表（§5.3 选项 A+C）；每回合付费，保持 ≤25 行、≤2200 字符。
+ * deep 行点名已安装的 research_kit 并禁止自写作业助手：P0 验收 run 里模型在 /root/jobs 自写了
+ * job 助手，child 的 out.md 因此没有 STATUS 行。角色 spec 的路径由宿主写（SE6，02 §3.5 M3）。
+ */
+function buildResearchRoutingBlock(rolesDir: string): string {
+  return `<research_routing>
+Act on the FIRST trigger that holds, at its depth. deep = rlm child via \`import research_kit\` (no hand-written job helpers): \`job, name = research_kit.new_job(run, step, target)\`, brief.md = ${rolesDir}/proma-research-<role>.md + inputs, \`await rlm(<do brief.md>, name=name)\`, same turn \`await research_kit.wait([job])\`, \`research_kit.field\`; only you write state. mid = reason here. shallow = mechanical.
+Novelty task = the deliverable is a new idea or method; only then run research-scoop and idea-quality. world tasks and empirical questions about a named system skip them.
 - Session start / unsure → research-loop: \`research_init\` or \`research_state\` + anchor — shallow
-- After compaction → first cell spawns the checker with the name and file given in <post_compaction_rlm_required>; wait, continue from that file, then research-loop — shallow
-- ⚠ in anchor / result outside band / transition refused → research-moves card; out-of-band forces triage — mid (reframe: deep)
-- No LIVE claim → research-abduce + discovery-methods → \`claim_propose\` — deep. Novelty task: before claim_propose of a mechanism (not the artifact rival) run research-scoop (queries mid; full-text check deep; Level ≤2 → abduce or reframe.md; not run → claim_propose, never call it novel), then Level ≥3 → research-grill/references/idea-quality.md (mid; weak / nugget missing / hollow → abduce); closest prior work goes in conflicts
-- Novelty task, user asks "has this been done?" of a LIVE claim → research-scoop; Level ≤2 → \`claim_transition\` to CONTESTED, note "scooped: <paper id>"
+- After compaction → first cell spawns the checker named in <post_compaction_rlm_required>; wait, resume from its file, then research-loop — shallow
+- ⚠ in anchor / result outside band / transition refused → research-moves; out-of-band forces triage — mid (reframe: deep)
+- No LIVE claim → research-abduce + discovery-methods → \`claim_propose\` — deep. Novelty task: before claim_propose of a mechanism (not the artifact rival) run research-scoop (queries mid; full-text check deep; Level ≤2 → abduce or reframe.md; not run → claim_propose, never call it novel), then Level ≥3 → research-grill/references/idea-quality.md (mid; weak / nugget missing / hollow → abduce)
+- Novelty task, "has this been done?" of a LIVE claim → research-scoop; Level ≤2 → \`claim_transition\` to CONTESTED, note "scooped: <paper id>"
 - Gate verdicts → RULINGS.md
-- ≥2 rival claims (≥1 LIVE/CONTESTED) with a discriminating difference, no covering probe → research-probe: SELECT + dry-run deep; \`prereg_write\` mid
+- ≥2 rival claims (≥1 LIVE/CONTESTED) that differ observably, no covering probe → research-probe: SELECT + dry-run deep; \`prereg_write\` mid
 - pid not yet run → \`probe_run\` — shallow, no mid-run edits
 - New landed result → \`metric_recompute\` → \`claim_transition\` — mid
 - LIVE/SUPPORTED unattacked, or new evidence → research-grill → \`attack_record\` — short attacks mid; bounded audit deep
 - ≥2 probes without belief change / budget ≤2 reps → research-moves research-judgment: Continue/Pivot/Kill — mid
 - User wants the answer / graveyard suffices → research-report → \`report_declare\` — mid
 </research_routing>`
+}
 
 function buildWorkspacePaths(
   workspaceSlug: string,

@@ -42,7 +42,6 @@ describe('Research 子 Agent 角色契约', () => {
 
   it('RLM spec 使用 Prime 原生 rlm 调用且默认继承模型', () => {
     const spec = buildResearchRlmSubagentSpec('analyst')
-    expect(spec).toContain("rlm.harness.get('subagent', 'proma-research-analyst', global_=True).content")
     expect(spec).toContain('await rlm(')
     expect(spec).toContain('不要传 model')
     expect(spec).toContain('继承父会话当前模型')
@@ -73,5 +72,21 @@ describe('Research 子 Agent 角色契约', () => {
 
   it('RLM STATUS 行只在所有节都定稿后才追加（防 wait 提前返回）', () => {
     expect(buildResearchRlmSubagentSpec('reviewer')).toContain('only after every section is final')
+  })
+
+  it('SE6：spec 不再让父会话从 global harness 读角色契约，改读宿主写的 research-roles 文件', () => {
+    for (const role of MANAGED_RESEARCH_SUBAGENT_ROLES) {
+      const spec = buildResearchRlmSubagentSpec(role)
+      expect(spec).not.toContain("rlm.harness.get('subagent', 'proma-research")
+      expect(spec).toContain(`research-roles/proma-research-${role}.md`)
+    }
+  })
+
+  it('M3：无头跑没有研究路由块也没有 research-roles/——spec 给出可执行的退路（照抄本条正文）', () => {
+    for (const role of MANAGED_RESEARCH_SUBAGENT_ROLES) {
+      const spec = buildResearchRlmSubagentSpec(role)
+      expect(spec).toContain('没有研究路由块时照抄本条')
+      expect(spec).not.toContain('只供显示')
+    }
   })
 })

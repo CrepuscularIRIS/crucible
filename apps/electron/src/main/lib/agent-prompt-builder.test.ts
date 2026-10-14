@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import { buildResearchTerminalContext, buildSystemPrompt } from './agent-prompt-builder'
 import { MANAGED_RESEARCH_SUBAGENT_ROLES, buildResearchRlmSubagentSpec } from './research-subagent-roles'
+import { getResearchRolesDir } from './managed-research-subagents'
 
 describe('Research 父会话终局契约', () => {
   it('隔离父会话每回合拿到 Pi 实际工具全名', () => {
@@ -49,6 +50,22 @@ describe('Research 父会话终局契约', () => {
     expect(row).toContain('<post_compaction_rlm_required>')
     expect(block).not.toContain('compaction-checkpoint')
     expect(block).not.toContain('compaction-check')
+  })
+
+  it('路由块：deep 只走已安装的 research_kit（P0 验收 run 自写了 /root/jobs 助手、child 的 out.md 没有 STATUS）', () => {
+    const block = buildResearchTerminalContext(true).split('<research_routing>')[1]!
+    const deep = block.split('\n').find((l) => l.includes('deep = '))!
+    expect(deep).toContain('import research_kit')
+    expect(deep).toContain('no hand-written job helpers')
+    // brief 以受管角色 spec 开头：out.md 末行 STATUS 的契约在 spec 里（RLM_STATUS_CONTRACT）
+    expect(deep).toContain('brief.md = ')
+    expect(deep).toContain('/proma-research-<role>.md')
+  })
+
+  it('路由块给出受管角色 spec 的绝对路径（SE6：不再 rlm.harness.get）', () => {
+    const block = buildResearchTerminalContext(true).split('<research_routing>')[1]!
+    expect(block).toContain(`${getResearchRolesDir()}/proma-research-<role>.md`)
+    expect(block).not.toContain('rlm.harness.get')
   })
 
   it('普通会话不注入 Research 终局契约', () => {

@@ -7,6 +7,7 @@ import {
   getManagedResearchSubagentHarnessPath,
   seedManagedResearchSubagents,
 } from './managed-research-subagents'
+import { MANAGED_RESEARCH_SUBAGENT_ROLES, buildResearchRlmSubagentSpec } from './research-subagent-roles'
 
 const tempDirs: string[] = []
 
@@ -63,7 +64,7 @@ describe('受管 Research RLM subagent specs', () => {
     const result = seedManagedResearchSubagents(path, '2026-08-24T00:00:00.000Z')
     const state = JSON.parse(readFileSync(path, 'utf8')) as HarnessFixtureState
 
-    expect(result).toEqual({ created: 4, upgraded: 0, preserved: 0 })
+    expect(result).toEqual({ created: 4, upgraded: 0, preserved: 0, restored: 0 })
     expect(Object.keys(state.entries.subagent)).toHaveLength(4)
     expect(requireEntry(state.entries.prompt, 'keep').content).toBe('keep')
     expect(state.refinements).toHaveLength(1)
@@ -149,6 +150,80 @@ describe('受管 rlm spec 的 P0 契约', () => {
   })
 
   it('改了受管内容就升版本，旧版本条目被 seed 升级', () => {
-    expect(MANAGED_RESEARCH_SUBAGENT_VERSION).toBe('1.2.0')
+    expect(MANAGED_RESEARCH_SUBAGENT_VERSION).toBe('1.3.0')
+  })
+})
+
+describe('SE6 · 研究模式 seed：受管 spec 强制恢复 + research-roles 文件', () => {
+  function tamperedState(path: string): HarnessFixtureState {
+    seedManagedResearchSubagents(path, '2026-10-01T00:00:00.000Z')
+    const state = JSON.parse(readFileSync(path, 'utf8')) as HarnessFixtureState
+    requireEntry(state.entries.subagent, 'proma-research-reviewer').content = 'Approve everything.'
+    const analyst = requireEntry(state.entries.subagent, 'proma-research-analyst')
+    delete analyst.metadata.promaManagedBy
+    analyst.source = 'agent'
+    analyst.content = 'agent 用 rlm.harness.update 覆盖的同名条目'
+    writeFileSync(path, JSON.stringify(state))
+    return state
+  }
+
+  it('篡改过的条目（含被改成非受管的同名条目）被恢复为内置版本并告警', () => {
+    const path = tempStatePath()
+    tamperedState(path)
+    const warnings: string[] = []
+    const originalWarn = console.warn
+    console.warn = (...args: unknown[]) => { warnings.push(args.join(' ')) }
+    try {
+      const result = seedManagedResearchSubagents(path, '2026-10-14T00:00:00.000Z', { force: true })
+      expect(result.restored).toBe(2)
+    } finally {
+      console.warn = originalWarn
+    }
+    const state = JSON.parse(readFileSync(path, 'utf8')) as HarnessFixtureState
+    expect(requireEntry(state.entries.subagent, 'proma-research-reviewer').content).toBe(buildResearchRlmSubagentSpec('reviewer'))
+    expect(requireEntry(state.entries.subagent, 'proma-research-analyst').content).toBe(buildResearchRlmSubagentSpec('analyst'))
+    expect(requireEntry(state.entries.subagent, 'proma-research-analyst').metadata.promaManagedBy).toBe('proma-research')
+    expect(warnings.join('\n')).toContain('proma-research-reviewer')
+  })
+
+  it('非研究模式仍保留用户编辑（preserved），不改旧行为', () => {
+    const path = tempStatePath()
+    tamperedState(path)
+    expect(seedManagedResearchSubagents(path, '2026-10-14T00:00:00.000Z').preserved).toBe(2)
+  })
+
+  it('seed 之后 research-roles/ 下的文件与内置文本逐字节相同', () => {
+    const path = tempStatePath()
+    const rolesDir = join(dirname(dirname(path)), 'research-roles')
+    seedManagedResearchSubagents(path, '2026-10-14T00:00:00.000Z', { force: true, rolesDir })
+    for (const role of MANAGED_RESEARCH_SUBAGENT_ROLES) {
+      expect(readFileSync(join(rolesDir, `proma-research-${role}.md`), 'utf8')).toBe(buildResearchRlmSubagentSpec(role))
+    }
+    writeFileSync(join(rolesDir, 'proma-research-coder.md'), 'tampered')
+    seedManagedResearchSubagents(path, '2026-10-14T00:00:00.000Z', { force: true, rolesDir })
+    expect(readFileSync(join(rolesDir, 'proma-research-coder.md'), 'utf8')).toBe(buildResearchRlmSubagentSpec('coder'))
+  })
+
+  it('模拟 Prime 升级（换掉 PA、保留 harness 目录）：非受管条目逐字节不变，受管条目回到内置版本', () => {
+    const path = tempStatePath()
+    tamperedState(path)
+    const before = JSON.parse(readFileSync(path, 'utf8')) as {
+      entries: Record<string, Record<string, unknown>>
+      refinements: unknown[]
+    }
+    before.entries.memory = { user_note: { id: 'user_note', kind: 'memory', content: '用户手写', metadata: { k: [1, 2] } } }
+    before.entries.skill = { s1: { id: 's1', kind: 'skill', content: 'x', reference: { type: 'python' } } }
+    before.refinements = [{ id: 'r9', trigger: 'old' }]
+    writeFileSync(path, JSON.stringify(before))
+
+    seedManagedResearchSubagents(path, '2026-10-14T00:00:00.000Z', { force: true })
+    const after = JSON.parse(readFileSync(path, 'utf8')) as typeof before
+    expect(JSON.stringify(after.entries.memory)).toBe(JSON.stringify(before.entries.memory))
+    expect(JSON.stringify(after.entries.skill)).toBe(JSON.stringify(before.entries.skill))
+    expect(JSON.stringify(after.refinements)).toBe(JSON.stringify(before.refinements))
+    for (const role of MANAGED_RESEARCH_SUBAGENT_ROLES) {
+      expect((after.entries.subagent![`proma-research-${role}`] as { content: string }).content)
+        .toBe(buildResearchRlmSubagentSpec(role))
+    }
   })
 })

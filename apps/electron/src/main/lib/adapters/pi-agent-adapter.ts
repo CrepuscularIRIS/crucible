@@ -67,10 +67,32 @@ import { createResearchIsolationExtension, createRlmChildToolGuardExtension } fr
 import {
   createResearchRefineRuntime,
   installResearchRefineToolTap,
+  REFINE_NOW_REASON,
   researchRefineArtifactDir,
   type ResearchRefineRuntime,
 } from './pi-research-refine-runtime'
-import type { ResearchRefineMode } from './pi-research-refine-types'
+import type { ResearchRefineMode, ResearchResidualSource } from './pi-research-refine-types'
+import {
+  createResearchHarnessGuard,
+  createResearchHarnessGuardExtension,
+  type HarnessRestore,
+} from './pi-research-harness-guard'
+import {
+  NO_AGENT_MESSAGE_PARENT_LINE,
+  collectResearchHostStatus,
+  markHostStatusContaminated,
+  renderResearchHostStatus,
+  type ResearchHostStatus,
+  resolveResearchRefineArm,
+  writeK0HostStatus,
+} from './pi-research-host-status'
+import {
+  getManagedResearchSubagentHarnessPath,
+  getResearchRolesDir,
+  seedManagedResearchSubagents,
+} from '../managed-research-subagents'
+import { MANAGED_RESEARCH_SUBAGENT_ROLES, buildResearchRlmSubagentSpec } from '../research-subagent-roles'
+import { getDefaultSkillsDir } from '../config-paths'
 import type { ResearchIsolationConfig } from '../research-isolation-guard'
 import { mergeRuntimeEnv, type AgentRuntimeEnv } from '../agent-runtime-env'
 import { sanitizePiMessageImageContent, sanitizeToolResultImageContent } from '../image-content-validation'
@@ -96,7 +118,7 @@ import {
 import { installPostCompactionRlmGate } from './pi-post-compaction-rlm'
 import { installRlmChildWatchdog } from './pi-rlm-child-watchdog'
 import { installIdleChildNoticePolicy } from './pi-idle-child-notice'
-import { mergePromaManagedSkillPaths, resolvePrimeNativeSkillPaths } from './pi-managed-skills'
+import { mergePromaManagedSkillPaths, narrowResearchSkillPaths, resolvePrimeNativeSkillPaths } from './pi-managed-skills'
 import { summarizePrimeRefineArtifacts } from './pi-refine-state'
 import type { AgentRefineEntrySummary, AgentRefineNowResult, AgentRefineState } from '@proma/shared'
 import { PendingPromptSkillActivationTracker } from './pi-skill-activation-tracker'
@@ -135,6 +157,8 @@ export interface PiResidentSession {
   researchRefineRuntime?: ResearchRefineRuntime
   /** research refine 实验臂；refineNow 按 臂 放行/拒绝。 */
   researchRefineMode?: ResearchRefineMode
+  /** refineNow / harness 被直写之后：臂标 contaminated（K0 宿主状态 + refine runtime）。 */
+  markResearchContaminated?: (reason: string) => void
   /** query 结束后 child 完成通知只进 UI、不开新轮（§12 Q2 c）；RLM 未启用时为 undefined。 */
   idleChildNotice?: ReturnType<typeof installIdleChildNoticePolicy>
   dispose(): Promise<void>
@@ -253,7 +277,7 @@ export interface PiAgentQueryOptions extends AgentQueryInput {
   runtimeEnv?: AgentRuntimeEnv
   /** workspace research MCP 显式启用的工具执行隔离边界。 */
   researchIsolation?: ResearchIsolationConfig
-  /** research refine 实验臂（off/frozen/learning）；research 会话缺省 learning。 */
+  /** research refine 实验臂（off/frozen/learning）；research 会话缺省 frozen（02 §10 Q1 (b)），learning 须显式传。 */
   researchRefine?: { mode: ResearchRefineMode; run?: string }
   /** 手动压缩请求：走 pi 原生 session.compact()，而非把 /compact 当普通 prompt 发给模型 */
   compactRequest?: boolean
@@ -1544,7 +1568,7 @@ export class PiAgentAdapter implements AgentProviderAdapter {
           : undefined,
         // refine 实验臂切换必须重建会话，否则复用旧臂的 reviewer/设置。
         researchRefineMode: input.researchIsolation
-          ? (input.researchRefine?.mode ?? 'learning')
+          ? resolveResearchRefineArm({ surface: 'ui', requested: input.researchRefine?.mode }).mode
           : undefined,
       })
       const residentEntry = this.residentSessions.get(input.sessionId)
@@ -2098,9 +2122,11 @@ export class PiAgentAdapter implements AgentProviderAdapter {
     if (!rlmSupply.available) {
       console.warn(`[Pi SDK] RLM 未启用：${rlmSupply.detail}。安装 uv 或设置 PRIME_AGENT_KERNEL_PYTHON 后可用。`)
     }
+    // SE7b：研究会话只加载 bundled 研究 slug（M6），且不加载原生 refine（M2）。
+    const researchSkills = input.researchIsolation ? narrowResearchSkillPaths(input.additionalSkillPaths ?? []) : undefined
     const managedSkillPaths = mergePromaManagedSkillPaths(
-      input.additionalSkillPaths ?? [],
-      rlmSupply.available ? resolvePrimeNativeSkillPaths() : [],
+      researchSkills?.paths ?? input.additionalSkillPaths ?? [],
+      rlmSupply.available ? resolvePrimeNativeSkillPaths(undefined, { research: Boolean(input.researchIsolation) }) : [],
     )
     const customTools = [
       buildCurrentSessionCompactionTool(
@@ -2122,9 +2148,10 @@ export class PiAgentAdapter implements AgentProviderAdapter {
     // artifactDir 里的 sessionId 待创建后解析（runtime 内部惰性取值）。
     const sessionArtifactsRoot = join(dirname(input.piSessionDir), 'session-artifacts')
     const artifactSessionIdHolder: { value: string } = { value: '' }
-    const researchRefineMode: ResearchRefineMode | undefined = input.researchIsolation
-      ? (input.researchRefine?.mode ?? 'learning')
+    const researchArm = input.researchIsolation
+      ? resolveResearchRefineArm({ surface: 'ui', requested: input.researchRefine?.mode })
       : undefined
+    const researchRefineMode: ResearchRefineMode | undefined = researchArm?.mode
     const researchRefineRuntime: ResearchRefineRuntime | undefined = researchRefineMode
       ? createResearchRefineRuntime({
         mode: researchRefineMode,
@@ -2133,6 +2160,78 @@ export class PiAgentAdapter implements AgentProviderAdapter {
       })
       : undefined
     const autoRefineOverride = resolvePiAutoRefineOverride(researchRefineMode)
+    // SE6 / SE2b / SE7b：研究会话的宿主面。受管 spec 在研究模式下强制恢复并写 research-roles；
+    // harness 对模型只读（turn_end 对照上次授权状态恢复）；K0 宿主状态块进系统提示与 k0-host.json。
+    const globalHarnessPath = getManagedResearchSubagentHarnessPath()
+    const researchRolesDir = getResearchRolesDir(input.piAgentDir)
+    let seedFailed = false
+    if (input.researchIsolation) {
+      try {
+        seedManagedResearchSubagents(globalHarnessPath, undefined, { force: true, rolesDir: researchRolesDir })
+      } catch (error) {
+        seedFailed = true
+        console.error('[Pi SDK] 研究模式受管 spec seed 失败:', error)
+      }
+    }
+    let researchHostStatus: ResearchHostStatus | undefined
+    try {
+      researchHostStatus = researchArm
+        ? collectResearchHostStatus({
+          arm: researchArm,
+          globalHarnessPath,
+          skillDirs: researchSkills?.paths,
+          referenceSkillsDir: getDefaultSkillsDir(),
+          unknownSkills: researchSkills?.unknown,
+        })
+        : undefined
+    } catch (error) {
+      // K0 是检测，不阻塞启动；缺了状态块就没有 k0-host.json（B0 读不到臂行 = 未知）。
+      console.error('[Pi SDK] K0 宿主状态采集失败:', error)
+    }
+    // seed 没恢复成功：受管 spec 可能仍是被改过的版本，而基线会认下它——封顶，不阻塞。
+    if (researchHostStatus && seedFailed) {
+      researchHostStatus = markHostStatusContaminated(researchHostStatus, 'managed spec seed failed')
+    }
+    const markResearchContaminated = (reason: string): void => {
+      // M2：K0 采集失败（researchHostStatus 缺失）时 refine runtime 照样要记 tamper。
+      researchRefineRuntime?.markContaminated?.(reason)
+      if (!researchHostStatus) return
+      researchHostStatus = markHostStatusContaminated(researchHostStatus, reason)
+      if (!artifactSessionIdHolder.value) return
+      try {
+        writeK0HostStatus(researchRefineArtifactDir(sessionArtifactsRoot, artifactSessionIdHolder.value), researchHostStatus)
+      } catch (error) {
+        console.error('[Pi SDK] k0-host.json 写入失败:', error)
+      }
+    }
+    const harnessGuard = input.researchIsolation
+      ? createResearchHarnessGuard({
+        statePaths: () => [
+          globalHarnessPath,
+          ...(artifactSessionIdHolder.value
+            ? [join(sessionArtifactsRoot, artifactSessionIdHolder.value, 'harness', 'harness_state.json')]
+            : []),
+        ],
+        pinnedFiles: () => Object.fromEntries(MANAGED_RESEARCH_SUBAGENT_ROLES.map((role) => [
+          join(researchRolesDir, `proma-research-${role}.md`),
+          buildResearchRlmSubagentSpec(role),
+        ])),
+      })
+      : undefined
+    const onHarnessRestore = (restores: HarnessRestore[]): void => {
+      const summary = restores.map((r) => `${r.change} ${r.kind}:${r.id}`).join(', ')
+      console.warn(`[Pi SDK] research harness 未授权写入已恢复: ${summary}`)
+      markResearchContaminated(`harness_direct_write restored: ${summary}`)
+      // 'system' 来源由轨道 A 加进联合类型；不可学（reviewer 排除 system§）。off/frozen 没有
+      // episode stream，记录只落在 k0-host.json 的 contaminated 原因里。
+      void researchRefineRuntime?.onToolOutcome?.({
+        kind: 'residual',
+        source: 'system' as string as ResearchResidualSource,
+        tool: 'harness',
+        ruleId: 'harness_direct_write',
+        messageExcerpt: summary.slice(0, 160),
+      }).catch((error) => console.error('[Pi SDK] harness_direct_write 结算失败:', error))
+    }
     const settingsManager = sdk.SettingsManager.inMemory({
       // 使用 Pi SDK 原生压缩策略：
       // - 手动压缩由 session.compact() 触发；
@@ -2192,6 +2291,9 @@ export class PiAgentAdapter implements AgentProviderAdapter {
             : undefined,
         )]
         : []),
+      ...(harnessGuard
+        ? [createResearchHarnessGuardExtension(harnessGuard, onHarnessRestore)]
+        : []),
       ...(openAIReasoningProfile
         ? [createOpenAIReasoningRequestExtension({
           profile: openAIReasoningProfile,
@@ -2222,7 +2324,11 @@ export class PiAgentAdapter implements AgentProviderAdapter {
       // buildSubagentGuidance——kernel 开了但模型不知道 rlm() 的契约。
       // Proma 的会话上下文改走 append 段，落在 Prime RLM 契约之后；基础提示
       // 保持 Prime 默认（含 RLM 学说、子代理指引、harness 状态注入）。
-      appendSystemPromptOverride: () => [appendWindowsBaseModeInstruction(input.systemPrompt, input.runtimeEnv)].filter(Boolean),
+      appendSystemPromptOverride: () => [
+        appendWindowsBaseModeInstruction(input.systemPrompt, input.runtimeEnv),
+        // K0 时刻的宿主状态（之后只会多出 contaminated 标记）；补丁 #27 的父会话覆盖行。
+        ...(researchHostStatus ? [renderResearchHostStatus(researchHostStatus), NO_AGENT_MESSAGE_PARENT_LINE] : []),
+      ].filter(Boolean),
     })
     await resourceLoader.reload()
     const skillDiagnostics = resourceLoader.getSkills().diagnostics
@@ -2255,6 +2361,27 @@ export class PiAgentAdapter implements AgentProviderAdapter {
     if (researchRefineRuntime) {
       artifactSessionIdHolder.value = session.sessionId
       installResearchRefineToolTap(session.agent, researchRefineRuntime)
+    }
+    let unsubscribeHarnessGuard: (() => void) | undefined
+    if (harnessGuard) {
+      harnessGuard.rebaseline()
+      // 只有 learning 臂的 refine 路径算授权写入（批准令牌与 global 回滚归 refine runtime）；
+      // off/frozen 里 kernel 显式 refine.run 的写入不认，下一个 turn_end 恢复并标 contaminated。
+      // ponytail: 那次 refine 后 Prime 重建的提示词里仍带该条目，直到下一次重建；升级路径是
+      // 非 learning 臂也在 prompt 结束时走 native rollbackId（轨道 A 的 runtime）或 SE16 只读快照。
+      // 常驻订阅（不随 query）：refine 也可能在 query 之外落定（refineNow、dispose 前的回滚）。
+      if (researchRefineMode === 'learning') {
+        unsubscribeHarnessGuard = session.subscribe((event: AgentSessionEvent) => {
+          if (event.type === 'refine_complete') harnessGuard.acceptRefinement(event.result)
+        })
+      }
+    }
+    if (researchHostStatus) {
+      try {
+        writeK0HostStatus(researchRefineArtifactDir(sessionArtifactsRoot, session.sessionId), researchHostStatus)
+      } catch (error) {
+        console.error('[Pi SDK] k0-host.json 写入失败:', error)
+      }
     }
     if (rlmSupply.available) {
       // 父会话的 ipython 走 session-owned 执行 hook：Prime 重建工具表后仍有效，
@@ -2365,6 +2492,7 @@ export class PiAgentAdapter implements AgentProviderAdapter {
       autoRefine: readAutoRefineSettings(settingsManager as unknown as { getSettings?: () => unknown }),
       ...(researchRefineRuntime?.mode === 'learning' && { researchRefineRuntime }),
       ...(researchRefineMode && { researchRefineMode }),
+      ...((researchHostStatus || researchRefineRuntime) && { markResearchContaminated }),
       idleChildNotice,
       // 审计 F2：learning 臂 dispose 前先排空 C5 promotion（VALIDATED → global），
       // 再交 Prime 销毁会话；失败也要 dispose，promotion 结果以事件流为准。
@@ -2374,6 +2502,15 @@ export class PiAgentAdapter implements AgentProviderAdapter {
         } catch (error) {
           console.error('[Pi SDK] research refine promotion 失败:', error)
         } finally {
+          // 最后一个 turn_end 之后的写入（非 serialized 的 refine.run、空闲时仍在写的 child）在这里收尾。
+          // ponytail: 基线不跨会话持久化，dispose 之后的写入要等 SE16 只读快照。
+          try {
+            const restores = harnessGuard?.check() ?? []
+            if (restores.length > 0) onHarnessRestore(restores)
+          } catch (error) {
+            console.error('[Pi SDK] dispose 前 harness 比对失败:', error)
+          }
+          unsubscribeHarnessGuard?.()
           disposeRlmChildWatchdog?.()
           session.dispose()
         }
@@ -2398,7 +2535,13 @@ export class PiAgentAdapter implements AgentProviderAdapter {
     if (resident.researchRefineMode && resident.researchRefineMode !== 'learning') {
       return { scheduled: false, reason: `research refine 实验臂为 ${resident.researchRefineMode}，手动提炼已被禁用` }
     }
-    await resident.session.refine()
+    // §3.5：refineNow 没有 C2 归因，永不 VALIDATED；本会话的臂从此标 contaminated。
+    resident.markResearchContaminated?.(REFINE_NOW_REASON)
+    // 会话空闲时没有 per-query 订阅：runUserRefine 临时接上 C3 结算，只放行 id 等于这次
+    // refine 返回值的那条（排队在前的 kernel refine.run 照常回滚），再在此静默边界回滚。
+    const runUserRefine = resident.researchRefineRuntime?.runUserRefine
+    if (runUserRefine) await runUserRefine(resident.session)
+    else await resident.session.refine()
     return { scheduled: true }
   }
 
