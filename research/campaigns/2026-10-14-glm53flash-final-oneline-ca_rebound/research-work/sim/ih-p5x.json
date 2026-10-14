@@ -1,0 +1,31 @@
+{
+ "id": "ih-p5x",
+ "claim": "H1",
+ "mechanism": {
+  "extra": [
+   {
+    "name": "IH",
+    "g": 0.6,
+    "E": -30.0,
+    "mvh": -75.0,
+    "mk": -9.0,
+    "mtau": 120.0,
+    "mpow": 1,
+    "hvh": -60.0,
+    "hk": 6.0,
+    "htau": 500.0,
+    "hpow": 1
+   }
+  ]
+ },
+ "label": "hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",
+ "block": [
+  "XE991"
+ ],
+ "reps": 64,
+ "seed": 0,
+ "counts_mean": 17.78125,
+ "counts_sd": 1.7409060768042508,
+ "nbsim_sha256": "bd1b9c85aaa7d9a0f7cdb92f086423d77af0fce4b5a472f4a0479b821ed58813",
+ "wall_s": 2.92
+}

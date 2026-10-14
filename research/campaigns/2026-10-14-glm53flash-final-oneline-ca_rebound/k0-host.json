@@ -1,0 +1,99 @@
+{
+  "arm": {
+    "mode": "frozen",
+    "source": "ui-default",
+    "contaminated": true,
+    "reasons": [
+      "harness_direct_write restored: added memory:research_战役执行环境教训_2026_10_14_ca_rebound_run_实证",
+      "harness_direct_write restored: added memory:research_战役执行环境教训_2026_10_14_ca_rebound_run_实证"
+    ]
+  },
+  "globalHarness": {
+    "path": "/root/.prime/agent/harness/harness_state.json",
+    "sha256": "ac9d346fcbb1132c2d2b0425cfb868549ea3d973f0aa17e5d4f3b11971f118e9",
+    "unmanagedEntries": 0,
+    "globalSkillEntries": 0,
+    "unapproved": []
+  },
+  "skills": [
+    {
+      "slug": "research-abduce",
+      "version": "0.5.4",
+      "sha": "31fab7c3391c78e29d4073ff242fe352c571587862e84460d213b39b0eb3e3d7"
+    },
+    {
+      "slug": "research-grill",
+      "version": "0.4.5",
+      "sha": "da20ca11420521ebca5a089521b8c0718cf356bba0e08b7220f267776d0d31c3"
+    },
+    {
+      "slug": "research-kit",
+      "version": "0.5.1",
+      "sha": "d7d3265938357418065509088973fe3227ceff04dd4c88c16cf072a67bed2c51"
+    },
+    {
+      "slug": "research-loop",
+      "version": "0.6.1",
+      "sha": "8b44e4f749dc467e3deda6c455a2c18f252024cd722ebfd824eb563aeb9f4bf9"
+    },
+    {
+      "slug": "research-moves",
+      "version": "0.2.4",
+      "sha": "2244b470806bbb0164bbc555dc91e34e9566904961a450e0292e047f7698b4c6"
+    },
+    {
+      "slug": "research-probe",
+      "version": "0.6.5",
+      "sha": "811688e2dc8fc40f5abb7201c108577d1822f763c77b3adcb78562e32861826d"
+    },
+    {
+      "slug": "research-report",
+      "version": "0.4.5",
+      "sha": "a4566b2dcc37c3ee1b2670f52bbdbcfc4ac7cdeecb2145e35ac4b6d0f84a10cc"
+    },
+    {
+      "slug": "research-scoop",
+      "version": "0.1.2",
+      "sha": "90bd53a0251191cc858a30891d105e60676c1d47252f12b4f93c6c209c07eae7"
+    }
+  ],
+  "unknownSkills": [
+    "agent-collaboration",
+    "automation",
+    "ccf-common",
+    "ccf-experiment-designer",
+    "ccf-humanization",
+    "ccf-idea-optimizer",
+    "ccf-idea-reviewer",
+    "ccf-integrity-auditor",
+    "ccf-literature-monitor",
+    "ccf-literature-searcher",
+    "ccf-paper-reviewer",
+    "ccf-paper-to-exemplar",
+    "ccf-paper-writer",
+    "ccf-pipeline-orchestrator",
+    "ccf-project-scaffolder",
+    "ccf-rebuttal-writer",
+    "ccf-skill-forger",
+    "ccf-submission-checker",
+    "ccf-visual-composer",
+    "docx",
+    "executing-plans",
+    "find-skills",
+    "guizang-ppt-skill",
+    "in-app-browser",
+    "knowledge-maintenance",
+    "nature-figure",
+    "nature-shared",
+    "nature-writing",
+    "pdf",
+    "pptx",
+    "proma-coach",
+    "prompt-clarifier",
+    "session-cleaner",
+    "skill-creator",
+    "tool-builder",
+    "writing-plans",
+    "xlsx"
+  ]
+}

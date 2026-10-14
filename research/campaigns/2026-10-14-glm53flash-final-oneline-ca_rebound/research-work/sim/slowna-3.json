@@ -1,0 +1,27 @@
+{
+ "mechanism": {
+  "extra": [],
+  "slow_na": true
+ },
+ "label": "hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",
+ "segments": [
+  [
+   250,
+   -30.0
+  ],
+  [
+   120,
+   0.0
+  ],
+  [
+   60,
+   6.0
+  ]
+ ],
+ "block": [],
+ "reps": 64,
+ "seed": 0,
+ "counts_mean": 7.078125,
+ "counts_sd": 1.655243592105509,
+ "nbsim_sha256": "bd1b9c85aaa7d9a0f7cdb92f086423d77af0fce4b5a472f4a0479b821ed58813"
+}
