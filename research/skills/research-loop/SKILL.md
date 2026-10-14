@@ -1,7 +1,7 @@
 ---
 name: research-loop
 description: 研究工作的第一动作。Use when 接到研究问题、想执行评测命令、开始或继续任何研究战役、会话刚启动、压缩刚发生、或不确定当前该做什么时。
-version: 0.5.5
+version: 0.5.6
 ---
 
 # research-loop —— 研究战役主路由
@@ -82,9 +82,9 @@ gate 是裁决不是续命。
    只有落地测量能终结 claim。
    ✓ 成功条件：本阶段规定的问题类型无悬空项。
 6. **压缩发生后**：运行时注入了 `<post_compaction_rlm_required>` 块时，第一个
-   ipython cell 只 spawn 压缩核对 child——`await rlm(..., name="compaction-check")`，
-   提示词照抄该块并填上 `<key claims>`；spawn 之前任何别的 cell（包括 print）都会被闸门拦下。等
-   `compaction-checkpoint.md` 写出后，再 `print(research_kit.LAST)` 找回锚
+   ipython cell 只 spawn 压缩核对 child——`name` 与输出文件名**逐字照抄该块**（每次压缩
+   都带新 nonce，别自己起名），提示词照抄并填上 `<key claims>`；spawn 之前任何别的 cell
+   （包括 print）都会被闸门拦下。等该块点名的文件写出后，再 `print(research_kit.LAST)` 找回锚
    + 读 `RULINGS.md` 尾部找回战役等级，再决定要不要重新 `anchor()`——不要凭对话
    记忆重建信念状态。
    **kernel 重启后**（`research_kit.LAST` 变量不在了）：重走开场仪式立锚。

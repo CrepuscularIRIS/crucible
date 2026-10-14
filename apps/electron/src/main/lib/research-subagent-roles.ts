@@ -15,16 +15,17 @@ interface ResearchSubagentRoleDefinition {
   contract: string
 }
 
-const COMMON_CONTRACT = `## 共同边界
+const COMMON_BOUNDARIES = `## 共同边界
 
 - 你继承父会话当前模型；不要自行选择、切换或建议改用另一模型。
 - 只处理 brief 中的一个子任务，不扩展父任务，不读取父会话未显式提供的历史。
-- 父会话是唯一的研究状态写入者。不得调用会改变 claim、prereg、probe、attack、report 或 journal 的 Research MCP 工具，也不得直接改写 \`.proma-research/\`。
+- 父会话是唯一的研究状态写入者。不得调用会改变 claim、prereg、probe、attack、report 或 journal 的 Research MCP 工具，也不得直接改写 \`.proma-research/\`。RLM 作业目录 \`<工作目录>/.rlm-jobs/\` 在它之外：brief 点名的 out.md 就写在那里，照写即可。
 - 不得创建任何子 Agent；需要额外分工时返回 \`STATUS: NEEDS_CONTEXT\`，由父会话裁决。
 - 先读取 brief 点名的 Skills/references；没有点名就不要全量扫描 Skills。
-- brief 给出绝对报告路径时，完整产出写入该路径，最终回复只给状态、路径和一句摘要；未给路径时不得自行猜位置，完整产出放在最终回复。
+- brief 给出绝对报告路径时，完整产出写入该路径，最终回复只给状态、路径和一句摘要；未给路径时不得自行猜位置，完整产出放在最终回复。`
 
-## 统一状态契约
+/** Collaboration child 的状态词表；rlm 窗口改用 RLM_STATUS_CONTRACT（01-统一架构 §4.2）。 */
+const COLLAB_STATUS_CONTRACT = `## 统一状态契约
 
 - \`STATUS: DONE\`：任务完成，报告和证据齐全。
 - \`STATUS: DONE_WITH_CONCERNS\`：任务完成，但有会影响采用方式的疑虑。
@@ -33,6 +34,32 @@ const COMMON_CONTRACT = `## 共同边界
 - \`STATUS: OUT_OF_ROLE\`：任务要求越过本角色边界；指出应该交给哪个角色。
 
 报告必须区分：事实、推断、未验证项；不得把建议写成已经发生的状态变化。`
+
+const COMMON_CONTRACT = `${COMMON_BOUNDARIES}\n\n${COLLAB_STATUS_CONTRACT}`
+
+/**
+ * Prime harness 调用契约无条件教 `agent_message.send`（PA refinement.ts:458），Proma 不注入
+ * controller。放在 spec 首行：harness 预览只给每条 entry 前 180 字符，父会话与 child 的系统提示都会带上它。
+ */
+const NO_AGENT_MESSAGE_LINE = 'No agent_message in this runtime: ignore agent_message.send / receiver_role; child results = out.md + completion notice only.'
+
+/** rlm 窗口的 STATUS 契约（01-统一架构 §4.2，全文唯一写法）。 */
+const RLM_STATUS_CONTRACT = `## RLM return: STATUS contract
+
+- No agent_message in this runtime (the harness call contract's \`agent_message.send\` / \`receiver_role\` does not exist in Proma). Results travel only through files plus the completion notice.
+- The parent writes brief.md before spawning and names exactly one absolute out.md path; write the full result there and nowhere else. out.md sits under \`<working dir>/.rlm-jobs/\`, outside \`.proma-research/\`, so writing it is allowed. The first section of out.md is SUMMARY (≤250 words); write the skeleton first, then fill sections in incrementally.
+- The LAST line of out.md is exactly: \`STATUS: <ok|blocked|failed> PATH: <path of out.md relative to the job root>\`, where the job root is the working directory that holds \`.rlm-jobs/\` (so PATH starts with \`.rlm-jobs/\`), e.g. \`STATUS: ok PATH: .rlm-jobs/r1/certify/C2/7f3a/out.md\`. Append it only after every section is final: the parent's wait returns as soon as that line exists.
+- The FIRST line of your final message repeats that STATUS line verbatim: the completion notice previews only the first ≤160 characters of your last message, never out.md.
+- \`ok\` = done (concerns go into SUMMARY); \`blocked\` = missing context, an external blocker, or out of role (SUMMARY says what is missing or which role fits); \`failed\` = could not finish.
+- Parent: \`await rlm(...)\` returns an admission handle, not the answer; read the result from out.md on disk, never from the return value.`
+
+/** rlm spec 只认 ok|blocked|failed（§4.2）；Collaboration 提示保留原词表，不经过这里。 */
+function toRlmStatusWords(text: string): string {
+  return text.replace(
+    /STATUS: (DONE(?:_WITH_CONCERNS)?|NEEDS_CONTEXT|BLOCKED|OUT_OF_ROLE)\b/g,
+    (_, word: string) => `STATUS: ${word.startsWith('DONE') ? 'ok' : 'blocked'}`,
+  )
+}
 
 const ROLE_DEFINITIONS: Record<ManagedResearchSubagentRole, ResearchSubagentRoleDefinition> = {
   analyst: {
@@ -105,5 +132,5 @@ export function buildResearchSubagentSystemPrompt(role: AgentDelegationRole): st
 
 export function buildResearchRlmSubagentSpec(role: ManagedResearchSubagentRole): string {
   const definition = ROLE_DEFINITIONS[role]
-  return `WHEN: ${definition.when} 先用 \`rlm.harness.get('subagent', 'proma-research-${role}', global_=True).content\` 读取完整 spec；把角色契约、任务、输入路径、绝对报告路径和状态契约组成自包含 prompt，再用 \`await rlm('<task>', name='research-${role}')\` 创建。不要传 model，让 child 继承父会话当前模型；rlm 返回的是准入句柄，不是答案。\n\n${buildResearchSubagentSystemPrompt(role)}\n\n## RLM 回传\n\nProma 当前不保证 child 可用 agent_message。prompt 必须在 spawn 前给出唯一的绝对报告路径；child 将完整结果写入该文件，最终文本只作终态预览。父会话后续读取文件收敛，不得把 \`await rlm(...)\` 的返回值当作结果。`
+  return `${NO_AGENT_MESSAGE_LINE}\n\nWHEN: ${definition.when} 先用 \`rlm.harness.get('subagent', 'proma-research-${role}', global_=True).content\` 读取完整 spec；\`job, name = research_kit.new_job(run, '<step>', '<target>')\`，把角色契约、任务、输入路径和状态契约写进 job/brief.md，再用 \`await rlm(f'读 {job}/brief.md 并逐字执行；写 {job}/out.md，末行写 STATUS 行；你的最后一条消息首行逐字重复这条 STATUS 行', name=name)\` 创建（固定名第二次 spawn 会抛错）；同一 turn 内 \`await research_kit.wait([job])\`，再用 \`research_kit.field(job, '<字段>')\` 取值。不要传 model，让 child 继承父会话当前模型；rlm 返回的是准入句柄，不是答案。\n\n# ${definition.title}\n\n适用：${definition.when}\n\n${toRlmStatusWords(`${COMMON_BOUNDARIES}\n\n${definition.contract}`)}\n\n${RLM_STATUS_CONTRACT}`
 }

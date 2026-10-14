@@ -11,7 +11,7 @@ description: >-
   claim with evidence (research-grill), to score idea quality (research-grill
   references/idea-quality.md), for artifact/confound rival hypotheses, or for a
   general literature review.
-version: 0.1.0
+version: 0.1.1
 ---
 
 # research-scoop: prior-work collision gate
@@ -92,10 +92,12 @@ these files, not the conversation.
    the set.
 6. **Verify and compare (5b/6, rlm child).** These are the extreme-judgement
    steps; never run them in the same context as the fetching. Following
-   research-loop `references/delegation.md`, load the `proma-research-reviewer`
-   contract and call `await rlm('<self-contained task>', name='research-reviewer')`
-   without `model=`. The prompt contains only paths: step1.md, step4.md, the
-   `papers/` files, and the report path `step56.md`. The child must:
+   research-loop `references/delegation.md`: `job, name = research_kit.new_job(run,
+   "scoop", "<id>")`, write the `proma-research-reviewer` contract plus the task into
+   `job/brief.md`, then call `await rlm(<the 3-line job prompt>, name=name)` without
+   `model=` (a fixed name fails on the second spawn). The brief contains only paths:
+   step1.md, step4.md, the `papers/` files; the child writes its record to
+   `job/out.md`, last line the STATUS line. The child must:
    - **5b** for each candidate read intro / method / experiments / limitations and
      mark each axis `match / partial / differ`, quoting the passage that decides it.
      Same mechanism under different names is `match`; shared vocabulary with
@@ -103,11 +105,11 @@ these files, not the conversation.
      `partial` counts as not matching; `abstract-only` axes and axes lost to
      truncation are `unverified`.
    - **6** per paper `level = 5 - matched axes`; overall = the minimum level.
-   The child returns a status; the parent reads step56.md and checks each quote
-   against `papers/` before accepting it. `DONE_WITH_CONCERNS` counts as done (copy the
-   concerns into the ruling). Any other status (`OUT_OF_ROLE`, `NEEDS_CONTEXT`,
-   `BLOCKED`), or a child that cannot run: do 5b/6
-   in the parent and write `single-context verdict` in the ruling.
+   Then `(result,) = await research_kit.wait([job], timeout_s=1200)` in the same turn.
+   `status == "ok"`: copy `job/out.md` to step56.md and check each quote against
+   `papers/` before accepting it (concerns in its SUMMARY go into the ruling). Any other
+   status (`blocked`, `failed`, `timeout`), or a child that cannot run: do 5b/6 in the
+   parent and write `single-context verdict` in the ruling.
 7. **Delta (parent).** Write the delta sentence (template below) against the closest
    paper, taking its phrasing from the 5b record, or state that no delta holds and
    name the blocking paper. The reviewer child is read-only; this step is yours.

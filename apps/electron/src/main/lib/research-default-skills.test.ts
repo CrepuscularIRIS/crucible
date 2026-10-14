@@ -235,14 +235,14 @@ describe('受管 research 默认 Skills', () => {
 
   it('所有改动过的默认 Research Skills 都递增了 patch 版本', () => {
     const expectedVersions: Record<string, string> = {
-      'research-loop': '0.5.5',
+      'research-loop': '0.5.6',
       'research-abduce': '0.5.3',
       'research-probe': '0.6.3',
-      'research-grill': '0.4.3',
+      'research-grill': '0.4.4',
       'research-report': '0.4.3',
-      'research-kit': '0.4.1',
+      'research-kit': '0.4.2',
       'research-moves': '0.2.3',
-      'research-scoop': '0.1.0',
+      'research-scoop': '0.1.1',
     }
     for (const [slug, version] of Object.entries(expectedVersions)) {
       const skill = readFileSync(join(researchSkillsRoot, slug, 'SKILL.md'), 'utf-8')

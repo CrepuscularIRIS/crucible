@@ -65,10 +65,10 @@ ${RESEARCH_ROUTING_BLOCK}`
 
 /** 精简版 mindset/调研/01 §5.2 路由表（§5.3 选项 A+C）；每回合付费，保持 ≤25 行、≤2200 字符。 */
 const RESEARCH_ROUTING_BLOCK = `<research_routing>
-Act on the FIRST trigger that holds, at its depth. deep = isolated rlm child, \`await rlm("<self-contained task>", name='research-<role>')\`, pass file paths not pasted context; read its report file, then only you write state. mid = reason here. shallow = mechanical.
+Act on the FIRST trigger that holds, at its depth. deep = rlm child: \`job, name = research_kit.new_job(run, step, target)\`, paths in job/brief.md, \`await rlm(<prompt>, name=name)\`, \`await research_kit.wait([job])\` same turn, \`research_kit.field\`; only you write state. mid = reason here. shallow = mechanical.
 Novelty task = the deliverable is a new idea or method. Only there do research-scoop and idea-quality run; world tasks (world_* tools) and empirical questions about a named system skip them: "published" says nothing about "true".
 - Session start / unsure → research-loop: \`research_init\` or \`research_state\` + anchor — shallow
-- After compaction → first one ipython cell spawning the checker rlm child (runtime-enforced), wait for compaction-checkpoint.md, continue from it, then research-loop — shallow
+- After compaction → first cell spawns the checker with the name and file given in <post_compaction_rlm_required>; wait, continue from that file, then research-loop — shallow
 - ⚠ in anchor / result outside band / transition refused → research-moves card; out-of-band forces triage — mid (reframe: deep)
 - No LIVE claim → research-abduce + discovery-methods → \`claim_propose\` — deep. Novelty task: before claim_propose of a mechanism (not the artifact rival) run research-scoop (queries mid; full-text check deep; Level ≤2 → abduce or reframe.md; not run → claim_propose, never call it novel), then Level ≥3 → research-grill/references/idea-quality.md (mid; weak / nugget missing / hollow → abduce); closest prior work goes in conflicts
 - Novelty task, user asks "has this been done?" of a LIVE claim → research-scoop; Level ≤2 → \`claim_transition\` to CONTESTED, note "scooped: <paper id>"

@@ -8,7 +8,7 @@ import {
   buildResearchRlmSubagentSpec,
 } from './research-subagent-roles'
 
-export const MANAGED_RESEARCH_SUBAGENT_VERSION = '1.0.0'
+export const MANAGED_RESEARCH_SUBAGENT_VERSION = '1.2.0'
 const MANAGED_BY = 'proma-research'
 
 interface HarnessEntry {

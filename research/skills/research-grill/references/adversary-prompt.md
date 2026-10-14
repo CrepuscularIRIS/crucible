@@ -8,7 +8,7 @@
 | 占位符 | 填什么 |
 |---|---|
 | `{CLAIM_VIEW}` | `research_kit.claim_view(run, "H#")` 的完整输出（不加不减） |
-| `{DROP_PATH}` | 父会话在 child spawn **之前**选定的绝对路径（如 `<项目根>/.grill-drops/H1/attacks.md`，见 SKILL.md 程序 2——**不是**环境变量，**不是** session_dir；RLM child 不保证 spawn 后仍有消息通道） |
+| `{DROP_PATH}` | 父会话在 child spawn **之前**选定的绝对路径（RLM：`<job>/attacks.md`，job 来自 `research_kit.new_job`；Collaboration：如 `<项目根>/.grill-drops/H1/attacks.md`。见 SKILL.md 程序 2——**不是**环境变量，**不是** session_dir；RLM child 不保证 spawn 后仍有消息通道） |
 | `{PRIOR_ATTACKS}` | 第二轮起：上一轮 attacks.md 原文；第一轮填 `（首轮，无）` |
 | `{SUPPORTED_ADDENDUM}` | 目标是 SUPPORTED 时附加段（见下）；否则留空 |
 
@@ -39,7 +39,7 @@ KIND ∈ new_h / constraint / no_change。
 攻击必须具体到可检验："样本可能不够"不算；
 "n=30 时频段 [0.8,1.0] 与 [0.6,1.0] 在 95% 置信下无法区分"算。
 不许和稀泥——"整体看起来合理"就是失职。
-除该文件外不需要其他产出。
+除该文件（以及 brief 要求的 out.md 与其末行 STATUS）外不需要其他产出。
 ```
 
 ## `{SUPPORTED_ADDENDUM}`（仅对 SUPPORTED 目标）

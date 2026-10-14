@@ -1,7 +1,7 @@
 ---
 name: research-grill
 description: Use when LIVE 或 SUPPORTED 假设尚未挨过对抗攻击、有新落地证据未被攻击检验、或候选要花高成本前需要独立 idea gauntlet 时。
-version: 0.4.3
+version: 0.4.4
 ---
 
 # research-grill —— 对抗检验
@@ -42,23 +42,27 @@ Collaboration child。信息不对称是结构：对抗者看得到主张与证�
    进入自包含 prompt。RLM 使用启动时受管的 `proma-research-reviewer` spec，
    Collaboration 传 `role=reviewer`；两者都不传模型参数。
 
-   RLM 示例：
+   RLM 示例（作业目录与 nonce 名见 research-loop `references/delegation.md`）：
 
    ```python
-   import pathlib
-   drop_dir = pathlib.Path.cwd() / ".grill-drops" / "H1"   # 项目根下，绝不在 .proma-research 内
-   drop_dir.mkdir(parents=True, exist_ok=True)
+   job, name = research_kit.new_job(run, "grill", "H1")   # 每轮新目录 + 新名；固定名第二次 spawn 必抛错
    view = research_kit.claim_view(run, "H1")               # 不含 transition notes
-   prompt = reviewer 角色契约 + 按 references/adversary-prompt.md 填占位符
-   # {DROP_PATH} = f"{drop_dir}/attacks.md"
-   handle = await rlm(prompt, name="grill-H1")
+   brief = reviewer 角色契约 + 按 references/adversary-prompt.md 填占位符
+   # {DROP_PATH} = f"{job}/attacks.md"
+   (job / "brief.md").write_text(brief, encoding="utf-8")
+   await rlm(f"读 {job}/brief.md 并逐字执行；写 {job}/out.md，末行写 STATUS 行；"
+             "你的最后一条消息首行逐字重复这条 STATUS 行", name=name)
+   (result,) = await research_kit.wait([job], timeout_s=1200)   # 同一 turn 内阻塞等
    ```
+
+   Collaboration 的落点放项目根下（如 `<项目根>/.grill-drops/H1/attacks.md`）。
 
    ✓ 成功条件：spawn 前 prompt 里已有字面绝对路径；没有任何"从环境变量找"
    或"稍后告诉你"的指示。
-3. **回收原文**：父会话直接攻击时保留四镜头原句；RLM 在**准入**时返回句柄，
-   不是答案，后续用 `research_kit.collect_attacks(str(drop_dir))` 回收（一并扫
-   `sub-*`，去重；空列表 = 还没写完，不是错误）；Collaboration 用
+3. **回收原文**：父会话直接攻击时保留四镜头原句；RLM 在 `wait` 返回后用
+   `research_kit.collect_attacks(str(job))` 回收（去重）；`result["status"]` 不是 `ok`
+   （`blocked` / `failed` / `timeout`）→ 按 delegation.md 换新 job 重派一次，仍失败父会话
+   自己攻击；Collaboration 用
    `wait_for_delegations` 收到终态后读取同一绝对报告路径，需要第二轮时才
    `continue_delegation`。不要短间隔轮询。
    ✓ 成功条件：拿到攻击行原文（跳过 `#` 开头的 SCOPE-ONLY 行——那是收窄
@@ -84,7 +88,7 @@ Collaboration child。信息不对称是结构：对抗者看得到主张与证�
 | 借口 | 现实 |
 |---|---|
 | "让子代理读 RLM_SESSION_DIR 找落点" | P4.3 实测：Prime 只在有持久 artifact 目录时才设它，没有时**根本不存在**——子代理把 attacks.md 写去了 `/tmp`，父代理只能翻日志抄回来。落点由父代理写死在 prompt 里。 |
-| "拉起后马上读 attacks.md" | rlm() 准入即返回，不返回答案。立即读可能为空；空不是错误，是"还没写完"。后续轮次再收。 |
+| "拉起后马上读 attacks.md" | rlm() 准入即返回，不返回答案。立即读可能为空；空不是错误，是"还没写完"。同一 turn 内 `research_kit.wait` 返回后再收。 |
 | "每条 claim 都派一个 child 才算独立" | child 是昂贵的执行通道，不是攻击本身。短 attack job 父会话直接做；只有有界深审或长程可见协作才委派。 |
 | "把我的推理一起给对抗者，攻得更准" | 攻得更准的是复读机。信息不对称是这个仪器的全部原理——用 claim_view，别自己拼"完整状态"。 |
 | "对抗者说整体合理，通过" | 那是它失职，不是你过关。换一个镜头重问。 |

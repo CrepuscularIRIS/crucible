@@ -116,3 +116,39 @@ describe('受管 reviewer spec 的落盘路径', () => {
     expect(getManagedResearchSubagentHarnessPath({ PRIME_AGENT_CODING_AGENT_DIR: '~/p' })).toBe(join(homedir(), 'p/harness/harness_state.json'))
   })
 })
+
+describe('受管 rlm spec 的 P0 契约', () => {
+  /** Prime formatHarnessStateForPrompt 只给每条 entry 前 180 字符（compactText）。 */
+  const harnessPreview = (content: string): string => content.replace(/\s+/g, ' ').trim().slice(0, 177)
+
+  function seededContents(): Record<string, string> {
+    const path = tempStatePath()
+    seedManagedResearchSubagents(path, '2026-10-14T00:00:00.000Z')
+    const state = JSON.parse(readFileSync(path, 'utf8')) as HarnessFixtureState
+    return Object.fromEntries(Object.entries(state.entries.subagent).map(([id, e]) => [id, e.content]))
+  }
+
+  it('agent_message 覆盖行出现在 harness 预览里（父会话与 child 的系统提示都看得到）', () => {
+    for (const content of Object.values(seededContents())) {
+      expect(harnessPreview(content)).toContain('No agent_message')
+      expect(harnessPreview(content)).toContain('WHEN:')
+    }
+  })
+
+  it('reviewer / analyst 按 §4.2 收尾：out.md 末行与最后一条消息首行是同一条 STATUS 行', () => {
+    const contents = seededContents()
+    for (const id of ['proma-research-reviewer', 'proma-research-analyst']) {
+      const content = contents[id]!
+      expect(content).toContain('STATUS: <ok|blocked|failed> PATH: <path of out.md relative to the job root>')
+      expect(content).toContain('LAST line of out.md')
+      expect(content).toContain('FIRST line of your final message')
+      expect(content).toContain('SUMMARY')
+      // 旧的 Collaboration 词表不得与 rlm 的三值 STATUS 并存
+      expect(content).not.toContain('STATUS: DONE')
+    }
+  })
+
+  it('改了受管内容就升版本，旧版本条目被 seed 升级', () => {
+    expect(MANAGED_RESEARCH_SUBAGENT_VERSION).toBe('1.2.0')
+  })
+})

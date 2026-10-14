@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test'
-import { buildResearchTerminalContext } from './agent-prompt-builder'
+import { buildResearchTerminalContext, buildSystemPrompt } from './agent-prompt-builder'
+import { MANAGED_RESEARCH_SUBAGENT_ROLES, buildResearchRlmSubagentSpec } from './research-subagent-roles'
 
 describe('Research 父会话终局契约', () => {
   it('隔离父会话每回合拿到 Pi 实际工具全名', () => {
@@ -38,6 +39,18 @@ describe('Research 父会话终局契约', () => {
     expect(lines.find((l) => l.startsWith('- pid not yet run'))).not.toContain('world_observe')
   })
 
+  it('路由块：deep 走 kit 的 nonce 作业（new_job/wait/field）；压缩复核用闸给的名字和文件', () => {
+    const block = buildResearchTerminalContext(true).split('<research_routing>')[1]!
+    for (const verb of ['research_kit.new_job(', 'name=name', 'research_kit.wait(', 'research_kit.field']) {
+      expect(block).toContain(verb)
+    }
+    expect(block).not.toContain("name='research-")
+    const row = block.split('\n').find((l) => l.startsWith('- After compaction'))!
+    expect(row).toContain('<post_compaction_rlm_required>')
+    expect(block).not.toContain('compaction-checkpoint')
+    expect(block).not.toContain('compaction-check')
+  })
+
   it('普通会话不注入 Research 终局契约', () => {
     expect(buildResearchTerminalContext(false)).toBe('')
   })
@@ -48,4 +61,17 @@ describe('Research 父会话终局契约', () => {
       expect(buildResearchTerminalContext(true, role)).toBe('')
     },
   )
+})
+
+describe('rlm child 系统提示（P0 检查 ④）', () => {
+  // child 复用父会话 ResourceLoader：Proma 能控制的系统提示面 = 父会话 append 段
+  // + harness 里的受管 rlm spec。父会话的契约/路由块只能走每回合用户消息。
+  it('spawn 出的 child 系统提示里没有 <research_terminal_contract> / <research_routing>', () => {
+    const append = buildSystemPrompt({ sessionId: 'p0-check', permissionMode: 'bypassPermissions' })
+    const surfaces = [append, ...MANAGED_RESEARCH_SUBAGENT_ROLES.map(buildResearchRlmSubagentSpec)]
+    for (const surface of surfaces) {
+      expect(surface).not.toContain('<research_terminal_contract>')
+      expect(surface).not.toContain('<research_routing>')
+    }
+  }, 20_000) // 首次加载 settings/user-profile 服务可能超过默认 5s
 })

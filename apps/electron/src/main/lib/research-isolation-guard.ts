@@ -1,5 +1,6 @@
 import { homedir } from 'node:os'
 import { delimiter, isAbsolute, join, relative, resolve, sep } from 'node:path'
+import { isResearchMutatingTool } from './research-permission-policy'
 
 export interface ResearchIsolationConfig {
   cwd: string
@@ -509,6 +510,25 @@ export function classifyResearchToolCall(
   }
   if (hasUnsafeStateMutation(source, config)) return { block: true, reason: DENIAL_REASON }
   return undefined
+}
+
+/**
+ * rlm child 经 MCP 只读（01-统一架构 §4.5 / §9.4，P0 检查 ②）：父会话是唯一的研究状态写入者。
+ * `rlmDepth` 取自 tool_call handler 的 `ctx.sessionManager.getHeader()?.rlmDepth`
+ * （Prime 给 child header 写 rlmDepth=父+1；父会话为 0 或缺省）。
+ * world_* 一律拒（含 world_simulate：它也往 journal.jsonl 追加，§4.5/§9.4）；research_init 仍算写入。
+ * ponytail: 只管 MCP 调用；child 用 ipython 直接写文件不受此限（Prime 无权限层），靠 collect 的检测兜底。
+ */
+export function classifyRlmChildToolCall(toolName: string, rlmDepth: number | undefined): ResearchToolBlock | undefined {
+  if (!rlmDepth || rlmDepth <= 0) return undefined
+  if (!isResearchMutatingTool(toolName)) return undefined
+  const tool = toolName.slice(toolName.lastIndexOf('__') + 2)
+  return {
+    block: true,
+    reason: `rlm child cannot call ${tool}: the parent session is the only research-state writer. `
+      + 'Write your result into the out.md your brief names (last line = the STATUS line) and finish; '
+      + 'the parent collects it and records state.',
+  }
 }
 
 export function buildResearchIsolationConfig(denyRoots: string[], researchCwd: string): ResearchIsolationConfig {

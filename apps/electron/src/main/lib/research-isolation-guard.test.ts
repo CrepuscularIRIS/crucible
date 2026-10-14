@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'bun:test'
 import {
+  buildResearchIsolationConfig,
   classifyResearchToolCall,
+  classifyRlmChildToolCall,
   resolveResearchIsolationConfig,
   type ResearchIsolationConfig,
 } from './research-isolation-guard'
@@ -219,5 +221,55 @@ describe('研究评测产品路径隔离守卫', () => {
       undefined as unknown as Record<string, unknown>,
       isolation,
     )).toMatchObject({ block: true })
+  })
+})
+
+describe('rlm child 经 MCP 只读（P0 检查 ②）', () => {
+  const stateChanging = [
+    'attack_record', 'claim_propose', 'claim_transition', 'prereg_write',
+    'probe_run', 'report_declare', 'world_forecast', 'world_observe', 'world_simulate',
+  ]
+
+  it('child（rlmDepth>0）调写状态的 research 工具被拒，并被告知改写 out.md', () => {
+    for (const tool of stateChanging) {
+      const decision = classifyRlmChildToolCall(`mcp__research__${tool}`, 1)
+      expect(decision).toMatchObject({ block: true })
+      expect(decision?.reason).toContain('out.md')
+      expect(decision?.reason).toContain(tool)
+    }
+  })
+
+  it('父会话（depth 0 / header 无 depth）放行同一调用', () => {
+    expect(classifyRlmChildToolCall('mcp__research__attack_record', 0)).toBeUndefined()
+    expect(classifyRlmChildToolCall('mcp__research__attack_record', undefined)).toBeUndefined()
+  })
+
+  it('child 的只读面与非 research 工具不受影响', () => {
+    for (const tool of ['research_state', 'metric_recompute']) {
+      expect(classifyRlmChildToolCall(`mcp__research__${tool}`, 1)).toBeUndefined()
+    }
+    expect(classifyRlmChildToolCall('ipython', 1)).toBeUndefined()
+    expect(classifyRlmChildToolCall('mcp__context7__query-docs', 1)).toBeUndefined()
+  })
+})
+
+describe('rlm 作业目录在状态根之外（N1）', () => {
+  const config = buildResearchIsolationConfig(['/home/test/oss/neuronbench'], '/home/test/project')
+  const job = '/home/test/project/.rlm-jobs/r1/certify/C2/7f3a'
+
+  it.each([
+    [`open('${job}/out.md','w').write('## SUMMARY\\nok\\nSTATUS: ok PATH: .rlm-jobs/r1/certify/C2/7f3a/out.md\\n')`],
+    [`from pathlib import Path\nPath('${job}/out.md').write_text('x')`],
+    [`job = Path('${job}-self')\njob.mkdir(parents=True)\n(job / 'out.md').write_text('x')`],
+    [`job, name = research_kit.new_job("r1", "certify", "C2")\n(job / "brief.md").write_text(brief)`],
+  ])('child 写 out.md、父会话写 brief.md / -self 放行: %s', (code) => {
+    expect(classifyResearchToolCall('ipython', { code }, config)).toBeUndefined()
+  })
+
+  it.each([
+    [`open('/home/test/project/.proma-research/r1/out.md','w')`],
+    [`Path('/home/test/project/.proma-research/r1/journal.jsonl').write_text('x')`],
+  ])('写 .proma-research 仍被拦: %s', (code) => {
+    expect(classifyResearchToolCall('ipython', { code }, config)).toMatchObject({ block: true })
   })
 })
