@@ -3,6 +3,7 @@ import { useSetAtom } from 'jotai'
 import type { BrowserStateChange, BrowserViewState } from '@proma/shared'
 import { BROWSER_RISK_DISCLAIMER_VERSION } from '@/types/settings'
 import {
+  showWebBrowserNoticeAtom,
   browserPanelMinimizedMapAtom,
   browserPanelOpenMapAtom,
   browserPendingNavigationMapAtom,
@@ -56,7 +57,12 @@ export function AgentBrowserLinkProvider({
     })
   }, [setBrowserOpenMap, setBrowserMinimizedMap, setBrowserStateMap, setPendingNavigationMap])
 
+  const showWebBrowserNotice = useSetAtom(showWebBrowserNoticeAtom)
   const openLink = React.useCallback((url: string) => {
+    if (document.documentElement.dataset.promaSurface === 'web') {
+      showWebBrowserNotice({ sessionId, url })
+      return
+    }
     const openBrowser = (window.electronAPI as Partial<typeof window.electronAPI>).openAgentBrowser
     if (typeof openBrowser !== 'function') {
       void window.electronAPI.openExternal(url)
@@ -100,7 +106,7 @@ export function AgentBrowserLinkProvider({
     void nextNavigation.finally(() => {
       if (navigationQueues.get(sessionId) === nextNavigation) navigationQueues.delete(sessionId)
     })
-  }, [publishBrowserState, sessionId, setBrowserMinimizedMap, setPendingNavigationMap])
+  }, [publishBrowserState, sessionId, setBrowserMinimizedMap, setPendingNavigationMap, showWebBrowserNotice])
 
   const value = React.useMemo(() => ({ openLink }), [openLink])
   return <AgentBrowserLinkContext.Provider value={value}>{children}</AgentBrowserLinkContext.Provider>
