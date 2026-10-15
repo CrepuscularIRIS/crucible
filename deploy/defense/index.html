@@ -140,7 +140,7 @@ blockquote.orig .src{display:block;font-size:.8rem;color:var(--muted)}
 33: {&quot;ts&quot;:&quot;2026-10-14T12:51:23.633Z&quot;,&quot;op&quot;:&quot;probe.land&quot;,&quot;pid&quot;:&quot;P1&quot;,&quot;exit_code&quot;:0,&quot;metric&quot;:17.3333,&quot;prev&quot;:&quot;9d986761f06dce481d2389e518b446d85aca270e3f43a9c86fe19df349ba1a74&quot;}
 34: {&quot;ts&quot;:&quot;2026-10-14T12:53:19.969Z&quot;,&quot;op&quot;:&quot;claim.transition&quot;,&quot;id&quot;:&quot;H1&quot;,&quot;to&quot;:&quot;SCOPED&quot;,&quot;by_probe&quot;:&quot;P1&quot;,&quot;note&quot;:&quot;P1 观测 17.33 落入 H3 频段 [14.3,17.4]，未达 H1 冻结带 [18,30]：超极化释放的强瞬态反弹（≥+2.7 于基线）不存在。观测相对基线仅 +2.0，弱效应变体（小电导内向流）留待 H4 判别，故 SCOPED 而非 REFUTED。&quot;,&quot;prev&quot;:&quot;e039ef8f174d97f1167a8872c75c173b3ad5ae0db1bcea0ea8b0cc2517c316ca&quot;}</pre>
 <h5>② 推导值（由记录推出）</h5><ul><li>同协议候选仿真值（全程）14–21，6 次</li><li>观测 17.33（3 次）对各预测区间：H1 [18, 30]；H2 [0, 14.2]；H3 [14.3, 17.4] ← 观测落在此</li></ul>
-<h5>③ 复算</h5><p class="small">键 <code>one.P1.base_mean</code>、<code>one.P1.delta</code>、<code>one.P1.r_star</code>、<code>one.P1.truth_mean</code>，来自 <code>recompute.json</code>，脚本 <code>mindset/轨迹偏离审计-复算.py</code></p>
+<h5>③ 复算</h5><p class="small">键 <code>one.P1.base_mean</code>、<code>one.P1.delta</code>、<code>one.P1.r_star</code>、<code>one.P1.truth_mean</code>，来自 <code>recompute.json</code>，脚本 <code>research/campaigns/_recompute/oneline-20261014.py</code></p>
 <h5>④ 审查者</h5><ul><li>无（本节点没有对应的攻击记录）</li></ul>
 <h5>⑤ 人的干预</h5><p class="small muted">本归档没有干预文件。</p>
 </details>
@@ -164,7 +164,7 @@ blockquote.orig .src{display:block;font-size:.8rem;color:var(--muted)}
 67: {&quot;ts&quot;:&quot;2026-10-14T13:08:24.223Z&quot;,&quot;op&quot;:&quot;claim.transition&quot;,&quot;id&quot;:&quot;H5&quot;,&quot;to&quot;:&quot;REFUTED&quot;,&quot;by_probe&quot;:&quot;P2&quot;,&quot;note&quot;:&quot;P2 观测 13.0 落入冻结带 [10,15.5]：brief hyperpol 40ms 协议下真细胞与裸细胞基线完全一致（13.0 vs 校准 13.0），快瞬态 T 型样 flavour 预测的 ≥+5 增强不存在。weakT 在同 draws 校准预测 20.0，偏差 -7.0。&quot;,&quot;prev&quot;:&quot;7f9e79007f65099b75ab9e5027285ccf13f5984f0091aa4fd24173b23606e322&quot;}
 68: {&quot;ts&quot;:&quot;2026-10-14T13:08:24.225Z&quot;,&quot;op&quot;:&quot;claim.transition&quot;,&quot;id&quot;:&quot;H3&quot;,&quot;to&quot;:&quot;SUPPORTED&quot;,&quot;by_probe&quot;:&quot;P2&quot;,&quot;note&quot;:&quot;P2 观测 13.0 落入冻结带 [10,15.5] 且与 ref/slow_na 校准值（13.0）完全一致：brief 协议无增强。P1 协议观测 17.33 vs slow_na 校准 15.67 的 +1.67 残差归入慢 Na 失活动力学的参数不确定性（P1 协议上 H1/H2/H3 频段 [14.3,17.4] 未区分该细节）。放电表观变化由基线通道（含 slow_na 动力学）解释，无需额外反弹电流。&quot;,&quot;prev&quot;:&quot;3b64b355290bffa6985612cfe4b8fbee40f7c6b36ec5fdf877b5d305a46ce58d&quot;}</pre>
 <h5>② 推导值（由记录推出）</h5><ul><li>同协议候选仿真值（最近窗口）13–20，8 次，第 55、56、57、58、59、60、61、62 行；候选参数未记录，含参数差异</li><li>同协议候选仿真值（全程）13–22，16 次</li><li>观测 13（1 次）对各预测区间：H3 [10, 15.5] ← 观测落在此；H4 [15.6, 18.4]；H5 [18.5, 26]</li></ul>
-<h5>③ 复算</h5><p class="small">键 <code>one.P2.base_mean</code>、<code>one.P2.delta</code>、<code>one.P2.r_star</code>、<code>one.P2.sd</code>、<code>one.P2.truth_mean</code>，来自 <code>recompute.json</code>，脚本 <code>mindset/轨迹偏离审计-复算.py</code></p>
+<h5>③ 复算</h5><p class="small">键 <code>one.P2.base_mean</code>、<code>one.P2.delta</code>、<code>one.P2.r_star</code>、<code>one.P2.sd</code>、<code>one.P2.truth_mean</code>，来自 <code>recompute.json</code>，脚本 <code>research/campaigns/_recompute/oneline-20261014.py</code></p>
 <h5>④ 审查者</h5><ul><li>G2 → H3：父会话自写</li><li>G3 → H3：父会话自写</li></ul>
 <h5>⑤ 人的干预</h5><p class="small muted">本归档没有干预文件。</p>
 </details>
@@ -178,7 +178,7 @@ blockquote.orig .src{display:block;font-size:.8rem;color:var(--muted)}
 <details><summary>证据（原始记录 1 行 · 推导值 · 复算 · 审查者 · 干预）</summary>
 <h5>① 原始记录</h5><pre>104: {&quot;ts&quot;:&quot;2026-10-14T13:23:44.624Z&quot;,&quot;op&quot;:&quot;report.declare&quot;,&quot;path&quot;:&quot;REPORT.md&quot;,&quot;sha256&quot;:&quot;4a3c575f0b1b1c4516bded76f99080942f4b92018dd8afb16aca20367a26e9d6&quot;,&quot;prev&quot;:&quot;ea7c03a6483c68e3ff4ead6b34adbf33b9137b2177fd0240034fe8525a0f691f&quot;}</pre>
 <h5>② 推导值（由记录推出）</h5><p class="small muted">无。</p>
-<h5>③ 复算</h5><p class="small">键 <code>one.P1.delta</code>、<code>one.P2.delta</code>，来自 <code>recompute.json</code>，脚本 <code>mindset/轨迹偏离审计-复算.py</code></p>
+<h5>③ 复算</h5><p class="small">键 <code>one.P1.delta</code>、<code>one.P2.delta</code>，来自 <code>recompute.json</code>，脚本 <code>research/campaigns/_recompute/oneline-20261014.py</code></p>
 <h5>④ 审查者</h5><ul><li>无（本节点没有对应的攻击记录）</li></ul>
 <h5>⑤ 人的干预</h5><p class="small muted">本归档没有干预文件。</p>
 </details>
@@ -187,12 +187,12 @@ blockquote.orig .src{display:block;font-size:.8rem;color:var(--muted)}
 <header><span class="nid">D10</span><h3>从没用过阻断剂：预算内唯一的决定性实验</h3><span class="meta">全程 / 会话外 · 接入层</span></header>
 <dl class="five"><div><dt>当时知道</dt><dd>取题工具只列实验协议，不列可用的阻断剂；测量工具只有一个可选的阻断剂字符串参数，没有说明可填什么。 <span class="aud">（审计补写）</span></dd></div><div><dt>为什么这样选</dt><dd>agent 不知道有阻断剂可用，全部测量都只看放电次数。 <span class="aud">（审计补写）</span></dd></div><div><dt>期待看到</dt><dd>没有设计过这类实验，也就没有预期。 <span class="aud">（审计补写）</span></dd></div><div><dt>实际发生</dt><dd>8 次预算里一次阻断剂实验都没做。 <span class="aud">（审计补写）</span></dd></div><div><dt>因此调整</dt><dd>无；结论完全建立在放电次数上。 <span class="aud">（审计补写）</span></dd></div></dl>
 <div class="verdicts"><div class="verdict" data-col="at-time"><h4>当时是否合理</h4><p><span class="icon m-partial" aria-hidden="true">⚠</span><b class="word m-partial">部分合理</b>。接入层缺口：阻断剂无从发现，不能全算推理错误。</p></div><div class="verdict" data-col="hindsight"><h4>事后对照真相</h4><p><span class="icon m-no" aria-hidden="true">✕</span><b class="word m-no">错误</b>。加 TTX 后，无额外电流的细胞 120 次里出峰 0 次，真相 49 次；测 8 次至少见 1 个峰的概率 0.985，一个峰就能排除“无额外电流”。</p></div></div>
-<p class="basis">依据：复算 TTX 判别（<code>mindset/轨迹偏离审计-复算.py ttx()</code>）；一句话审计 D10（<code>mindset/轨迹偏离审计-ca_rebound-一句话-20261014.md §1、§2 D10</code>）</p>
+<p class="basis">依据：复算 TTX 判别（<code>research/campaigns/_recompute/oneline-20261014.py ttx()</code>）；一句话审计 D10（<code>mindset/轨迹偏离审计-ca_rebound-一句话-20261014.md §1、§2 D10</code>）</p>
 
 <details><summary>证据（原始记录 0 行 · 推导值 · 复算 · 审查者 · 干预）</summary>
 <h5>① 原始记录</h5><p class="small muted">本节点不对应运行记录里的行（全程或会话外）。</p>
 <h5>② 推导值（由记录推出）</h5><p class="small muted">无。</p>
-<h5>③ 复算</h5><p class="small">键 <code>one.ttx.hypc.plain_hits</code>、<code>one.ttx.hypc.truth_hits</code>、<code>one.ttx.hypc.truth_p8</code>、<code>one.ttx.reps</code>，来自 <code>recompute.json</code>，脚本 <code>mindset/轨迹偏离审计-复算.py</code></p>
+<h5>③ 复算</h5><p class="small">键 <code>one.ttx.hypc.plain_hits</code>、<code>one.ttx.hypc.truth_hits</code>、<code>one.ttx.hypc.truth_p8</code>、<code>one.ttx.reps</code>，来自 <code>recompute.json</code>，脚本 <code>research/campaigns/_recompute/oneline-20261014.py</code></p>
 <h5>④ 审查者</h5><ul><li>无（本节点没有对应的攻击记录）</li></ul>
 <h5>⑤ 人的干预</h5><p class="small muted">本归档没有干预文件。</p>
 </details>
@@ -225,7 +225,7 @@ blockquote.orig .src{display:block;font-size:.8rem;color:var(--muted)}
 <dt>程序检查</dt><dd>程序检查通过（预登记 ✓ · 对账 ✓ · 溯源 ✓）。程序检查通过只说明记录前后一致，不说明结论正确。</dd>
 <dt>人工干预</dt><dd>未记录（本归档无干预文件）</dd>
 <dt>运行记录链</dt><dd>完整（105 行，逐行哈希相连）</dd>
-<dt>sha256</dt><dd><ul class="small mono"><li>journal.jsonl c80e0c7a66a9b7b9ef5ef16bc9e36c399ef2660569bd132c2e0e95f42bbce1e2</li><li>REPORT.md 4a3c575f0b1b1c4516bded76f99080942f4b92018dd8afb16aca20367a26e9d6</li><li>prereg/P1.json de54b108e31c0b1609c1233fd0a27f88f4505a4ea2145828be6ac7cb60827eb7</li><li>prereg/P2.json bb0a0723acb1f382a969e54a4bfe0843301ba1ab66ed186f0967def56cee0d76</li><li>prereg/P3.json c3caddec933cb89b9b62d6c50cad1a50020f55c991d8734c4fcc30bfac03a2ad</li><li>prereg/P4.json 07f94c0a7c97e15b5a9d90e88f2f0926663a34b0393777bf26349fe1355c7b68</li><li>annotations.json 1bf305035f57b2c2359a0c1f41b88ee94ddc51e8abd4583c7bdc8d485fbb11fc</li><li>recompute.json 3b8b9e01f858e9f7fce34931f3ba93ac882e1b7ee1be0d94eb81642673556eb6</li></ul></dd>
+<dt>sha256</dt><dd><ul class="small mono"><li>journal.jsonl c80e0c7a66a9b7b9ef5ef16bc9e36c399ef2660569bd132c2e0e95f42bbce1e2</li><li>REPORT.md 4a3c575f0b1b1c4516bded76f99080942f4b92018dd8afb16aca20367a26e9d6</li><li>prereg/P1.json de54b108e31c0b1609c1233fd0a27f88f4505a4ea2145828be6ac7cb60827eb7</li><li>prereg/P2.json bb0a0723acb1f382a969e54a4bfe0843301ba1ab66ed186f0967def56cee0d76</li><li>prereg/P3.json c3caddec933cb89b9b62d6c50cad1a50020f55c991d8734c4fcc30bfac03a2ad</li><li>prereg/P4.json 07f94c0a7c97e15b5a9d90e88f2f0926663a34b0393777bf26349fe1355c7b68</li><li>annotations.json 5676ecca1f7549846a6c2bee81dd6d9d9124f1f3645aa9a70f7be8a6ec80f88c</li><li>recompute.json 06aaaa9ff91c27d64343c6e7bf8d4861ae5d4ec4ead86daf6f9ff80df6fe1281</li></ul></dd>
 <dt>生成器</dt><dd class="mono">judge-report/1</dd>
 </dl>
 </section>

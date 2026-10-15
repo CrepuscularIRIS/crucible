@@ -1,6 +1,6 @@
 {
  "schema": "crucible.recompute/1",
- "script": "mindset/轨迹偏离审计-复算.py",
+ "script": "research/campaigns/_recompute/oneline-20261014.py",
  "values": {
   "one.P1.base_mean": 15.88,
   "one.P1.delta": 0.42,

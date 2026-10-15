@@ -74,11 +74,11 @@ describe('确定性', () => {
     expect(new Set(shas).size).toBe(1)
   })
 
-  it('页面里不允许留下未填的 {{键}}（"仍不能确定"一节曾漏插值）', () => {
+  test('页面里不允许留下未填的 {{键}}（"仍不能确定"一节曾漏插值）', () => {
     for (const dir of [ONE]) expect(buildReport(dir)).not.toMatch(/\{\{[^}]*\}\}/)
   })
 
-  it('反馈句在没有迁移时不留下空的"随后"', () => {
+  test('反馈句在没有迁移时不留下空的"随后"', () => {
     expect(buildReport(join(import.meta.dir, '../campaigns/2026-10-14-glm53flash-ca_rebound-s0'))).not.toContain('随后 。')
   })
 })

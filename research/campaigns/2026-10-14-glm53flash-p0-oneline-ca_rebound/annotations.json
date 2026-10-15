@@ -50,7 +50,7 @@
       "basis": [
         {
           "text": "复算：同 world、同 seed、同协议，基线 {{p0.P2.base_mean}}±{{p0.P2.base_sd}} 对真相 {{p0.P2.truth_mean}}±{{p0.P2.truth_sd}}",
-          "ref": "mindset/轨迹偏离审计-s0-复算.py cell_keys(p0.P2)"
+          "ref": "research/campaigns/_recompute/s0-p0-20261014.py cell_keys(p0.P2)"
         },
         {
           "text": "s0 审计同协议行（hyperpol cond + depol test）",
@@ -84,7 +84,7 @@
       "basis": [
         {
           "text": "重放：P2 = {{p0.replay.P2}}、P4 = {{p0.replay.P4}}、P4 是否等于 P2 第一次重复：{{p0.replay.P4_equals_P2_rep1}}；再跑一次 P4 仍得 {{p0.replay.rerun_P4}}（计量格冻结）",
-          "ref": "mindset/轨迹偏离审计-s0-复算.py replay_p0()"
+          "ref": "research/campaigns/_recompute/s0-p0-20261014.py replay_p0()"
         }
       ]
     }

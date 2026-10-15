@@ -1,6 +1,6 @@
 {
  "schema": "crucible.recompute/1",
- "script": "mindset/轨迹偏离审计-s0-复算.py",
+ "script": "research/campaigns/_recompute/s0-p0-20261014.py",
  "values": {
   "p0.P2.base_mean": 15.52,
   "p0.P2.base_p_kill": 0.94,

@@ -309,7 +309,7 @@
       "basis": [
         {
           "text": "复算 TTX 判别",
-          "ref": "mindset/轨迹偏离审计-复算.py ttx()"
+          "ref": "research/campaigns/_recompute/oneline-20261014.py ttx()"
         },
         {
           "text": "一句话审计 D10",
