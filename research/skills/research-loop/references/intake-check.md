@@ -116,9 +116,11 @@ seed_questions:         # 只在 open，≤3 个可选："约束是什么 / 已�
 
 然后在**一条消息**里展示草稿与每个字段的推荐值，问一次，停。
 
-- **确认后**：草稿改成用户确认的值（`status: confirmed`，没答的字段写
-  `INFERRED · default <X>`），调 `research_init{mode, success_predicate, depth, recall}`，
-  再在 RULINGS.md 写 `Ruling: intake: mode=… · predicate=… · depth=… · cost≈… — <理由> — <押错代价>`。
+- **确认后**：不要改草稿（含 status 行——回复之后的任何改写都让这次确认作废，宿主会拦 init）；
+  用户确认或改过的值直接作为 `research_init{mode, success_predicate, depth, recall}` 的入参，
+  再在 RULINGS.md 写 `Ruling: intake: mode=… · predicate=… · depth=… · cost≈… — <理由> — <押错代价>`
+  （没答的字段写 `INFERRED · default <X>`）。用户改了 `forks` / `budget` 这类只在草稿里、init 不收的字段 →
+  按改后的值重写草稿（`status: pending_user`）再呈现一次：改写即新一轮确认，宿主会拦旧确认。
   宿主在 init 时把 pending 文件收进 run 目录的 `K0-intake.md`（画布从那里读 `forks:`）；
   返回值没说已收入就留在 pending 路径——不要自己往 `.proma-research/` 里拷。
 - **resume**：pending 文件仍是 `pending_user` → 原样重新呈现这一次确认，不调 `research_init`。

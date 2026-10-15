@@ -1,7 +1,7 @@
 ---
 name: research-kit
 description: Use when 在 kernel 里需要读信念状态时——立锚/计数器、构造对抗者视图、比较探针判别力、出校准账本、回收子代理攻击；或给 rlm 窗口建作业目录、阻塞等待并回收 out.md。
-version: 0.5.2
+version: 0.5.3
 ---
 
 # research-kit —— kernel 侧只读工具箱
@@ -29,7 +29,7 @@ research_kit.counters(run)           # 元认知计数器 dict：落地未迁移
 research_kit.claim_view(run, "H1")   # 对抗者上下文：claim+证据+graveyard，无 notes
 research_kit.disjoint_pairs({"H1": (0.8, 1.0), "H2": (0.0, 0.6)})  # → [("H1","H2")]
 research_kit.calibration(run)        # 每个落地探针：预登记频段 vs 观测（带内/外）
-research_kit.collect_attacks(str(drop_dir))  # 回收子代理写下的攻击行（去重；drop_dir = 父代理 spawn 前选定的落点目录）
+research_kit.collect_attacks(str(drop_dir))  # 回收子代理写下的攻击行（去重；drop_dir = 父代理 spawn 前选定的落点目录；RLM job 目录读 out.md 里以 new_h / constraint / no_change 开头的行）
 
 # rlm 窗口作业（契约见 research-loop 的 references/delegation.md）
 job, name = research_kit.new_job(run, "certify", "C2")  # <cwd>/.rlm-jobs/<run>/certify/C2/<nonce4>/ + "certify-C2-<nonce4>"

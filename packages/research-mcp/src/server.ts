@@ -19,7 +19,7 @@
 
 import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
-import { basename, dirname, join } from 'node:path'
+import { basename, dirname, join, posix } from 'node:path'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod'
@@ -782,12 +782,18 @@ export function buildServer(): McpServer {
     async ({ run, path }) => {
       const root = resolveRun(run)
       requireInit(root)
-      const normalizedPath = path.replace(/\\/g, '/')
-      const workPath = `research-work/${sanitizeRunName(run)}/${normalizedPath}`
+      // path 相对 research-work/<run>/；agent 常把这段前缀也带上（交付 run D18：报错回显嵌套路径，它照写出嵌套副本）
+      const workPrefix = `research-work/${sanitizeRunName(run)}/`
+      const given = posix.normalize(path.replace(/\\/g, '/'))
+      const normalizedPath = given.startsWith(workPrefix) ? given.slice(workPrefix.length) : given
+      const workPath = `${workPrefix}${normalizedPath}`
       // agent 只在 research-work 写；run 目录里已有的普通文件只认旧 run（迁移前写在状态根内的报告）
       const found = readNoFollow(serverCwd(), confined(workDir(run), normalizedPath)) ?? readNoFollow(serverCwd(), confined(root, normalizedPath))
       if (!found) {
-        throw new ResearchStateError(`报告不存在：先把报告写成 ${workPath}（研究工作目录内、.proma-research/ 之外），再调 report_declare`)
+        throw new ResearchStateError(
+          `报告不存在：先把报告写成 ${workPath}（研究工作目录内、.proma-research/ 之外），再调 report_declare；`
+          + `path 相对 ${workPrefix}（例 path: "REPORT.md"）`,
+        )
       }
       if ('link' in found) {
         appendEvent(root, 'report.link', { path: found.source, link: found.link })

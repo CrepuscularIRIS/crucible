@@ -1,7 +1,7 @@
 ---
 name: research-grill
 description: Use when LIVE 或 SUPPORTED 假设尚未挨过对抗攻击、有新落地证据未被攻击检验、或候选要花高成本前需要独立 idea gauntlet 时。
-version: 0.4.5
+version: 0.4.6
 ---
 
 # research-grill —— 对抗检验
@@ -48,7 +48,7 @@ Collaboration child。信息不对称是结构：对抗者看得到主张与证�
    job, name = research_kit.new_job(run, "grill", "H1")   # 每轮新目录 + 新名；固定名第二次 spawn 必抛错
    view = research_kit.claim_view(run, "H1")               # 不含 transition notes
    brief = reviewer 角色契约 + 按 references/adversary-prompt.md 填占位符
-   # {DROP_PATH} = f"{job}/attacks.md"
+   # {DROP_PATH} = f"{job}/out.md"（角色契约只许写 out.md；攻击行与 SUMMARY、末行 STATUS 同文件）
    (job / "brief.md").write_text(brief, encoding="utf-8")
    await rlm(f"读 {job}/brief.md 并逐字执行；写 {job}/out.md，末行写 STATUS 行；"
              "你的最后一条消息首行逐字重复这条 STATUS 行", name=name)
@@ -79,7 +79,7 @@ Collaboration child。信息不对称是结构：对抗者看得到主张与证�
    ✓ 成功条件：锚的攻击计数上涨；攻击债将在下一次 propose/prereg 清偿。
    同时按 `research-loop` 的 `references/stage-questioning.md` 中 S1/S2/S5 清理
    隐藏前提、自我矛盾与最小失败边界。
-5. **第二轮起**：上一轮 attacks.md 原文填进模板 `{PRIOR_ATTACKS}`——对抗者
+5. **第二轮起**：上一轮的攻击行原文填进模板 `{PRIOR_ATTACKS}`——对抗者
    要知道哪些已消化、哪些被驳回，才不会越攻越软或重复已和解的攻击。
 6. **落账权在父代理**：child 的系统角色契约禁止写 Research 状态；
    `PROMA_RESEARCH_RUN` 钉死的新战役名又阻止旁路 init【结构】。父会话仍须核验
@@ -91,11 +91,11 @@ Collaboration child。信息不对称是结构：对抗者看得到主张与证�
 | 借口 | 现实 |
 |---|---|
 | "让子代理读 RLM_SESSION_DIR 找落点" | P4.3 实测：Prime 只在有持久 artifact 目录时才设它，没有时**根本不存在**——子代理把 attacks.md 写去了 `/tmp`，父代理只能翻日志抄回来。落点由父代理写死在 prompt 里。 |
-| "拉起后马上读 attacks.md" | rlm() 准入即返回，不返回答案。立即读可能为空；空不是错误，是"还没写完"。同一 turn 内 `research_kit.wait` 返回后再收。 |
+| "拉起后马上读攻击行" | rlm() 准入即返回，不返回答案。立即读可能为空；空不是错误，是"还没写完"。同一 turn 内 `research_kit.wait` 返回后再收。 |
 | "每条 claim 都派一个 child 才算独立" | child 是昂贵的执行通道，不是攻击本身。短 attack job 父会话直接做；只有有界深审或长程可见协作才委派。 |
 | "把我的推理一起给对抗者，攻得更准" | 攻得更准的是复读机。信息不对称是这个仪器的全部原理——用 claim_view，别自己拼"完整状态"。 |
 | "对抗者说整体合理，通过" | 那是它失职，不是你过关。换一个镜头重问。 |
-| "我替它总结一下它想说什么" | 用它的原话（attacks.md 的行）。总结是你的辩护混进它的攻击。 |
+| "我替它总结一下它想说什么" | 用它的原话（`collect_attacks` 收回的行）。总结是你的辩护混进它的攻击。 |
 | "把 REFUTED 的也拉出来打一轮" | 死人不会复活，鞭尸不产信息——除非你带来新证据（那走 revive）。SUPPORTED 在 graveyard 数组里但**是**主要攻击对象。 |
 | "让同一个 reviewer 边挑错边给最终改稿，效率更高" | 它只会留下自己会修的 finding。冻结 proposition，攻击与 reformulate 分离，父会话最后裁决。 |
 

@@ -516,6 +516,18 @@ describe('报告在 research-work 写、declare 复制进 run 目录（agent 不
     rmSync(workReport(run))
     await expect(callTool('report_declare', { run, path: 'REPORT.md' })).rejects.toThrow(`research-work/${run}/REPORT.md`)
   })
+
+  it('path 带了 research-work/<run>/ 前缀 → 剥掉照常声明；找不到时报错不回显嵌套路径（审计 D18）', async () => {
+    delete process.env.PROMA_KERNEL_PYTHON
+    const run = 'prefixed-path'
+    await passingRun(run)
+    expect(await callTool('report_declare', { run, path: `research-work/${run}/REPORT.md` })).toContain('三道 gate 全绿')
+    expect(await callTool('report_declare', { run, path: `./research-work/${run}/REPORT.md` })).toContain('三道 gate 全绿')
+    const error = await callTool('report_declare', { run, path: `research-work/${run}/DRAFT.md` }).catch((e: Error) => e.message)
+    expect(error).not.toContain(`research-work/${run}/research-work/`)
+    expect(error).toContain(`research-work/${run}/DRAFT.md`)
+    expect(error).toContain('path 相对')
+  })
 })
 
 // ── F1-T2：world_simulate(mode=info) 给出工作目录 nbsim；候选模式拒绝 + 指路（03 §5、§7）──

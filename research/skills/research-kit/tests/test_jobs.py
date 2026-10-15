@@ -360,3 +360,24 @@ def test_wait_timeout_does_not_delete_self_dirs(tmp_path: Path, fast_poll: None,
     assert result["status"] == "timeout"
     assert fake_rlm == []
     assert result["deleted"] is False
+
+
+# ---------- collect_attacks × RLM out.md（交付 run D22：只找 attacks.md，返回 0 条） ----------
+
+
+def test_collect_attacks_reads_attack_lines_from_rlm_out_md() -> None:
+    job, _ = jobs.new_job(RUN, "grill", "H1")
+    _write_out(
+        job,
+        "## SUMMARY\n三镜头各一条，H1 的占据度最弱。\n\n## attacks\n"
+        "new_h | H1 | 慢 Na 伪影同样给出 16 个尖峰\n"
+        "- constraint | H1 | TEA 格从未计量\n"
+        "# SCOPE-ONLY | H1 | 只在 22 °C 成立\n"
+        "no_change | H2 | P3 不改变对 H2 的信念",
+        f"STATUS: ok PATH: {JOBS}/grill/H1/{job.name}/out.md",
+    )
+    assert research_kit.collect_attacks(str(job)) == [
+        "new_h | H1 | 慢 Na 伪影同样给出 16 个尖峰",
+        "- constraint | H1 | TEA 格从未计量",
+        "no_change | H2 | P3 不改变对 H2 的信念",
+    ]

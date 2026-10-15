@@ -45,7 +45,7 @@ export function renderK0PendingBlock(cwd: string): string {
   if (!pending) return ''
   return `<research_k0_pending>
 K0 intake is waiting for the user (${pending.path}). The user's message in this turn is the only thing that can answer it:
-- it confirms or amends → \`research_init\` with the confirmed values, then continue (the host moves the file into the run);
+- it confirms or amends → \`research_init\` with the confirmed values, then continue. Do not edit the pending file yourself (not even its status line): any edit after the reply voids the confirmation; the host moves the file into the run and marks it confirmed;
 - otherwise (e.g. "继续", an unrelated question) → present the same intake again and end the turn.
 Silence is never approval; never pick the defaults yourself.
 ${pending.text.trim()}
@@ -66,13 +66,20 @@ function runDirFromInput(cwd: string, input: Record<string, unknown>): string | 
   return run ? join(cwd, '.proma-research', run) : undefined
 }
 
+/** 交付 run D1：agent 把草稿首行改成 confirmed 再 init，被拦；改回来又晚于回复，只好让用户再确认一次。 */
+const KEEP_DRAFT = '用户回复后不要改草稿（含 status 行）：回复之后的任何改写都让这次确认作废；'
+  + '用户原样确认或只改了 init 入参时直接调用 research_init，宿主自己把草稿移进 run 并改 status'
+  + '（改了 forks / budget 这类只在草稿里的字段 → 重写草稿、再呈现一次）。'
+
 const UNANSWERED = 'K0 intake 还在等用户确认（.research-pending/K0-intake.md 写于用户最近一次回复之后）：'
   + '宿主永不代用户批准。二选一：把 intake 呈现给用户后结束本轮；或单独调用 AskUserQuestion 等回答。'
   + '收到回答后再调用 research_init。'
+  + KEEP_DRAFT
 
 const NO_DRAFT = '带 mode 的 research_init 必须先过 K0：把 intake 草稿写到 .research-pending/K0-intake.md，'
   + '首行 `status: pending_user`，其后 mode · predicate · depth · forks 各一行；呈现给用户问一次'
   + '（结束本轮，或单独调用 AskUserQuestion），收到回答后再调用 research_init。宿主永不代用户批准。'
+  + KEEP_DRAFT
 
 export interface K0IntakeExtensionOptions {
   cwd: string

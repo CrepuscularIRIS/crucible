@@ -1,7 +1,7 @@
 ---
 name: research-loop
 description: 研究工作的第一动作。Use when 接到研究问题、想执行评测命令、开始或继续任何研究战役、会话刚启动、压缩刚发生、或不确定当前该做什么时。
-version: 0.6.2
+version: 0.6.3
 ---
 
 # research-loop —— 研究战役主路由
@@ -35,6 +35,9 @@ claim——终结它的只有落地测量。问题的单位是决策分叉：答
 预算纪律：确证阶段（最后一个 LIVE 假设的攻击 + 对账）预留 **≥2 reps**；
 第一个假设出现前花光全部预算 = 确证阶段零预算，只会把你自己逼向回显探针
 那条歪路（prereg 现已结构性拒绝常量输出命令）。
+
+数字出处：对用户说出的读数只抄 journal 已有事件——`probe.land` 的读数标 `(P#)`，直接 `world_observe` 的读数写明"未预登记观测"；
+已花预算 = journal 里 `world.observe` 的 cost 之和（`research_kit.anchor` 的预算行），不标 P#。journal 里没有的读数不写（交付 run 曾凭空写出两个"已落地观测"）。
 
 ## 程序
 

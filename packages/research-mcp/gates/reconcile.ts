@@ -135,7 +135,12 @@ export function runReconcileGate(runRoot: string, reportOverride?: ReconcileRepo
       .replace(SIM_CITATION, (m) => (simRecordExists(runRoot, m.slice(5, -1)) ? ' ' : m))
     if (BARE_NUMBER.test(unsourced)) {
       const bare = unsourced.match(BARE_NUMBER)?.[0]
-      reasons.push(`第 ${lineNo} 行的数字 ${bare} 缺少 (P#) 出处（报告数字必须可对账）→ 只引用 metric_recompute 的返回值并标注 (P#)`)
+      // 文案列全合法写法：只说 (P#) 时 agent 会把 MSE 与预报值整段删掉（交付 run D19）
+      reasons.push(
+        `第 ${lineNo} 行的数字 ${bare} 缺少 (P#) 出处（报告数字必须可对账；给出处，不要删数字）→ 合法写法：`
+        + '落地读数 `数字 (P#)`（metric_recompute 的返回值）；终局误差 `数字 (F)`（world_forecast 的 spike_forecast_mse）；'
+        + '逐标签预报值写进 research-work/<run>/forecast.md，REPORT 里写 `值见 forecast.md (sim:<记录 id>)`',
+      )
     }
   }
 

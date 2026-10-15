@@ -87,6 +87,8 @@ research_kit.field(job, "verdict")                             # 按字段取，
   写到 `<job>-self/out.md`，末行 `STATUS: ok SELF_REVIEWED PATH: …`——它被接受，但结论
   只按降级（`lead`）使用，RULING 标 `self-reviewed`。
 - **第二轮 = 新作业目录**，把上一轮 out.md 列为输入；不续聊旧 child。
+- **Python 只在 ipython 跑**：brief 写明"读写与计算只用 ipython；Bash 里不跑 python、不接管道（隔离守卫会拒）"——
+  守卫拒绝 Bash 里的任何解释器调用（含只读脚本），child 被拒后反复换写法，是交付 run 三个零产出超时的可能来源。
 - **仿真输出**：brief 要求 child 仿真时，它的第二个合法输出是
   `research-work/<run>/sim/<nonce>-<id>.json`，out.md 只列这些路径。
 

@@ -12,6 +12,7 @@ kernel 跨压缩存活：`anchor()` 的结果同时存进模块变量 `LAST`，�
 from __future__ import annotations
 
 import json
+import re
 from itertools import combinations
 from pathlib import Path
 from typing import Any
@@ -302,13 +303,18 @@ def disjoint_pairs(bands: dict[str, tuple[float, float] | list[float]]) -> list[
     return pairs
 
 
+# RLM child 的角色契约只许写 out.md（交付 run D22）：out.md 里只收 `KIND | 目标 | 表述` 行，
+# SUMMARY 正文、标题、`# SCOPE-ONLY` 与末行 STATUS 都不算攻击。
+_ATTACK_LINE = re.compile(r"^(?:[-*]\s+)?(?:new_h|constraint|no_change)\s*\|", re.I)
+
+
 def collect_attacks(session_dir: str, filename: str = "attacks.md") -> list[str]:
     """回收对抗子代理写下的攻击行，对子会话目录的几种落点都成立。
 
     Prime 只在存在持久 artifact 目录时才设 `RLM_SESSION_DIR`；没有时该变量**根本不存在**，
     子代理会把文件写到别处（P4.3 实测落在 `/tmp/attacks.md`）。所以父代理必须把
     `handle.session_dir` 的**绝对路径**直接写进 prompt，不让子代理自己去查环境变量。
-    本函数在此之上兜底：给定目录 → 其 `sub-*` 子目录。
+    本函数在此之上兜底：给定目录 → 其 `sub-*` 子目录 → RLM 作业的 `out.md`（只收攻击行）。
 
     **不向上找父目录**：`sub-XXXX` 的父级可能是 `/tmp` 这类共享目录，会把无关战役的
     attacks.md 收进来（这条是本函数自己的测试抓出来的）。
@@ -319,6 +325,7 @@ def collect_attacks(session_dir: str, filename: str = "attacks.md") -> list[str]
     base = Path(session_dir)
     candidates = [base / filename]
     candidates.extend(sorted(base.glob(f"sub-*/{filename}")))
+    candidates.append(base / "out.md")
 
     lines: list[str] = []
     seen: set[str] = set()
@@ -328,6 +335,8 @@ def collect_attacks(session_dir: str, filename: str = "attacks.md") -> list[str]
         for raw in path.read_text(encoding="utf-8").splitlines():
             line = raw.strip()
             if not line or line.startswith("#") or line in seen:
+                continue
+            if path.name == "out.md" and not _ATTACK_LINE.match(line):
                 continue
             seen.add(line)
             lines.append(line)

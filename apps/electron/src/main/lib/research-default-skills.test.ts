@@ -455,7 +455,7 @@ describe('受管 research 默认 Skills', () => {
     expect(engine).toContain('r* = ⌈(2/d)²⌉')
     expect(engine).toContain('r* = ⌈ln 0.05 / ln(1 − p)⌉')
     expect(engine).toContain('held-out 不可观测；forecast 只一次')
-    expect(engine).toContain('sims[{path, sha256}]')
+    expect(engine).toContain('sims[{path}]')
     expect(engine).toContain('research-work/<run>/nbsim')
     expect(engine).toContain('永不凭一组参数否定一个家族')
     // HIGH-3：不给完整的新增通道例子（任何带失活的例子都像某个 world）；只示范符号，用参考模型自己的 Na h 门
@@ -525,6 +525,21 @@ describe('受管 research 默认 Skills', () => {
     for (const mark of ['AskUserQuestion', '同一批', '研究分叉 F-a', '解决：… ｜ 成本：… ｜ 仍不确定：…', 'U#:']) {
       expect(forks).toContain(mark)
     }
+  })
+
+  it('交付 run 审计 D1/D4/§5.1：K0 确认后不改草稿；读数与已花预算只抄 journal；child brief 只用 ipython 跑 Python', () => {
+    const k0 = readFileSync(join(researchSkillsRoot, 'research-loop/references/intake-check.md'), 'utf-8')
+    // 宿主门拦"回复后改写过的草稿"：卡片再叫 agent 改成 status: confirmed 就是不可能指令
+    expect(k0).not.toContain('`status: confirmed`')
+    expect(k0).toContain('不要改草稿')
+    const loop = readFileSync(join(researchSkillsRoot, 'research-loop/SKILL.md'), 'utf-8')
+    const sourceRule = loop.split('\n').find((l) => l.startsWith('数字出处') && l.includes('probe.land'))
+    expect(sourceRule).toContain('(P#)')
+    expect(loop).toContain('journal 里没有的读数不写')
+    const delegation = readFileSync(join(researchSkillsRoot, 'research-loop/references/delegation.md'), 'utf-8')
+    const ipythonRule = delegation.split('\n').find((l) => l.includes('ipython') && l.includes('Bash'))
+    expect(ipythonRule).toBeDefined()
+    expect(ipythonRule).toContain('隔离守卫')
   })
 
   it('F1 B6/B7/B9：判别搜索含阻断剂格、observe 收 blockers；预算没花完时锚继续点名探针、报告写明为何没花；预报逐标签带 (sim:<记录 id>)', () => {
@@ -660,12 +675,12 @@ describe('受管 research 默认 Skills', () => {
 
   it('所有改动过的默认 Research Skills 都递增了 patch 版本', () => {
     const expectedVersions: Record<string, string> = {
-      'research-loop': '0.6.2',
+      'research-loop': '0.6.3',
       'research-abduce': '0.5.4',
       'research-probe': '0.6.6',
-      'research-grill': '0.4.5',
+      'research-grill': '0.4.6',
       'research-report': '0.4.6',
-      'research-kit': '0.5.2',
+      'research-kit': '0.5.3',
       'research-moves': '0.2.4',
       'research-scoop': '0.1.2',
     }

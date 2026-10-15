@@ -117,6 +117,20 @@ describe('K0 闸：永不静默批准（research_init 必须晚于用户回复�
     expect(res.reason).toMatch(/一次|once/)
   })
 
+  it('两种拦截的 reason 与每回合块都说清：用户回复后别改草稿（含 status 行），直接 research_init（审计 D1）', async () => {
+    const cwd = workspace()
+    // agent 自己把首行改成 confirmed：pending 不再算数，带 mode 的 init 落到 NO_DRAFT
+    writePending(cwd, DRAFT.replace('pending_user', 'confirmed'))
+    const noDraft = await install(cwd, () => Date.now()).tool_call!(modeInit, top) as { reason: string }
+    expect(noDraft.reason).toContain('不要改')
+    expect(noDraft.reason).toContain('status')
+    // 改回 pending_user：mtime 晚于回复，落到 UNANSWERED
+    writePending(cwd, DRAFT, Date.now())
+    const unanswered = await install(cwd, () => Date.now() - 60_000).tool_call!(modeInit, top) as { reason: string }
+    expect(unanswered.reason).toContain('不要改')
+    expect(renderK0PendingBlock(cwd)).toMatch(/do not edit/i)
+  })
+
   it('带 mode、用户已回复过的草稿 → 放行；run 里已有 K0-intake.md（重开）→ 放行', async () => {
     const cwd = workspace()
     writePending(cwd, DRAFT, Date.now() - 60_000)

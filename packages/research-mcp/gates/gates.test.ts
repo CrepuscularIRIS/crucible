@@ -287,6 +287,19 @@ describe('gate 间不矛盾（F1 回归锁）', () => {
     expect(check('- 预报 held A：值见 forecast.md sim:grid-k1-g9.99').passed).toBe(false)
   })
 
+  it('裸小数的拒绝文案列全合法写法（(P#)、(F)、forecast.md + (sim:id)），别让 agent 删数字（审计 D19）', async () => {
+    const runRoot = await buildHonestRun()
+    const text = `${HONEST_REPORT}\n- 预报 MSE 0.73\n`
+    writeFileSync(join(runRoot, 'REPORT-bare.md'), text, 'utf-8')
+    const reason = runReconcileGate(runRoot, { path: 'REPORT-bare.md', sha256: sha256(text) }).failures.map((f) => f.reason).join('\n')
+    expect(reason).toContain('0.73 缺少 (P#) 出处')
+    expect(reason).toContain('(F)')
+    expect(reason).toContain('forecast.md')
+    expect(reason).toContain('(sim:')
+    // 不宣传 [lo, hi]：频段遮罩不核对是否预登记过，写进文案等于教 agent 用它绕过出处检查（评审 B1）
+    expect(reason).not.toContain('[lo, hi]')
+  })
+
   it('trace 会读取 world 事件：forecast 的预算快照与此前 observe 不符时变红', async () => {
     const runRoot = await buildHonestRun()
     const journalFile = join(runRoot, 'journal.jsonl')
