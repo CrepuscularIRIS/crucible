@@ -50,3 +50,16 @@ describe('live-view：子任务卡（交付 run 真实 out.md）', () => {
     expect(running).toMatchObject({ task: 'W5 教训综合', finding: '', status: 'running' })
   })
 })
+
+
+describe('公开进度摘要', () => {
+  test('Given 正文后跟随思考块 When 摘要 Then 只显示对用户可见正文', () => {
+    const thinking = assistant([{ type: 'thinking', thinking: '内部候选推断' }])
+    expect(liveSaying([assistant([{ type: 'text', text: '正在检查环境' }]), thinking])).toBe('正在检查环境')
+    expect(liveSaying([thinking])).toBe('')
+  })
+  test('Given 仿真观测与实际 Bash 工具名 When 展示 Then 不冒称真实实验', () => {
+    expect(describeTool('mcp__research__world_observe', {}).label).toBe('仿真观测（扣预算）')
+    expect(describeTool('Bash', { command: 'pwd' }).label).toBe('运行命令')
+  })
+})

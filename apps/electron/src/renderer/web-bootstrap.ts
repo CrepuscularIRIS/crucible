@@ -11,6 +11,7 @@
 async function boot(): Promise<void> {
   // preload 已声明 window.electronAPI: ElectronAPI（非可选），浏览器里它此刻还不存在。
   if (!(window as Partial<Window>).electronAPI) {
+    document.documentElement.dataset.promaSurface = 'web'
     const { connectBridge } = await import('../web/electron-shim')
     // 先执行 preload：它会通过 shim 的 contextBridge 把 electronAPI 挂到 window。
     await import('../preload/index')

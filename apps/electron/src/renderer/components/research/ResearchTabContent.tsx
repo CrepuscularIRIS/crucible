@@ -55,6 +55,7 @@ function JudgeReportPane({ sessionId, onBackToResearch }: { sessionId: string; o
 export function ResearchTabContent({ sessionId }: { sessionId: string }): React.ReactElement {
   const [viewMap, setViewMap] = useAtom(researchTabViewMapAtom)
   const view = viewMap.get(sessionId) ?? 'progress'
+  const source = useAtomValue(researchCanvasSourceMapAtom).get(sessionId)
   const { requestClose } = useCloseTab()
   const setView = (next: ResearchTabView) => setViewMap((prev) => new Map(prev).set(sessionId, next))
 
@@ -62,7 +63,7 @@ export function ResearchTabContent({ sessionId }: { sessionId: string }): React.
     <Tabs value={view} onValueChange={(next) => setView(next as ResearchTabView)} className="research-workspace flex h-full min-h-0 flex-col bg-content-area">
       <div className="research-view-bar titlebar-no-drag">
         <div className="research-brand"><FlaskConical className="size-4" aria-hidden /><span>CRUCIBLE<span className="research-brand-caption">研究工作台</span></span></div>
-        <LiveStrip sessionId={sessionId} />
+        <LiveStrip sessionId={sessionId} sourceKind={source?.kind} />
         <TabsList aria-label="研究 Tab 视图" className="h-10 rounded-md border border-border/60 bg-background/50 p-1">
           {VIEWS.map(([key, label]) => (
             <TabsTrigger key={key} value={key} className="gap-2 px-4 text-[12px] transition-none data-[state=active]:bg-card">

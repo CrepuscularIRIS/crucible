@@ -18,6 +18,7 @@ import { BROWSER_RISK_DISCLAIMER_VERSION } from '@/types/settings'
 import { detectIsWindows, getWindowControlsPaddingClass } from '@/lib/platform'
 import { cn } from '@/lib/utils'
 import { browserPendingNavigationMapAtom } from '@/atoms/browser-atoms'
+import { WebBrowserNotice } from './WebBrowserNotice'
 import { BrowserSlot } from './BrowserSlot'
 import { shouldReuseInitialBrowserTab } from './agent-browser-link-utils'
 
@@ -28,7 +29,15 @@ interface BrowserPanelProps {
   onClose: () => void
 }
 
-export function BrowserPanel({ sessionId, state, onMinimize, onClose }: BrowserPanelProps): React.ReactElement {
+export function BrowserPanel(props: BrowserPanelProps): React.ReactElement {
+  const pendingUrl = useAtomValue(browserPendingNavigationMapAtom).get(props.sessionId)
+  if (typeof document !== 'undefined' && document.documentElement.dataset.promaSurface === 'web') {
+    return <WebBrowserNotice url={pendingUrl ?? props.state?.url} onClose={props.onMinimize} />
+  }
+  return <NativeBrowserPanel {...props} />
+}
+
+function NativeBrowserPanel({ sessionId, state, onMinimize, onClose }: BrowserPanelProps): React.ReactElement {
   const [url, setUrl] = React.useState(state?.url ?? '')
   const [riskAcknowledged, setRiskAcknowledged] = React.useState<boolean | null>(null)
   const [savingRiskAcknowledgement, setSavingRiskAcknowledgement] = React.useState(false)

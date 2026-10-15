@@ -20,7 +20,7 @@ const RESEARCH_LABELS: Record<string, string> = {
   research_init: '开局建档',
   research_state: '读研究状态',
   world_simulate: '跑仿真',
-  world_observe: '真实测量（扣预算）',
+  world_observe: '仿真观测（扣预算）',
   world_forecast: '提交预报',
   claim_propose: '提出假设',
   claim_transition: '改判假设',
@@ -55,7 +55,7 @@ export function describeTool(name: string, input: Record<string, unknown>): Pick
     if (/research_kit\.wait\(/.test(code)) return { kind: 'child', label: '等子任务返回', detail: firstLine(code) }
     return { kind: 'code', label: '运行 Python', detail: firstLine(code) }
   }
-  if (name === 'bash') return { kind: 'shell', label: '运行命令', detail: firstLine(input.command) }
+  if (name.toLowerCase() === 'bash') return { kind: 'shell', label: '运行命令', detail: firstLine(input.command) }
   if (name === 'TaskCreate' || name === 'TaskUpdate') return { kind: 'other', label: '更新任务清单', detail: firstLine(input.subject ?? input.status) }
   if (name === 'AskUserQuestion') return { kind: 'other', label: '向你提问', detail: '' }
   return { kind: 'other', label: name, detail: '' }
@@ -85,7 +85,7 @@ export function liveActions(messages: readonly SDKMessage[], running = true, lim
   return out.slice(-limit)
 }
 
-/** 本轮最后一段 AI 说的话（正文优先，没有就用思考），截断 */
+/** 本轮最后一段 AI 说的话（仅对用户可见的正文），截断 */
 export function liveSaying(messages: readonly SDKMessage[], n = 280): string {
   for (let i = messages.length - 1; i >= 0; i--) {
     const msg = messages[i]!
@@ -94,7 +94,7 @@ export function liveSaying(messages: readonly SDKMessage[], n = 280): string {
     if (!Array.isArray(blocks)) continue
     for (let j = blocks.length - 1; j >= 0; j--) {
       const b = blocks[j] as { type: string; text?: unknown; thinking?: unknown }
-      const text = b.type === 'text' ? b.text : b.type === 'thinking' ? b.thinking : undefined
+      const text = b.type === 'text' ? b.text : undefined
       if (typeof text === 'string' && text.trim()) return text.trim().replace(/\s+/g, ' ').slice(0, n)
     }
   }
