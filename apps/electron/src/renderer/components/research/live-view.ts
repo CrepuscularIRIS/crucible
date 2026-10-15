@@ -20,7 +20,7 @@ const RESEARCH_LABELS: Record<string, string> = {
   research_init: '开局建档',
   research_state: '读研究状态',
   world_simulate: '跑仿真',
-  world_observe: '仿真观测（扣预算）',
+  world_observe: '计量观测（扣预算）',
   world_forecast: '提交预报',
   claim_propose: '提出假设',
   claim_transition: '改判假设',
@@ -108,8 +108,20 @@ export interface ChildCard {
   task: string
   /** out.md 的 SUMMARY 段（没有就取标题后的第一段）：它带回了什么 */
   finding: string
+  selfReviewed?: boolean
   brief?: string
   out?: string
+}
+
+/** 只翻译任务标题里明确出现的契约代号；原始任务书仍完整保留。 */
+export function childTaskLabel(task: string): string {
+  if (/\bK1\b/.test(task)) return '检查候选解释有没有遗漏'
+  if (/\bW1\b/.test(task)) return '寻找可能的机制解释'
+  if (/\bW2\b|\bK3\b/.test(task)) return '复核证据是否足以改变判断'
+  if (/\bW3\b/.test(task)) return '寻找当前结论的反例'
+  if (/\bW5\b/.test(task)) return '总结本轮教训与未解决问题'
+  if (/\bI2\b/.test(task)) return '比较候选机制在不同条件下的预测'
+  return task
 }
 
 const title = (md: string | undefined): string => (md?.split('\n').find((l) => /^#\s/.test(l)) ?? '').replace(/^#\s+/, '').trim()
@@ -137,6 +149,7 @@ export function childCards(jobs: readonly ChildJob[], files: Readonly<Record<str
       status: job.status,
       task: title(brief) || title(out) || job.name,
       finding: out ? summaryOf(out) : '',
+      ...(job.selfReviewed !== undefined ? { selfReviewed: job.selfReviewed } : {}),
       ...(brief !== undefined ? { brief } : {}),
       ...(out !== undefined ? { out } : {}),
     }

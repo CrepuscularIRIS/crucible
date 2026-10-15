@@ -63,6 +63,8 @@ describe('展示状态归属与证据边界', () => {
     const html = renderToStaticMarkup(<RefineHistory state={{ resident: false, autoRefine: { enabled: false, turnInterval: 25 } }} />)
     expect(html).toContain('历史经验读取尚未接入')
     expect(html).not.toContain('重新发起一轮')
+    expect(html).toContain('首轮消息前或空闲超时后')
+    expect(html).not.toContain('会话已释放')
   })
   test('Given 学习臂有干预与提炼记录 When 展示 Then 不冒称未授权或已验证', () => {
     const html = renderToStaticMarkup(<RefineHistory state={{ resident: true, autoRefine: { enabled: true, turnInterval: 25 }, arm: { mode: 'learning', contaminated: true }, harness: { entries: 1, recent: [{ ts: '', kind: 'memory', summary: '检查环境' }] } }} />)
@@ -70,5 +72,39 @@ describe('展示状态归属与证据边界', () => {
     expect(html).toContain('干预或污染')
     expect(html).toContain('验证与回滚状态未接入')
     expect(html).not.toContain('未授权')
+  })
+
+  test('Given 子任务已回报 When 讲解协作 Then 分开任务、回报与尚未核验的采纳', () => {
+    const html = renderToStaticMarkup(<ChildCards cards={[{ name: 'review-1', task: '查漏候选', status: 'ok', finding: '补充三种候选', out: '# 回报' }]} />)
+    expect(html).toContain('它带回了什么')
+    expect(html).toContain('改变了哪一步')
+    expect(html).toContain('采纳关联未接入')
+    expect(html).toContain('未读取到任务书')
+    expect(html).not.toContain('已采纳三种候选')
+  })
+
+  test('Given 父会话代做 When 展示 Then 不称为独立审查', () => {
+    const html = renderToStaticMarkup(<ChildCards cards={[{ name: 'self-audit', task: 'K3 审计', status: 'ok', finding: '核验完毕', selfReviewed: true }]} />)
+    expect(html).toContain('父会话代做 · 自审记录')
+    expect(html).toContain('复核证据是否足以改变判断')
+    expect(html).not.toContain('独立子任务')
+  })
+
+  test('Given 有提炼原因与改动 When 展示 Then 解释改动并保持验证与历史范围边界', () => {
+    const html = renderToStaticMarkup(<RefineHistory state={{ resident: true, autoRefine: { enabled: true, turnInterval: 25 }, harness: { entries: 8, recent: [{ ts: '', kind: 'skill', summary: '先检查环境', rationale: '上次缺依赖', edits: [{ action: 'add', kind: 'skill', title: '<script>准备环境</script>' }] }] } }} />)
+    expect(html).toContain('上次缺依赖')
+    expect(html).toContain('新增 · 工作技能')
+    expect(html).toContain('&lt;script&gt;准备环境&lt;/script&gt;')
+    expect(html).toContain('时间未记录')
+    expect(html).toContain('最近 5 次')
+    expect(html).toContain('每次最多 6 项')
+    expect(html).toContain('验证与回滚状态未接入')
+  })
+
+  test('Given 没有原因与明细 When 展示提炼 Then 不补造改动或效果', () => {
+    const html = renderToStaticMarkup(<RefineHistory state={{ resident: true, autoRefine: { enabled: true, turnInterval: 25 }, harness: { entries: 0, recent: [{ ts: '', kind: 'unknown', summary: '' }] } }} />)
+    expect(html).toContain('摘要未记录')
+    expect(html).toContain('未返回提炼原因')
+    expect(html).toContain('未返回改动明细')
   })
 })

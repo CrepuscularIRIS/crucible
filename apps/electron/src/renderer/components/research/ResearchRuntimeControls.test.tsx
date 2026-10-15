@@ -18,6 +18,8 @@ describe('画布内的 RLM 与 Refine 入口', () => {
       expect(html).toContain('当前会话')
       expect(html).toContain('查看 RLM 运行能力')
       expect(html).toContain('查看经验策略与提炼记录')
+      expect(html).toContain('aria-label="RLM · 未确认，查看 RLM 运行能力"')
+      expect(html).toContain('aria-label="经验 · Refine，查看经验策略与提炼记录"')
       expect(html).toContain('「子任务」')
       expect(html).toContain('「实时」')
     }

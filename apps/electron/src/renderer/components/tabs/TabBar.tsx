@@ -37,7 +37,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { TabBarItem } from './TabBarItem'
 import { getTabBarActionLayout } from './tab-bar-action-layout'
 import { useCloseTab } from '@/hooks/useCloseTab'
-import { detectIsWindows, WINDOW_CONTROLS_INSET_RIGHT } from '@/lib/platform'
+import { detectIsWindows, isWebSurface, WINDOW_CONTROLS_INSET_RIGHT } from '@/lib/platform'
 import { registerShortcut } from '@/lib/shortcut-registry'
 import { cn } from '@/lib/utils'
 import { shortcutGuideOpenAtom } from '@/atoms/shortcut-guide'
@@ -270,7 +270,7 @@ function TabBarInner({
   const showWebBrowserNotice = useSetAtom(showWebBrowserNoticeAtom)
   const openBrowser = React.useCallback(async () => {
     if (!activeAgentSession) return
-    if (document.documentElement.dataset.promaSurface === 'web') {
+    if (isWebSurface()) {
       showWebBrowserNotice({ sessionId: activeAgentSession.id })
       return
     }

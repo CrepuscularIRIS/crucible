@@ -10,6 +10,7 @@ import {
   browserStateMapAtom,
 } from '@/atoms/browser-atoms'
 import { shouldReuseInitialBrowserTab } from './agent-browser-link-utils'
+import { isWebSurface } from '@/lib/platform'
 
 interface AgentBrowserLinkContextValue {
   openLink: (url: string) => void
@@ -59,7 +60,7 @@ export function AgentBrowserLinkProvider({
 
   const showWebBrowserNotice = useSetAtom(showWebBrowserNoticeAtom)
   const openLink = React.useCallback((url: string) => {
-    if (document.documentElement.dataset.promaSurface === 'web') {
+    if (isWebSurface()) {
       showWebBrowserNotice({ sessionId, url })
       return
     }

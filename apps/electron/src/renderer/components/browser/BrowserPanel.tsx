@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { BROWSER_RISK_DISCLAIMER_VERSION } from '@/types/settings'
-import { detectIsWindows, getWindowControlsPaddingClass } from '@/lib/platform'
+import { detectIsWindows, getWindowControlsPaddingClass, isWebSurface } from '@/lib/platform'
 import { cn } from '@/lib/utils'
 import { browserPendingNavigationMapAtom } from '@/atoms/browser-atoms'
 import { WebBrowserNotice } from './WebBrowserNotice'
@@ -31,7 +31,7 @@ interface BrowserPanelProps {
 
 export function BrowserPanel(props: BrowserPanelProps): React.ReactElement {
   const pendingUrl = useAtomValue(browserPendingNavigationMapAtom).get(props.sessionId)
-  if (typeof document !== 'undefined' && document.documentElement.dataset.promaSurface === 'web') {
+  if (isWebSurface()) {
     return <WebBrowserNotice url={pendingUrl ?? props.state?.url} onClose={props.onMinimize} />
   }
   return <NativeBrowserPanel {...props} />

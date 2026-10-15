@@ -11,7 +11,7 @@ describe('手动提炼的许可与策略说明', () => {
   })
   test('Given 冻结、关闭、未知策略或未驻留 When 尝试提炼 Then 拒绝写入', () => {
     for (const mode of ['frozen', 'off', 'future']) expect(refineBlockReason({ ...ready, arm: { mode } }, false, false)).toBeTruthy()
-    expect(refineBlockReason({ ...ready, resident: false }, false, false)).toContain('已释放')
+    expect(refineBlockReason({ ...ready, resident: false }, false, false)).toContain('首轮消息前或空闲超时后')
     expect(refineBlockReason(null, false, false)).toContain('未确认')
     expect(refineBlockReason(ready, true, false)).toContain('等待本轮结束')
     expect(refineBlockReason(ready, false, true)).toContain('请勿重复提交')

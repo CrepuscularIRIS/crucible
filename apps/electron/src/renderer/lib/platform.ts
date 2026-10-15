@@ -6,6 +6,11 @@ export const WINDOW_CONTROLS_WIDTH_PX = 126
 export const WINDOW_CONTROLS_INSET_RIGHT = 'right-[126px]'
 export const WINDOW_CONTROLS_PADDING_RIGHT = 'pr-[126px]'
 
+/** Web 演示不挂载 Electron 原生 BrowserView。 */
+export function isWebSurface(): boolean {
+  return typeof document !== 'undefined' && document.documentElement.dataset.promaSurface === 'web'
+}
+
 export function getWindowControlsPaddingClass(isWindows: boolean): string {
   return isWindows ? WINDOW_CONTROLS_PADDING_RIGHT : ''
 }

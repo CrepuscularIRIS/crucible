@@ -2,11 +2,19 @@ import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { SDKMessage } from '@proma/shared'
-import { childCards, describeTool, liveActions, liveSaying } from './live-view'
+import { childCards, childTaskLabel, describeTool, liveActions, liveSaying } from './live-view'
 import { DELIVERY_DIR } from './test-fixtures'
 
 const assistant = (content: unknown[]) => ({ type: 'assistant', message: { content } }) as unknown as SDKMessage
 const user = (content: unknown[]) => ({ type: 'user', message: { content } }) as unknown as SDKMessage
+
+test('Given 标记为自审的任务 When 投影 Then 保留身份且只翻译明确任务代号', () => {
+  const cards = childCards([{ name: 'audit', status: 'ok', selfReviewed: true }], {})
+  expect(cards[0]?.selfReviewed).toBe(true)
+  expect(childTaskLabel('W5 教训综合')).toBe('总结本轮教训与未解决问题')
+  expect(childTaskLabel('K3 审计')).toBe('复核证据是否足以改变判断')
+  expect(childTaskLabel('自定义科研任务')).toBe('自定义科研任务')
+})
 
 describe('live-view：AI 正在做什么', () => {
   test('工具调用按先后列出；有结果的标完成 / 出错，没结果的是进行中', () => {
@@ -59,7 +67,7 @@ describe('公开进度摘要', () => {
     expect(liveSaying([thinking])).toBe('')
   })
   test('Given 仿真观测与实际 Bash 工具名 When 展示 Then 不冒称真实实验', () => {
-    expect(describeTool('mcp__research__world_observe', {}).label).toBe('仿真观测（扣预算）')
+    expect(describeTool('mcp__research__world_observe', {}).label).toBe('计量观测（扣预算）')
     expect(describeTool('Bash', { command: 'pwd' }).label).toBe('运行命令')
   })
 })

@@ -5,11 +5,11 @@ import type { AgentRefineState } from '@proma/shared'
 import { agentLiveMessagesAtomFamily, agentSessionStreamingStateAtomFamily } from '@/atoms/agent-atoms'
 import { Button } from '@/components/ui/button'
 import { useRefineState } from '../agent/use-refine-state'
-import { REFINE_MODES } from '../agent/refine-view'
-import { liveActions, liveSaying, type ChildCard, type LiveAction } from './live-view'
+import { REFINE_MODES, REFINE_NOT_RESIDENT } from '../agent/refine-view'
+import { childTaskLabel, liveActions, liveSaying, type ChildCard, type LiveAction } from './live-view'
 
 const CHILD_STATUS: Record<ChildCard['status'], [string, string]> = {
-  running: ['未见回报', 'text-sky-600 dark:text-sky-400'],
+  running: ['未见回报', 'text-muted-foreground'],
   ok: ['完成', 'text-emerald-600 dark:text-emerald-400'],
   blocked: ['受阻', 'text-amber-600 dark:text-amber-400'],
   failed: ['失败', 'text-destructive'],
@@ -17,7 +17,7 @@ const CHILD_STATUS: Record<ChildCard['status'], [string, string]> = {
 }
 const ACTION_DOT: Record<LiveAction['status'], string> = { running: 'bg-sky-500 animate-pulse', ok: 'bg-emerald-500', error: 'bg-destructive', stopped: 'bg-muted-foreground/40' }
 const ACTION_STATUS: Record<LiveAction['status'], string> = { running: '进行中', ok: '完成', error: '出错', stopped: '未返回' }
-export const CHILD_HINT = '每个子任务在独立上下文里只做一件事，写回 out.md；主 agent 是唯一能改研究记录的一方。'
+export const CHILD_HINT = 'RLM 用独立上下文分工，主 agent 负责提交研究记录。这里展示任务文件；父会话代做须另行区分，文件存在不等于独立执行已验证。'
 
 const clock = (ms: number) => {
   const s = Math.max(0, Math.floor(ms / 1000))
@@ -70,20 +70,25 @@ function Section({ title, hint, children }: { title: string; hint?: string; chil
 
 export function ChildCards({ cards }: { cards: ChildCard[] }): React.ReactElement {
   if (!cards.length) return <p className="text-[12px] text-muted-foreground">还没有派出子任务。主 agent 用 research_kit.new_job + rlm 派出后，这里出现任务卡。</p>
-  const running = cards.filter((c) => c.status === 'running').length
+  const unreported = cards.filter((c) => c.status === 'running').length
   return <div className="space-y-2">
-    <p className="text-[11px] text-muted-foreground">共 {cards.length} 个 · 未见回报 {running} · 完成 {cards.filter((c) => c.status === 'ok').length} · 受阻或异常 {cards.filter((c) => c.status !== 'ok' && c.status !== 'running').length}</p>
-    {[...cards].reverse().map((c) => {
+    <p className="text-[11px] text-muted-foreground">共 {cards.length} 个 · 未见回报 {unreported} · 完成 {cards.filter((c) => c.status === 'ok').length} · 受阻或异常 {cards.filter((c) => c.status !== 'ok' && c.status !== 'running').length}</p>
+    <div className="research-story-intro"><span>分工与复查 · RLM</span><h3>派出去做什么，带回来什么，下一步改了什么？</h3><p>回报是一份建议；是否被采纳，要继续核对主研究员的实验与判断记录。卡片序号为展示顺序，不是派发时间。</p></div>
+    {[...cards].reverse().map((c, i) => {
       const [label, tone] = CHILD_STATUS[c.status]
-      return <details key={c.name} className="rounded-md border border-border/60 p-3">
-        <summary className="cursor-pointer list-none">
-          <div className="flex items-baseline gap-2"><span className={`shrink-0 text-[11px] ${tone}`}>{label}</span><span className="min-w-0 text-[12px] font-medium">{c.task}</span></div>
-          {c.finding ? <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground">带回：{c.finding}</p> : c.status === 'running' && <p className="mt-1.5 text-[11px] text-muted-foreground">尚未读取到回报；仅凭文件缺失不能判断任务是否仍在执行。</p>}
-          <p className="mt-1 font-mono text-[10px] text-muted-foreground/70">{c.name} · 点开看任务书与完整回报</p>
-        </summary>
-        {c.brief && <><h3 className="mt-3 text-[11px] text-muted-foreground">任务书 brief.md</h3><pre className="mt-1 max-h-64 overflow-auto whitespace-pre-wrap rounded bg-muted/40 p-2 text-[11px]">{c.brief}</pre></>}
-        {c.out && <><h3 className="mt-3 text-[11px] text-muted-foreground">回报 out.md</h3><pre className="mt-1 max-h-96 overflow-auto whitespace-pre-wrap rounded bg-muted/40 p-2 text-[11px]">{c.out}</pre></>}
-      </details>
+      return <article key={c.name} className="research-story-card">
+        <header className="research-story-heading"><span className="research-story-index" aria-hidden>{String(cards.length - i).padStart(2, '0')}</span><div className="min-w-0 flex-1"><p className="research-story-kicker">{c.selfReviewed ? '父会话代做 · 自审记录' : '任务记录'}</p><h3>{childTaskLabel(c.task)}</h3></div><span className={`text-[11px] ${tone}`}>{label}</span></header>
+        <ol className="research-story-chain">
+          <li><span className="research-story-step">01 · 任务</span><h4>请它解决什么</h4><p>{c.task}</p><small>{c.brief ? '任务书可在下方展开核对' : '未读取到任务书，标题不能代替完整指令'}</small></li>
+          <li><span className="research-story-step">02 · 回报</span><h4>它带回了什么</h4>{c.finding ? <p>带回：{c.finding}</p> : <p>{c.out ? '已有回报文件，未提取到摘要，请查看原文。' : '尚未读取到回报；仅凭文件缺失不能判断任务是否仍在执行。'}</p>}</li>
+          <li className="research-story-unverified"><span className="research-story-step">03 · 采纳证据</span><h4>改变了哪一步</h4><p>采纳关联未接入。请对照实验记录核查，不能仅凭子任务完成就认定主会话已采纳。</p></li>
+        </ol>
+        <details className="research-story-source"><summary>核对原文 · {c.name}</summary>
+          {c.brief && <><h4>任务书 brief.md</h4><pre>{c.brief}</pre></>}
+          {c.out && <><h4>回报 out.md</h4><pre>{c.out}</pre></>}
+          {!c.brief && !c.out && <p>当前快照未包含任务书与回报正文。</p>}
+        </details>
+      </article>
     })}
   </div>
 }
@@ -95,19 +100,27 @@ function RefineLog({ sessionId, running }: { sessionId: string; running: boolean
   return <RefineHistory state={state} />
 }
 
+const EDIT_KIND: Record<string, string> = { memory: '操作记忆', skill: '工作技能', prompt: '提示规则', subagent: '子代理角色' }
+const EDIT_ACTION: Record<string, string> = { add: '新增', update: '更新', remove: '删除', delete: '删除', create: '新增' }
+
 export function RefineHistory({ state }: { state: AgentRefineState }): React.ReactElement {
-  if (!state.resident) return <p className="text-[12px] text-muted-foreground">会话已释放，历史经验读取尚未接入；这不表示没有保存经验，也无需为查看历史重新运行模型。</p>
+  if (!state.resident) return <p className="text-[12px] text-muted-foreground">{REFINE_NOT_RESIDENT}，历史经验读取尚未接入；这不表示没有保存经验，也无需为查看历史重新运行模型。</p>
   const recent = state.harness?.recent ?? []
   const arm = state.arm
   return <div className="space-y-3 text-[12px]">
+    <div className="research-story-intro"><span>操作经验 · Refine</span><h3>经验写下来了，下一次真的做得更好吗？</h3><p>先看触发原因，再看改了什么，最后核对验证。提炼完成不等于能力提升。</p></div>
     {arm && <p className={arm.contaminated ? 'text-destructive' : 'text-muted-foreground'}>经验策略：{REFINE_MODES[arm.mode] ?? '策略未确认'}{arm.contaminated ? ' · 本运行已标记干预或污染，原因需查审计记录；不能作为纯自动学习对照' : ''}</p>}
+    <p className="text-muted-foreground">当前展示 {recent.length} 次提炼摘要（接口最多返回最近 5 次，每次最多 6 项改动），不是完整进化历史。经验条目数与提炼次数不同。</p>
     {recent.length === 0
       ? <p className="text-muted-foreground">当前没有返回经验记录。{arm?.mode === 'frozen' ? '冻结策略不允许提炼更新。' : ''}</p>
-      : <ol className="space-y-3">{recent.map((r, i) => <li key={`${r.ts}-${i}`} className="rounded-md border border-border/60 p-3">
-        <p className="mb-1 text-[10px] text-muted-foreground">提炼记录 · 验证与回滚状态未接入</p><p className="font-medium">{r.summary}</p>
-        {r.rationale && <p className="mt-1 leading-relaxed text-muted-foreground">为什么：{r.rationale}</p>}
-        {!!r.edits?.length && <ul className="mt-2 space-y-1">{r.edits.map((e, j) => <li key={j} className="text-[11px]"><span className="text-muted-foreground">{e.action ?? '改'} {e.kind}</span> {e.title ?? e.id}</li>)}</ul>}
-        <p className="mt-1 text-[10px] text-muted-foreground">{hhmm(r.ts)}</p>
+      : <ol className="space-y-3">{recent.map((r, i) => <li key={`${r.ts}-${i}`} className="research-story-card">
+        <header className="research-story-heading"><span className="research-story-index" aria-hidden>↻</span><div className="min-w-0 flex-1"><p className="research-story-kicker">提炼记录 · {hhmm(r.ts) || '时间未记录'}</p><h3>{r.summary || '摘要未记录'}</h3></div></header>
+        <ol className="research-story-chain">
+          <li><span className="research-story-step">01 · 原因</span><h4>为什么要改</h4><p>{r.rationale || '未返回提炼原因，不能从改动反推触发事件。'}</p></li>
+          <li><span className="research-story-step">02 · 改动</span><h4>经验记录改了什么</h4>{r.edits?.length ? <ul className="space-y-2">{r.edits.map((e, j) => <li key={j}><span className="research-edit-kind">{EDIT_ACTION[e.action ?? ''] ?? e.action ?? '改动'} · {EDIT_KIND[e.kind] ?? e.kind}</span><p>{e.title ?? e.id ?? '条目未命名'}</p></li>)}</ul> : <p>未返回改动明细，不能据此认定写入了新经验。</p>}</li>
+          <li className="research-story-unverified"><span className="research-story-step">03 · 验证</span><h4>有没有变得更好</h4><p>验证与回滚状态未接入。需要后续任务的执行证据与对照结果，才能判断改动是否有效、是否仍生效。</p></li>
+        </ol>
+        <p className="research-story-footnote">来源：会话中的提炼事件摘要。当前接口没有改动前后正文及验证记录。</p>
       </li>)}</ol>}
   </div>
 }
