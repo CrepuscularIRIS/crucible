@@ -1,0 +1,95 @@
+{
+  "pid": "P5",
+  "question": "weak step + TEA（reps=1）：钙型快激活候选 H2（TEA 格预测 0.34±1.12）与 H0（34.1±6.3）/slow_na 伪影（35.4±5.3）的判决格；H6/H10/H12 不在本格 bands（方向校验限制），其判别走后续探针。obs 落中带 → H2 排除、null 与伪影二选一；obs 落归零带 → H0/H7 排除、载体为钙型。d≈10、r*=1，单观测判决。mattering：Cd 弱证据（P2: 11 vs 14）的正式检验——钙型候选唯一预测 TEA 下归零。severity：若钙型为假，obs 落归零带需未建模机制；两向互斥。",
+  "observe": {
+    "world": "ca_rebound",
+    "seed": 0,
+    "protocol": "weak step (5 uA, 120 ms)",
+    "reps": 1,
+    "blockers": "TEA"
+  },
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H0": [
+      18.46,
+      49.73
+    ],
+    "H2": [
+      -2.45,
+      3.13
+    ],
+    "H7": [
+      22.15,
+      48.6
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        3.14,
+        62.52
+      ],
+      "action": "kill",
+      "target": "H2",
+      "headline": "weak+TEA 读数落在 [3.14, 62.52]：E≥100 载体（CaT）在 TEA 格预测归零（μ≤0.34），obs 远离归零带——H2 排除。"
+    },
+    {
+      "band": [
+        -0.5,
+        18.45
+      ],
+      "action": "kill",
+      "target": "H0",
+      "headline": "weak+TEA 读数低于 H0（REF）预测带下界 18.46（落在 [-0.5, 18.45]）——排除。"
+    },
+    {
+      "band": [
+        49.74,
+        62.52
+      ],
+      "action": "kill",
+      "target": "H0",
+      "headline": "weak+TEA 读数高于 H0（REF）预测带上界 49.73（落在 [49.74, 62.52]）——排除。"
+    },
+    {
+      "band": [
+        -0.5,
+        22.14
+      ],
+      "action": "kill",
+      "target": "H7",
+      "headline": "weak+TEA 读数低于 H7（slowNA）预测带下界 22.15（落在 [-0.5, 22.14]）——排除。"
+    },
+    {
+      "band": [
+        48.61,
+        62.52
+      ],
+      "action": "kill",
+      "target": "H7",
+      "headline": "weak+TEA 读数高于 H7（slowNA）预测带上界 48.6（落在 [48.61, 62.52]）——排除。"
+    }
+  ],
+  "discrimination": "σ 出处：64-reps sim sd；band=μ±2.5σ/√1（σ=0 取量化底 0.5）。关键分离：归零带 [−2.45,3.13] vs 中带 [18.46,49.73]，d≥4.9 r*=1；H0 vs H7 带重叠（本格不判别，幸存者留 P6 XE991/none 格）。",
+  "provenance": {
+    "H0": "sim:cdfa-REF-pool-04-TEA",
+    "H2": "sim:cdfa-CaT-pool-04-TEA",
+    "H7": "sim:cdfa-slowNA-pool-04-TEA"
+  },
+  "sims": [
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-REF-pool-04-TEA.json",
+      "sha256": "20228f94542169e6725c6fe96c66e8bd9f84863be163fafe8d5e1cd78bdac240"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-CaT-pool-04-TEA.json",
+      "sha256": "776b35652ebbb4c63d8061234b2bce8c776b3dcec00aee0fa8d5bbf54863bc2d"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-slowNA-pool-04-TEA.json",
+      "sha256": "878356edbc89d922da52d129c515b234fd80d30cb178681d188164b396692e26"
+    }
+  ],
+  "frozenAt": "2026-10-15T04:08:07.641Z"
+}

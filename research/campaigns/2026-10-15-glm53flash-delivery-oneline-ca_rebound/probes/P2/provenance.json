@@ -1,0 +1,20 @@
+{
+  "pid": "P2",
+  "observe": {
+    "world": "ca_rebound",
+    "seed": 0,
+    "protocol": "weak step (5 uA, 120 ms)",
+    "reps": 1,
+    "blockers": "Cd"
+  },
+  "executor": "world-meter",
+  "startedAt": "2026-10-15T02:53:58.753Z",
+  "endedAt": "2026-10-15T02:53:59.698Z",
+  "landed": true,
+  "metric": 11,
+  "metricSource": {
+    "kind": "json",
+    "spec": "spike_count",
+    "raw": "raw/output.txt"
+  }
+}

@@ -1,0 +1,784 @@
+mech,label,is_heldout,block,reps,seed,mean,sd,sim_id
+CaL,hyperpol -25 then release,1,Cd,64,0,11.328125,1.8175047215064979,cdfa-CaL-ho-01-Cd
+CaL,hyperpol -25 then release,1,TEA,64,0,1.0,0.0,cdfa-CaL-ho-01-TEA
+CaL,hyperpol -25 then release,1,XE991,64,0,21.28125,2.5848689752185927,cdfa-CaL-ho-01-XE991
+CaL,hyperpol -25 then release,1,none,64,0,21.28125,2.5848689752185927,cdfa-CaL-ho-01-none
+CaL,hyperpol -35 then release,1,Cd,64,0,10.921875,1.7665740092503144,cdfa-CaL-ho-02-Cd
+CaL,hyperpol -35 then release,1,TEA,64,0,1.0,0.0,cdfa-CaL-ho-02-TEA
+CaL,hyperpol -35 then release,1,XE991,64,0,20.921875,2.7962826088525867,cdfa-CaL-ho-02-XE991
+CaL,hyperpol -35 then release,1,none,64,0,20.921875,2.7962826088525867,cdfa-CaL-ho-02-none
+CaL,hyperpol -30 then release,1,Cd,64,0,10.984375,1.8125855206972359,cdfa-CaL-ho-03-Cd
+CaL,hyperpol -30 then release,1,TEA,64,0,1.0,0.0,cdfa-CaL-ho-03-TEA
+CaL,hyperpol -30 then release,1,XE991,64,0,20.9375,3.0125399292618225,cdfa-CaL-ho-03-XE991
+CaL,hyperpol -30 then release,1,none,64,0,20.9375,3.0125399292618225,cdfa-CaL-ho-03-none
+CaL,hyperpol -40 then release,1,Cd,64,0,10.921875,1.7665740092503144,cdfa-CaL-ho-04-Cd
+CaL,hyperpol -40 then release,1,TEA,64,0,1.0,0.0,cdfa-CaL-ho-04-TEA
+CaL,hyperpol -40 then release,1,XE991,64,0,20.90625,2.752884490107243,cdfa-CaL-ho-04-XE991
+CaL,hyperpol -40 then release,1,none,64,0,20.90625,2.752884490107243,cdfa-CaL-ho-04-none
+CaL,"brief step (12 uA, 40 ms)",1,Cd,64,0,6.6875,1.3671311638052945,cdfa-CaL-ho-05-Cd
+CaL,"brief step (12 uA, 40 ms)",1,TEA,64,0,0.0,0.0,cdfa-CaL-ho-05-TEA
+CaL,"brief step (12 uA, 40 ms)",1,XE991,64,0,10.703125,1.7699402509868778,cdfa-CaL-ho-05-XE991
+CaL,"brief step (12 uA, 40 ms)",1,none,64,0,10.703125,1.7699402509868778,cdfa-CaL-ho-05-none
+CaL,"long step (10 uA, 300 ms)",1,Cd,64,0,25.953125,1.8976149399489508,cdfa-CaL-ho-06-Cd
+CaL,"long step (10 uA, 300 ms)",1,TEA,64,0,0.0,0.0,cdfa-CaL-ho-06-TEA
+CaL,"long step (10 uA, 300 ms)",1,XE991,64,0,35.40625,3.0064414972173457,cdfa-CaL-ho-06-XE991
+CaL,"long step (10 uA, 300 ms)",1,none,64,0,35.40625,3.0064414972173457,cdfa-CaL-ho-06-none
+CaL,"brief step (12 uA, 40 ms)",1,Cd,64,0,6.6875,1.3671311638052945,cdfa-CaL-pool-01-Cd
+CaL,"brief step (12 uA, 40 ms)",1,TEA,64,0,0.0,0.0,cdfa-CaL-pool-01-TEA
+CaL,"brief step (12 uA, 40 ms)",1,XE991,64,0,10.703125,1.7699402509868778,cdfa-CaL-pool-01-XE991
+CaL,"brief step (12 uA, 40 ms)",1,none,64,0,10.703125,1.7699402509868778,cdfa-CaL-pool-01-none
+CaL,"long step (10 uA, 300 ms)",1,Cd,64,0,25.953125,1.8976149399489508,cdfa-CaL-pool-02-Cd
+CaL,"long step (10 uA, 300 ms)",1,TEA,64,0,0.0,0.0,cdfa-CaL-pool-02-TEA
+CaL,"long step (10 uA, 300 ms)",1,XE991,64,0,35.40625,3.0064414972173457,cdfa-CaL-pool-02-XE991
+CaL,"long step (10 uA, 300 ms)",1,none,64,0,35.40625,3.0064414972173457,cdfa-CaL-pool-02-none
+CaL,"strong step (18 uA, 120 ms)",0,Cd,64,0,14.0,1.699673171197595,cdfa-CaL-pool-03-Cd
+CaL,"strong step (18 uA, 120 ms)",0,TEA,64,0,0.0,0.0,cdfa-CaL-pool-03-TEA
+CaL,"strong step (18 uA, 120 ms)",0,XE991,64,0,18.859375,2.092065035105532,cdfa-CaL-pool-03-XE991
+CaL,"strong step (18 uA, 120 ms)",0,none,64,0,18.859375,2.092065035105532,cdfa-CaL-pool-03-none
+CaL,"weak step (5 uA, 120 ms)",0,Cd,64,0,10.859375,1.7170220390372637,cdfa-CaL-pool-04-Cd
+CaL,"weak step (5 uA, 120 ms)",0,TEA,64,0,0.0,0.0,cdfa-CaL-pool-04-TEA
+CaL,"weak step (5 uA, 120 ms)",0,XE991,64,0,17.78125,2.6990224567836076,cdfa-CaL-pool-04-XE991
+CaL,"weak step (5 uA, 120 ms)",0,none,64,0,17.78125,2.6990224567836076,cdfa-CaL-pool-04-none
+CaL,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,Cd,64,0,15.421875,1.7439663559810008,cdfa-CaL-pool-05-Cd
+CaL,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,TEA,64,0,0.0,0.0,cdfa-CaL-pool-05-TEA
+CaL,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,XE991,64,0,21.984375,2.3804240485244748,cdfa-CaL-pool-05-XE991
+CaL,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,none,64,0,21.984375,2.3804240485244748,cdfa-CaL-pool-05-none
+CaL,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,Cd,64,0,7.15625,1.25,cdfa-CaL-pool-06-Cd
+CaL,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,TEA,64,0,0.0,0.0,cdfa-CaL-pool-06-TEA
+CaL,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,XE991,64,0,12.671875,2.070615946240489,cdfa-CaL-pool-06-XE991
+CaL,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,none,64,0,12.671875,2.070615946240489,cdfa-CaL-pool-06-none
+CaL,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,Cd,64,0,27.390625,2.5857803310867147,cdfa-CaL-pool-07-Cd
+CaL,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,TEA,64,0,0.34375,1.2751439383426733,cdfa-CaL-pool-07-TEA
+CaL,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,XE991,64,0,36.515625,3.8255290639397344,cdfa-CaL-pool-07-XE991
+CaL,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,none,64,0,36.515625,3.8255290639397344,cdfa-CaL-pool-07-none
+CaL,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,Cd,64,0,36.359375,2.399518387523524,cdfa-CaL-pool-08-Cd
+CaL,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,TEA,64,0,0.0,0.0,cdfa-CaL-pool-08-TEA
+CaL,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,XE991,64,0,46.21875,3.730903758761791,cdfa-CaL-pool-08-XE991
+CaL,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,none,64,0,46.21875,3.730903758761791,cdfa-CaL-pool-08-none
+CaL,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,Cd,64,0,15.6875,1.8071726580138976,cdfa-CaL-pool-09-Cd
+CaL,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,TEA,64,0,0.0,0.0,cdfa-CaL-pool-09-TEA
+CaL,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,XE991,64,0,22.015625,2.333280186469561,cdfa-CaL-pool-09-XE991
+CaL,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,none,64,0,22.015625,2.333280186469561,cdfa-CaL-pool-09-none
+CaT,hyperpol -25 then release,1,Cd,64,0,11.328125,1.8175047215064979,cdfa-CaT-ho-01-Cd
+CaT,hyperpol -25 then release,1,TEA,64,0,53.4375,14.681675221226877,cdfa-CaT-ho-01-TEA
+CaT,hyperpol -25 then release,1,XE991,64,0,21.265625,3.5332533122115612,cdfa-CaT-ho-01-XE991
+CaT,hyperpol -25 then release,1,none,64,0,21.265625,3.5332533122115612,cdfa-CaT-ho-01-none
+CaT,hyperpol -35 then release,1,Cd,64,0,10.921875,1.7665740092503144,cdfa-CaT-ho-02-Cd
+CaT,hyperpol -35 then release,1,TEA,64,0,45.015625,21.912156651662205,cdfa-CaT-ho-02-TEA
+CaT,hyperpol -35 then release,1,XE991,64,0,20.9375,3.2015621187164243,cdfa-CaT-ho-02-XE991
+CaT,hyperpol -35 then release,1,none,64,0,20.9375,3.2015621187164243,cdfa-CaT-ho-02-none
+CaT,hyperpol -30 then release,1,Cd,64,0,10.984375,1.8125855206972359,cdfa-CaT-ho-03-Cd
+CaT,hyperpol -30 then release,1,TEA,64,0,56.984375,16.801825474802264,cdfa-CaT-ho-03-TEA
+CaT,hyperpol -30 then release,1,XE991,64,0,21.015625,2.681460082604844,cdfa-CaT-ho-03-XE991
+CaT,hyperpol -30 then release,1,none,64,0,21.015625,2.681460082604844,cdfa-CaT-ho-03-none
+CaT,hyperpol -40 then release,1,Cd,64,0,10.921875,1.7665740092503144,cdfa-CaT-ho-04-Cd
+CaT,hyperpol -40 then release,1,TEA,64,0,35.53125,16.234363661445542,cdfa-CaT-ho-04-TEA
+CaT,hyperpol -40 then release,1,XE991,64,0,20.96875,3.15709706926504,cdfa-CaT-ho-04-XE991
+CaT,hyperpol -40 then release,1,none,64,0,20.96875,3.15709706926504,cdfa-CaT-ho-04-none
+CaT,"brief step (12 uA, 40 ms)",1,Cd,64,0,6.6875,1.3671311638052945,cdfa-CaT-ho-05-Cd
+CaT,"brief step (12 uA, 40 ms)",1,TEA,64,0,0.0,0.0,cdfa-CaT-ho-05-TEA
+CaT,"brief step (12 uA, 40 ms)",1,XE991,64,0,10.390625,2.0518453753741883,cdfa-CaT-ho-05-XE991
+CaT,"brief step (12 uA, 40 ms)",1,none,64,0,10.390625,2.0518453753741883,cdfa-CaT-ho-05-none
+CaT,"long step (10 uA, 300 ms)",1,Cd,64,0,25.953125,1.8976149399489508,cdfa-CaT-ho-06-Cd
+CaT,"long step (10 uA, 300 ms)",1,TEA,64,0,13.609375,4.835770116439327,cdfa-CaT-ho-06-TEA
+CaT,"long step (10 uA, 300 ms)",1,XE991,64,0,34.84375,3.7973204838600148,cdfa-CaT-ho-06-XE991
+CaT,"long step (10 uA, 300 ms)",1,none,64,0,34.84375,3.7973204838600148,cdfa-CaT-ho-06-none
+CaT,"brief step (12 uA, 40 ms)",1,Cd,64,0,6.6875,1.3671311638052945,cdfa-CaT-pool-01-Cd
+CaT,"brief step (12 uA, 40 ms)",1,TEA,64,0,0.0,0.0,cdfa-CaT-pool-01-TEA
+CaT,"brief step (12 uA, 40 ms)",1,XE991,64,0,10.390625,2.0518453753741883,cdfa-CaT-pool-01-XE991
+CaT,"brief step (12 uA, 40 ms)",1,none,64,0,10.390625,2.0518453753741883,cdfa-CaT-pool-01-none
+CaT,"long step (10 uA, 300 ms)",1,Cd,64,0,25.953125,1.8976149399489508,cdfa-CaT-pool-02-Cd
+CaT,"long step (10 uA, 300 ms)",1,TEA,64,0,13.609375,4.835770116439327,cdfa-CaT-pool-02-TEA
+CaT,"long step (10 uA, 300 ms)",1,XE991,64,0,34.84375,3.7973204838600148,cdfa-CaT-pool-02-XE991
+CaT,"long step (10 uA, 300 ms)",1,none,64,0,34.84375,3.7973204838600148,cdfa-CaT-pool-02-none
+CaT,"strong step (18 uA, 120 ms)",0,Cd,64,0,14.0,1.699673171197595,cdfa-CaT-pool-03-Cd
+CaT,"strong step (18 uA, 120 ms)",0,TEA,64,0,0.34375,1.115813462250605,cdfa-CaT-pool-03-TEA
+CaT,"strong step (18 uA, 120 ms)",0,XE991,64,0,16.265625,2.8072592265552117,cdfa-CaT-pool-03-XE991
+CaT,"strong step (18 uA, 120 ms)",0,none,64,0,16.265625,2.8072592265552117,cdfa-CaT-pool-03-none
+CaT,"weak step (5 uA, 120 ms)",0,Cd,64,0,10.859375,1.7170220390372637,cdfa-CaT-pool-04-Cd
+CaT,"weak step (5 uA, 120 ms)",0,TEA,64,0,0.34375,1.115813462250605,cdfa-CaT-pool-04-TEA
+CaT,"weak step (5 uA, 120 ms)",0,XE991,64,0,17.453125,2.9055485371246688,cdfa-CaT-pool-04-XE991
+CaT,"weak step (5 uA, 120 ms)",0,none,64,0,17.453125,2.9055485371246688,cdfa-CaT-pool-04-none
+CaT,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,Cd,64,0,15.421875,1.7439663559810008,cdfa-CaT-pool-05-Cd
+CaT,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,TEA,64,0,13.015625,6.95676486457264,cdfa-CaT-pool-05-TEA
+CaT,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,TTX,64,0,0.0,0.0,cdfa-CaT-pool-05-TTX
+CaT,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,XE991,64,0,17.015625,2.8030153123502273,cdfa-CaT-pool-05-XE991
+CaT,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,none,64,0,17.015625,2.8030153123502273,cdfa-CaT-pool-05-none
+CaT,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,Cd,64,0,7.15625,1.25,cdfa-CaT-pool-06-Cd
+CaT,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,TEA,64,0,15.90625,8.507174843008919,cdfa-CaT-pool-06-TEA
+CaT,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,XE991,64,0,13.0,2.5385910352879693,cdfa-CaT-pool-06-XE991
+CaT,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,none,64,0,13.0,2.5385910352879693,cdfa-CaT-pool-06-none
+CaT,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,Cd,64,0,27.390625,2.5857803310867147,cdfa-CaT-pool-07-Cd
+CaT,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,TEA,64,0,17.0,3.7543625417956235,cdfa-CaT-pool-07-TEA
+CaT,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,XE991,64,0,36.765625,3.8739757991065833,cdfa-CaT-pool-07-XE991
+CaT,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,none,64,0,36.765625,3.8739757991065833,cdfa-CaT-pool-07-none
+CaT,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,Cd,64,0,36.359375,2.399518387523524,cdfa-CaT-pool-08-Cd
+CaT,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,TEA,64,0,16.21875,3.8851314046948313,cdfa-CaT-pool-08-TEA
+CaT,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,XE991,64,0,45.375,3.2244108604247996,cdfa-CaT-pool-08-XE991
+CaT,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,none,64,0,45.375,3.2244108604247996,cdfa-CaT-pool-08-none
+CaT,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,Cd,64,0,15.6875,1.8071726580138976,cdfa-CaT-pool-09-Cd
+CaT,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,TEA,64,0,5.09375,4.474686297419905,cdfa-CaT-pool-09-TEA
+CaT,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,XE991,64,0,19.5,2.889499325005346,cdfa-CaT-pool-09-XE991
+CaT,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,none,64,0,19.5,2.889499325005346,cdfa-CaT-pool-09-none
+Ih,hyperpol -25 then release,1,Cd,64,0,18.671875,1.9924833950036018,cdfa-Ih-ho-01-Cd
+Ih,hyperpol -25 then release,1,TEA,64,0,68.703125,9.129891057087468,cdfa-Ih-ho-01-TEA
+Ih,hyperpol -25 then release,1,XE991,64,0,18.671875,1.9924833950036018,cdfa-Ih-ho-01-XE991
+Ih,hyperpol -25 then release,1,none,64,0,18.671875,1.9924833950036018,cdfa-Ih-ho-01-none
+Ih,hyperpol -35 then release,1,Cd,64,0,19.03125,1.9104453897721305,cdfa-Ih-ho-02-Cd
+Ih,hyperpol -35 then release,1,TEA,64,0,61.90625,6.227738130511127,cdfa-Ih-ho-02-TEA
+Ih,hyperpol -35 then release,1,XE991,64,0,19.03125,1.9104453897721305,cdfa-Ih-ho-02-XE991
+Ih,hyperpol -35 then release,1,none,64,0,19.03125,1.9104453897721305,cdfa-Ih-ho-02-none
+Ih,hyperpol -30 then release,1,Cd,64,0,18.875,1.7772816768115736,cdfa-Ih-ho-03-Cd
+Ih,hyperpol -30 then release,1,TEA,64,0,63.125,6.511284465973315,cdfa-Ih-ho-03-TEA
+Ih,hyperpol -30 then release,1,XE991,64,0,18.875,1.7772816768115736,cdfa-Ih-ho-03-XE991
+Ih,hyperpol -30 then release,1,none,64,0,18.875,1.7772816768115736,cdfa-Ih-ho-03-none
+Ih,hyperpol -40 then release,1,Cd,64,0,19.3125,2.076894812813606,cdfa-Ih-ho-04-Cd
+Ih,hyperpol -40 then release,1,TEA,64,0,60.984375,6.132122518940859,cdfa-Ih-ho-04-TEA
+Ih,hyperpol -40 then release,1,XE991,64,0,19.3125,2.076894812813606,cdfa-Ih-ho-04-XE991
+Ih,hyperpol -40 then release,1,none,64,0,19.3125,2.076894812813606,cdfa-Ih-ho-04-none
+Ih,"brief step (12 uA, 40 ms)",1,Cd,64,0,9.390625,1.629267899668096,cdfa-Ih-ho-05-Cd
+Ih,"brief step (12 uA, 40 ms)",1,TEA,64,0,23.8125,4.019298683198588,cdfa-Ih-ho-05-TEA
+Ih,"brief step (12 uA, 40 ms)",1,XE991,64,0,9.390625,1.629267899668096,cdfa-Ih-ho-05-XE991
+Ih,"brief step (12 uA, 40 ms)",1,none,64,0,9.390625,1.629267899668096,cdfa-Ih-ho-05-none
+Ih,"long step (10 uA, 300 ms)",1,Cd,64,0,31.015625,1.93129767624924,cdfa-Ih-ho-06-Cd
+Ih,"long step (10 uA, 300 ms)",1,TEA,64,0,35.59375,7.395233879126753,cdfa-Ih-ho-06-TEA
+Ih,"long step (10 uA, 300 ms)",1,XE991,64,0,31.015625,1.93129767624924,cdfa-Ih-ho-06-XE991
+Ih,"long step (10 uA, 300 ms)",1,none,64,0,31.015625,1.93129767624924,cdfa-Ih-ho-06-none
+Ih,"brief step (12 uA, 40 ms)",1,Cd,64,0,9.390625,1.629267899668096,cdfa-Ih-pool-01-Cd
+Ih,"brief step (12 uA, 40 ms)",1,TEA,64,0,23.8125,4.019298683198588,cdfa-Ih-pool-01-TEA
+Ih,"brief step (12 uA, 40 ms)",1,XE991,64,0,9.390625,1.629267899668096,cdfa-Ih-pool-01-XE991
+Ih,"brief step (12 uA, 40 ms)",1,none,64,0,9.390625,1.629267899668096,cdfa-Ih-pool-01-none
+Ih,"long step (10 uA, 300 ms)",1,Cd,64,0,31.015625,1.93129767624924,cdfa-Ih-pool-02-Cd
+Ih,"long step (10 uA, 300 ms)",1,TEA,64,0,35.59375,7.395233879126753,cdfa-Ih-pool-02-TEA
+Ih,"long step (10 uA, 300 ms)",1,XE991,64,0,31.015625,1.93129767624924,cdfa-Ih-pool-02-XE991
+Ih,"long step (10 uA, 300 ms)",1,none,64,0,31.015625,1.93129767624924,cdfa-Ih-pool-02-none
+Ih,"strong step (18 uA, 120 ms)",0,Cd,64,0,16.65625,1.9535783204080286,cdfa-Ih-pool-03-Cd
+Ih,"strong step (18 uA, 120 ms)",0,TEA,64,0,17.796875,3.153127384294409,cdfa-Ih-pool-03-TEA
+Ih,"strong step (18 uA, 120 ms)",0,XE991,64,0,16.65625,1.9535783204080286,cdfa-Ih-pool-03-XE991
+Ih,"strong step (18 uA, 120 ms)",0,none,64,0,16.65625,1.9535783204080286,cdfa-Ih-pool-03-none
+Ih,"weak step (5 uA, 120 ms)",0,Cd,64,0,14.84375,1.8363071119842154,cdfa-Ih-pool-04-Cd
+Ih,"weak step (5 uA, 120 ms)",0,TEA,64,0,43.75,5.509011376754122,cdfa-Ih-pool-04-TEA
+Ih,"weak step (5 uA, 120 ms)",0,XE991,64,0,14.84375,1.8363071119842154,cdfa-Ih-pool-04-XE991
+Ih,"weak step (5 uA, 120 ms)",0,none,64,0,14.84375,1.8363071119842154,cdfa-Ih-pool-04-none
+Ih,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,Cd,64,0,19.21875,2.0966242709015206,cdfa-Ih-pool-05-Cd
+Ih,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,TEA,64,0,43.40625,7.061450792973587,cdfa-Ih-pool-05-TEA
+Ih,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,XE991,64,0,19.21875,2.0966242709015206,cdfa-Ih-pool-05-XE991
+Ih,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,none,64,0,19.21875,2.0966242709015206,cdfa-Ih-pool-05-none
+Ih,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,Cd,64,0,10.5,1.532712089469627,cdfa-Ih-pool-06-Cd
+Ih,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,TEA,64,0,29.375,5.217491947499509,cdfa-Ih-pool-06-TEA
+Ih,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,XE991,64,0,10.5,1.532712089469627,cdfa-Ih-pool-06-XE991
+Ih,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,none,64,0,10.5,1.532712089469627,cdfa-Ih-pool-06-none
+Ih,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,Cd,64,0,31.78125,2.5663806272276766,cdfa-Ih-pool-07-Cd
+Ih,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,TEA,64,0,17.703125,3.2154374039021034,cdfa-Ih-pool-07-TEA
+Ih,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,XE991,64,0,31.78125,2.5663806272276766,cdfa-Ih-pool-07-XE991
+Ih,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,none,64,0,31.78125,2.5663806272276766,cdfa-Ih-pool-07-none
+Ih,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,Cd,64,0,41.703125,2.7984104756944057,cdfa-Ih-pool-08-Cd
+Ih,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,TEA,64,0,19.125,4.061042168220307,cdfa-Ih-pool-08-TEA
+Ih,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,XE991,64,0,41.703125,2.7984104756944057,cdfa-Ih-pool-08-XE991
+Ih,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,none,64,0,41.703125,2.7984104756944057,cdfa-Ih-pool-08-none
+Ih,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,Cd,64,0,19.5,2.32992949004287,cdfa-Ih-pool-09-Cd
+Ih,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,TEA,64,0,36.453125,10.03158454542768,cdfa-Ih-pool-09-TEA
+Ih,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,XE991,64,0,19.5,2.32992949004287,cdfa-Ih-pool-09-XE991
+Ih,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,none,64,0,19.5,2.32992949004287,cdfa-Ih-pool-09-none
+KA,hyperpol -25 then release,1,Cd,64,0,1.390625,0.9858875221591996,cdfa-KA-ho-01-Cd
+KA,hyperpol -25 then release,1,TEA,64,0,11.359375,8.566022187171308,cdfa-KA-ho-01-TEA
+KA,hyperpol -25 then release,1,XE991,64,0,1.390625,0.9858875221591996,cdfa-KA-ho-01-XE991
+KA,hyperpol -25 then release,1,none,64,0,1.390625,0.9858875221591996,cdfa-KA-ho-01-none
+KA,hyperpol -35 then release,1,Cd,64,0,1.640625,1.01367142699435,cdfa-KA-ho-02-Cd
+KA,hyperpol -35 then release,1,TEA,64,0,11.0,9.533566430716728,cdfa-KA-ho-02-TEA
+KA,hyperpol -35 then release,1,XE991,64,0,1.640625,1.01367142699435,cdfa-KA-ho-02-XE991
+KA,hyperpol -35 then release,1,none,64,0,1.640625,1.01367142699435,cdfa-KA-ho-02-none
+KA,hyperpol -30 then release,1,Cd,64,0,1.578125,1.0955130348488828,cdfa-KA-ho-03-Cd
+KA,hyperpol -30 then release,1,TEA,64,0,9.828125,6.750789930262953,cdfa-KA-ho-03-TEA
+KA,hyperpol -30 then release,1,XE991,64,0,1.578125,1.0955130348488828,cdfa-KA-ho-03-XE991
+KA,hyperpol -30 then release,1,none,64,0,1.578125,1.0955130348488828,cdfa-KA-ho-03-none
+KA,hyperpol -40 then release,1,Cd,64,0,1.625,1.0,cdfa-KA-ho-04-Cd
+KA,hyperpol -40 then release,1,TEA,64,0,11.015625,9.52605814228313,cdfa-KA-ho-04-TEA
+KA,hyperpol -40 then release,1,XE991,64,0,1.625,1.0,cdfa-KA-ho-04-XE991
+KA,hyperpol -40 then release,1,none,64,0,1.625,1.0,cdfa-KA-ho-04-none
+KA,"brief step (12 uA, 40 ms)",1,Cd,64,0,2.765625,0.9878980009684504,cdfa-KA-ho-05-Cd
+KA,"brief step (12 uA, 40 ms)",1,TEA,64,0,23.75,6.541685623266437,cdfa-KA-ho-05-TEA
+KA,"brief step (12 uA, 40 ms)",1,XE991,64,0,2.765625,0.9878980009684504,cdfa-KA-ho-05-XE991
+KA,"brief step (12 uA, 40 ms)",1,none,64,0,2.765625,0.9878980009684504,cdfa-KA-ho-05-none
+KA,"long step (10 uA, 300 ms)",1,Cd,64,0,14.625,2.011869540407391,cdfa-KA-ho-06-Cd
+KA,"long step (10 uA, 300 ms)",1,TEA,64,0,39.9375,6.7679801680823175,cdfa-KA-ho-06-TEA
+KA,"long step (10 uA, 300 ms)",1,XE991,64,0,14.625,2.011869540407391,cdfa-KA-ho-06-XE991
+KA,"long step (10 uA, 300 ms)",1,none,64,0,14.625,2.011869540407391,cdfa-KA-ho-06-none
+KA,"brief step (12 uA, 40 ms)",1,Cd,64,0,2.765625,0.9878980009684504,cdfa-KA-pool-01-Cd
+KA,"brief step (12 uA, 40 ms)",1,TEA,64,0,23.75,6.541685623266437,cdfa-KA-pool-01-TEA
+KA,"brief step (12 uA, 40 ms)",1,XE991,64,0,2.765625,0.9878980009684504,cdfa-KA-pool-01-XE991
+KA,"brief step (12 uA, 40 ms)",1,none,64,0,2.765625,0.9878980009684504,cdfa-KA-pool-01-none
+KA,"long step (10 uA, 300 ms)",1,Cd,64,0,14.625,2.011869540407391,cdfa-KA-pool-02-Cd
+KA,"long step (10 uA, 300 ms)",1,TEA,64,0,39.9375,6.7679801680823175,cdfa-KA-pool-02-TEA
+KA,"long step (10 uA, 300 ms)",1,XE991,64,0,14.625,2.011869540407391,cdfa-KA-pool-02-XE991
+KA,"long step (10 uA, 300 ms)",1,none,64,0,14.625,2.011869540407391,cdfa-KA-pool-02-none
+KA,"strong step (18 uA, 120 ms)",0,Cd,64,0,8.25,1.3093073414159542,cdfa-KA-pool-03-Cd
+KA,"strong step (18 uA, 120 ms)",0,TEA,64,0,31.421875,5.290916707261097,cdfa-KA-pool-03-TEA
+KA,"strong step (18 uA, 120 ms)",0,XE991,64,0,8.25,1.3093073414159542,cdfa-KA-pool-03-XE991
+KA,"strong step (18 uA, 120 ms)",0,none,64,0,8.25,1.3093073414159542,cdfa-KA-pool-03-none
+KA,"weak step (5 uA, 120 ms)",0,Cd,64,0,3.21875,1.302850964201445,cdfa-KA-pool-04-Cd
+KA,"weak step (5 uA, 120 ms)",0,TEA,64,0,38.8125,5.887503580695167,cdfa-KA-pool-04-TEA
+KA,"weak step (5 uA, 120 ms)",0,XE991,64,0,3.21875,1.302850964201445,cdfa-KA-pool-04-XE991
+KA,"weak step (5 uA, 120 ms)",0,none,64,0,3.21875,1.302850964201445,cdfa-KA-pool-04-none
+KA,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,Cd,64,0,8.484375,1.4141258728016344,cdfa-KA-pool-05-Cd
+KA,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,TEA,64,0,37.921875,5.926279079672061,cdfa-KA-pool-05-TEA
+KA,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,XE991,64,0,8.484375,1.4141258728016344,cdfa-KA-pool-05-XE991
+KA,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,none,64,0,8.484375,1.4141258728016344,cdfa-KA-pool-05-none
+KA,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,Cd,64,0,2.203125,1.1294005644237277,cdfa-KA-pool-06-Cd
+KA,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,TEA,64,0,24.59375,7.512357544274359,cdfa-KA-pool-06-TEA
+KA,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,XE991,64,0,2.203125,1.1294005644237277,cdfa-KA-pool-06-XE991
+KA,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,none,64,0,2.203125,1.1294005644237277,cdfa-KA-pool-06-none
+KA,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,Cd,64,0,16.1875,2.537809329023004,cdfa-KA-pool-07-Cd
+KA,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,TEA,64,0,17.734375,3.25743197860494,cdfa-KA-pool-07-TEA
+KA,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,XE991,64,0,16.1875,2.537809329023004,cdfa-KA-pool-07-XE991
+KA,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,none,64,0,16.1875,2.537809329023004,cdfa-KA-pool-07-none
+KA,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,Cd,64,0,22.921875,2.5404954366209878,cdfa-KA-pool-08-Cd
+KA,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,TEA,64,0,33.40625,4.638413624546754,cdfa-KA-pool-08-TEA
+KA,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,XE991,64,0,22.921875,2.5404954366209878,cdfa-KA-pool-08-XE991
+KA,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,none,64,0,22.921875,2.5404954366209878,cdfa-KA-pool-08-none
+KA,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,Cd,64,0,8.421875,1.3663145597520638,cdfa-KA-pool-09-Cd
+KA,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,TEA,64,0,37.359375,5.015427587842226,cdfa-KA-pool-09-TEA
+KA,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,XE991,64,0,8.421875,1.3663145597520638,cdfa-KA-pool-09-XE991
+KA,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,none,64,0,8.421875,1.3663145597520638,cdfa-KA-pool-09-none
+Kir,hyperpol -25 then release,1,Cd,64,0,0.203125,0.44292274219727706,cdfa-Kir-ho-01-Cd
+Kir,hyperpol -25 then release,1,TEA,64,0,7.34375,3.7679464745296785,cdfa-Kir-ho-01-TEA
+Kir,hyperpol -25 then release,1,XE991,64,0,0.203125,0.44292274219727706,cdfa-Kir-ho-01-XE991
+Kir,hyperpol -25 then release,1,none,64,0,0.203125,0.44292274219727706,cdfa-Kir-ho-01-none
+Kir,hyperpol -35 then release,1,Cd,64,0,0.203125,0.44292274219727706,cdfa-Kir-ho-02-Cd
+Kir,hyperpol -35 then release,1,TEA,64,0,5.625,2.340126166724879,cdfa-Kir-ho-02-TEA
+Kir,hyperpol -35 then release,1,XE991,64,0,0.203125,0.44292274219727706,cdfa-Kir-ho-02-XE991
+Kir,hyperpol -35 then release,1,none,64,0,0.203125,0.44292274219727706,cdfa-Kir-ho-02-none
+Kir,hyperpol -30 then release,1,Cd,64,0,0.203125,0.44292274219727706,cdfa-Kir-ho-03-Cd
+Kir,hyperpol -30 then release,1,TEA,64,0,6.515625,3.2317482000569644,cdfa-Kir-ho-03-TEA
+Kir,hyperpol -30 then release,1,XE991,64,0,0.203125,0.44292274219727706,cdfa-Kir-ho-03-XE991
+Kir,hyperpol -30 then release,1,none,64,0,0.203125,0.44292274219727706,cdfa-Kir-ho-03-none
+Kir,hyperpol -40 then release,1,Cd,64,0,0.203125,0.44292274219727706,cdfa-Kir-ho-04-Cd
+Kir,hyperpol -40 then release,1,TEA,64,0,5.078125,2.1179856220565085,cdfa-Kir-ho-04-TEA
+Kir,hyperpol -40 then release,1,XE991,64,0,0.203125,0.44292274219727706,cdfa-Kir-ho-04-XE991
+Kir,hyperpol -40 then release,1,none,64,0,0.203125,0.44292274219727706,cdfa-Kir-ho-04-none
+Kir,"brief step (12 uA, 40 ms)",1,Cd,64,0,3.140625,0.9061901321221477,cdfa-Kir-ho-05-Cd
+Kir,"brief step (12 uA, 40 ms)",1,TEA,64,0,21.296875,4.355910735234749,cdfa-Kir-ho-05-TEA
+Kir,"brief step (12 uA, 40 ms)",1,XE991,64,0,3.140625,0.9061901321221477,cdfa-Kir-ho-05-XE991
+Kir,"brief step (12 uA, 40 ms)",1,none,64,0,3.140625,0.9061901321221477,cdfa-Kir-ho-05-none
+Kir,"long step (10 uA, 300 ms)",1,Cd,64,0,18.859375,1.9588398534409523,cdfa-Kir-ho-06-Cd
+Kir,"long step (10 uA, 300 ms)",1,TEA,64,0,26.03125,5.551973051258873,cdfa-Kir-ho-06-TEA
+Kir,"long step (10 uA, 300 ms)",1,XE991,64,0,18.859375,1.9588398534409523,cdfa-Kir-ho-06-XE991
+Kir,"long step (10 uA, 300 ms)",1,none,64,0,18.859375,1.9588398534409523,cdfa-Kir-ho-06-none
+Kir,"brief step (12 uA, 40 ms)",1,Cd,64,0,3.140625,0.9061901321221477,cdfa-Kir-pool-01-Cd
+Kir,"brief step (12 uA, 40 ms)",1,TEA,64,0,21.296875,4.355910735234749,cdfa-Kir-pool-01-TEA
+Kir,"brief step (12 uA, 40 ms)",1,XE991,64,0,3.140625,0.9061901321221477,cdfa-Kir-pool-01-XE991
+Kir,"brief step (12 uA, 40 ms)",1,none,64,0,3.140625,0.9061901321221477,cdfa-Kir-pool-01-none
+Kir,"long step (10 uA, 300 ms)",1,Cd,64,0,18.859375,1.9588398534409523,cdfa-Kir-pool-02-Cd
+Kir,"long step (10 uA, 300 ms)",1,TEA,64,0,26.03125,5.551973051258873,cdfa-Kir-pool-02-TEA
+Kir,"long step (10 uA, 300 ms)",1,XE991,64,0,18.859375,1.9588398534409523,cdfa-Kir-pool-02-XE991
+Kir,"long step (10 uA, 300 ms)",1,none,64,0,18.859375,1.9588398534409523,cdfa-Kir-pool-02-none
+Kir,"strong step (18 uA, 120 ms)",0,Cd,64,0,10.21875,1.3969212178533508,cdfa-Kir-pool-03-Cd
+Kir,"strong step (18 uA, 120 ms)",0,TEA,64,0,16.953125,2.869819348885587,cdfa-Kir-pool-03-TEA
+Kir,"strong step (18 uA, 120 ms)",0,XE991,64,0,10.21875,1.3969212178533508,cdfa-Kir-pool-03-XE991
+Kir,"strong step (18 uA, 120 ms)",0,none,64,0,10.21875,1.3969212178533508,cdfa-Kir-pool-03-none
+Kir,"weak step (5 uA, 120 ms)",0,Cd,64,0,5.1875,1.5210167860651846,cdfa-Kir-pool-04-Cd
+Kir,"weak step (5 uA, 120 ms)",0,TEA,64,0,37.578125,5.284913200770902,cdfa-Kir-pool-04-TEA
+Kir,"weak step (5 uA, 120 ms)",0,XE991,64,0,5.1875,1.5210167860651846,cdfa-Kir-pool-04-XE991
+Kir,"weak step (5 uA, 120 ms)",0,none,64,0,5.1875,1.5210167860651846,cdfa-Kir-pool-04-none
+Kir,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,Cd,64,0,6.578125,1.2824169579229112,cdfa-Kir-pool-05-Cd
+Kir,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,TEA,64,0,34.796875,5.782237957197092,cdfa-Kir-pool-05-TEA
+Kir,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,XE991,64,0,6.578125,1.2824169579229112,cdfa-Kir-pool-05-XE991
+Kir,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,none,64,0,6.578125,1.2824169579229112,cdfa-Kir-pool-05-none
+Kir,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,Cd,64,0,1.421875,0.9395150302488471,cdfa-Kir-pool-06-Cd
+Kir,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,TEA,64,0,26.59375,4.256530929707378,cdfa-Kir-pool-06-TEA
+Kir,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,XE991,64,0,1.421875,0.9395150302488471,cdfa-Kir-pool-06-XE991
+Kir,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,none,64,0,1.421875,0.9395150302488471,cdfa-Kir-pool-06-none
+Kir,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,Cd,64,0,20.609375,1.9889950202240805,cdfa-Kir-pool-07-Cd
+Kir,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,TEA,64,0,17.640625,3.1033376169987315,cdfa-Kir-pool-07-TEA
+Kir,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,XE991,64,0,20.609375,1.9889950202240805,cdfa-Kir-pool-07-XE991
+Kir,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,none,64,0,20.609375,1.9889950202240805,cdfa-Kir-pool-07-none
+Kir,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,Cd,64,0,28.90625,2.4670446943275115,cdfa-Kir-pool-08-Cd
+Kir,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,TEA,64,0,17.84375,3.4050324567830526,cdfa-Kir-pool-08-TEA
+Kir,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,XE991,64,0,28.90625,2.4670446943275115,cdfa-Kir-pool-08-XE991
+Kir,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,none,64,0,28.90625,2.4670446943275115,cdfa-Kir-pool-08-none
+Kir,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,Cd,64,0,7.375,1.3743685418725535,cdfa-Kir-pool-09-Cd
+Kir,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,TEA,64,0,32.609375,5.747648760131509,cdfa-Kir-pool-09-TEA
+Kir,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,XE991,64,0,7.375,1.3743685418725535,cdfa-Kir-pool-09-XE991
+Kir,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,none,64,0,7.375,1.3743685418725535,cdfa-Kir-pool-09-none
+KslowInact,hyperpol -25 then release,1,Cd,64,0,6.0,1.632993161855452,cdfa-KslowInact-ho-01-Cd
+KslowInact,hyperpol -25 then release,1,TEA,64,0,11.296875,1.497931775206936,cdfa-KslowInact-ho-01-TEA
+KslowInact,hyperpol -25 then release,1,XE991,64,0,6.0,1.632993161855452,cdfa-KslowInact-ho-01-XE991
+KslowInact,hyperpol -25 then release,1,none,64,0,6.0,1.632993161855452,cdfa-KslowInact-ho-01-none
+KslowInact,hyperpol -35 then release,1,Cd,64,0,6.140625,1.412722099409056,cdfa-KslowInact-ho-02-Cd
+KslowInact,hyperpol -35 then release,1,TEA,64,0,11.46875,1.4025911395563229,cdfa-KslowInact-ho-02-TEA
+KslowInact,hyperpol -35 then release,1,XE991,64,0,6.140625,1.412722099409056,cdfa-KslowInact-ho-02-XE991
+KslowInact,hyperpol -35 then release,1,none,64,0,6.140625,1.412722099409056,cdfa-KslowInact-ho-02-none
+KslowInact,hyperpol -30 then release,1,Cd,64,0,6.203125,1.7291128792552408,cdfa-KslowInact-ho-03-Cd
+KslowInact,hyperpol -30 then release,1,TEA,64,0,11.40625,1.341862600304233,cdfa-KslowInact-ho-03-TEA
+KslowInact,hyperpol -30 then release,1,XE991,64,0,6.203125,1.7291128792552408,cdfa-KslowInact-ho-03-XE991
+KslowInact,hyperpol -30 then release,1,none,64,0,6.203125,1.7291128792552408,cdfa-KslowInact-ho-03-none
+KslowInact,hyperpol -40 then release,1,Cd,64,0,6.140625,1.412722099409056,cdfa-KslowInact-ho-04-Cd
+KslowInact,hyperpol -40 then release,1,TEA,64,0,11.484375,1.4028563548635165,cdfa-KslowInact-ho-04-TEA
+KslowInact,hyperpol -40 then release,1,XE991,64,0,6.140625,1.412722099409056,cdfa-KslowInact-ho-04-XE991
+KslowInact,hyperpol -40 then release,1,none,64,0,6.140625,1.412722099409056,cdfa-KslowInact-ho-04-none
+KslowInact,"brief step (12 uA, 40 ms)",1,Cd,64,0,4.296875,1.1081184897390655,cdfa-KslowInact-ho-05-Cd
+KslowInact,"brief step (12 uA, 40 ms)",1,TEA,64,0,6.875,1.2018504251546631,cdfa-KslowInact-ho-05-TEA
+KslowInact,"brief step (12 uA, 40 ms)",1,XE991,64,0,4.296875,1.1081184897390655,cdfa-KslowInact-ho-05-XE991
+KslowInact,"brief step (12 uA, 40 ms)",1,none,64,0,4.296875,1.1081184897390655,cdfa-KslowInact-ho-05-none
+KslowInact,"long step (10 uA, 300 ms)",1,Cd,64,0,19.015625,1.6855330982798367,cdfa-KslowInact-ho-06-Cd
+KslowInact,"long step (10 uA, 300 ms)",1,TEA,64,0,26.609375,2.79805594359585,cdfa-KslowInact-ho-06-TEA
+KslowInact,"long step (10 uA, 300 ms)",1,XE991,64,0,19.015625,1.6855330982798367,cdfa-KslowInact-ho-06-XE991
+KslowInact,"long step (10 uA, 300 ms)",1,none,64,0,19.015625,1.6855330982798367,cdfa-KslowInact-ho-06-none
+KslowInact,"brief step (12 uA, 40 ms)",1,Cd,64,0,4.296875,1.1081184897390655,cdfa-KslowInact-pool-01-Cd
+KslowInact,"brief step (12 uA, 40 ms)",1,TEA,64,0,6.875,1.2018504251546631,cdfa-KslowInact-pool-01-TEA
+KslowInact,"brief step (12 uA, 40 ms)",1,XE991,64,0,4.296875,1.1081184897390655,cdfa-KslowInact-pool-01-XE991
+KslowInact,"brief step (12 uA, 40 ms)",1,none,64,0,4.296875,1.1081184897390655,cdfa-KslowInact-pool-01-none
+KslowInact,"long step (10 uA, 300 ms)",1,Cd,64,0,19.015625,1.6855330982798367,cdfa-KslowInact-pool-02-Cd
+KslowInact,"long step (10 uA, 300 ms)",1,TEA,64,0,26.609375,2.79805594359585,cdfa-KslowInact-pool-02-TEA
+KslowInact,"long step (10 uA, 300 ms)",1,XE991,64,0,19.015625,1.6855330982798367,cdfa-KslowInact-pool-02-XE991
+KslowInact,"long step (10 uA, 300 ms)",1,none,64,0,19.015625,1.6855330982798367,cdfa-KslowInact-pool-02-none
+KslowInact,"strong step (18 uA, 120 ms)",0,Cd,64,0,10.59375,1.805799739288025,cdfa-KslowInact-pool-03-Cd
+KslowInact,"strong step (18 uA, 120 ms)",0,TEA,64,0,14.875,1.6281258092646436,cdfa-KslowInact-pool-03-TEA
+KslowInact,"strong step (18 uA, 120 ms)",0,XE991,64,0,10.59375,1.805799739288025,cdfa-KslowInact-pool-03-XE991
+KslowInact,"strong step (18 uA, 120 ms)",0,none,64,0,10.59375,1.805799739288025,cdfa-KslowInact-pool-03-none
+KslowInact,"weak step (5 uA, 120 ms)",0,Cd,64,0,7.65625,1.654419286215914,cdfa-KslowInact-pool-04-Cd
+KslowInact,"weak step (5 uA, 120 ms)",0,TEA,64,0,11.078125,1.2885908077591077,cdfa-KslowInact-pool-04-TEA
+KslowInact,"weak step (5 uA, 120 ms)",0,XE991,64,0,7.65625,1.654419286215914,cdfa-KslowInact-pool-04-XE991
+KslowInact,"weak step (5 uA, 120 ms)",0,none,64,0,7.65625,1.654419286215914,cdfa-KslowInact-pool-04-none
+KslowInact,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,Cd,64,0,11.28125,1.1747171223151203,cdfa-KslowInact-pool-05-Cd
+KslowInact,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,TEA,64,0,15.359375,1.9949713567582152,cdfa-KslowInact-pool-05-TEA
+KslowInact,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,XE991,64,0,11.28125,1.1747171223151203,cdfa-KslowInact-pool-05-XE991
+KslowInact,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,none,64,0,11.28125,1.1747171223151203,cdfa-KslowInact-pool-05-none
+KslowInact,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,Cd,64,0,4.890625,1.4487782208928093,cdfa-KslowInact-pool-06-Cd
+KslowInact,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,TEA,64,0,7.046875,1.1605921791694127,cdfa-KslowInact-pool-06-TEA
+KslowInact,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,XE991,64,0,4.890625,1.4487782208928093,cdfa-KslowInact-pool-06-XE991
+KslowInact,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,none,64,0,4.890625,1.4487782208928093,cdfa-KslowInact-pool-06-none
+KslowInact,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,Cd,64,0,20.9375,2.1812694716463867,cdfa-KslowInact-pool-07-Cd
+KslowInact,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,TEA,64,0,30.015625,2.8867083880191844,cdfa-KslowInact-pool-07-TEA
+KslowInact,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,XE991,64,0,20.9375,2.1812694716463867,cdfa-KslowInact-pool-07-XE991
+KslowInact,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,none,64,0,20.9375,2.1812694716463867,cdfa-KslowInact-pool-07-none
+KslowInact,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,Cd,64,0,27.921875,2.2488422947522726,cdfa-KslowInact-pool-08-Cd
+KslowInact,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,TEA,64,0,38.359375,2.9566561308665023,cdfa-KslowInact-pool-08-TEA
+KslowInact,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,XE991,64,0,27.921875,2.2488422947522726,cdfa-KslowInact-pool-08-XE991
+KslowInact,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,none,64,0,27.921875,2.2488422947522726,cdfa-KslowInact-pool-08-none
+KslowInact,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,Cd,64,0,11.125,1.5481684006675103,cdfa-KslowInact-pool-09-Cd
+KslowInact,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,TEA,64,0,15.28125,1.9637084288790925,cdfa-KslowInact-pool-09-TEA
+KslowInact,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,XE991,64,0,11.125,1.5481684006675103,cdfa-KslowInact-pool-09-XE991
+KslowInact,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,none,64,0,11.125,1.5481684006675103,cdfa-KslowInact-pool-09-none
+M,hyperpol -25 then release,1,Cd,64,0,9.953125,1.9794955867032837,cdfa-M-ho-01-Cd
+M,hyperpol -25 then release,1,TEA,64,0,33.6875,4.5211144854422995,cdfa-M-ho-01-TEA
+M,hyperpol -25 then release,1,XE991,64,0,11.328125,1.8175047215064979,cdfa-M-ho-01-XE991
+M,hyperpol -25 then release,1,none,64,0,9.953125,1.9794955867032837,cdfa-M-ho-01-none
+M,hyperpol -35 then release,1,Cd,64,0,9.828125,1.9884961814124924,cdfa-M-ho-02-Cd
+M,hyperpol -35 then release,1,TEA,64,0,32.296875,4.6382799476762795,cdfa-M-ho-02-TEA
+M,hyperpol -35 then release,1,XE991,64,0,10.921875,1.7665740092503144,cdfa-M-ho-02-XE991
+M,hyperpol -35 then release,1,none,64,0,9.828125,1.9884961814124924,cdfa-M-ho-02-none
+M,hyperpol -30 then release,1,Cd,64,0,9.84375,1.8363071119842154,cdfa-M-ho-03-Cd
+M,hyperpol -30 then release,1,TEA,64,0,33.140625,4.331014718523073,cdfa-M-ho-03-TEA
+M,hyperpol -30 then release,1,XE991,64,0,10.984375,1.8125855206972359,cdfa-M-ho-03-XE991
+M,hyperpol -30 then release,1,none,64,0,9.84375,1.8363071119842154,cdfa-M-ho-03-none
+M,hyperpol -40 then release,1,Cd,64,0,9.8125,1.966989481173608,cdfa-M-ho-04-Cd
+M,hyperpol -40 then release,1,TEA,64,0,32.09375,4.723190843702142,cdfa-M-ho-04-TEA
+M,hyperpol -40 then release,1,XE991,64,0,10.921875,1.7665740092503144,cdfa-M-ho-04-XE991
+M,hyperpol -40 then release,1,none,64,0,9.8125,1.966989481173608,cdfa-M-ho-04-none
+M,"brief step (12 uA, 40 ms)",1,Cd,64,0,6.21875,1.3389020614513707,cdfa-M-ho-05-Cd
+M,"brief step (12 uA, 40 ms)",1,TEA,64,0,17.578125,3.1310259361267536,cdfa-M-ho-05-TEA
+M,"brief step (12 uA, 40 ms)",1,XE991,64,0,6.6875,1.3671311638052945,cdfa-M-ho-05-XE991
+M,"brief step (12 uA, 40 ms)",1,none,64,0,6.21875,1.3389020614513707,cdfa-M-ho-05-none
+M,"long step (10 uA, 300 ms)",1,Cd,64,0,24.03125,2.107949805131133,cdfa-M-ho-06-Cd
+M,"long step (10 uA, 300 ms)",1,TEA,64,0,55.484375,4.440049290088196,cdfa-M-ho-06-TEA
+M,"long step (10 uA, 300 ms)",1,XE991,64,0,25.953125,1.8976149399489508,cdfa-M-ho-06-XE991
+M,"long step (10 uA, 300 ms)",1,none,64,0,24.03125,2.107949805131133,cdfa-M-ho-06-none
+M,"brief step (12 uA, 40 ms)",1,Cd,64,0,6.21875,1.3389020614513707,cdfa-M-pool-01-Cd
+M,"brief step (12 uA, 40 ms)",1,TEA,64,0,17.578125,3.1310259361267536,cdfa-M-pool-01-TEA
+M,"brief step (12 uA, 40 ms)",1,XE991,64,0,6.6875,1.3671311638052945,cdfa-M-pool-01-XE991
+M,"brief step (12 uA, 40 ms)",1,none,64,0,6.21875,1.3389020614513707,cdfa-M-pool-01-none
+M,"long step (10 uA, 300 ms)",1,Cd,64,0,24.03125,2.107949805131133,cdfa-M-pool-02-Cd
+M,"long step (10 uA, 300 ms)",1,TEA,64,0,55.484375,4.440049290088196,cdfa-M-pool-02-TEA
+M,"long step (10 uA, 300 ms)",1,XE991,64,0,25.953125,1.8976149399489508,cdfa-M-pool-02-XE991
+M,"long step (10 uA, 300 ms)",1,none,64,0,24.03125,2.107949805131133,cdfa-M-pool-02-none
+M,"strong step (18 uA, 120 ms)",0,Cd,64,0,12.9375,1.735484013727802,cdfa-M-pool-03-Cd
+M,"strong step (18 uA, 120 ms)",0,TEA,64,0,28.390625,4.355682978173366,cdfa-M-pool-03-TEA
+M,"strong step (18 uA, 120 ms)",0,XE991,64,0,14.0,1.699673171197595,cdfa-M-pool-03-XE991
+M,"strong step (18 uA, 120 ms)",0,none,64,0,12.9375,1.735484013727802,cdfa-M-pool-03-none
+M,"weak step (5 uA, 120 ms)",0,Cd,64,0,10.046875,1.407797869464875,cdfa-M-pool-04-Cd
+M,"weak step (5 uA, 120 ms)",0,TEA,64,0,27.421875,4.875610462388518,cdfa-M-pool-04-TEA
+M,"weak step (5 uA, 120 ms)",0,XE991,64,0,10.859375,1.7170220390372637,cdfa-M-pool-04-XE991
+M,"weak step (5 uA, 120 ms)",0,none,64,0,10.046875,1.407797869464875,cdfa-M-pool-04-none
+M,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,Cd,64,0,14.140625,1.9096013670272602,cdfa-M-pool-05-Cd
+M,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,TEA,64,0,32.375,4.91999483804091,cdfa-M-pool-05-TEA
+M,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,XE991,64,0,15.421875,1.7439663559810008,cdfa-M-pool-05-XE991
+M,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,none,64,0,14.140625,1.9096013670272602,cdfa-M-pool-05-none
+M,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,Cd,64,0,6.78125,1.7409060768042508,cdfa-M-pool-06-Cd
+M,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,TEA,64,0,14.21875,3.368711071866254,cdfa-M-pool-06-TEA
+M,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,XE991,64,0,7.15625,1.25,cdfa-M-pool-06-XE991
+M,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,none,64,0,6.78125,1.7409060768042508,cdfa-M-pool-06-none
+M,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,Cd,64,0,24.65625,2.3786000284280866,cdfa-M-pool-07-Cd
+M,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,TEA,64,0,51.1875,5.9970230710149615,cdfa-M-pool-07-TEA
+M,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,XE991,64,0,27.390625,2.5857803310867147,cdfa-M-pool-07-XE991
+M,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,none,64,0,24.65625,2.3786000284280866,cdfa-M-pool-07-none
+M,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,Cd,64,0,33.671875,2.5761709465856,cdfa-M-pool-08-Cd
+M,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,TEA,64,0,74.375,5.437961803049794,cdfa-M-pool-08-TEA
+M,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,XE991,64,0,36.359375,2.399518387523524,cdfa-M-pool-08-XE991
+M,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,none,64,0,33.671875,2.5761709465856,cdfa-M-pool-08-none
+M,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,Cd,64,0,14.28125,1.9145951538574946,cdfa-M-pool-09-Cd
+M,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,TEA,64,0,32.203125,4.228323573012742,cdfa-M-pool-09-TEA
+M,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,XE991,64,0,15.6875,1.8071726580138976,cdfa-M-pool-09-XE991
+M,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,none,64,0,14.28125,1.9145951538574946,cdfa-M-pool-09-none
+NaP,hyperpol -25 then release,1,Cd,64,0,19.265625,2.508665537248395,cdfa-NaP-ho-01-Cd
+NaP,hyperpol -25 then release,1,TEA,64,0,1.046875,0.2777281701735287,cdfa-NaP-ho-01-TEA
+NaP,hyperpol -25 then release,1,XE991,64,0,19.265625,2.508665537248395,cdfa-NaP-ho-01-XE991
+NaP,hyperpol -25 then release,1,none,64,0,19.265625,2.508665537248395,cdfa-NaP-ho-01-none
+NaP,hyperpol -35 then release,1,Cd,64,0,19.328125,2.390820324783279,cdfa-NaP-ho-02-Cd
+NaP,hyperpol -35 then release,1,TEA,64,0,67.796875,7.655643602483985,cdfa-NaP-ho-02-TEA
+NaP,hyperpol -35 then release,1,XE991,64,0,19.328125,2.390820324783279,cdfa-NaP-ho-02-XE991
+NaP,hyperpol -35 then release,1,none,64,0,19.328125,2.390820324783279,cdfa-NaP-ho-02-none
+NaP,hyperpol -30 then release,1,Cd,64,0,19.53125,2.5756413903003987,cdfa-NaP-ho-03-Cd
+NaP,hyperpol -30 then release,1,TEA,64,0,21.40625,5.658870687718307,cdfa-NaP-ho-03-TEA
+NaP,hyperpol -30 then release,1,XE991,64,0,19.53125,2.5756413903003987,cdfa-NaP-ho-03-XE991
+NaP,hyperpol -30 then release,1,none,64,0,19.53125,2.5756413903003987,cdfa-NaP-ho-03-none
+NaP,hyperpol -40 then release,1,Cd,64,0,19.3125,2.376304988175002,cdfa-NaP-ho-04-Cd
+NaP,hyperpol -40 then release,1,TEA,64,0,79.046875,5.35836295629818,cdfa-NaP-ho-04-TEA
+NaP,hyperpol -40 then release,1,XE991,64,0,19.3125,2.376304988175002,cdfa-NaP-ho-04-XE991
+NaP,hyperpol -40 then release,1,none,64,0,19.3125,2.376304988175002,cdfa-NaP-ho-04-none
+NaP,"brief step (12 uA, 40 ms)",1,Cd,64,0,10.328125,1.7187545093735939,cdfa-NaP-ho-05-Cd
+NaP,"brief step (12 uA, 40 ms)",1,TEA,64,0,0.0,0.0,cdfa-NaP-ho-05-TEA
+NaP,"brief step (12 uA, 40 ms)",1,XE991,64,0,10.328125,1.7187545093735939,cdfa-NaP-ho-05-XE991
+NaP,"brief step (12 uA, 40 ms)",1,none,64,0,10.328125,1.7187545093735939,cdfa-NaP-ho-05-none
+NaP,"long step (10 uA, 300 ms)",1,Cd,64,0,34.46875,2.7369821754208465,cdfa-NaP-ho-06-Cd
+NaP,"long step (10 uA, 300 ms)",1,TEA,64,0,0.0,0.0,cdfa-NaP-ho-06-TEA
+NaP,"long step (10 uA, 300 ms)",1,XE991,64,0,34.46875,2.7369821754208465,cdfa-NaP-ho-06-XE991
+NaP,"long step (10 uA, 300 ms)",1,none,64,0,34.46875,2.7369821754208465,cdfa-NaP-ho-06-none
+NaP,"brief step (12 uA, 40 ms)",1,Cd,64,0,10.328125,1.7187545093735939,cdfa-NaP-pool-01-Cd
+NaP,"brief step (12 uA, 40 ms)",1,TEA,64,0,0.0,0.0,cdfa-NaP-pool-01-TEA
+NaP,"brief step (12 uA, 40 ms)",1,XE991,64,0,10.328125,1.7187545093735939,cdfa-NaP-pool-01-XE991
+NaP,"brief step (12 uA, 40 ms)",1,none,64,0,10.328125,1.7187545093735939,cdfa-NaP-pool-01-none
+NaP,"long step (10 uA, 300 ms)",1,Cd,64,0,34.46875,2.7369821754208465,cdfa-NaP-pool-02-Cd
+NaP,"long step (10 uA, 300 ms)",1,TEA,64,0,0.0,0.0,cdfa-NaP-pool-02-TEA
+NaP,"long step (10 uA, 300 ms)",1,XE991,64,0,34.46875,2.7369821754208465,cdfa-NaP-pool-02-XE991
+NaP,"long step (10 uA, 300 ms)",1,none,64,0,34.46875,2.7369821754208465,cdfa-NaP-pool-02-none
+NaP,"strong step (18 uA, 120 ms)",0,Cd,64,0,18.484375,2.3502258419004134,cdfa-NaP-pool-03-Cd
+NaP,"strong step (18 uA, 120 ms)",0,TEA,64,0,0.0,0.0,cdfa-NaP-pool-03-TEA
+NaP,"strong step (18 uA, 120 ms)",0,XE991,64,0,18.484375,2.3502258419004134,cdfa-NaP-pool-03-XE991
+NaP,"strong step (18 uA, 120 ms)",0,none,64,0,18.484375,2.3502258419004134,cdfa-NaP-pool-03-none
+NaP,"weak step (5 uA, 120 ms)",0,Cd,64,0,17.0,1.8516401995451028,cdfa-NaP-pool-04-Cd
+NaP,"weak step (5 uA, 120 ms)",0,TEA,64,0,0.0,0.0,cdfa-NaP-pool-04-TEA
+NaP,"weak step (5 uA, 120 ms)",0,XE991,64,0,17.0,1.8516401995451028,cdfa-NaP-pool-04-XE991
+NaP,"weak step (5 uA, 120 ms)",0,none,64,0,17.0,1.8516401995451028,cdfa-NaP-pool-04-none
+NaP,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,Cd,64,0,20.484375,2.2747208968860684,cdfa-NaP-pool-05-Cd
+NaP,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,TEA,64,0,0.015625,0.125,cdfa-NaP-pool-05-TEA
+NaP,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,TTX,64,0,0.0,0.0,cdfa-NaP-pool-05-TTX
+NaP,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,XE991,64,0,20.484375,2.2747208968860684,cdfa-NaP-pool-05-XE991
+NaP,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,none,64,0,20.484375,2.2747208968860684,cdfa-NaP-pool-05-none
+NaP,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,Cd,64,0,11.65625,1.6155862860333543,cdfa-NaP-pool-06-Cd
+NaP,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,TEA,64,0,0.0,0.0,cdfa-NaP-pool-06-TEA
+NaP,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,XE991,64,0,11.65625,1.6155862860333543,cdfa-NaP-pool-06-XE991
+NaP,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,none,64,0,11.65625,1.6155862860333543,cdfa-NaP-pool-06-none
+NaP,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,Cd,64,0,35.125,2.5789132693430483,cdfa-NaP-pool-07-Cd
+NaP,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,TEA,64,0,0.0,0.0,cdfa-NaP-pool-07-TEA
+NaP,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,XE991,64,0,35.125,2.5789132693430483,cdfa-NaP-pool-07-XE991
+NaP,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,none,64,0,35.125,2.5789132693430483,cdfa-NaP-pool-07-none
+NaP,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,Cd,64,0,45.15625,3.4421235140119952,cdfa-NaP-pool-08-Cd
+NaP,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,TEA,64,0,0.0,0.0,cdfa-NaP-pool-08-TEA
+NaP,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,XE991,64,0,45.15625,3.4421235140119952,cdfa-NaP-pool-08-XE991
+NaP,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,none,64,0,45.15625,3.4421235140119952,cdfa-NaP-pool-08-none
+NaP,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,Cd,64,0,21.125,2.1639176700003357,cdfa-NaP-pool-09-Cd
+NaP,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,TEA,64,0,0.0,0.0,cdfa-NaP-pool-09-TEA
+NaP,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,XE991,64,0,21.125,2.1639176700003357,cdfa-NaP-pool-09-XE991
+NaP,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,none,64,0,21.125,2.1639176700003357,cdfa-NaP-pool-09-none
+REF,hyperpol -25 then release,1,Cd,64,0,11.328125,1.8175047215064979,cdfa-REF-ho-01-Cd
+REF,hyperpol -25 then release,1,TEA,64,0,57.328125,8.663103090621176,cdfa-REF-ho-01-TEA
+REF,hyperpol -25 then release,1,XE991,64,0,11.328125,1.8175047215064979,cdfa-REF-ho-01-XE991
+REF,hyperpol -25 then release,1,none,64,0,11.328125,1.8175047215064979,cdfa-REF-ho-01-none
+REF,hyperpol -35 then release,1,Cd,64,0,10.921875,1.7665740092503144,cdfa-REF-ho-02-Cd
+REF,hyperpol -35 then release,1,TEA,64,0,53.03125,7.075485849042453,cdfa-REF-ho-02-TEA
+REF,hyperpol -35 then release,1,XE991,64,0,10.921875,1.7665740092503144,cdfa-REF-ho-02-XE991
+REF,hyperpol -35 then release,1,none,64,0,10.921875,1.7665740092503144,cdfa-REF-ho-02-none
+REF,hyperpol -30 then release,1,Cd,64,0,10.984375,1.8125855206972359,cdfa-REF-ho-03-Cd
+REF,hyperpol -30 then release,1,TEA,64,0,54.640625,7.846477700317978,cdfa-REF-ho-03-TEA
+REF,hyperpol -30 then release,1,XE991,64,0,10.984375,1.8125855206972359,cdfa-REF-ho-03-XE991
+REF,hyperpol -30 then release,1,none,64,0,10.984375,1.8125855206972359,cdfa-REF-ho-03-none
+REF,hyperpol -40 then release,1,Cd,64,0,10.921875,1.7665740092503144,cdfa-REF-ho-04-Cd
+REF,hyperpol -40 then release,1,TEA,64,0,52.25,6.772962119561564,cdfa-REF-ho-04-TEA
+REF,hyperpol -40 then release,1,XE991,64,0,10.921875,1.7665740092503144,cdfa-REF-ho-04-XE991
+REF,hyperpol -40 then release,1,none,64,0,10.921875,1.7665740092503144,cdfa-REF-ho-04-none
+REF,"brief step (12 uA, 40 ms)",1,Cd,64,0,6.6875,1.3671311638052945,cdfa-REF-ho-05-Cd
+REF,"brief step (12 uA, 40 ms)",1,TEA,64,0,17.03125,2.8783193398617573,cdfa-REF-ho-05-TEA
+REF,"brief step (12 uA, 40 ms)",1,XE991,64,0,6.6875,1.3671311638052945,cdfa-REF-ho-05-XE991
+REF,"brief step (12 uA, 40 ms)",1,none,64,0,6.6875,1.3671311638052945,cdfa-REF-ho-05-none
+REF,"long step (10 uA, 300 ms)",1,Cd,64,0,25.953125,1.8976149399489508,cdfa-REF-ho-06-Cd
+REF,"long step (10 uA, 300 ms)",1,TEA,64,0,19.15625,3.7721567659187585,cdfa-REF-ho-06-TEA
+REF,"long step (10 uA, 300 ms)",1,XE991,64,0,25.953125,1.8976149399489508,cdfa-REF-ho-06-XE991
+REF,"long step (10 uA, 300 ms)",1,none,64,0,25.953125,1.8976149399489508,cdfa-REF-ho-06-none
+REF,"brief step (12 uA, 40 ms)",1,Cd,64,0,6.6875,1.3671311638052945,cdfa-REF-pool-01-Cd
+REF,"brief step (12 uA, 40 ms)",1,TEA,64,0,17.03125,2.8783193398617573,cdfa-REF-pool-01-TEA
+REF,"brief step (12 uA, 40 ms)",1,XE991,64,0,6.6875,1.3671311638052945,cdfa-REF-pool-01-XE991
+REF,"brief step (12 uA, 40 ms)",1,none,64,0,6.6875,1.3671311638052945,cdfa-REF-pool-01-none
+REF,"long step (10 uA, 300 ms)",1,Cd,64,0,25.953125,1.8976149399489508,cdfa-REF-pool-02-Cd
+REF,"long step (10 uA, 300 ms)",1,TEA,64,0,19.15625,3.7721567659187585,cdfa-REF-pool-02-TEA
+REF,"long step (10 uA, 300 ms)",1,XE991,64,0,25.953125,1.8976149399489508,cdfa-REF-pool-02-XE991
+REF,"long step (10 uA, 300 ms)",1,none,64,0,25.953125,1.8976149399489508,cdfa-REF-pool-02-none
+REF,"strong step (18 uA, 120 ms)",0,Cd,64,0,14.0,1.699673171197595,cdfa-REF-pool-03-Cd
+REF,"strong step (18 uA, 120 ms)",0,TEA,64,0,18.34375,3.1178887341805765,cdfa-REF-pool-03-TEA
+REF,"strong step (18 uA, 120 ms)",0,XE991,64,0,14.0,1.699673171197595,cdfa-REF-pool-03-XE991
+REF,"strong step (18 uA, 120 ms)",0,none,64,0,14.0,1.699673171197595,cdfa-REF-pool-03-none
+REF,"weak step (5 uA, 120 ms)",0,Cd,64,0,10.859375,1.7170220390372637,cdfa-REF-pool-04-Cd
+REF,"weak step (5 uA, 120 ms)",0,TEA,64,0,34.09375,6.253173797335441,cdfa-REF-pool-04-TEA
+REF,"weak step (5 uA, 120 ms)",0,XE991,64,0,10.859375,1.7170220390372637,cdfa-REF-pool-04-XE991
+REF,"weak step (5 uA, 120 ms)",0,none,64,0,10.859375,1.7170220390372637,cdfa-REF-pool-04-none
+REF,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,Cd,64,0,15.421875,1.7439663559810008,cdfa-REF-pool-05-Cd
+REF,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,TEA,64,0,17.90625,3.322452479147065,cdfa-REF-pool-05-TEA
+REF,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,TTX,64,0,0.0,0.0,cdfa-REF-pool-05-TTX
+REF,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,XE991,64,0,15.421875,1.7439663559810008,cdfa-REF-pool-05-XE991
+REF,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,none,64,0,15.421875,1.7439663559810008,cdfa-REF-pool-05-none
+REF,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,Cd,64,0,7.15625,1.25,cdfa-REF-pool-06-Cd
+REF,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,TEA,64,0,23.828125,4.712545524179084,cdfa-REF-pool-06-TEA
+REF,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,XE991,64,0,7.15625,1.25,cdfa-REF-pool-06-XE991
+REF,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,none,64,0,7.15625,1.25,cdfa-REF-pool-06-none
+REF,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,Cd,64,0,27.390625,2.5857803310867147,cdfa-REF-pool-07-Cd
+REF,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,TEA,64,0,17.984375,3.2440039315537996,cdfa-REF-pool-07-TEA
+REF,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,XE991,64,0,27.390625,2.5857803310867147,cdfa-REF-pool-07-XE991
+REF,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,none,64,0,27.390625,2.5857803310867147,cdfa-REF-pool-07-none
+REF,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,Cd,64,0,36.359375,2.399518387523524,cdfa-REF-pool-08-Cd
+REF,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,TEA,64,0,17.140625,3.384686276521975,cdfa-REF-pool-08-TEA
+REF,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,XE991,64,0,36.359375,2.399518387523524,cdfa-REF-pool-08-XE991
+REF,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,none,64,0,36.359375,2.399518387523524,cdfa-REF-pool-08-none
+REF,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,Cd,64,0,15.6875,1.8071726580138976,cdfa-REF-pool-09-Cd
+REF,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,TEA,64,0,18.046875,3.3258472485420794,cdfa-REF-pool-09-TEA
+REF,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,XE991,64,0,15.6875,1.8071726580138976,cdfa-REF-pool-09-XE991
+REF,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,none,64,0,15.6875,1.8071726580138976,cdfa-REF-pool-09-none
+slowNA,hyperpol -25 then release,1,Cd,64,0,10.859375,2.038262468105835,cdfa-slowNA-ho-01-Cd
+slowNA,hyperpol -25 then release,1,TEA,64,0,51.046875,5.501600596824903,cdfa-slowNA-ho-01-TEA
+slowNA,hyperpol -25 then release,1,XE991,64,0,10.859375,2.038262468105835,cdfa-slowNA-ho-01-XE991
+slowNA,hyperpol -25 then release,1,none,64,0,10.859375,2.038262468105835,cdfa-slowNA-ho-01-none
+slowNA,hyperpol -35 then release,1,Cd,64,0,11.0,2.196678589461104,cdfa-slowNA-ho-02-Cd
+slowNA,hyperpol -35 then release,1,TEA,64,0,50.3125,4.826760719946561,cdfa-slowNA-ho-02-TEA
+slowNA,hyperpol -35 then release,1,XE991,64,0,11.0,2.196678589461104,cdfa-slowNA-ho-02-XE991
+slowNA,hyperpol -35 then release,1,none,64,0,11.0,2.196678589461104,cdfa-slowNA-ho-02-none
+slowNA,hyperpol -30 then release,1,Cd,64,0,10.84375,2.0175322817582146,cdfa-slowNA-ho-03-Cd
+slowNA,hyperpol -30 then release,1,TEA,64,0,50.671875,5.067965646455272,cdfa-slowNA-ho-03-TEA
+slowNA,hyperpol -30 then release,1,XE991,64,0,10.84375,2.0175322817582146,cdfa-slowNA-ho-03-XE991
+slowNA,hyperpol -30 then release,1,none,64,0,10.84375,2.0175322817582146,cdfa-slowNA-ho-03-none
+slowNA,hyperpol -40 then release,1,Cd,64,0,11.0,2.196678589461104,cdfa-slowNA-ho-04-Cd
+slowNA,hyperpol -40 then release,1,TEA,64,0,49.625,4.897359184716492,cdfa-slowNA-ho-04-TEA
+slowNA,hyperpol -40 then release,1,XE991,64,0,11.0,2.196678589461104,cdfa-slowNA-ho-04-XE991
+slowNA,hyperpol -40 then release,1,none,64,0,11.0,2.196678589461104,cdfa-slowNA-ho-04-none
+slowNA,"brief step (12 uA, 40 ms)",1,Cd,64,0,6.75,1.3093073414159542,cdfa-slowNA-ho-05-Cd
+slowNA,"brief step (12 uA, 40 ms)",1,TEA,64,0,17.40625,3.0327249520720856,cdfa-slowNA-ho-05-TEA
+slowNA,"brief step (12 uA, 40 ms)",1,XE991,64,0,6.75,1.3093073414159542,cdfa-slowNA-ho-05-XE991
+slowNA,"brief step (12 uA, 40 ms)",1,none,64,0,6.75,1.3093073414159542,cdfa-slowNA-ho-05-none
+slowNA,"long step (10 uA, 300 ms)",1,Cd,64,0,25.0,2.260776661041756,cdfa-slowNA-ho-06-Cd
+slowNA,"long step (10 uA, 300 ms)",1,TEA,64,0,26.90625,4.686077826586472,cdfa-slowNA-ho-06-TEA
+slowNA,"long step (10 uA, 300 ms)",1,XE991,64,0,25.0,2.260776661041756,cdfa-slowNA-ho-06-XE991
+slowNA,"long step (10 uA, 300 ms)",1,none,64,0,25.0,2.260776661041756,cdfa-slowNA-ho-06-none
+slowNA,"brief step (12 uA, 40 ms)",1,Cd,64,0,6.75,1.3093073414159542,cdfa-slowNA-pool-01-Cd
+slowNA,"brief step (12 uA, 40 ms)",1,TEA,64,0,17.40625,3.0327249520720856,cdfa-slowNA-pool-01-TEA
+slowNA,"brief step (12 uA, 40 ms)",1,XE991,64,0,6.75,1.3093073414159542,cdfa-slowNA-pool-01-XE991
+slowNA,"brief step (12 uA, 40 ms)",1,none,64,0,6.75,1.3093073414159542,cdfa-slowNA-pool-01-none
+slowNA,"long step (10 uA, 300 ms)",1,Cd,64,0,25.0,2.260776661041756,cdfa-slowNA-pool-02-Cd
+slowNA,"long step (10 uA, 300 ms)",1,TEA,64,0,26.90625,4.686077826586472,cdfa-slowNA-pool-02-TEA
+slowNA,"long step (10 uA, 300 ms)",1,XE991,64,0,25.0,2.260776661041756,cdfa-slowNA-pool-02-XE991
+slowNA,"long step (10 uA, 300 ms)",1,none,64,0,25.0,2.260776661041756,cdfa-slowNA-pool-02-none
+slowNA,"strong step (18 uA, 120 ms)",0,Cd,64,0,13.859375,1.56212297038459,cdfa-slowNA-pool-03-Cd
+slowNA,"strong step (18 uA, 120 ms)",0,TEA,64,0,16.015625,3.0627935557394927,cdfa-slowNA-pool-03-TEA
+slowNA,"strong step (18 uA, 120 ms)",0,XE991,64,0,13.859375,1.56212297038459,cdfa-slowNA-pool-03-XE991
+slowNA,"strong step (18 uA, 120 ms)",0,none,64,0,13.859375,1.56212297038459,cdfa-slowNA-pool-03-none
+slowNA,"weak step (5 uA, 120 ms)",0,Cd,64,0,11.15625,1.5757965987509048,cdfa-slowNA-pool-04-Cd
+slowNA,"weak step (5 uA, 120 ms)",0,TEA,64,0,35.375,5.290002550483977,cdfa-slowNA-pool-04-TEA
+slowNA,"weak step (5 uA, 120 ms)",0,XE991,64,0,11.15625,1.5757965987509048,cdfa-slowNA-pool-04-XE991
+slowNA,"weak step (5 uA, 120 ms)",0,none,64,0,11.15625,1.5757965987509048,cdfa-slowNA-pool-04-none
+slowNA,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,Cd,64,0,14.890625,1.8440568415644445,cdfa-slowNA-pool-05-Cd
+slowNA,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,TEA,64,0,15.21875,2.572558173405522,cdfa-slowNA-pool-05-TEA
+slowNA,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,XE991,64,0,14.890625,1.8440568415644445,cdfa-slowNA-pool-05-XE991
+slowNA,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,none,64,0,14.890625,1.8440568415644445,cdfa-slowNA-pool-05-none
+slowNA,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,Cd,64,0,7.078125,1.655243592105509,cdfa-slowNA-pool-06-Cd
+slowNA,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,TEA,64,0,24.03125,4.220015609690531,cdfa-slowNA-pool-06-TEA
+slowNA,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,XE991,64,0,7.078125,1.655243592105509,cdfa-slowNA-pool-06-XE991
+slowNA,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,none,64,0,7.078125,1.655243592105509,cdfa-slowNA-pool-06-none
+slowNA,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,Cd,64,0,24.75,2.2677868380553634,cdfa-slowNA-pool-07-Cd
+slowNA,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,TEA,64,0,36.0,5.849976258261415,cdfa-slowNA-pool-07-TEA
+slowNA,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,XE991,64,0,24.75,2.2677868380553634,cdfa-slowNA-pool-07-XE991
+slowNA,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,none,64,0,24.75,2.2677868380553634,cdfa-slowNA-pool-07-none
+slowNA,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,Cd,64,0,34.71875,2.51641436767502,cdfa-slowNA-pool-08-Cd
+slowNA,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,TEA,64,0,15.109375,4.090706414331633,cdfa-slowNA-pool-08-TEA
+slowNA,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,XE991,64,0,34.71875,2.51641436767502,cdfa-slowNA-pool-08-XE991
+slowNA,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,none,64,0,34.71875,2.51641436767502,cdfa-slowNA-pool-08-none
+slowNA,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,Cd,64,0,15.296875,1.7699402509868778,cdfa-slowNA-pool-09-Cd
+slowNA,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,TEA,64,0,14.953125,2.5599459784726735,cdfa-slowNA-pool-09-TEA
+slowNA,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,XE991,64,0,15.296875,1.7699402509868778,cdfa-slowNA-pool-09-XE991
+slowNA,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,none,64,0,15.296875,1.7699402509868778,cdfa-slowNA-pool-09-none
+CaS,"brief step (12 uA, 40 ms)",1,Cd,64,0,6.6875,1.3671311638052945,self-K1-CaS-ho-00-Cd
+CaS,"brief step (12 uA, 40 ms)",1,TEA,64,0,0.0,0.0,self-K1-CaS-ho-00-TEA
+CaS,"brief step (12 uA, 40 ms)",1,XE991,64,0,11.0,2.6547352123364485,self-K1-CaS-ho-00-XE991
+CaS,"brief step (12 uA, 40 ms)",1,none,64,0,11.0,2.6547352123364485,self-K1-CaS-ho-00-none
+CaS,"long step (10 uA, 300 ms)",1,Cd,64,0,25.953125,1.8976149399489508,self-K1-CaS-ho-01-Cd
+CaS,"long step (10 uA, 300 ms)",1,TEA,64,0,0.0,0.0,self-K1-CaS-ho-01-TEA
+CaS,"long step (10 uA, 300 ms)",1,XE991,64,0,30.625,4.942526826287484,self-K1-CaS-ho-01-XE991
+CaS,"long step (10 uA, 300 ms)",1,none,64,0,30.625,4.942526826287484,self-K1-CaS-ho-01-none
+CaS,hyperpol -25 then release,1,Cd,64,0,11.328125,1.8175047215064979,self-K1-CaS-ho-09-Cd
+CaS,hyperpol -25 then release,1,TEA,64,0,1.0,0.0,self-K1-CaS-ho-09-TEA
+CaS,hyperpol -25 then release,1,XE991,64,0,34.296875,8.669742471596807,self-K1-CaS-ho-09-XE991
+CaS,hyperpol -25 then release,1,none,64,0,34.296875,8.669742471596807,self-K1-CaS-ho-09-none
+CaS,hyperpol -35 then release,1,Cd,64,0,10.921875,1.7665740092503144,self-K1-CaS-ho-10-Cd
+CaS,hyperpol -35 then release,1,TEA,64,0,1.65625,1.9535783204080286,self-K1-CaS-ho-10-TEA
+CaS,hyperpol -35 then release,1,XE991,64,0,24.875,5.26292814870322,self-K1-CaS-ho-10-XE991
+CaS,hyperpol -35 then release,1,none,64,0,24.875,5.26292814870322,self-K1-CaS-ho-10-none
+CaS,hyperpol -30 then release,1,Cd,64,0,10.984375,1.8125855206972359,self-K1-CaS-ho-11-Cd
+CaS,hyperpol -30 then release,1,TEA,64,0,1.0,0.0,self-K1-CaS-ho-11-TEA
+CaS,hyperpol -30 then release,1,XE991,64,0,30.28125,8.938002955101146,self-K1-CaS-ho-11-XE991
+CaS,hyperpol -30 then release,1,none,64,0,30.28125,8.938002955101146,self-K1-CaS-ho-11-none
+CaS,hyperpol -40 then release,1,Cd,64,0,10.921875,1.7665740092503144,self-K1-CaS-ho-12-Cd
+CaS,hyperpol -40 then release,1,TEA,64,0,3.78125,4.281628343263958,self-K1-CaS-ho-12-TEA
+CaS,hyperpol -40 then release,1,XE991,64,0,23.625,3.401680257083045,self-K1-CaS-ho-12-XE991
+CaS,hyperpol -40 then release,1,none,64,0,23.625,3.401680257083045,self-K1-CaS-ho-12-none
+CaS,"brief step (12 uA, 40 ms)",1,Cd,64,0,6.6875,1.3671311638052945,self-K1-CaS-ho-13-Cd
+CaS,"brief step (12 uA, 40 ms)",1,TEA,64,0,0.0,0.0,self-K1-CaS-ho-13-TEA
+CaS,"brief step (12 uA, 40 ms)",1,XE991,64,0,11.0,2.6547352123364485,self-K1-CaS-ho-13-XE991
+CaS,"brief step (12 uA, 40 ms)",1,none,64,0,11.0,2.6547352123364485,self-K1-CaS-ho-13-none
+CaS,"long step (10 uA, 300 ms)",1,Cd,64,0,25.953125,1.8976149399489508,self-K1-CaS-ho-14-Cd
+CaS,"long step (10 uA, 300 ms)",1,TEA,64,0,0.0,0.0,self-K1-CaS-ho-14-TEA
+CaS,"long step (10 uA, 300 ms)",1,XE991,64,0,30.625,4.942526826287484,self-K1-CaS-ho-14-XE991
+CaS,"long step (10 uA, 300 ms)",1,none,64,0,30.625,4.942526826287484,self-K1-CaS-ho-14-none
+CaS,"strong step (18 uA, 120 ms)",0,Cd,64,0,14.0,1.699673171197595,self-K1-CaS-pool-02-Cd
+CaS,"strong step (18 uA, 120 ms)",0,TEA,64,0,0.0,0.0,self-K1-CaS-pool-02-TEA
+CaS,"strong step (18 uA, 120 ms)",0,XE991,64,0,15.515625,3.590075329713274,self-K1-CaS-pool-02-XE991
+CaS,"strong step (18 uA, 120 ms)",0,none,64,0,15.515625,3.590075329713274,self-K1-CaS-pool-02-none
+CaS,"weak step (5 uA, 120 ms)",0,Cd,64,0,10.859375,1.7170220390372637,self-K1-CaS-pool-03-Cd
+CaS,"weak step (5 uA, 120 ms)",0,TEA,64,0,0.0,0.0,self-K1-CaS-pool-03-TEA
+CaS,"weak step (5 uA, 120 ms)",0,XE991,64,0,17.4375,3.250763036190168,self-K1-CaS-pool-03-XE991
+CaS,"weak step (5 uA, 120 ms)",0,none,64,0,17.4375,3.250763036190168,self-K1-CaS-pool-03-none
+CaS,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,Cd,64,0,15.421875,1.7439663559810008,self-K1-CaS-pool-04-Cd
+CaS,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,TEA,64,0,0.03125,0.17536809360305042,self-K1-CaS-pool-04-TEA
+CaS,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,XE991,64,0,19.484375,3.26108457710738,self-K1-CaS-pool-04-XE991
+CaS,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,none,64,0,19.484375,3.26108457710738,self-K1-CaS-pool-04-none
+CaS,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,Cd,64,0,7.15625,1.25,self-K1-CaS-pool-05-Cd
+CaS,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,TEA,64,0,0.03125,0.25,self-K1-CaS-pool-05-TEA
+CaS,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,XE991,64,0,11.625,2.848001248439177,self-K1-CaS-pool-05-XE991
+CaS,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,none,64,0,11.625,2.848001248439177,self-K1-CaS-pool-05-none
+CaS,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,Cd,64,0,27.390625,2.5857803310867147,self-K1-CaS-pool-06-Cd
+CaS,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,TEA,64,0,5.4375,5.324024614447054,self-K1-CaS-pool-06-TEA
+CaS,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,XE991,64,0,29.28125,5.376222636877108,self-K1-CaS-pool-06-XE991
+CaS,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,none,64,0,29.28125,5.376222636877108,self-K1-CaS-pool-06-none
+CaS,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,Cd,64,0,36.359375,2.399518387523524,self-K1-CaS-pool-07-Cd
+CaS,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,TEA,64,0,0.015625,0.125,self-K1-CaS-pool-07-TEA
+CaS,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,XE991,64,0,35.1875,5.653696641515683,self-K1-CaS-pool-07-XE991
+CaS,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,none,64,0,35.1875,5.653696641515683,self-K1-CaS-pool-07-none
+CaS,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,Cd,64,0,15.6875,1.8071726580138976,self-K1-CaS-pool-08-Cd
+CaS,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,TEA,64,0,0.0,0.0,self-K1-CaS-pool-08-TEA
+CaS,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,XE991,64,0,19.28125,4.366062299143245,self-K1-CaS-pool-08-XE991
+CaS,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,none,64,0,19.28125,4.366062299143245,self-K1-CaS-pool-08-none
+CaTr,"brief step (12 uA, 40 ms)",1,Cd,64,0,6.6875,1.3671311638052945,self-K1-CaTr-ho-00-Cd
+CaTr,"brief step (12 uA, 40 ms)",1,TEA,64,0,0.0,0.0,self-K1-CaTr-ho-00-TEA
+CaTr,"brief step (12 uA, 40 ms)",1,XE991,64,0,9.390625,1.6389813667747783,self-K1-CaTr-ho-00-XE991
+CaTr,"brief step (12 uA, 40 ms)",1,none,64,0,9.390625,1.6389813667747783,self-K1-CaTr-ho-00-none
+CaTr,"long step (10 uA, 300 ms)",1,Cd,64,0,25.953125,1.8976149399489508,self-K1-CaTr-ho-01-Cd
+CaTr,"long step (10 uA, 300 ms)",1,TEA,64,0,0.0,0.0,self-K1-CaTr-ho-01-TEA
+CaTr,"long step (10 uA, 300 ms)",1,XE991,64,0,34.578125,3.3608610362170444,self-K1-CaTr-ho-01-XE991
+CaTr,"long step (10 uA, 300 ms)",1,none,64,0,34.578125,3.3608610362170444,self-K1-CaTr-ho-01-none
+CaTr,hyperpol -25 then release,1,Cd,64,0,11.328125,1.8175047215064979,self-K1-CaTr-ho-09-Cd
+CaTr,hyperpol -25 then release,1,TEA,64,0,1.0,0.0,self-K1-CaTr-ho-09-TEA
+CaTr,hyperpol -25 then release,1,XE991,64,0,15.28125,2.2570436486133874,self-K1-CaTr-ho-09-XE991
+CaTr,hyperpol -25 then release,1,none,64,0,15.28125,2.2570436486133874,self-K1-CaTr-ho-09-none
+CaTr,hyperpol -35 then release,1,Cd,64,0,10.921875,1.7665740092503144,self-K1-CaTr-ho-10-Cd
+CaTr,hyperpol -35 then release,1,TEA,64,0,1.015625,0.125,self-K1-CaTr-ho-10-TEA
+CaTr,hyperpol -35 then release,1,XE991,64,0,15.09375,1.9977666101352851,self-K1-CaTr-ho-10-XE991
+CaTr,hyperpol -35 then release,1,none,64,0,15.09375,1.9977666101352851,self-K1-CaTr-ho-10-none
+CaTr,hyperpol -30 then release,1,Cd,64,0,10.984375,1.8125855206972359,self-K1-CaTr-ho-11-Cd
+CaTr,hyperpol -30 then release,1,TEA,64,0,1.0,0.0,self-K1-CaTr-ho-11-TEA
+CaTr,hyperpol -30 then release,1,XE991,64,0,15.1875,2.280872848797353,self-K1-CaTr-ho-11-XE991
+CaTr,hyperpol -30 then release,1,none,64,0,15.1875,2.280872848797353,self-K1-CaTr-ho-11-none
+CaTr,hyperpol -40 then release,1,Cd,64,0,10.921875,1.7665740092503144,self-K1-CaTr-ho-12-Cd
+CaTr,hyperpol -40 then release,1,TEA,64,0,1.1875,0.5875696513930031,self-K1-CaTr-ho-12-TEA
+CaTr,hyperpol -40 then release,1,XE991,64,0,15.09375,1.9977666101352851,self-K1-CaTr-ho-12-XE991
+CaTr,hyperpol -40 then release,1,none,64,0,15.09375,1.9977666101352851,self-K1-CaTr-ho-12-none
+CaTr,"brief step (12 uA, 40 ms)",1,Cd,64,0,6.6875,1.3671311638052945,self-K1-CaTr-ho-13-Cd
+CaTr,"brief step (12 uA, 40 ms)",1,TEA,64,0,0.0,0.0,self-K1-CaTr-ho-13-TEA
+CaTr,"brief step (12 uA, 40 ms)",1,XE991,64,0,9.390625,1.6389813667747783,self-K1-CaTr-ho-13-XE991
+CaTr,"brief step (12 uA, 40 ms)",1,none,64,0,9.390625,1.6389813667747783,self-K1-CaTr-ho-13-none
+CaTr,"long step (10 uA, 300 ms)",1,Cd,64,0,25.953125,1.8976149399489508,self-K1-CaTr-ho-14-Cd
+CaTr,"long step (10 uA, 300 ms)",1,TEA,64,0,0.0,0.0,self-K1-CaTr-ho-14-TEA
+CaTr,"long step (10 uA, 300 ms)",1,XE991,64,0,34.578125,3.3608610362170444,self-K1-CaTr-ho-14-XE991
+CaTr,"long step (10 uA, 300 ms)",1,none,64,0,34.578125,3.3608610362170444,self-K1-CaTr-ho-14-none
+CaTr,"strong step (18 uA, 120 ms)",0,Cd,64,0,14.0,1.699673171197595,self-K1-CaTr-pool-02-Cd
+CaTr,"strong step (18 uA, 120 ms)",0,TEA,64,0,0.0,0.0,self-K1-CaTr-pool-02-TEA
+CaTr,"strong step (18 uA, 120 ms)",0,XE991,64,0,18.171875,1.8649199948795625,self-K1-CaTr-pool-02-XE991
+CaTr,"strong step (18 uA, 120 ms)",0,none,64,0,18.171875,1.8649199948795625,self-K1-CaTr-pool-02-none
+CaTr,"weak step (5 uA, 120 ms)",0,Cd,64,0,10.859375,1.7170220390372637,self-K1-CaTr-pool-03-Cd
+CaTr,"weak step (5 uA, 120 ms)",0,TEA,64,0,0.0,0.0,self-K1-CaTr-pool-03-TEA
+CaTr,"weak step (5 uA, 120 ms)",0,XE991,64,0,15.625,2.11944886516837,self-K1-CaTr-pool-03-XE991
+CaTr,"weak step (5 uA, 120 ms)",0,none,64,0,15.625,2.11944886516837,self-K1-CaTr-pool-03-none
+CaTr,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,Cd,64,0,15.421875,1.7439663559810008,self-K1-CaTr-pool-04-Cd
+CaTr,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,TEA,64,0,0.0,0.0,self-K1-CaTr-pool-04-TEA
+CaTr,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,XE991,64,0,18.90625,1.6496151547346305,self-K1-CaTr-pool-04-XE991
+CaTr,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,none,64,0,18.90625,1.6496151547346305,self-K1-CaTr-pool-04-none
+CaTr,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,Cd,64,0,7.15625,1.25,self-K1-CaTr-pool-05-Cd
+CaTr,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,TEA,64,0,0.0,0.0,self-K1-CaTr-pool-05-TEA
+CaTr,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,XE991,64,0,10.515625,1.7816720121083338,self-K1-CaTr-pool-05-XE991
+CaTr,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,none,64,0,10.515625,1.7816720121083338,self-K1-CaTr-pool-05-none
+CaTr,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,Cd,64,0,27.390625,2.5857803310867147,self-K1-CaTr-pool-06-Cd
+CaTr,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,TEA,64,0,0.0,0.0,self-K1-CaTr-pool-06-TEA
+CaTr,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,XE991,64,0,22.75,11.970864100038364,self-K1-CaTr-pool-06-XE991
+CaTr,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,none,64,0,22.75,11.970864100038364,self-K1-CaTr-pool-06-none
+CaTr,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,Cd,64,0,36.359375,2.399518387523524,self-K1-CaTr-pool-07-Cd
+CaTr,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,TEA,64,0,0.0,0.0,self-K1-CaTr-pool-07-TEA
+CaTr,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,XE991,64,0,41.953125,7.884945848371188,self-K1-CaTr-pool-07-XE991
+CaTr,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,none,64,0,41.953125,7.884945848371188,self-K1-CaTr-pool-07-none
+CaTr,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,Cd,64,0,15.6875,1.8071726580138976,self-K1-CaTr-pool-08-Cd
+CaTr,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,TEA,64,0,0.0,0.0,self-K1-CaTr-pool-08-TEA
+CaTr,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,XE991,64,0,20.28125,2.228735494571284,self-K1-CaTr-pool-08-XE991
+CaTr,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,none,64,0,20.28125,2.228735494571284,self-K1-CaTr-pool-08-none
+Hvr,"brief step (12 uA, 40 ms)",1,Cd,64,0,7.765625,1.3771628011794323,self-K1-Hvr-ho-00-Cd
+Hvr,"brief step (12 uA, 40 ms)",1,TEA,64,0,20.4375,3.8042374035044424,self-K1-Hvr-ho-00-TEA
+Hvr,"brief step (12 uA, 40 ms)",1,XE991,64,0,7.765625,1.3771628011794323,self-K1-Hvr-ho-00-XE991
+Hvr,"brief step (12 uA, 40 ms)",1,none,64,0,7.765625,1.3771628011794323,self-K1-Hvr-ho-00-none
+Hvr,"long step (10 uA, 300 ms)",1,Cd,64,0,28.3125,2.4680498052652506,self-K1-Hvr-ho-01-Cd
+Hvr,"long step (10 uA, 300 ms)",1,TEA,64,0,28.171875,7.606502413609948,self-K1-Hvr-ho-01-TEA
+Hvr,"long step (10 uA, 300 ms)",1,XE991,64,0,28.3125,2.4680498052652506,self-K1-Hvr-ho-01-XE991
+Hvr,"long step (10 uA, 300 ms)",1,none,64,0,28.3125,2.4680498052652506,self-K1-Hvr-ho-01-none
+Hvr,hyperpol -25 then release,1,Cd,64,0,15.078125,1.9049200083193094,self-K1-Hvr-ho-09-Cd
+Hvr,hyperpol -25 then release,1,TEA,64,0,67.09375,8.348973418502249,self-K1-Hvr-ho-09-TEA
+Hvr,hyperpol -25 then release,1,XE991,64,0,15.078125,1.9049200083193094,self-K1-Hvr-ho-09-XE991
+Hvr,hyperpol -25 then release,1,none,64,0,15.078125,1.9049200083193094,self-K1-Hvr-ho-09-none
+Hvr,hyperpol -35 then release,1,Cd,64,0,14.890625,1.8092986232063815,self-K1-Hvr-ho-10-Cd
+Hvr,hyperpol -35 then release,1,TEA,64,0,61.90625,5.800160780475407,self-K1-Hvr-ho-10-TEA
+Hvr,hyperpol -35 then release,1,XE991,64,0,14.890625,1.8092986232063815,self-K1-Hvr-ho-10-XE991
+Hvr,hyperpol -35 then release,1,none,64,0,14.890625,1.8092986232063815,self-K1-Hvr-ho-10-none
+Hvr,hyperpol -30 then release,1,Cd,64,0,15.390625,1.8136798294653673,self-K1-Hvr-ho-11-Cd
+Hvr,hyperpol -30 then release,1,TEA,64,0,64.3125,6.943936489359185,self-K1-Hvr-ho-11-TEA
+Hvr,hyperpol -30 then release,1,XE991,64,0,15.390625,1.8136798294653673,self-K1-Hvr-ho-11-XE991
+Hvr,hyperpol -30 then release,1,none,64,0,15.390625,1.8136798294653673,self-K1-Hvr-ho-11-none
+Hvr,hyperpol -40 then release,1,Cd,64,0,14.890625,1.8092986232063815,self-K1-Hvr-ho-12-Cd
+Hvr,hyperpol -40 then release,1,TEA,64,0,61.453125,5.95200296418897,self-K1-Hvr-ho-12-TEA
+Hvr,hyperpol -40 then release,1,XE991,64,0,14.890625,1.8092986232063815,self-K1-Hvr-ho-12-XE991
+Hvr,hyperpol -40 then release,1,none,64,0,14.890625,1.8092986232063815,self-K1-Hvr-ho-12-none
+Hvr,"brief step (12 uA, 40 ms)",1,Cd,64,0,7.765625,1.3771628011794323,self-K1-Hvr-ho-13-Cd
+Hvr,"brief step (12 uA, 40 ms)",1,TEA,64,0,20.4375,3.8042374035044424,self-K1-Hvr-ho-13-TEA
+Hvr,"brief step (12 uA, 40 ms)",1,XE991,64,0,7.765625,1.3771628011794323,self-K1-Hvr-ho-13-XE991
+Hvr,"brief step (12 uA, 40 ms)",1,none,64,0,7.765625,1.3771628011794323,self-K1-Hvr-ho-13-none
+Hvr,"long step (10 uA, 300 ms)",1,Cd,64,0,28.3125,2.4680498052652506,self-K1-Hvr-ho-14-Cd
+Hvr,"long step (10 uA, 300 ms)",1,TEA,64,0,28.171875,7.606502413609948,self-K1-Hvr-ho-14-TEA
+Hvr,"long step (10 uA, 300 ms)",1,XE991,64,0,28.3125,2.4680498052652506,self-K1-Hvr-ho-14-XE991
+Hvr,"long step (10 uA, 300 ms)",1,none,64,0,28.3125,2.4680498052652506,self-K1-Hvr-ho-14-none
+Hvr,"strong step (18 uA, 120 ms)",0,Cd,64,0,15.40625,1.831980019992247,self-K1-Hvr-pool-02-Cd
+Hvr,"strong step (18 uA, 120 ms)",0,TEA,64,0,18.015625,3.574567073353746,self-K1-Hvr-pool-02-TEA
+Hvr,"strong step (18 uA, 120 ms)",0,XE991,64,0,15.40625,1.831980019992247,self-K1-Hvr-pool-02-XE991
+Hvr,"strong step (18 uA, 120 ms)",0,none,64,0,15.40625,1.831980019992247,self-K1-Hvr-pool-02-none
+Hvr,"weak step (5 uA, 120 ms)",0,Cd,64,0,12.703125,1.454927996909289,self-K1-Hvr-pool-03-Cd
+Hvr,"weak step (5 uA, 120 ms)",0,TEA,64,0,40.46875,6.34452332255751,self-K1-Hvr-pool-03-TEA
+Hvr,"weak step (5 uA, 120 ms)",0,XE991,64,0,12.703125,1.454927996909289,self-K1-Hvr-pool-03-XE991
+Hvr,"weak step (5 uA, 120 ms)",0,none,64,0,12.703125,1.454927996909289,self-K1-Hvr-pool-03-none
+Hvr,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,Cd,64,0,17.453125,1.6612262395735324,self-K1-Hvr-pool-04-Cd
+Hvr,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,TEA,64,0,44.359375,7.264541383180118,self-K1-Hvr-pool-04-TEA
+Hvr,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,XE991,64,0,17.453125,1.6612262395735324,self-K1-Hvr-pool-04-XE991
+Hvr,"hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",0,none,64,0,17.453125,1.6612262395735324,self-K1-Hvr-pool-04-none
+Hvr,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,Cd,64,0,9.078125,1.3721109620083545,self-K1-Hvr-pool-05-Cd
+Hvr,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,TEA,64,0,32.359375,4.5333584995800065,self-K1-Hvr-pool-05-TEA
+Hvr,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,XE991,64,0,9.078125,1.3721109620083545,self-K1-Hvr-pool-05-XE991
+Hvr,"hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",0,none,64,0,9.078125,1.3721109620083545,self-K1-Hvr-pool-05-none
+Hvr,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,Cd,64,0,29.96875,2.062274518699242,self-K1-Hvr-pool-06-Cd
+Hvr,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,TEA,64,0,17.6875,3.3469958100333725,self-K1-Hvr-pool-06-TEA
+Hvr,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,XE991,64,0,29.96875,2.062274518699242,self-K1-Hvr-pool-06-XE991
+Hvr,"paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",0,none,64,0,29.96875,2.062274518699242,self-K1-Hvr-pool-06-none
+Hvr,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,Cd,64,0,38.890625,3.2762599054797175,self-K1-Hvr-pool-07-Cd
+Hvr,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,TEA,64,0,18.046875,2.8139656674838407,self-K1-Hvr-pool-07-TEA
+Hvr,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,XE991,64,0,38.890625,3.2762599054797175,self-K1-Hvr-pool-07-XE991
+Hvr,"depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",0,none,64,0,38.890625,3.2762599054797175,self-K1-Hvr-pool-07-none
+Hvr,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,Cd,64,0,17.53125,2.0545632525503223,self-K1-Hvr-pool-08-Cd
+Hvr,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,TEA,64,0,28.640625,7.22510435471405,self-K1-Hvr-pool-08-TEA
+Hvr,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,XE991,64,0,17.53125,2.0545632525503223,self-K1-Hvr-pool-08-XE991
+Hvr,"brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)",0,none,64,0,17.53125,2.0545632525503223,self-K1-Hvr-pool-08-none

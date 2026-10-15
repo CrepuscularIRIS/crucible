@@ -1,0 +1,374 @@
+{
+  "pid": "P2",
+  "question": "weak step (5uA,120ms) + Cd 格（reps=1）一次观测判别全部 13 条 claim：Cd 删除全部 E≥100 附加通道 → Ca 族（CaT/CaL/CaTr/CaS）预测精确塌回 null 值 10.86±1.72@64reps，NaP/Ih/Hvr（E<100）与 slowNA/K 系（基线/非钙）保持无药读数。mattering：obs 高位（>16）杀 null+塌回簇+slowNA+Hvr，收窄到 NaP/Ih；obs 低位（<10）杀 NaP/Ih/Hvr，收窄到 null+塌回簇。severity：若所有候选为假，obs 落在全部补区间之外的概率仅由未建模机制产生——每条 claim 的 predicts 都已声明其 Cd 响应（塌回或不敏感），方向自洽。",
+  "observe": {
+    "world": "ca_rebound",
+    "seed": 0,
+    "protocol": "weak step (5 uA, 120 ms)",
+    "reps": 1,
+    "blockers": "Cd"
+  },
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H0": [
+      6.57,
+      15.15
+    ],
+    "H1": [
+      10.25,
+      19.43
+    ],
+    "H10": [
+      6.57,
+      15.15
+    ],
+    "H11": [
+      9.07,
+      16.34
+    ],
+    "H12": [
+      6.57,
+      15.15
+    ],
+    "H2": [
+      6.57,
+      15.15
+    ],
+    "H3": [
+      6.53,
+      13.57
+    ],
+    "H4": [
+      -0.04,
+      6.48
+    ],
+    "H5": [
+      12.37,
+      21.63
+    ],
+    "H6": [
+      6.57,
+      15.15
+    ],
+    "H7": [
+      7.22,
+      15.1
+    ],
+    "H8": [
+      1.38,
+      8.99
+    ],
+    "H9": [
+      3.52,
+      11.79
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        -0.5,
+        6.56
+      ],
+      "action": "kill",
+      "target": "H0",
+      "headline": "weak+Cd 观测低于 H0 预测带下界 6.57（读数落在 [-0.5, 6.56]）：H0（REF）在 Cd 格的预测不含该读数——排除。"
+    },
+    {
+      "band": [
+        15.16,
+        61.79
+      ],
+      "action": "kill",
+      "target": "H0",
+      "headline": "weak+Cd 观测高于 H0 预测带上界 15.15（读数落在 [15.16, 61.79]）：H0（REF）在 Cd 格的预测不含该读数——排除。"
+    },
+    {
+      "band": [
+        -0.5,
+        10.24
+      ],
+      "action": "kill",
+      "target": "H1",
+      "headline": "weak+Cd 观测低于 H1 预测带下界 10.25（读数落在 [-0.5, 10.24]）：H1（Ih）在 Cd 格的预测不含该读数——排除。"
+    },
+    {
+      "band": [
+        19.44,
+        61.79
+      ],
+      "action": "kill",
+      "target": "H1",
+      "headline": "weak+Cd 观测高于 H1 预测带上界 19.43（读数落在 [19.44, 61.79]）：H1（Ih）在 Cd 格的预测不含该读数——排除。"
+    },
+    {
+      "band": [
+        -0.5,
+        6.56
+      ],
+      "action": "kill",
+      "target": "H2",
+      "headline": "weak+Cd 观测低于 H2 预测带下界 6.57（读数落在 [-0.5, 6.56]）：H2（CaT）在 Cd 格的预测不含该读数——排除。"
+    },
+    {
+      "band": [
+        15.16,
+        61.79
+      ],
+      "action": "kill",
+      "target": "H2",
+      "headline": "weak+Cd 观测高于 H2 预测带上界 15.15（读数落在 [15.16, 61.79]）：H2（CaT）在 Cd 格的预测不含该读数——排除。"
+    },
+    {
+      "band": [
+        -0.5,
+        6.52
+      ],
+      "action": "kill",
+      "target": "H3",
+      "headline": "weak+Cd 观测低于 H3 预测带下界 6.53（读数落在 [-0.5, 6.52]）：H3（M）在 Cd 格的预测不含该读数——排除。"
+    },
+    {
+      "band": [
+        13.58,
+        61.79
+      ],
+      "action": "kill",
+      "target": "H3",
+      "headline": "weak+Cd 观测高于 H3 预测带上界 13.57（读数落在 [13.58, 61.79]）：H3（M）在 Cd 格的预测不含该读数——排除。"
+    },
+    {
+      "band": [
+        -0.5,
+        -0.05
+      ],
+      "action": "kill",
+      "target": "H4",
+      "headline": "weak+Cd 观测低于 H4 预测带下界 -0.04（读数落在 [-0.5, -0.05]）：H4（KA）在 Cd 格的预测不含该读数——排除。"
+    },
+    {
+      "band": [
+        6.49,
+        61.79
+      ],
+      "action": "kill",
+      "target": "H4",
+      "headline": "weak+Cd 观测高于 H4 预测带上界 6.48（读数落在 [6.49, 61.79]）：H4（KA）在 Cd 格的预测不含该读数——排除。"
+    },
+    {
+      "band": [
+        -0.5,
+        12.36
+      ],
+      "action": "kill",
+      "target": "H5",
+      "headline": "weak+Cd 观测低于 H5 预测带下界 12.37（读数落在 [-0.5, 12.36]）：H5（NaP）在 Cd 格的预测不含该读数——排除。"
+    },
+    {
+      "band": [
+        21.64,
+        61.79
+      ],
+      "action": "kill",
+      "target": "H5",
+      "headline": "weak+Cd 观测高于 H5 预测带上界 21.63（读数落在 [21.64, 61.79]）：H5（NaP）在 Cd 格的预测不含该读数——排除。"
+    },
+    {
+      "band": [
+        -0.5,
+        6.56
+      ],
+      "action": "kill",
+      "target": "H6",
+      "headline": "weak+Cd 观测低于 H6 预测带下界 6.57（读数落在 [-0.5, 6.56]）：H6（CaL）在 Cd 格的预测不含该读数——排除。"
+    },
+    {
+      "band": [
+        15.16,
+        61.79
+      ],
+      "action": "kill",
+      "target": "H6",
+      "headline": "weak+Cd 观测高于 H6 预测带上界 15.15（读数落在 [15.16, 61.79]）：H6（CaL）在 Cd 格的预测不含该读数——排除。"
+    },
+    {
+      "band": [
+        -0.5,
+        7.21
+      ],
+      "action": "kill",
+      "target": "H7",
+      "headline": "weak+Cd 观测低于 H7 预测带下界 7.22（读数落在 [-0.5, 7.21]）：H7（slowNA）在 Cd 格的预测不含该读数——排除。"
+    },
+    {
+      "band": [
+        15.11,
+        61.79
+      ],
+      "action": "kill",
+      "target": "H7",
+      "headline": "weak+Cd 观测高于 H7 预测带上界 15.1（读数落在 [15.11, 61.79]）：H7（slowNA）在 Cd 格的预测不含该读数——排除。"
+    },
+    {
+      "band": [
+        -0.5,
+        1.37
+      ],
+      "action": "kill",
+      "target": "H8",
+      "headline": "weak+Cd 观测低于 H8 预测带下界 1.38（读数落在 [-0.5, 1.37]）：H8（Kir）在 Cd 格的预测不含该读数——排除。"
+    },
+    {
+      "band": [
+        9,
+        61.79
+      ],
+      "action": "kill",
+      "target": "H8",
+      "headline": "weak+Cd 观测高于 H8 预测带上界 8.99（读数落在 [9.0, 61.79]）：H8（Kir）在 Cd 格的预测不含该读数——排除。"
+    },
+    {
+      "band": [
+        -0.5,
+        3.51
+      ],
+      "action": "kill",
+      "target": "H9",
+      "headline": "weak+Cd 观测低于 H9 预测带下界 3.52（读数落在 [-0.5, 3.51]）：H9（KslowInact）在 Cd 格的预测不含该读数——排除。"
+    },
+    {
+      "band": [
+        11.8,
+        61.79
+      ],
+      "action": "kill",
+      "target": "H9",
+      "headline": "weak+Cd 观测高于 H9 预测带上界 11.79（读数落在 [11.8, 61.79]）：H9（KslowInact）在 Cd 格的预测不含该读数——排除。"
+    },
+    {
+      "band": [
+        -0.5,
+        6.56
+      ],
+      "action": "kill",
+      "target": "H10",
+      "headline": "weak+Cd 观测低于 H10 预测带下界 6.57（读数落在 [-0.5, 6.56]）：H10（CaTr）在 Cd 格的预测不含该读数——排除。"
+    },
+    {
+      "band": [
+        15.16,
+        61.79
+      ],
+      "action": "kill",
+      "target": "H10",
+      "headline": "weak+Cd 观测高于 H10 预测带上界 15.15（读数落在 [15.16, 61.79]）：H10（CaTr）在 Cd 格的预测不含该读数——排除。"
+    },
+    {
+      "band": [
+        -0.5,
+        9.06
+      ],
+      "action": "kill",
+      "target": "H11",
+      "headline": "weak+Cd 观测低于 H11 预测带下界 9.07（读数落在 [-0.5, 9.06]）：H11（Hvr）在 Cd 格的预测不含该读数——排除。"
+    },
+    {
+      "band": [
+        16.35,
+        61.79
+      ],
+      "action": "kill",
+      "target": "H11",
+      "headline": "weak+Cd 观测高于 H11 预测带上界 16.34（读数落在 [16.35, 61.79]）：H11（Hvr）在 Cd 格的预测不含该读数——排除。"
+    },
+    {
+      "band": [
+        -0.5,
+        6.56
+      ],
+      "action": "kill",
+      "target": "H12",
+      "headline": "weak+Cd 观测低于 H12 预测带下界 6.57（读数落在 [-0.5, 6.56]）：H12（CaS）在 Cd 格的预测不含该读数——排除。"
+    },
+    {
+      "band": [
+        15.16,
+        61.79
+      ],
+      "action": "kill",
+      "target": "H12",
+      "headline": "weak+Cd 观测高于 H12 预测带上界 15.15（读数落在 [15.16, 61.79]）：H12（CaS）在 Cd 格的预测不含该读数——排除。"
+    }
+  ],
+  "discrimination": "σ 出处：64-reps sim 记录 sd；band=μ±2.5σ/√1。Cd 格关键分离：NaP [12.37,21.63] vs 塌回簇/REF [6.57,15.15] d≈3.2 (r*=3→N=1 带不重叠即判)；Ih [10.25,19.43] 与 NaP 带重叠（本轮不分，幸存者交下一格）；KA/Kir/KsI 带 [−0.04,11.79] 与高带 d≥2。补区间 kill 覆盖 [−0.5,61.79] 无死角。",
+  "provenance": {
+    "H0": "sim:cdfa-REF-pool-04-Cd",
+    "H1": "sim:cdfa-Ih-pool-04-Cd",
+    "H2": "sim:cdfa-CaT-pool-04-Cd",
+    "H3": "sim:cdfa-M-pool-04-Cd",
+    "H4": "sim:cdfa-KA-pool-04-Cd",
+    "H5": "sim:cdfa-NaP-pool-04-Cd",
+    "H6": "sim:cdfa-CaL-pool-04-Cd",
+    "H7": "sim:cdfa-slowNA-pool-04-Cd",
+    "H8": "sim:cdfa-Kir-pool-04-Cd",
+    "H9": "sim:cdfa-KslowInact-pool-04-Cd",
+    "H10": "sim:self-K1-CaTr-pool-03-Cd",
+    "H11": "sim:self-K1-Hvr-pool-03-Cd",
+    "H12": "sim:self-K1-CaS-pool-03-Cd"
+  },
+  "sims": [
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-REF-pool-04-Cd.json",
+      "sha256": "e0655d5c258fb97512f6aea6cffb1fa92ee4733e5e66221ddae0a35056ff08b6"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-Ih-pool-04-Cd.json",
+      "sha256": "5328111f4a4e0e2d3bc378594c8017ab68cff17adcea255d7a4d692fe6e4ff76"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-CaT-pool-04-Cd.json",
+      "sha256": "ad368238260a788c52c204249e3f8f9eb050c0c5bd2a0635056742a9ea18d376"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-M-pool-04-Cd.json",
+      "sha256": "39b2dd4bd121f04bee328b3239a6d856734294aa679fc1fe85c4e36455380d87"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-KA-pool-04-Cd.json",
+      "sha256": "661fbfc749f71dc590d99ea927a3725771019cf7e5f3c9134e87f5f61d430d37"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-NaP-pool-04-Cd.json",
+      "sha256": "a4c77271fc3f33bb4ba20a5f15a5f954e9bf42456d0c4cac80cd1b45759baa23"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-CaL-pool-04-Cd.json",
+      "sha256": "6bf52958568b6960d611e52bcfcf2f97466cc3d0ca651ef8a087364e8cabaef5"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-slowNA-pool-04-Cd.json",
+      "sha256": "94d01410b080fda07f3c8b209c9d03d1f8295ff053f848794103b9185a3c170b"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-Kir-pool-04-Cd.json",
+      "sha256": "3c59af9664419330576e80f70dd6fa74ab52df5115c1a5c184803b4d63a88e37"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-KslowInact-pool-04-Cd.json",
+      "sha256": "fa82da6e9111a9a725fc8a693f34fc9c8cbaab1068f258facd9d9013ad0e797b"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/self-K1-CaTr-pool-03-Cd.json",
+      "sha256": "f0ef779018d281f7b14d006411f1f79a2fd86c6393323b0be6929f9b9e67a809"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/self-K1-Hvr-pool-03-Cd.json",
+      "sha256": "621268ffe9e1dd3ed5a29a19b210216003449df36c5ea8d6be378b31e7f60d89"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/self-K1-CaS-pool-03-Cd.json",
+      "sha256": "4daf89ee69881d5ffc544764d68c105dd2a8e0e9251a96d9e489dcc719f4c22b"
+    }
+  ],
+  "frozenAt": "2026-10-15T02:53:52.894Z"
+}

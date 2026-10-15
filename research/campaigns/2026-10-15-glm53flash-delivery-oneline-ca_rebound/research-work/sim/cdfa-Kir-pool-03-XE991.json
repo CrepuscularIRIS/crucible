@@ -1,0 +1,1 @@
+{"mechanism": {"extra": [{"name": "Kir", "g": 2.0, "E": -85.0, "mvh": -80.0, "mk": -6.0, "mtau": 30.0, "mpow": 1}], "slow_na": false}, "label": "strong step (18 uA, 120 ms)", "block": ["XE991"], "reps": 64, "seed": 0, "counts_mean": 10.21875, "counts_sd": 1.3969212178533508, "nbsim_sha256": "bd1b9c85aaa7d9a0f7cdb92f086423d77af0fce4b5a472f4a0479b821ed58813"}

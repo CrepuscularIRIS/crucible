@@ -1,0 +1,326 @@
+{
+  "run": "ca-rebound",
+  "claims": [
+    {
+      "id": "H0",
+      "statement": "内置 H0（null）：真实系统与参考模型（无附加机制）无可分辨差异，观测偏离都在噪声内",
+      "predicts": [
+        "观测落在参考模型的仿真分布内（无附加机制）"
+      ],
+      "state": "LIVE",
+      "builtin": true
+    },
+    {
+      "id": "H1",
+      "statement": "附加电流 = 超极化激活、慢激活、无失活、混合阳离子翻转电位（E≈-30）的 Ih 型通道：条件化超极化期间缓慢开启，释放后提供持续内向去极化尾电流，抬高同一测试步的事件计数；效应随条件化时长按 mtau≈80ms 缩放。（族级；代表参数点 g=1.5, E=-30, mvh=-75, mk=-7, mtau=80；自由参数只作网格 claim）",
+      "predicts": [
+        "hyperpol conditioning + depol test (-30/250ms→+12) 相对 identity 读数上升（sanity Δ≈+3.8@64reps, sim 记录见 families.md）",
+        "对 TTX/TEA/Cd/XE991 全不敏感（E<100 非 Cd 型，name≠M）",
+        "brief-hyper 条件化（40ms）读数效应较 250ms 缩水约一半（mtau=80ms）"
+      ],
+      "state": "CONTESTED",
+      "conflicts": "none — 战役开局，与 H0 及后续各族按读数符号/药敏判别",
+      "level": "family",
+      "note": "P4 (hyperpol cond + TEA, reps=1) obs=17 落在 H1 的 kill 分支 [-0.5,25.74]（低于 Ih 预测带下界 25.75）：Ih 型在 TEA 格应读 43.41±7.06@64reps（sim:cdfa-Ih-pool-05-TEA），观测 17 远低于其带——H1 参数点排除。P1/P2/P3 三格带内存活是必要非充分条件，本格给出首个出带证据。"
+    },
+    {
+      "id": "H2",
+      "statement": "附加电流 = 低阈值瞬态钙电流（T 型/rebound 发生器）：mvh≈-58 快激活、去极化失活+超极化去失活（hvh≈-62, hk>0, htau≈90ms）、E=+120、mpow=2；条件化超极化去失活 h，释放时 m 快速打开产生爆发式计数↑，去极化条件化则失活→计数↓。（族级；代表点 g=2.0, mvh=-58, mk=6, hvh=-62, hk=6, htau=90, mpow=2）",
+      "predicts": [
+        "hyperpol 条件化后 test 计数上升（sanity H1 Δ≈+1.6@64reps），depolarising 条件化后 test 计数下降（双极性指纹，H2↓ 半边未测）",
+        "Cd 格精确塌回基线（E=120≥100，sanity 已验证逐位一致）",
+        "条件化超极化越深/越长，释放爆发越大（h 去失活积累）"
+      ],
+      "state": "CONTESTED",
+      "conflicts": "none — 开局多族并存；与 H1/F1 靠 E 极性、与 H4/F4 靠读数符号、与 H6/F6 靠条件化极性结构判别",
+      "level": "family",
+      "note": "P5 (weak step + TEA, reps=1) obs=29 落在 H2 的 kill 分支 [3.14,62.52]（高于 CaT 预测带上界 3.13）：T 型钙载体在 TEA 格预测 0.34±1.12@64reps（sim:cdfa-CaT-pool-04-TEA，弱钙+快激活在拔钾后载体事件归零），观测 29 远离归零带——H2 参数点排除。与 P1/P2/P3/P4 四格带内存活的组合证据一致：无任何一格支持快钙易化指纹。"
+    },
+    {
+      "id": "H3",
+      "statement": "附加电流 = M 型慢钾电流（Kv7）：高阈（mvh≈-30）、慢激活（mtau≈100ms）、无失活的持续外向 K 电流，name='M'（XE991 敏感）；测试步内缓慢积累外向拖拽压制后段事件，条件化去极化抑制更强。（族级；代表点 g=1.2, E=-77, mvh=-30, mk=4, mtau=100）",
+      "predicts": [
+        "两方向条件化都轻度抑制测试计数（sanity H1 Δ≈-1.3, H2 Δ≈-2.7@64reps；测试步内 m 慢开启产生外向拖拽）",
+        "XE991 格读数塌回基线（name=='M' 独占指纹，未测）",
+        "Cd/TTX/TEA 不敏感"
+      ],
+      "state": "CONTESTED",
+      "conflicts": "none — 与 H9/F9 靠 XE991 敏感性与量级分家；与 H6/F6 靠 Cd 分家",
+      "level": "family",
+      "byProbe": "P3",
+      "note": "P3 (depolarising cond + TEA, reps=1) obs=16 落在 H3 补区间 kill 分支 [-0.5,60.77]。K3 审计（self-reviewed，.rlm-jobs/ca-rebound/k3b/H3H9/aebb-self/out.md）：数字出处程序化逐位核对；7 参数点网格（g/mvh/mtau）TEA 格下界最小 36.1 全部高于 obs=16；d=10.7→r*=1≤reps=1；门方向两轮独立检查一致；support 带互斥。",
+      "lead": {
+        "requested": "REFUTED",
+        "byProbe": "P3",
+        "caps": [
+          "self_reviewed"
+        ]
+      }
+    },
+    {
+      "id": "H4",
+      "statement": "附加电流 = A 型瞬态钾电流（Kv4）：快激活（mtau≈6ms）+ 快去极化失活（htau≈25ms）的瞬态外向 K；条件化超极化恢复 h 可用性，测试步先被瞬态外向电流压住（首事件延迟、计数↓），历史记忆短。（族级；代表点 g=3.0, mvh=-55, mk=8, hvh=-60, hk=6, htau=25）",
+      "predicts": [
+        "hyperpol 条件化后 test 计数下降（sanity H1 Δ≈-6.9@64reps，快速瞬态外向压制首事件）",
+        "weak step (5 uA) 静息张力抑制（S Δ≈-3.9，h∞(-65)≈0.70 静息开）",
+        "gap 120ms 后条件化效应基本消失（htau≈25ms 短记忆）",
+        "对四种阻断剂全不敏感"
+      ],
+      "state": "CONTESTED",
+      "conflicts": "none — 与 H8/F8 同为无药敏 H1↓，靠条件化幅值扫描曲线形状与静息张力分家（gap/幅值系列）",
+      "level": "family",
+      "byProbe": "P2",
+      "lead": {
+        "requested": "REFUTED",
+        "byProbe": "P2",
+        "caps": [
+          "no_audit"
+        ]
+      },
+      "note": "P2 (weak step + Cd, reps=1) obs=11 落在 H4 的 kill 分支 [6.49,61.79]（高于 KA 预测带上界 6.48）：Cd 不动 KA（E=-77<100），其 weak step 读数应保持 3.2±1.3@64reps；观测 11 远高于其带——H4 参数点排除。"
+    },
+    {
+      "id": "H5",
+      "statement": "附加电流 = 持续钠电流（非失活 Nav 窗电流）：低阈（mvh≈-48）、无失活门的持续内向钠，亚阈值增益放大器；无强历史记忆，主要改变测试步基线可激发性。（族级；代表点 g=0.8, E=50, mvh=-48, mk=6, mtau=8）",
+      "predicts": [
+        "各条件化协议读数≈恒定平移（无历史记忆；条件化不变性指纹）",
+        "TEA 格放大效应（基线外向钾拔除后增益更显，未测）",
+        "TTX 格计数归零（已验证：计数指标绑定基线 Nav 再生性）",
+        "Cd/XE991 不敏感"
+      ],
+      "state": "CONTESTED",
+      "conflicts": "none — 与 H1/F1 靠条件化极性依赖分家（F5 两方向都↑、F1 只对 hyper↑）；与 H6/F6 靠 Cd 分家",
+      "level": "family",
+      "byProbe": "P2",
+      "lead": {
+        "requested": "REFUTED",
+        "byProbe": "P2",
+        "caps": [
+          "no_audit"
+        ]
+      },
+      "note": "P2 (weak step + Cd, reps=1) obs=11 落在 H5 的 kill 分支 [-0.5,12.36]（低于 NaP 预测带下界 12.37）：若 ca_rebound 附加电流为持续钠窗增益放大器，Cd 格读数应保持 17.0±1.85@64reps；观测 11 显著低于其带——H5 参数点排除。"
+    },
+    {
+      "id": "H6",
+      "statement": "附加电流 = 高阈值钙电流 + 慢失活（L/N 型）：mvh≈-20 高阈持续内向（E=120）+ 去极化慢失活（hvh≈-15, htau≈300ms）；本参数点主效应为去极化期间内向叠加→后续测试易化（累计失活化身留网格）。（族级；代表点 g=1.5, mvh=-20, mk=6, mtau=20, hvh=-15, hk=5, htau=300）",
+      "predicts": [
+        "depolarising 条件化后 test 计数上升（sanity H2 Δ≈+9.9, P Δ≈+9.1@64reps；高阈内向增益主导）",
+        "hyperpol 条件化后 test 计数近基线（H1 不动，未测）",
+        "Cd 格塌回基线（E=120≥100）",
+        "累计失活抑制化身需 htau≳2s（代表点 300ms 不出现，未测）"
+      ],
+      "state": "CONTESTED",
+      "conflicts": "none — 与 H2/F2 同为 Cd 敏感，靠条件化极性（单极 vs 双极）与激活阈分家；与 H5/F5 靠 Cd 分家",
+      "level": "family",
+      "note": "P7 (paired + TEA, reps=1) obs=16 落在 H6 的 kill 分支 [3.54,50.62]（高于 CaL 归零预测带上界 3.53）：E≥100 载体在 TEA 格预测归零 0.00±0.50@64reps（sim:cdfa-CaL-pool-07-TEA），观测 16 远离归零带——H6 参数点排除。"
+    },
+    {
+      "id": "H7",
+      "statement": "伪影族（无新通道）：基线 Nav 的慢失活 s 门（vh=-45, k=4；去极化 tau≈380ms/超极化 tau≈1500ms，schema 硬编码点假设）使钠可用性成为条件化历史函数——去极化降低可用性（计数↓）、超极化恢复（↑）。读数差异完全由基线通道动力学产生。（extra=[]，slow_na=true）",
+      "predicts": [
+        "depolarising 条件化后 test 计数轻度下降（sanity H2 Δ≈-1.6@64reps）",
+        "hyperpol 条件化读数近中性（sanity H1 Δ≈-0.53≈2×SEM，静息 s≈0.99 无恢复空间）",
+        "Cd 格完全不动（载体是基线钠非 extra）",
+        "恢复时程超慢：长 hyper 条件化与 brief-hyper 读数差大于所有 extra 族（超极化 tau=1500ms）",
+        "TTX 格计数归零（与所有族同，不可用作伪影排除）"
+      ],
+      "state": "LIVE",
+      "conflicts": "none — 伪影对手（boring rival）显式准入；与 H9/F9 靠恢复时程（1500/380 双常数 vs 600ms）分家；与 H2/H6 靠 Cd 不动分家",
+      "level": "family"
+    },
+    {
+      "id": "H8",
+      "statement": "附加电流 = 内向整流钾电流（Kir，Ih 结构的 K 选择性化身）：mk<0 超极化激活（mvh≈-80, mtau≈30ms）、无失活、E≈-85；超极化期产生下垂 sag，释放瞬间（V 跳至 -65 而 m 仍高）产生大瞬态外向尾钳住测试段首事件→计数↓。（族级；代表点 g=2.0, E=-85, mvh=-80, mk=-6, mtau=30）",
+      "predicts": [
+        "hyperpol 条件化后 test 计数下降（sanity H1 Δ≈-8.8, S Δ≈-3.6@64reps；释放瞬间外向尾钳住首事件）",
+        "抑制随条件化超极化深度单调加深（held-out -25→-40 系列曲线爬升，-75→-95 段仍在变）",
+        "gap 协议短记忆（mtau=30ms 去激活快）",
+        "对四种阻断剂全不敏感"
+      ],
+      "state": "CONTESTED",
+      "conflicts": "none — 与 H1/F1 同构反读数对（E 决定释放尾极性：F8 外向尾↓、F1 内向尾↑），靠读数符号与幅值扫描曲线分家",
+      "level": "family",
+      "byProbe": "P2",
+      "lead": {
+        "requested": "REFUTED",
+        "byProbe": "P2",
+        "caps": [
+          "no_audit"
+        ]
+      },
+      "note": "P2 (weak step + Cd, reps=1) obs=11 落在 H8 的 kill 分支 [9.0,61.79]（高于 Kir 预测带上界 8.99）：Cd 不动 Kir（E=-85<100），其 weak step 读数应保持 5.2±1.5@64reps；观测 11 高于其 +2.5σ 带——H8 参数点排除。"
+    },
+    {
+      "id": "H9",
+      "statement": "附加电流 = 常规阈值钾 + 慢速去极化失活门（Kv 累计失活）：mvh≈-35、快激活（mtau≈8ms）、慢失活（hvh≈-40, htau≈600ms）；去极化条件化/尖峰期外向电流直接压制事件（本参数点读作抑制；累计易化化身留网格：需 m 阈低于尖峰电位且 g 更小）。（族级；代表点 g=4.0, E=-77, mvh=-35, mk=10, hvh=-40, hk=8, htau=600）",
+      "predicts": [
+        "depolarising 条件化后 test 计数强下降（sanity H2 Δ≈-8.4@64reps；尖峰期 m 快速全开强外向压制）",
+        "weak step 近基线（静息 m∞(-65)≈0.05）",
+        "gap 协议保留大部分抑制（htau=600ms 长记忆）",
+        "TTX 格计数归零（已验证）",
+        "Cd/XE991/TEA 不敏感"
+      ],
+      "state": "CONTESTED",
+      "conflicts": "none — 与 H3/F3 靠 XE991 与量级（-8.4 vs -2.7）分家；与 H7 伪影靠恢复时程（600ms vs 1500/380ms 双时间常数）分家；与 H4/F4 靠 S 协议静息张力分家",
+      "level": "family",
+      "byProbe": "P3",
+      "lead": {
+        "requested": "REFUTED",
+        "byProbe": "P3",
+        "caps": [
+          "self_reviewed"
+        ]
+      },
+      "note": "P3 (depolarising cond + TEA, reps=1) obs=16 落在 H9 补区间 kill 分支 [-0.5,30.96]（低于 K9 预测带下界 30.97）。K3 审计（self-reviewed，同 H3）：7 参数点网格（g/hvh/htau）TEA 格下界最小 23.5 全部高于 obs=16；d=7.6→r*=1≤reps=1。"
+    },
+    {
+      "id": "H10",
+      "statement": "附加电流 = 低阈瞬态钙 + 反向失活门（hyperpolarization-activated inactivation，hk<0）：mvh≈-58 快激活同 F2，但 hvh=-55, hk=-6（超极化使 h 关闭、去极化使 h 恢复），htau≈200ms；条件化超极化把 h 关闭，释放窗可用电流近零、事件随去极化延迟增长；两极条件化都读作易化。（族级；代表点 g=2.0, E=120, mvh=-58, mk=6, mtau=8, mpow=2, hvh=-55, hk=-6, htau=200）",
+      "predicts": [
+        "H1 与 H2 双易化（sanity Δ≈+3.5 / +5.6@64reps，K1 记录）",
+        "Cd 格塌回基线（E=120，未测）",
+        "gap 协议（hyperpol pre-pulse + weak test）读数相对无 gap 版回升（h 于去极化 gap 恢复）；F2 同格回落——符号即判别"
+      ],
+      "state": "CONTESTED",
+      "conflicts": "none — F2 的 h 门反向化身（hyperpolarization-activated 失活），读数几何新（双易化 + gap 回升 vs F2 gap 回落）；来源 K1 审计（.rlm-jobs/ca-rebound/rivals/K1/44d9/out.md）",
+      "parent": "H2",
+      "level": "family",
+      "note": "P7 (paired + TEA, reps=1) obs=16 落在 H10 的 kill 分支 [3.54,50.62]（高于 CaTr 归零预测带上界 1.25）：E≥100 载体在 TEA 格预测归零 0.00±0.50@64reps（sim:self-K1-CaTr-pool-06-TEA），观测 16 远离归零带——H10 参数点排除。"
+    },
+    {
+      "id": "H11",
+      "statement": "附加电流 = 超极化激活混合阳离子 + 慢电压依赖恢复窗（双慢门 Ih 型）：m 门同 F1（mvh=-75, mk=-7, mtau=80, E=-30），叠加慢关闭 h 门（hvh=-60, hk=-6, htau=120ms）——m·h 在静息附近构成迟滞窗，历史依赖同时受条件化幅值与时程耦合调制。（族级）",
+      "predicts": [
+        "H1 与 H2 双易化、量级小于 F1（sanity Δ≈+2.0 / +2.5@64reps，K1 记录）",
+        "条件化时长扫描非单调/过冲（长条件化把 h 压得更低，读数先降后升）",
+        "gap 协议读数回升；条件化不变性不成立",
+        "对四种阻断剂不敏感（同 F1）"
+      ],
+      "state": "CONTESTED",
+      "conflicts": "none — F1 的双慢门化身（m 慢开 + h 慢关），与 F1 只能靠条件化时长/幅值扫描曲线几何分家（H11 非单调过冲 vs F1 单调饱和）；来源 K1 审计",
+      "parent": "H1",
+      "level": "family",
+      "note": "P4 (hyperpol cond + TEA, reps=1) obs=17 落在 H11 的 kill 分支 [-0.5,26.19]（低于 Hvr 预测带下界 26.2）：Hvr 型在 TEA 格应读 44.36±7.26@64reps（sim:self-K1-Hvr-pool-04-TEA），观测 17 远低于其带——H11 参数点排除（K1 补族）。"
+    },
+    {
+      "id": "H12",
+      "statement": "附加电流 = 低阈持久钙 + 慢去极化失活（F6 门拓扑的低阈化身）：mvh=-45 半开、hvh=-30、htau≈250ms、E=120；条件化去极化先注入大量内向电流，h 在时窗内可见失活 → 测试后段易化衰减甚至反转为净抑制。（族级；代表点 g=1.2, mk=8, mtau=35, mpow=1, hk=5）",
+      "predicts": [
+        "H1 易化（sanity Δ≈+4.1@64reps，K1 记录）、H2 近基线弱负（sanity Δ≈-1.2，接近 1.6×SEM 弱信号）",
+        "Cd 格塌回基线（E=120，未测）",
+        "长条件化下 H2 读数单调更负（htau=250ms 累计失活）；F2 同窗已饱和、F6 高阈点单调更正",
+        "gap 曲线斜率按 htau=250ms"
+      ],
+      "state": "CONTESTED",
+      "conflicts": "none — F6 慢失活结构的低阈参数化身（mvh=-45 vs -20），兑现 F6 未兑现的失活主导读数分支；与 F2 靠 htau 与 H2 符号分家；来源 K1 审计",
+      "parent": "H6",
+      "level": "family",
+      "note": "P7 (paired + TEA, reps=1) obs=16 落在 H12 的 kill 分支 [3.54,50.62]（高于 CaS 预测带 [-7.87,18.75] 与归零带的重叠区上沿——其 kill 分支区间 [3.54,50.62] 覆盖 obs）：E≥100 载体在 TEA 格预测 0.02±0.12@64reps（sim:self-K1-CaS-pool-06-TEA），obs=16 远离归零带——H12 参数点排除。"
+    }
+  ],
+  "probes": [
+    {
+      "pid": "P1",
+      "status": "LANDED",
+      "preregSha256": "c52c90d98840139d62c18328527bf039273b0ecba755af960a5d75544ae2749b",
+      "exitCode": 0,
+      "metric": 14
+    },
+    {
+      "pid": "P2",
+      "status": "LANDED",
+      "preregSha256": "f26dd7cb11a9845c27f9c8cbb307fc84417085da667496e84c7140d0dd5350e4",
+      "exitCode": 0,
+      "metric": 11
+    },
+    {
+      "pid": "P3",
+      "status": "LANDED",
+      "preregSha256": "715cdc4897078857bc080ef362d83071a79065d6751d5b7f1940e8633e174fb5",
+      "exitCode": 0,
+      "metric": 16
+    },
+    {
+      "pid": "P4",
+      "status": "LANDED",
+      "preregSha256": "2bacaed7cb326bd581fd5b2230966e2243ace3c513a254eb5c2fd2e47a217c0c",
+      "exitCode": 0,
+      "metric": 17
+    },
+    {
+      "pid": "P5",
+      "status": "LANDED",
+      "preregSha256": "baf1411a12816a558b1774ce6ed795b9eca82058fe1e8084c848d5f5a9d21e34",
+      "exitCode": 0,
+      "metric": 29
+    },
+    {
+      "pid": "P7",
+      "status": "LANDED",
+      "preregSha256": "8812778ec039a831b84034f6266f2c714bf4db8ff422f02f43c37271751cf72b",
+      "exitCode": 0,
+      "metric": 16
+    }
+  ],
+  "attacks": [
+    {
+      "gid": "G1",
+      "target": "H2",
+      "kind": "constraint",
+      "text": "[noise] P5 上 CaT 仿真 sd=1.12 反常窄：TEA+weak 去抑制 regime 应为 burst 双峰个位数 sd；须换 seed 复跑核验简并仿真指纹（seed 复用/blocker 写错通道/朗之万噪声被关），否则 P5 对 H2 的排除无效。（W3 grill2/equiv/d9a8 攻击 7+8 合并；已换 seed=1、256 reps 复核：0.45±1.23，重尾但主体归零——攻击被数据驳回，P5 排除稳健）",
+      "ts": "2026-10-15T04:47:55.493Z"
+    },
+    {
+      "gid": "G2",
+      "target": "H0",
+      "kind": "constraint",
+      "text": "[identifiability] 六格只提供约 5 个独立标量约束，12 族各有 ≥3 自由参数：被证伪的是 12 个代表参数点而非 12 个族；小 g 缩放后必然存在全部带内的参数点（效应 <±1 spike）——equiv{H0,H7} 应 scope 为\"在六格分辨率下无可检测附加电流效应\"。多重比较无 FDR 控制（约 72 次判定，P(≥1 假带外)≈59%）。单 rep 观测测量噪声未计入带宽。（W3 grill2/equiv/d9a8 攻击 1/2/5/6；处置：进报告 scope 段与未来 prereg 控制臂）",
+      "ts": "2026-10-15T04:48:01.005Z"
+    },
+    {
+      "gid": "G3",
+      "target": "H0",
+      "kind": "constraint",
+      "text": "[coverage] TTX 无任何计量格、XE991 只在仿真矩阵从未被计量：钠依赖机制（含 NaP/H7 本身）与小 g_M M 型电流在全部六格上结构性不可见（4 格在 TEA 下 M 效应被吸收；weak step 不足以表达适应性阈下电导）——等价类对这两轴的机制不封闭，只在 TTX/XE991 消融格才能显形。（W3 grill2/equiv/d9a8 攻击 9/10；处置：进报告\"未覆盖协议\"段）",
+      "ts": "2026-10-15T04:48:09.028Z"
+    },
+    {
+      "gid": "G4",
+      "target": "H0",
+      "kind": "constraint",
+      "text": "[identifiability] 慢 Ih 变体（V1/2≈-90、大 g、慢去激活/慢去失活）在 P1/P2/P3/P5 近似静默，仅受 P4/P7 两格约束且 H0 带最宽（[9.60,26.21]/[9.87,26.09]）——带内判定对小 g 慢 Ih 的区分力从未量化；慢去激活 Ca 变体同理。（W3 grill2/equiv/d9a8 攻击 4；处置：报告 scope 声明）",
+      "ts": "2026-10-15T04:48:14.585Z"
+    },
+    {
+      "gid": "G5",
+      "target": "H0",
+      "kind": "no_change",
+      "text": "[identifiability] \"六格只提供约 5 个独立标量约束\"的计数批评不改变信念：报告的 headline 已写为等价类 equiv{H0,H7} + 检出限声明（\"在 6 格 × 1 rep 精度下未检出任何 ≥1σ 附加电流效应\"），并未宣称族级排除——该攻击与已写明的 scope 一致。（W3 grill2/equiv/d9a8 攻击 1 的重复面；报告措辞已覆盖）",
+      "ts": "2026-10-15T04:48:22.770Z"
+    }
+  ],
+  "reports": [
+    {
+      "path": "REPORT.md",
+      "sha256": "6a9d4aea067642c0642ec04217d55bf2b4ea50818260918a40abaa3bd4f9a90c",
+      "ts": "2026-10-15T04:50:09.185Z"
+    }
+  ],
+  "gateVerdicts": [
+    {
+      "ts": "2026-10-15T04:50:09.186Z",
+      "passed": true,
+      "report": "REPORT.md"
+    }
+  ],
+  "tampers": [],
+  "graveyard": [],
+  "contract": {
+    "mode": "identify",
+    "successPredicate": "LIVE 收缩到 1 个或一个写明的等价类（RULING equiv{H#…}），且 world_forecast 已提交",
+    "depth": "light",
+    "recall": "off"
+  },
+  "debts": []
+}

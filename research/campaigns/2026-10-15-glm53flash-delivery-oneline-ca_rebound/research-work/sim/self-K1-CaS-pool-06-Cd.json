@@ -1,0 +1,29 @@
+{
+ "mechanism": {
+  "extra": [
+   {
+    "name": "CaS",
+    "g": 1.2,
+    "E": 120.0,
+    "mvh": -45.0,
+    "mk": 8.0,
+    "mtau": 35.0,
+    "mpow": 1,
+    "hvh": -30.0,
+    "hk": 5.0,
+    "htau": 250.0,
+    "hpow": 1
+   }
+  ],
+  "slow_na": false
+ },
+ "label": "paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",
+ "block": [
+  "Cd"
+ ],
+ "reps": 64,
+ "seed": 0,
+ "counts_mean": 27.390625,
+ "counts_sd": 2.5857803310867147,
+ "nbsim_sha256": "bd1b9c85aaa7d9a0f7cdb92f086423d77af0fce4b5a472f4a0479b821ed58813"
+}

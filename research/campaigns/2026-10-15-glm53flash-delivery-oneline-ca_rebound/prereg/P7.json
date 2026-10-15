@@ -1,0 +1,104 @@
+{
+  "pid": "P7",
+  "question": "paired long pulses + TEA（reps=1）：H0（18.0±3.2，band [9.9,26.1]）对 E≥100 归零簇（H6/H10/H12：μ≤0.34，带 [−2.8,3.5]）的判决；H2/H7 不在本格 bands（方向校验限制：升 predicts 归零带 vs 降 predicts 中带不可同格），它们的取舍由本格读数组合推断：obs∈[26.1,50.6] → H0 死+E≥100 簇死（此前 H2 已被 P5 杀）→ 唯一活者 H7（伪影判决）；obs∈[3.54,9.86] → H6/H10/H12 死、H0 活；obs∈归零带 → H0 死、载体为慢钙。mattering：E≥100 簇正式点名排除 + null vs 伪影方向判决。severity：若 H0 与 E≥100 簇都为假，obs 落全部补区间外需未建模机制。",
+  "observe": {
+    "world": "ca_rebound",
+    "seed": 0,
+    "protocol": "paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",
+    "reps": 1,
+    "blockers": "TEA"
+  },
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H0": [
+      9.87,
+      26.09
+    ],
+    "H10": [
+      -1.25,
+      1.25
+    ],
+    "H12": [
+      -7.87,
+      18.75
+    ],
+    "H6": [
+      -2.84,
+      3.53
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        3.54,
+        50.62
+      ],
+      "action": "kill",
+      "target": "H6",
+      "headline": "paired+TEA 读数落在 [3.54, 50.62]：E≥100 载体（CaL）在 TEA 格预测归零（μ≤0.34），obs 远离归零带——H6 排除。"
+    },
+    {
+      "band": [
+        3.54,
+        50.62
+      ],
+      "action": "kill",
+      "target": "H10",
+      "headline": "paired+TEA 读数落在 [3.54, 50.62]：E≥100 载体（CaTr）在 TEA 格预测归零（μ≤0.34），obs 远离归零带——H10 排除。"
+    },
+    {
+      "band": [
+        3.54,
+        50.62
+      ],
+      "action": "kill",
+      "target": "H12",
+      "headline": "paired+TEA 读数落在 [3.54, 50.62]：E≥100 载体（CaS）在 TEA 格预测归零（μ≤0.34），obs 远离归零带——H12 排除。"
+    },
+    {
+      "band": [
+        -0.5,
+        9.86
+      ],
+      "action": "kill",
+      "target": "H0",
+      "headline": "paired+TEA 读数低于 H0（REF）预测带 [9.87, 26.09]（落在 [-0.5, 9.86]）——排除。"
+    },
+    {
+      "band": [
+        26.1,
+        50.62
+      ],
+      "action": "kill",
+      "target": "H0",
+      "headline": "paired+TEA 读数高于 H0（REF）预测带 [9.87, 26.09]（落在 [26.1, 50.62]）——排除。"
+    }
+  ],
+  "discrimination": "σ 出处：64-reps sim sd；band=μ±2.5σ/√1（σ=0 取量化底 0.5）。关键分离：归零带 [−2.8,3.5] vs H0 [9.9,26.1]，d≥4.6 r*=1；H7/H2 不在本格 bands（方向校验限制），其取舍由本格读数组合推断：obs∈[26.1,50.6] → H0 死+E≥100 簇死（H2 已被 P5 杀）→ 唯一活者 H7（伪影判决）。",
+  "provenance": {
+    "H0": "sim:cdfa-REF-pool-07-TEA",
+    "H10": "sim:self-K1-CaTr-pool-06-TEA",
+    "H12": "sim:self-K1-CaS-pool-06-TEA",
+    "H6": "sim:cdfa-CaL-pool-07-TEA"
+  },
+  "sims": [
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-REF-pool-07-TEA.json",
+      "sha256": "0cb954513c92e91495101381a0799e88f3986699f636071a2d4704ee24306967"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-CaL-pool-07-TEA.json",
+      "sha256": "db61c6329b43d9f5f74f01ca31e5a1de950963bae679c9f95e372b03529c479d"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/self-K1-CaTr-pool-06-TEA.json",
+      "sha256": "cbeb85f34b00e2725a5c39f3d22ade915f3a5ae41ae23d31b54b65bc448e763a"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/self-K1-CaS-pool-06-TEA.json",
+      "sha256": "38ed5c0773aef5aa45ed1308e58639b3c35a248aa7ba9b98caf3d8e7460d132e"
+    }
+  ],
+  "frozenAt": "2026-10-15T04:12:20.324Z"
+}

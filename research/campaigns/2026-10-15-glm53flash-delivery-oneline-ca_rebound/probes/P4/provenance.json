@@ -1,0 +1,20 @@
+{
+  "pid": "P4",
+  "observe": {
+    "world": "ca_rebound",
+    "seed": 0,
+    "protocol": "hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",
+    "reps": 1,
+    "blockers": "TEA"
+  },
+  "executor": "world-meter",
+  "startedAt": "2026-10-15T04:02:55.116Z",
+  "endedAt": "2026-10-15T04:02:58.281Z",
+  "landed": true,
+  "metric": 17,
+  "metricSource": {
+    "kind": "json",
+    "spec": "spike_count",
+    "raw": "raw/output.txt"
+  }
+}

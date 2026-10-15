@@ -1,0 +1,1 @@
+{"mechanism": {"extra": [{"name": "Ih", "g": 1.5, "E": -30.0, "mvh": -75.0, "mk": -7.0, "mtau": 80.0, "mpow": 1}], "slow_na": false}, "label": "brief step (12 uA, 40 ms)", "block": ["XE991"], "reps": 64, "seed": 0, "counts_mean": 9.390625, "counts_sd": 1.629267899668096, "nbsim_sha256": "bd1b9c85aaa7d9a0f7cdb92f086423d77af0fce4b5a472f4a0479b821ed58813"}

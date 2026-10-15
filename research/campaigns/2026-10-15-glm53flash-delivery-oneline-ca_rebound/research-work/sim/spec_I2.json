@@ -1,0 +1,184 @@
+{
+ "mechs": {
+  "REF": {
+   "extra": [],
+   "slow_na": false
+  },
+  "Ih": {
+   "extra": [
+    {
+     "name": "Ih",
+     "g": 1.5,
+     "E": -30.0,
+     "mvh": -75.0,
+     "mk": -7.0,
+     "mtau": 80.0,
+     "mpow": 1
+    }
+   ],
+   "slow_na": false
+  },
+  "CaT": {
+   "extra": [
+    {
+     "name": "CaT",
+     "g": 2.0,
+     "E": 120.0,
+     "mvh": -58.0,
+     "mk": 6.0,
+     "mtau": 8.0,
+     "mpow": 2,
+     "hvh": -62.0,
+     "hk": 6.0,
+     "htau": 90.0,
+     "hpow": 1
+    }
+   ],
+   "slow_na": false
+  },
+  "M": {
+   "extra": [
+    {
+     "name": "M",
+     "g": 1.2,
+     "E": -77.0,
+     "mvh": -30.0,
+     "mk": 4.0,
+     "mtau": 100.0,
+     "mpow": 1
+    }
+   ],
+   "slow_na": false
+  },
+  "KA": {
+   "extra": [
+    {
+     "name": "KA",
+     "g": 3.0,
+     "E": -77.0,
+     "mvh": -55.0,
+     "mk": 8.0,
+     "mtau": 6.0,
+     "mpow": 1,
+     "hvh": -60.0,
+     "hk": 6.0,
+     "htau": 25.0,
+     "hpow": 1
+    }
+   ],
+   "slow_na": false
+  },
+  "NaP": {
+   "extra": [
+    {
+     "name": "NaP",
+     "g": 0.8,
+     "E": 50.0,
+     "mvh": -48.0,
+     "mk": 6.0,
+     "mtau": 8.0,
+     "mpow": 1
+    }
+   ],
+   "slow_na": false
+  },
+  "CaL": {
+   "extra": [
+    {
+     "name": "CaL",
+     "g": 1.5,
+     "E": 120.0,
+     "mvh": -20.0,
+     "mk": 6.0,
+     "mtau": 20.0,
+     "mpow": 1,
+     "hvh": -15.0,
+     "hk": 5.0,
+     "htau": 300.0,
+     "hpow": 1
+    }
+   ],
+   "slow_na": false
+  },
+  "Kir": {
+   "extra": [
+    {
+     "name": "Kir",
+     "g": 2.0,
+     "E": -85.0,
+     "mvh": -80.0,
+     "mk": -6.0,
+     "mtau": 30.0,
+     "mpow": 1
+    }
+   ],
+   "slow_na": false
+  },
+  "KslowInact": {
+   "extra": [
+    {
+     "name": "KslowInact",
+     "g": 4.0,
+     "E": -77.0,
+     "mvh": -35.0,
+     "mk": 10.0,
+     "mtau": 8.0,
+     "mpow": 1,
+     "hvh": -40.0,
+     "hk": 8.0,
+     "htau": 600.0,
+     "hpow": 1
+    }
+   ],
+   "slow_na": false
+  },
+  "slowNA": {
+   "extra": [],
+   "slow_na": true
+  }
+ },
+ "pool": [
+  "brief step (12 uA, 40 ms)",
+  "long step (10 uA, 300 ms)",
+  "strong step (18 uA, 120 ms)",
+  "weak step (5 uA, 120 ms)",
+  "hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",
+  "hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)",
+  "paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",
+  "depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",
+  "brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)"
+ ],
+ "heldout": [
+  "hyperpol -25 then release",
+  "hyperpol -35 then release",
+  "hyperpol -30 then release",
+  "hyperpol -40 then release",
+  "brief step (12 uA, 40 ms)",
+  "long step (10 uA, 300 ms)"
+ ],
+ "ttx_proto": "hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",
+ "ttx_mechs": [
+  "REF",
+  "CaT",
+  "NaP"
+ ],
+ "ttx_pi_pool": 5,
+ "blocks": {
+  "none": [],
+  "TEA": [
+   "TEA"
+  ],
+  "Cd": [
+   "Cd"
+  ],
+  "XE991": [
+   "XE991"
+  ],
+  "TTX": [
+   "TTX"
+  ]
+ },
+ "reps": 64,
+ "seed": 0,
+ "nbsim_sha256": "bd1b9c85aaa7d9a0f7cdb92f086423d77af0fce4b5a472f4a0479b821ed58813"
+}

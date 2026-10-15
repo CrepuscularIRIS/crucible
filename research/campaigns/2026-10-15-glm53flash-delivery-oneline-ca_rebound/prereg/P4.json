@@ -1,0 +1,140 @@
+{
+  "pid": "P4",
+  "question": "TEA×hyperpol 条件化（-30uA/250ms→+12uA 测试, reps=1）：判别中高带分离（H1 Ih 43.4±7.1 / H11 Hvr 44.4±7.3 高带 vs H0 17.9 / H2 13.0 / H7 15.2 中带）。E≥100 归零簇（H6/H10/H12，TEA 格预测 0±0.5）不在本格 bands（其 predicts 无条件化限定，方向校验会拦截）；若 obs 落 [1.26,8.78] 或其他未判别区，E≥100 簇的排除留下一探针点名。本格不单独判别 H1 vs H11（d≈0.13，带重叠——若两者同时存活且其余全死，走等价类出口）。mattering：Ih 型方向 vs null/伪影/低阈钙的分离。severity：若 H1/H11 都为假，obs 落高带需未建模机制；中带格与高带格互斥。",
+  "observe": {
+    "world": "ca_rebound",
+    "seed": 0,
+    "protocol": "hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)",
+    "reps": 1,
+    "blockers": "TEA"
+  },
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H0": [
+      9.6,
+      26.21
+    ],
+    "H1": [
+      25.75,
+      61.06
+    ],
+    "H11": [
+      26.2,
+      62.52
+    ],
+    "H2": [
+      -4.38,
+      30.41
+    ],
+    "H7": [
+      8.79,
+      21.65
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        -0.5,
+        9.59
+      ],
+      "action": "kill",
+      "target": "H0",
+      "headline": "TEA+hyper 条件化读数低于 H0（REF）预测带 [9.6, 26.21]（落在 [-0.5, 9.59]）——排除。"
+    },
+    {
+      "band": [
+        26.22,
+        62.52
+      ],
+      "action": "kill",
+      "target": "H0",
+      "headline": "TEA+hyper 条件化读数高于 H0（REF）预测带 [9.6, 26.21]（落在 [26.22, 62.52]）——排除。"
+    },
+    {
+      "band": [
+        -0.5,
+        25.74
+      ],
+      "action": "kill",
+      "target": "H1",
+      "headline": "TEA+hyper 条件化读数低于 H1（Ih）预测带 [25.75, 61.06]（落在 [-0.5, 25.74]）——排除。"
+    },
+    {
+      "band": [
+        61.07,
+        62.52
+      ],
+      "action": "kill",
+      "target": "H1",
+      "headline": "TEA+hyper 条件化读数高于 H1（Ih）预测带 [25.75, 61.06]（落在 [61.07, 62.52]）——排除。"
+    },
+    {
+      "band": [
+        30.42,
+        62.52
+      ],
+      "action": "kill",
+      "target": "H2",
+      "headline": "TEA+hyper 条件化读数高于 H2（CaT）预测带 [-4.38, 30.41]（落在 [30.42, 62.52]）——排除。"
+    },
+    {
+      "band": [
+        -0.5,
+        8.78
+      ],
+      "action": "kill",
+      "target": "H7",
+      "headline": "TEA+hyper 条件化读数低于 H7（slowNA）预测带 [8.79, 21.65]（落在 [-0.5, 8.78]）——排除。"
+    },
+    {
+      "band": [
+        21.66,
+        62.52
+      ],
+      "action": "kill",
+      "target": "H7",
+      "headline": "TEA+hyper 条件化读数高于 H7（slowNA）预测带 [8.79, 21.65]（落在 [21.66, 62.52]）——排除。"
+    },
+    {
+      "band": [
+        -0.5,
+        26.19
+      ],
+      "action": "kill",
+      "target": "H11",
+      "headline": "TEA+hyper 条件化读数低于 H11（Hvr）预测带 [26.2, 62.52]（落在 [-0.5, 26.19]）——排除。"
+    }
+  ],
+  "discrimination": "σ 出处：64-reps sim sd；band=μ±2.5σ/√1（σ=0 格取量化底 0.5）。关键分离（N=1）：E≥100 簇（≤1.25）vs 中带（≥8.79）d≥3.0 r*=1；H1/H11（≥25.75）vs 中带（≤26.21）d≈0.1-1.9 不可分（重叠窗 [25.75,26.21]）；H1 vs H11 d≈0.13 r*≈1600（等价类候选）；H2 带宽 σ=6.96（TEA 格高方差）覆盖 [-4.4,30.4] 与几乎所有带重叠——本格对 H2 无判别力，如实写明。",
+  "provenance": {
+    "H0": "sim:cdfa-REF-pool-05-TEA",
+    "H1": "sim:cdfa-Ih-pool-05-TEA",
+    "H11": "sim:self-K1-Hvr-pool-04-TEA",
+    "H2": "sim:cdfa-CaT-pool-05-TEA",
+    "H7": "sim:cdfa-slowNA-pool-05-TEA"
+  },
+  "sims": [
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-REF-pool-05-TEA.json",
+      "sha256": "bfad9f84fab440fc7b600cfd746ee598928d50bb07f57934184b6c8222c719c0"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-Ih-pool-05-TEA.json",
+      "sha256": "5164f6a3c5bd91f43f766d6da1be7abd436b0181d55259b3e2e0cc9df82fbc4a"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-CaT-pool-05-TEA.json",
+      "sha256": "140c97325b84143c9eeee360f3a3ab941e9a878891173ad7cef7eb7a679c7184"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-slowNA-pool-05-TEA.json",
+      "sha256": "018655b37f1a620e11123e9b80613827e98e4622cd4ea262f65a32c84c186bd1"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/self-K1-Hvr-pool-04-TEA.json",
+      "sha256": "cb7257f9dfa6a712d298c03eddcf5f9e0b4257a08d37b5a8ff49dbdcdba2b0d0"
+    }
+  ],
+  "frozenAt": "2026-10-15T04:02:52.540Z"
+}

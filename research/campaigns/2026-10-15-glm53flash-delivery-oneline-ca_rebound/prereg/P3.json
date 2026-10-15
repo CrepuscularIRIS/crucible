@@ -1,0 +1,248 @@
+{
+  "pid": "P3",
+  "question": "TEA×去极化条件化（+15uA/250ms→+12uA 测试, reps=1）：TEA 拔除基线钾后，E≥100 附加通道的载体事件应归零（放大型钙候选的 TEA 读数与其无药读数脱钩，H2 本格 reads 归零带 vs 中带；H10/H12 与 H2 同格同判（E≥100 载体 TEA 归零），其 predicts 缺条件化限定故不入本格 bands），而 M 型钾外向拖拽被 TEA 放大至 ~74。一次观测同时：高位 [46.2,61.2) support H3（与全部对手带不相交）；[1.26,25.59] reads 排除 E≥100 簇 H2（并同判 H10/H12）；各 claim 补区间无死角。H1/H6 不在本格判别（移交下一探针）。mattering：K 系（H4/H9）与中带簇（H0/H7/H8/H11）分离 + E≥100 簇候选的整体排除。severity：若 H3 为假，obs 落 [46.2,61.2) 需未建模机制；若真实系统属 E≥100 簇，obs 必落归零带而非中带——两向都有信息。",
+  "observe": {
+    "world": "ca_rebound",
+    "seed": 0,
+    "protocol": "depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",
+    "reps": 1,
+    "blockers": "TEA"
+  },
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H0": [
+      8.68,
+      25.6
+    ],
+    "H11": [
+      11.01,
+      25.08
+    ],
+    "H2": [
+      6.51,
+      25.93
+    ],
+    "H3": [
+      60.78,
+      87.97
+    ],
+    "H4": [
+      21.81,
+      45
+    ],
+    "H5": [
+      -1.25,
+      1.25
+    ],
+    "H7": [
+      4.88,
+      25.34
+    ],
+    "H8": [
+      9.33,
+      26.36
+    ],
+    "H9": [
+      30.97,
+      45.75
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        1.26,
+        25.59
+      ],
+      "action": "kill",
+      "target": "H2",
+      "headline": "TEA+去极化条件化读数落在 [1.26, 25.59]：E≥100 载体在 TEA 下应归零（-0.88~1.25），高位读数与 H2 预测不符——H2 排除（同格 H10/H12 同判）。"
+    },
+    {
+      "band": [
+        46.16,
+        61.19
+      ],
+      "action": "support",
+      "target": "H3",
+      "headline": "TEA 下去极化条件化读数落在 [46.2, 61.2)：仅 M 族预测带 [60.8,88.0] 的邻域唯一高位族（次高 K 系 ≤45.8 与中带 ≤29.3 皆不可达）——待 K3 审计后判 M 型 Kv7 钾电流；同观测的补区间 kill 排除全部对手。"
+    },
+    {
+      "band": [
+        -0.5,
+        60.77
+      ],
+      "action": "kill",
+      "target": "H3",
+      "headline": "读数落在 [-0.5, 60.77]（低于 M 带下界 60.78）：H3 M 预测不符——排除。"
+    },
+    {
+      "band": [
+        -0.5,
+        8.67
+      ],
+      "action": "kill",
+      "target": "H0",
+      "headline": "TEA+去极化条件化读数低于 H0（REF）预测带 [8.68, 25.6]（落在 [-0.5, 8.67]）——排除。"
+    },
+    {
+      "band": [
+        25.61,
+        87.97
+      ],
+      "action": "kill",
+      "target": "H0",
+      "headline": "TEA+去极化条件化读数高于 H0（REF）预测带 [8.68, 25.6]（落在 [25.61, 87.97]）——排除。"
+    },
+    {
+      "band": [
+        -0.5,
+        21.8
+      ],
+      "action": "kill",
+      "target": "H4",
+      "headline": "TEA+去极化条件化读数低于 H4（KA）预测带 [21.81, 45.0]（落在 [-0.5, 21.8]）——排除。"
+    },
+    {
+      "band": [
+        45.01,
+        87.97
+      ],
+      "action": "kill",
+      "target": "H4",
+      "headline": "TEA+去极化条件化读数高于 H4（KA）预测带 [21.81, 45.0]（落在 [45.01, 87.97]）——排除。"
+    },
+    {
+      "band": [
+        -0.5,
+        4.87
+      ],
+      "action": "kill",
+      "target": "H7",
+      "headline": "TEA+去极化条件化读数低于 H7（slowNA）预测带 [4.88, 25.34]（落在 [-0.5, 4.87]）——排除。"
+    },
+    {
+      "band": [
+        25.35,
+        87.97
+      ],
+      "action": "kill",
+      "target": "H7",
+      "headline": "TEA+去极化条件化读数高于 H7（slowNA）预测带 [4.88, 25.34]（落在 [25.35, 87.97]）——排除。"
+    },
+    {
+      "band": [
+        -0.5,
+        9.32
+      ],
+      "action": "kill",
+      "target": "H8",
+      "headline": "TEA+去极化条件化读数低于 H8（Kir）预测带 [9.33, 26.36]（落在 [-0.5, 9.32]）——排除。"
+    },
+    {
+      "band": [
+        26.37,
+        87.97
+      ],
+      "action": "kill",
+      "target": "H8",
+      "headline": "TEA+去极化条件化读数高于 H8（Kir）预测带 [9.33, 26.36]（落在 [26.37, 87.97]）——排除。"
+    },
+    {
+      "band": [
+        -0.5,
+        30.96
+      ],
+      "action": "kill",
+      "target": "H9",
+      "headline": "TEA+去极化条件化读数低于 H9（KslowInact）预测带 [30.97, 45.75]（落在 [-0.5, 30.96]）——排除。"
+    },
+    {
+      "band": [
+        45.76,
+        87.97
+      ],
+      "action": "kill",
+      "target": "H9",
+      "headline": "TEA+去极化条件化读数高于 H9（KslowInact）预测带 [30.97, 45.75]（落在 [45.76, 87.97]）——排除。"
+    },
+    {
+      "band": [
+        -0.5,
+        11
+      ],
+      "action": "kill",
+      "target": "H11",
+      "headline": "TEA+去极化条件化读数低于 H11（Hvr）预测带 [11.01, 25.08]（落在 [-0.5, 11.0]）——排除。"
+    },
+    {
+      "band": [
+        25.09,
+        87.97
+      ],
+      "action": "kill",
+      "target": "H11",
+      "headline": "TEA+去极化条件化读数高于 H11（Hvr）预测带 [11.01, 25.08]（落在 [25.09, 87.97]）——排除。"
+    },
+    {
+      "band": [
+        25.94,
+        87.97
+      ],
+      "action": "kill",
+      "target": "H2",
+      "headline": "TEA+去极化条件化读数高于 H2 归零预测带上界 25.93（落在 [25.94, 87.97]）——排除。"
+    }
+  ],
+  "discrimination": "σ 出处：64-reps sim sd；band=μ±2.5σ/√1（sd=0 格取量化底 0.5）。关键分离（N=1）：H3 vs H9 d≈5.6 r*=1；H3 vs H4 d≈7 r*=1；E≥100 簇 vs 中带簇 d≥2.8（归零 vs 15.1）r*=1；H0 vs H9 d≈6.8；H1 vs H11 d≈0.2 不可分（等价类候选，留 P4）。",
+  "provenance": {
+    "H0": "sim:cdfa-REF-pool-08-TEA",
+    "H11": "sim:self-K1-Hvr-pool-07-TEA",
+    "H2": "sim:cdfa-CaT-pool-08-TEA",
+    "H3": "sim:cdfa-M-pool-08-TEA",
+    "H4": "sim:cdfa-KA-pool-08-TEA",
+    "H5": "sim:cdfa-NaP-pool-08-TEA",
+    "H7": "sim:cdfa-slowNA-pool-08-TEA",
+    "H8": "sim:cdfa-Kir-pool-08-TEA",
+    "H9": "sim:cdfa-KslowInact-pool-08-TEA"
+  },
+  "sims": [
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-REF-pool-08-TEA.json",
+      "sha256": "3e627da393fe43ebc8bd5883940b94cf8ca2e9527bef2546ef5854edc172dd66"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-CaT-pool-08-TEA.json",
+      "sha256": "a69ccf0392ca72b94d8a94ff0e2bf59e9253330fa5d832be268295eed3d5c568"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-M-pool-08-TEA.json",
+      "sha256": "cd66e3c1c68dfd906a7aae5a01a41f17680c57a8af48029495683f30d668f9f2"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-KA-pool-08-TEA.json",
+      "sha256": "18403468bb9a9949d10983812311046c7a9e2ece30a501149de9ff85364af61d"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-NaP-pool-08-TEA.json",
+      "sha256": "25462940611920e99c57b62d686b001896d601d4acb2548ae04dbc47d5897898"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-slowNA-pool-08-TEA.json",
+      "sha256": "bb73ac19510f1876865e88a27caea6270f324a77a9bee44e581b296bfcf6575a"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-Kir-pool-08-TEA.json",
+      "sha256": "ecabd2e048088503c9cf14d70ebf47f8bb6e1b6591424c544576ed2bb9a37f82"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-KslowInact-pool-08-TEA.json",
+      "sha256": "dcfe319069cc10be41f885da4905e481afd0664297e7a373761d6c13ea6a2576"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/self-K1-Hvr-pool-07-TEA.json",
+      "sha256": "dcf4a62f72d33a958a0e9868591c0324207c1a19019d46b459986f136d6a5566"
+    }
+  ],
+  "frozenAt": "2026-10-15T03:18:57.667Z"
+}

@@ -1,0 +1,20 @@
+{
+  "pid": "P7",
+  "observe": {
+    "world": "ca_rebound",
+    "seed": 0,
+    "protocol": "paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)",
+    "reps": 1,
+    "blockers": "TEA"
+  },
+  "executor": "world-meter",
+  "startedAt": "2026-10-15T04:12:23.461Z",
+  "endedAt": "2026-10-15T04:12:28.212Z",
+  "landed": true,
+  "metric": 16,
+  "metricSource": {
+    "kind": "json",
+    "spec": "spike_count",
+    "raw": "raw/output.txt"
+  }
+}

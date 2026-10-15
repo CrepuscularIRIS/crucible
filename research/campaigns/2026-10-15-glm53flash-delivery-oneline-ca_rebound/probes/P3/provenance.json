@@ -1,0 +1,20 @@
+{
+  "pid": "P3",
+  "observe": {
+    "world": "ca_rebound",
+    "seed": 0,
+    "protocol": "depolarising conditioning + test (+15 uA/250 ms, then +12 uA)",
+    "reps": 1,
+    "blockers": "TEA"
+  },
+  "executor": "world-meter",
+  "startedAt": "2026-10-15T03:19:01.317Z",
+  "endedAt": "2026-10-15T03:19:04.692Z",
+  "landed": true,
+  "metric": 16,
+  "metricSource": {
+    "kind": "json",
+    "spec": "spike_count",
+    "raw": "raw/output.txt"
+  }
+}

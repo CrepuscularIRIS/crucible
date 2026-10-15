@@ -1,0 +1,15 @@
+{
+ "brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)": "brief_hyperpol_conditioning_test_30_uA_40_ms_then_12_uA",
+ "brief step (12 uA, 40 ms)": "brief_step_12_uA_40_ms",
+ "depolarising conditioning + test (+15 uA/250 ms, then +12 uA)": "depolarising_conditioning_test_15_uA_250_ms_then_12_uA",
+ "hyperpol -25 then release": "hyperpol_25_then_release",
+ "hyperpol -30 then release": "hyperpol_30_then_release",
+ "hyperpol -35 then release": "hyperpol_35_then_release",
+ "hyperpol -40 then release": "hyperpol_40_then_release",
+ "hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)": "hyperpol_conditioning_depol_test_30_uA_250_ms_then_12_uA",
+ "hyperpol pre-pulse + weak test (-30 uA/250 ms, gap, +6 uA)": "hyperpol_pre_pulse_weak_test_30_uA_250_ms_gap_6_uA",
+ "long step (10 uA, 300 ms)": "long_step_10_uA_300_ms",
+ "paired long pulses (12 uA/300 ms, 60 ms gap, 12 uA/300 ms)": "paired_long_pulses_12_uA_300_ms_60_ms_gap_12_uA_300_ms",
+ "strong step (18 uA, 120 ms)": "strong_step_18_uA_120_ms",
+ "weak step (5 uA, 120 ms)": "weak_step_5_uA_120_ms"
+}

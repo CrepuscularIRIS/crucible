@@ -1,0 +1,255 @@
+{
+  "pid": "P1",
+  "question": "一次观测同时判别 13 个机制候选（11 附加电流族 + slow_na 伪影 + H0）在 weak step 无阻断剂格的尖峰计数；mattering：决定附加电流属抑制性窗电流簇（KA/Kir/KsI/M/slowNA）还是高计数 Ca/NaP 簇（CaL/CaT/CaTr/NaP/CaS/Ih/Hvr）",
+  "observe": {
+    "world": "ca_rebound",
+    "seed": 0,
+    "protocol": "weak step (5 uA, 120 ms)",
+    "reps": 1,
+    "blockers": ""
+  },
+  "metricKind": "json",
+  "metricSpec": "spike_count",
+  "bands": {
+    "H0": [
+      6.57,
+      15.15
+    ],
+    "H1": [
+      10.25,
+      19.43
+    ],
+    "H10": [
+      10.33,
+      20.92
+    ],
+    "H11": [
+      9.07,
+      16.34
+    ],
+    "H12": [
+      9.31,
+      25.56
+    ],
+    "H2": [
+      10.19,
+      24.72
+    ],
+    "H3": [
+      6.53,
+      13.57
+    ],
+    "H4": [
+      -0.04,
+      6.48
+    ],
+    "H5": [
+      12.37,
+      21.63
+    ],
+    "H6": [
+      11.03,
+      24.53
+    ],
+    "H7": [
+      7.22,
+      15.1
+    ],
+    "H8": [
+      1.38,
+      8.99
+    ],
+    "H9": [
+      3.52,
+      11.79
+    ]
+  },
+  "branches": [
+    {
+      "band": [
+        -0.04,
+        6.48
+      ],
+      "action": "kill",
+      "target": "H4"
+    },
+    {
+      "band": [
+        6.57,
+        15.15
+      ],
+      "action": "kill",
+      "target": "H0"
+    },
+    {
+      "band": [
+        1.38,
+        8.99
+      ],
+      "action": "scope",
+      "target": "H8",
+      "scopeNote": "存活则 Kir 型超极化激活外向尾方向；高计数簇被 kill"
+    },
+    {
+      "band": [
+        3.52,
+        11.79
+      ],
+      "action": "scope",
+      "target": "H9",
+      "scopeNote": "存活则慢失活钾抑制方向；高计数簇被 kill"
+    },
+    {
+      "band": [
+        6.53,
+        13.57
+      ],
+      "action": "scope",
+      "target": "H3",
+      "scopeNote": "存活则 M 型慢钾方向；高计数簇被 kill"
+    },
+    {
+      "band": [
+        7.22,
+        15.1
+      ],
+      "action": "scope",
+      "target": "H7",
+      "scopeNote": "存活则 slow_na 伪影方向；高计数簇被 kill"
+    },
+    {
+      "band": [
+        10.25,
+        19.43
+      ],
+      "action": "scope",
+      "target": "H1",
+      "scopeNote": "存活则 Ih 型易化方向；更高带 Ca/NaP 簇被 kill"
+    },
+    {
+      "band": [
+        9.07,
+        16.34
+      ],
+      "action": "scope",
+      "target": "H11",
+      "scopeNote": "存活则双慢门方向；更高带被 kill"
+    },
+    {
+      "band": [
+        10.33,
+        20.92
+      ],
+      "action": "scope",
+      "target": "H10",
+      "scopeNote": "存活则反向失活钙方向；更高带被 kill"
+    },
+    {
+      "band": [
+        10.19,
+        24.72
+      ],
+      "action": "scope",
+      "target": "H2",
+      "scopeNote": "存活则 T 型钙；簇内 CaL/CaTr/NaP/CaS 判别移交下一探针"
+    },
+    {
+      "band": [
+        11.03,
+        24.53
+      ],
+      "action": "scope",
+      "target": "H6",
+      "scopeNote": "存活则高阈钙；簇内判别移交下一探针"
+    },
+    {
+      "band": [
+        9.31,
+        25.56
+      ],
+      "action": "scope",
+      "target": "H12",
+      "scopeNote": "存活则低阈慢失活钙；簇内判别移交下一探针"
+    },
+    {
+      "band": [
+        12.37,
+        21.63
+      ],
+      "action": "scope",
+      "target": "H5",
+      "scopeNote": "存活则持续钠；与 Ca 族移交下一探针 Cd 格"
+    }
+  ],
+  "discrimination": "13 频段极性分带：低带 H4/H8、中带 H0/H3/H7/H9、高带 H1/H2/H5/H6/H10/H11/H12。逐对判别（r*=⌈(5/d)²⌉, N=1）：H4 vs 高带 d≥2.6、H8 vs 高带 d≥2.2、H3/H7 vs H2 d≥2.2、H9 vs H2/H5 d≥1.6；簇内对（min r*≥3, 本探针不可分）：H2/CaL/CaTr/NaP/CaS、H1/H11 (r*=15)、H6/H5、H10/H12——移交下一探针（TEA 归零暴涨轴 + 极性轴）。σ 出处：sim 记录 64-reps sd（μ±2.5σ/√N 频段）。",
+  "provenance": {
+    "H0": "sim:cdfa-REF-pool-04-none",
+    "H1": "sim:cdfa-Ih-pool-04-none",
+    "H10": "sim:self-K1-CaTr-pool-03-none",
+    "H11": "sim:self-K1-Hvr-pool-03-none",
+    "H12": "sim:self-K1-CaS-pool-03-none",
+    "H2": "sim:cdfa-CaT-pool-04-none",
+    "H3": "sim:cdfa-M-pool-04-none",
+    "H4": "sim:cdfa-KA-pool-04-none",
+    "H5": "sim:cdfa-NaP-pool-04-none",
+    "H6": "sim:cdfa-CaL-pool-04-none",
+    "H7": "sim:cdfa-slowNA-pool-04-none",
+    "H8": "sim:cdfa-Kir-pool-04-none",
+    "H9": "sim:cdfa-KslowInact-pool-04-none"
+  },
+  "sims": [
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-REF-pool-04-none.json",
+      "sha256": "ab8c72f452b5f641a3ce80887b2a37303b913205105528f73d5730657907acdf"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-Ih-pool-04-none.json",
+      "sha256": "f99dce9fca2b07c148458cabc02e231bb7d9eef80d242a6159df4a969100cd4b"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-CaT-pool-04-none.json",
+      "sha256": "e3c005e96dd7bc5f74cab4254c543ff9cb613578e4eb0a26a2b77e4c91fbf6d0"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-M-pool-04-none.json",
+      "sha256": "2bf6b17f024cdebb2ad969d5bf9ea310d86f51ce178dba8d695dd2164421005e"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-KA-pool-04-none.json",
+      "sha256": "472e1ef1b82e183a2c37748893b4b5ce798ef21e84eed5fcbd6e68905e5129c7"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-NaP-pool-04-none.json",
+      "sha256": "188804978664faa02ba278488d4516e2672967941cf62945718b9753b721df5c"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-CaL-pool-04-none.json",
+      "sha256": "748da846f06a7ff512fd5b46642c7c57d5d549d9d0ebb2b8346f81b80ef3aaf2"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-slowNA-pool-04-none.json",
+      "sha256": "4f1f905ffef0605f51988f15841ce96c77abc29c054e4b3c52d5db0eb82d5c71"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-Kir-pool-04-none.json",
+      "sha256": "6f03c7b0998402bfb5c2cdfb80aa6f47e93fc22d5f06f38125feaab98c101ffd"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/cdfa-KslowInact-pool-04-none.json",
+      "sha256": "c85e4c65d19c2ff26f76f91889515cdd150ce0df46f0236b6efea1352a340eca"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/self-K1-CaTr-pool-03-none.json",
+      "sha256": "1a17e2c033a5260515f7616d4403cf363d79e1b968e8c536c8a8e7e47035fc65"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/self-K1-Hvr-pool-03-none.json",
+      "sha256": "4820d97299c17239bbfd14f95636f97d9b5694c15ccfc52ae7b55c759dca84cd"
+    },
+    {
+      "path": "research-work/ca-rebound/sim/self-K1-CaS-pool-03-none.json",
+      "sha256": "6cca3758fcd6e81c3bc448a916f3dd61297c11a8e431fc918add13e2ef7f56ba"
+    }
+  ],
+  "frozenAt": "2026-10-15T02:30:12.376Z"
+}
