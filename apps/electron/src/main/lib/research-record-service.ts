@@ -16,6 +16,7 @@ import type { AgentStreamPayload, AskUserRequest } from '@proma/shared'
 import { childJobs, verifyInterventions } from '@proma/shared/research-record'
 import { renderJudgeReport } from '../../../../../research/report/judge-report'
 import { readStageDocAt, readWorkdir } from './research-stage-docs'
+import { isPendingK0, K0_PENDING_REL } from './adapters/pi-research-k0'
 import {
   controlState,
   getResearchChildCanceller,
@@ -328,6 +329,15 @@ function liveSnapshot(sessionId: string): ResearchRecordSnapshot | null {
 // ===== 推送：轮询签名 =====
 
 const POLL_MS = 50
+
+const statSig = (abs: string): string => {
+  try {
+    const s = statSync(abs)
+    return `${s.size}:${s.mtimeMs}`
+  } catch {
+    return '-'
+  }
+}
 const MAX_WATCHES = 4
 const watches = new Map<string, { timer: ReturnType<typeof setInterval>; sig: string }>()
 
@@ -335,15 +345,10 @@ const watches = new Map<string, { timer: ReturnType<typeof setInterval>; sig: st
 function signature(sessionId: string): string {
   const cwd = deps.resolveCwd(sessionId)
   const runDir = findLiveRunDir(cwd)
-  if (!cwd || !runDir) return 'none'
-  const stats = livePaths(cwd, runDir).map(([key, abs]) => {
-    try {
-      const s = statSync(abs)
-      return `${key}:${s.size}:${s.mtimeMs}`
-    } catch {
-      return `${key}:-`
-    }
-  })
+  if (!cwd) return 'none'
+  // 还没有 run：K0 草稿出现 / 改写也变签名 → 推一次 null，画布据此重读草稿（getPendingIntake）
+  if (!runDir) return `none|${statSig(join(cwd, K0_PENDING_REL))}`
+  const stats = livePaths(cwd, runDir).map(([key, abs]) => `${key}:${statSig(abs)}`)
   const workdir = readWorkdir(cwd, liveWorkdirSegs(runDir))
   const work = workdir ? [workdir.simMtimeMs, workdir.recallMtimeMs, ...workdir.docs.map((d) => `${d.path}:${d.size}:${d.mtimeMs}`)].join(',') : '-'
   return [runDir, ...stats, work, deps.isRunning(sessionId), askPending.has(sessionId), isWired(sessionId), getResearchChildCanceller() !== undefined].join('|')
@@ -392,6 +397,26 @@ export function stopAllRecordWatches(): void {
 export function getRecord(sessionId: string): ResearchRecordSnapshot | null {
   watch(sessionId)
   return liveSnapshot(sessionId)
+}
+
+/**
+ * research:pending-intake —— run 记录建立之前，agent 写的 K0 草稿 `<cwd>/.research-pending/K0-intake.md`
+ * 原文（画布只读显示）。只认这一个路径，走阶段文档同一套防护（逐段 lstat、O_NOFOLLOW、普通文件、2 MB 上限）；
+ * 已有 run、首个 status 行不是 pending_user、读不到 → null。同 getRecord 开始轮询：草稿变动 / run 建立都会推送。
+ * ponytail: 同一 cwd 已有旧 run 时新草稿不显示（findLiveRunDir 优先）；一个会话做第二个题目时再按 mtime 比较。
+ */
+export function getPendingIntake(sessionId: string): string | null {
+  if (typeof sessionId !== 'string') throw new Error('research:pending-intake 参数不合法')
+  watch(sessionId)
+  const cwd = deps.resolveCwd(sessionId)
+  if (!cwd || findLiveRunDir(cwd)) return null
+  const [dir, name] = K0_PENDING_REL.split('/') as [string, string]
+  try {
+    const { text } = readStageDocAt(cwd, [dir], name)
+    return isPendingK0(text) ? text : null
+  } catch {
+    return null
+  }
 }
 
 // ===== 归档 =====

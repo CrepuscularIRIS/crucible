@@ -286,7 +286,7 @@ import {
   resolveAgentCwd,
 } from './lib/agent-session-manager'
 import { runAgent, stopAgent, generateAgentTitle, saveFilesToAgentSession, saveFilesToWorkspaceFiles, isAgentSessionActive, isAgentSessionBusy, reserveAgentSessionStart, queueAgentMessage, enqueueAgentQueuedMessage, cancelAgentQueuedMessage, moveAgentQueuedMessage, clearAgentQueuedMessages, updateAgentPermissionMode, rewindAgentSession, setVisibleAgentSession , refineAgentSession, getAgentLiveRun, getAgentRefineState, agentEventBus } from './lib/agent-service'
-import { configureResearchRecord, getRecord as getResearchRecord, releaseRecord as releaseResearchRecord, handleAgentEvent as handleResearchAgentEvent, handleAskUserAnswered as handleResearchAskUserAnswered, intervene as interveneResearch, judgeReport as researchJudgeReport, listArchives as listResearchArchives, openArchive as openResearchArchive, readStageDoc as readResearchStageDoc } from './lib/research-record-service'
+import { configureResearchRecord, getRecord as getResearchRecord, releaseRecord as releaseResearchRecord, handleAgentEvent as handleResearchAgentEvent, handleAskUserAnswered as handleResearchAskUserAnswered, getPendingIntake as getResearchPendingIntake, intervene as interveneResearch, judgeReport as researchJudgeReport, listArchives as listResearchArchives, openArchive as openResearchArchive, readStageDoc as readResearchStageDoc } from './lib/research-record-service'
 import { RESEARCH_RECORD_IPC_CHANNELS, type ResearchInterveneInput, type ResearchJudgeReportInput, type ResearchStageDocInput } from '../types/research-record'
 import { permissionService } from './lib/agent-permission-service'
 import { askUserService } from './lib/agent-ask-user-service'
@@ -2299,6 +2299,7 @@ export function registerIpcHandlers(): void {
   ipcMain.handle(RESEARCH_RECORD_IPC_CHANNELS.INTERVENE, (_, input: ResearchInterveneInput) => interveneResearch(input))
   ipcMain.handle(RESEARCH_RECORD_IPC_CHANNELS.READ_STAGE_DOC, (_, input: ResearchStageDocInput) => readResearchStageDoc(input))
   ipcMain.handle(RESEARCH_RECORD_IPC_CHANNELS.JUDGE_REPORT, (_, input: ResearchJudgeReportInput) => researchJudgeReport(input))
+  ipcMain.handle(RESEARCH_RECORD_IPC_CHANNELS.PENDING_INTAKE, (_, sessionId: string) => getResearchPendingIntake(sessionId))
 
   // RLM（P0.1）：读取 ipython kernel 供给状态，供 UI 显示可用性/引导安装
   ipcMain.handle(

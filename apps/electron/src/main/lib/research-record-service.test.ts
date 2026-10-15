@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { createHash } from 'node:crypto'
-import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs'
+import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, truncateSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, join, resolve } from 'node:path'
 import { buildReport } from '../../../../../research/report/judge-report'
@@ -8,6 +8,7 @@ import type { AgentStreamPayload, AskUserRequest } from '@proma/shared'
 import { parseBundle, workbench } from '@proma/shared/research-record'
 import {
   configureResearchRecord,
+  getPendingIntake,
   getRecord,
   handleAgentEvent,
   handleAskUserAnswered,
@@ -391,6 +392,67 @@ describe('阶段文档与状态条输入（research-work/<run>/）', () => {
     } finally {
       rmSync(outside, { recursive: true, force: true })
     }
+  })
+})
+
+describe('K0 开局草稿（run 记录建立之前，<cwd>/.research-pending/K0-intake.md）', () => {
+  const DRAFT = 'status: pending_user\nmode: identify\nsuccess_predicate: <img src=x onerror=alert(1)>\n'
+  const dir = () => join(cwd, '.research-pending')
+  const draft = () => join(dir(), 'K0-intake.md')
+
+  beforeEach(() => {
+    rmSync(join(cwd, '.proma-research'), { recursive: true })
+    mkdirSync(dir())
+  })
+
+  it('还没有 run：返回草稿原文；首个 status 不是 pending_user / 没有草稿 / 未知会话 → null', () => {
+    writeFileSync(draft(), DRAFT)
+    expect(getPendingIntake(SID)).toBe(DRAFT)
+    expect(getPendingIntake('other')).toBeNull()
+    writeFileSync(draft(), 'status: confirmed\nmode: identify\n# status: pending_user\n')
+    expect(getPendingIntake(SID)).toBeNull()
+    rmSync(draft())
+    expect(getPendingIntake(SID)).toBeNull()
+    expect(() => getPendingIntake(42 as unknown as string)).toThrow('参数不合法')
+  })
+
+  it('run 记录已建立 → null（画布走实时视图）', () => {
+    writeFileSync(draft(), DRAFT)
+    mkdirSync(runDir, { recursive: true })
+    writeJournal(join(runDir, 'journal.jsonl'), [{ op: 'run.init', run: 'r1' }])
+    expect(getPendingIntake(SID)).toBeNull()
+  })
+
+  it('只读这一个路径：文件或目录是符号链接、不是普通文件、超过上限 → null', () => {
+    const secret = join(cwd, 'secret.md')
+    writeFileSync(secret, DRAFT)
+    symlinkSync(secret, draft())
+    expect(getPendingIntake(SID)).toBeNull()
+    rmSync(draft())
+    mkdirSync(draft())
+    expect(getPendingIntake(SID)).toBeNull()
+    rmSync(dir(), { recursive: true })
+    const elsewhere = join(cwd, 'elsewhere')
+    mkdirSync(elsewhere)
+    writeFileSync(join(elsewhere, 'K0-intake.md'), DRAFT)
+    symlinkSync(elsewhere, dir())
+    expect(getPendingIntake(SID)).toBeNull()
+    rmSync(dir())
+    mkdirSync(dir())
+    writeFileSync(draft(), DRAFT)
+    truncateSync(draft(), 2 * 1024 * 1024 + 1)
+    expect(getPendingIntake(SID)).toBeNull()
+  })
+
+  it('草稿出现 / 改写 → 推送 null 快照（画布据此重读草稿）；getPendingIntake 自己开始轮询', async () => {
+    expect(getPendingIntake(SID)).toBeNull()
+    writeFileSync(draft(), DRAFT)
+    await Bun.sleep(200)
+    expect(pushes.at(-1)).toEqual({ sessionId: SID, snapshot: null })
+    const n = pushes.length
+    writeFileSync(draft(), `${DRAFT}depth: full\n`)
+    await Bun.sleep(200)
+    expect(pushes.length).toBeGreaterThan(n)
   })
 })
 

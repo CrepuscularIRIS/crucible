@@ -56,6 +56,7 @@ export function ResearchCanvasPane({ sessionId, onClose }: { sessionId: string; 
   const bridge = React.useMemo(researchBridge, [])
   const [loaded, setLoaded] = React.useState<Loaded | null>(null)
   const [archives, setArchives] = React.useState<ResearchArchiveEntry[] | null>(null)
+  const [pendingIntake, setPendingIntake] = React.useState<string | null>(null)
   const [seq, setSeq] = React.useState<number | undefined>(undefined)
   const [selection, setSelection] = React.useState<NodeSelection | null>(null)
   const [error, setError] = React.useState<string | null>(null)
@@ -68,6 +69,7 @@ export function ResearchCanvasPane({ sessionId, onClose }: { sessionId: string; 
   const autoLive = React.useRef(true)
   /** 换数据源或新快照到达时作废在途的解析 */
   const ticket = React.useMemo(latestTicket, [])
+  const pendingTicket = React.useMemo(latestTicket, [])
 
   const setSource = React.useCallback((next: ResearchCanvasSource | null) => {
     setSourceMap((prev) => { const map = new Map(prev); if (next) map.set(sessionId, next); else map.delete(sessionId); return map })
@@ -96,13 +98,25 @@ export function ResearchCanvasPane({ sessionId, onClose }: { sessionId: string; 
     let cancelled = false
     const probe = autoLive.current && bridge.getResearchRecord ? bridge.getResearchRecord(sessionId) : Promise.resolve(null)
     probe.then((snap) => { if (!cancelled && snap) setSource({ kind: 'live' }) }, () => undefined)
-    // 画布先于 research_init 打开（K0 阶段还没有 run 目录）：run 目录一出现，推送到达即切到实时
+    // K0 阶段还没有 run 目录：显示 agent 写的开局草稿（只读），草稿出现 / 改写时主进程推 null 快照，据此重读
+    setPendingIntake(null)
+    const readPending = () => {
+      const current = pendingTicket()
+      void bridge.getResearchPendingIntake?.(sessionId).then((text) => { if (!cancelled && current()) setPendingIntake(text) }, () => undefined)
+    }
+    readPending()
+    // 画布先于 research_init 打开：run 目录一出现，推送到达即切到实时
     const off = bridge.onResearchRecordChanged?.((event) => {
-      if (!cancelled && autoLive.current && event.sessionId === sessionId && event.snapshot) setSource({ kind: 'live' })
+      if (cancelled || event.sessionId !== sessionId) return
+      if (!event.snapshot) return readPending()
+      // run 已建立（草稿已收进 run）：即使用户留在选择器，也不再显示"等待你确认"
+      pendingTicket()
+      setPendingIntake(null)
+      if (autoLive.current) setSource({ kind: 'live' })
     })
     if (bridge.listResearchArchives) bridge.listResearchArchives(sessionId).then((a) => { if (!cancelled) setArchives(a) }, () => setArchives(null))
     return () => { cancelled = true; off?.() }
-  }, [bridge, sessionId, source, setSource])
+  }, [bridge, pendingTicket, sessionId, source, setSource])
 
   // 载入所选数据源；实时模式订阅推送
   React.useEffect(() => {
@@ -228,7 +242,7 @@ export function ResearchCanvasPane({ sessionId, onClose }: { sessionId: string; 
     void intervene({ kind: 'fork_answer', ...(openForkId ? { forkId: openForkId } : {}), chosen: label })
   }, [intervene, openForkId])
 
-  if (!source) return <ArchivePicker archives={bridge.listResearchArchives ? archives : null} onPick={setSource} onClose={onClose} />
+  if (!source) return <ArchivePicker archives={bridge.listResearchArchives ? archives : null} pendingIntake={pendingIntake} onPick={setSource} onClose={onClose} />
   if (!view) {
     return (
       <div className="flex h-full flex-col items-start gap-2 bg-content-area p-3 text-[13px] text-muted-foreground titlebar-no-drag">

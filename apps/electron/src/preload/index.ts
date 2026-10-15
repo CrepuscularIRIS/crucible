@@ -575,6 +575,8 @@ export interface ElectronAPI {
   readResearchStageDoc: (input: ResearchStageDocInput) => Promise<ResearchStageDocResult>
   /** 评委报告 HTML（需要 annotations.json；没有时返回 error） */
   getResearchJudgeReport: (input: ResearchJudgeReportInput) => Promise<ResearchJudgeReportResult>
+  /** run 记录建立之前的 K0 草稿原文（.research-pending/K0-intake.md，只读；没有为 null） */
+  getResearchPendingIntake: (sessionId: string) => Promise<string | null>
 
   /** 迁移 Chat 对话记录到 Agent 会话 */
   migrateChatToAgent: (conversationId: string, agentSessionId: string) => Promise<void>
@@ -1830,6 +1832,9 @@ const electronAPI: ElectronAPI = {
   },
   getResearchJudgeReport: (input: ResearchJudgeReportInput) => {
     return ipcRenderer.invoke(RESEARCH_RECORD_IPC_CHANNELS.JUDGE_REPORT, input)
+  },
+  getResearchPendingIntake: (sessionId: string) => {
+    return ipcRenderer.invoke(RESEARCH_RECORD_IPC_CHANNELS.PENDING_INTAKE, sessionId)
   },
   deleteAgentSession: (id: string) => {
     return ipcRenderer.invoke(AGENT_IPC_CHANNELS.DELETE_SESSION, id)

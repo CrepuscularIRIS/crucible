@@ -13,6 +13,8 @@ export const RESEARCH_RECORD_IPC_CHANNELS = {
   INTERVENE: 'research:intervene',
   /** 读 research-work/<run>/ 下的一份阶段文档（只读） */
   READ_STAGE_DOC: 'research:read-stage-doc',
+  /** run 记录建立之前的 K0 草稿 `.research-pending/K0-intake.md` 原文（只读；没有为 null） */
+  PENDING_INTAKE: 'research:pending-intake',
   /** 评委报告 HTML（research/report/judge-report.ts；需要 annotations.json） */
   JUDGE_REPORT: 'research:judge-report',
   /** 主进程 → 渲染层推送：{ sessionId, snapshot } */

@@ -27,12 +27,14 @@ export interface PendingK0 {
   mtimeMs: number
 }
 
+/** 只认首个 status 行：草稿正文里引用 "status: pending_user" 不该让已确认的文件复活。 */
+export const isPendingK0 = (text: string): boolean => /^\s*status:\s*pending_user\b/.test(text.match(FIRST_STATUS)?.[0] ?? '')
+
 export function readPendingK0(cwd: string): PendingK0 | undefined {
   const path = join(cwd, K0_PENDING_REL)
   try {
     const text = readFileSync(path, 'utf-8')
-    // 只认首个 status 行：草稿正文里引用 "status: pending_user" 不该让已确认的文件复活。
-    if (!/^\s*status:\s*pending_user\b/.test(text.match(FIRST_STATUS)?.[0] ?? '')) return undefined
+    if (!isPendingK0(text)) return undefined
     return { path, text, mtimeMs: statSync(path).mtimeMs }
   } catch {
     return undefined

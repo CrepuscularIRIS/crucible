@@ -26,6 +26,7 @@ export interface ResearchBridge {
   onResearchRecordChanged: (cb: (event: { sessionId: string; snapshot: ResearchRecordSnapshot | null }) => void) => () => void
   readResearchStageDoc: (input: ResearchStageDocInput) => Promise<ResearchStageDocResult>
   getResearchJudgeReport: (input: ResearchJudgeReportInput) => Promise<ResearchJudgeReportResult>
+  getResearchPendingIntake: (sessionId: string) => Promise<string | null>
 }
 
 /** preload 上可能缺任一方法；调用方逐个判断 typeof === 'function' */

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import type { ResearchArchiveEntry } from '@/types/research-record'
 import type { ResearchCanvasSource } from '@/atoms/research-atoms'
 import { archivePickerView } from './canvas-view'
+import { K0PendingCard } from './K0PendingCard'
 import { SAMPLE_PROMPT, SAMPLE_RUN } from './sample-run'
 
 /**
@@ -12,9 +13,11 @@ import { SAMPLE_PROMPT, SAMPLE_RUN } from './sample-run'
  * 示例 run：主进程列出同一 run 时走归档（带注记），否则用打包的无真相副本，都没有（docker）则不显示。
  * 白名单归档要主进程（R1）列出。
  */
-export function ArchivePicker({ archives, onPick, onClose }: {
+export function ArchivePicker({ archives, pendingIntake, onPick, onClose }: {
   /** null = 主进程未提供归档列表 */
   archives: ResearchArchiveEntry[] | null
+  /** run 记录建立之前的 K0 草稿原文（等用户确认）；没有为 null */
+  pendingIntake: string | null
   onPick: (source: ResearchCanvasSource) => void
   onClose: () => void
 }): React.ReactElement {
@@ -32,6 +35,7 @@ export function ArchivePicker({ archives, onPick, onClose }: {
         </button>
       </div>
       <div className="research-canvas-scroll"><div className="research-canvas-body text-[13px]">
+        {pendingIntake !== null && <K0PendingCard text={pendingIntake} />}
         <section className="research-panel p-7">
           <FlaskConical className="mb-5 size-7 text-muted-foreground" aria-hidden />
           <p className="research-eyebrow">START WITH A QUESTION</p>
