@@ -39,6 +39,8 @@ export interface ResearchCanvasViewProps {
   live?: React.ReactNode
   /** 子任务卡：派去做什么、带回了什么 */
   childCards?: ChildCard[]
+  /** 没有显式选择时，右栏显示中栏当前实验的证据（不写选择，实时 / 回放都跟着中栏走） */
+  resolveDetail?: (sel: NodeSelection) => NodeDetailView | null
 }
 
 interface WorkbenchUI {
@@ -95,7 +97,7 @@ export function pickProbe<P extends { pid: string }>(probes: P[], selectedId: st
 
 /** 三栏共用同一时点：左侧导航，中间研究产物，右侧证据与版本；新快照不抢焦点。 */
 export function ResearchCanvasView(props: ResearchCanvasViewProps): React.ReactElement {
-  const { view, detail, narrow, onSelect, onSeq } = props
+  const { view, narrow, onSelect, onSeq } = props
   const artifactScroll = React.useRef<HTMLDivElement>(null)
   const versionPickerId = React.useId()
   const replay = !!onSeq
@@ -105,6 +107,7 @@ export function ResearchCanvasView(props: ResearchCanvasViewProps): React.ReactE
   const probes = view.workbench?.probes ?? []
   const probe = pickProbe(probes, props.selection?.kind === 'prereg' ? props.selection.id : undefined, ui.probeId)
   const pid = probe?.pid
+  const detail = props.detail ?? (pid && !props.selection ? props.resolveDetail?.({ kind: 'prereg', id: pid }) ?? null : null)
   const claimNames = Object.fromEntries(view.claims.map((claim) => [claim.id, claim.name]))
   const events = view.workbench?.events ?? []
   const versions = view.workbench?.versions ?? []

@@ -80,7 +80,7 @@ describe('状态条 + 阶段文档（交付 run，实时视角）', () => {
     const html = renderLive()
     expect(html).toContain('report 报告')
     expect(html).toContain('6 / 8')
-    expect(html).toContain('LIVE 2 · CONTESTED 11 · REFUTED 0')
+    expect(html).toContain('○ 未定 2 · ? 有争议 11 · ✕ 被否定 0')
     expect(html).toContain('第 62 行 · 10-15 12:50 · 账本检查通过')
     expect(html).toContain('已结束')
     expect(html.indexOf('report 报告')).toBeLessThan(html.indexOf('假设与证据'))
@@ -158,3 +158,21 @@ describe('pickProbe：只在回放时点已登记的实验里选', () => {
     expect(pickProbe([], 'P2', 'P2')).toBeNull()
   })
 })
+
+describe('右栏跟随中栏当前实验（不写选择）', () => {
+  test('没有选择时按中栏实验取证据：回放到第 66 行显示 P2 的证据，问的是当时的记录', () => {
+    const view = canvasView(one, replayAt(66))
+    const asked: unknown[] = []
+    const selected: unknown[] = []
+    const html = renderToStaticMarkup(
+      <TooltipProvider>
+        <ResearchCanvasView view={view} detail={null} narrow={false} onSelect={(s) => selected.push(s)} onClose={noop} onSeq={noop}
+          resolveDetail={(sel) => { asked.push(sel); return nodeDetail(one, sel, view.seq) }} />
+      </TooltipProvider>,
+    )
+    expect(asked).toEqual([{ kind: 'prereg', id: 'P2' }])
+    expect(selected).toEqual([])
+    expect(html).not.toContain('每个判断，都有来处')
+  })
+})
+

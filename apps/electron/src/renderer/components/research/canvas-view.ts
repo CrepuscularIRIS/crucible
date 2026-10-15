@@ -113,6 +113,15 @@ export interface CanvasView {
 export const STATE_LABEL: Record<ClaimState, string> = {
   LIVE: '○ 未定', SUPPORTED: '✓ 得到支持', REFUTED: '✕ 被否定', SCOPED: '◐ 收窄', CONTESTED: '? 有争议',
 }
+/** 共享层的阶段报告写的是 `H0 LIVE`：画布统一换成中文状态名 */
+const localStage = (r: ReturnType<typeof stageReport>): ReturnType<typeof stageReport> => {
+  const tr = (items: string[]) => items.map((t) => {
+    const at = t.lastIndexOf(' ')
+    const label = STATE_LABEL[t.slice(at + 1) as ClaimState]
+    return label ? `${t.slice(0, at)} ${label}` : t
+  })
+  return { known: tr(r.known), unknown: tr(r.unknown), next: r.next }
+}
 const CELL_LABEL: Record<CellMark, string> = {
   support: '✓ 支持（带内）', kill: '✕ 否定（带内）', scope: '◐ 收窄', outside: '· 带外',
   unbanded: '— 未登记带', pending: '◌ 待测', failed: '✗ 测量失败',
@@ -139,7 +148,7 @@ function statusView(rec: ResearchRecord, opts: CanvasOptions): StatusView {
   return {
     phase: PHASE_LABEL[s.phase],
     budget: s.budget.total === undefined ? String(s.budget.spent) : `${s.budget.spent} / ${s.budget.total}`,
-    counts: `LIVE ${s.counts.LIVE} · CONTESTED ${s.counts.CONTESTED} · REFUTED ${s.counts.REFUTED}${s.counts.SUPPORTED ? ` · SUPPORTED ${s.counts.SUPPORTED}` : ''}`,
+    counts: `${STATE_LABEL.LIVE} ${s.counts.LIVE} · ${STATE_LABEL.CONTESTED} ${s.counts.CONTESTED} · ${STATE_LABEL.REFUTED} ${s.counts.REFUTED}${s.counts.SUPPORTED ? ` · ${STATE_LABEL.SUPPORTED} ${s.counts.SUPPORTED}` : ''}`,
     ...(s.latest ? { latest: `第 ${s.latest.seq} 行 · ${shortTime(s.latest.ts)} · ${s.latest.summary}` } : {}),
     ...(s.next ? { next: s.next } : {}),
   }
@@ -261,8 +270,8 @@ function focusView(rec: ResearchRecord, seq: number, opts: CanvasOptions): Focus
       }
     }
     case 'done': {
-      const s = stageReport(rec, seq)
-      return { ...base, lines: [`已知：${s.known.join('；') || '暂无记录'}`, `未知：${s.unknown.join('；') || '记录未列出未决项，不代表没有不确定性'}`], warnings: [] }
+      const s = localStage(stageReport(rec, seq))
+      return { ...base, lines: [`已知：${s.known.join('；') || '还没有定论的假设'}`, `未知：${s.unknown.join('；') || '记录未列出未决项，不代表没有不确定性'}`], warnings: [] }
     }
     case 'next': {
       const open = [...claimsAt(rec).values()].filter((c) => c.state === 'LIVE' || c.state === 'CONTESTED')
@@ -374,7 +383,7 @@ export function canvasView(full: ResearchRecord, opts: CanvasOptions): CanvasVie
       `因此：${fb.transitions.map((t) => `${t.id} → ${STATE_LABEL[t.to as ClaimState] ?? t.to}`).join('、') || '无状态变化'}`,
       `新协议：${fb.toProtocol}；目的：${fb.toQuestion}`,
     ],
-    stage: stageReport(rec, seq),
+    stage: localStage(stageReport(rec, seq)),
     children: full.childJobs.map((j) => ({
       name: j.name,
       statusLabel: j.status === 'nonconforming' ? '未按契约结束' : j.status === 'running' ? '运行中' : j.status,

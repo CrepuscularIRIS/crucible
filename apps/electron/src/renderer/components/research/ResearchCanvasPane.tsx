@@ -201,6 +201,10 @@ export function ResearchCanvasPane({ sessionId, onClose }: { sessionId: string; 
     () => (loaded && view && selection ? nodeDetail(loaded.record, selection, view.seq, loaded.annotations) : null),
     [loaded, selection, view],
   )
+  const resolveDetail = React.useCallback(
+    (sel: NodeSelection) => (loaded && view ? nodeDetail(loaded.record, sel, view.seq, loaded.annotations) : null),
+    [loaded, view],
+  )
 
   /** 执行主进程给的发送计划：只用现有发送 API（04 §3.7"谁发消息"） */
   const execute = React.useCallback(async (result: ResearchInterveneResult) => {
@@ -278,6 +282,7 @@ export function ResearchCanvasPane({ sessionId, onClose }: { sessionId: string; 
         onCloseDoc={() => setOpenDoc(null)}
         live={live ? <LivePanel sessionId={sessionId} /> : undefined}
         childCards={loaded?.children ?? []}
+        resolveDetail={resolveDetail}
         {...(canReadDocs ? { onOpenDoc } : {})}
         {...(live ? (controllable ? { onControl, ...(forkAnswerable ? { onForkAnswer } : {}) } : {}) : { onSeq: setSeq })}
       />

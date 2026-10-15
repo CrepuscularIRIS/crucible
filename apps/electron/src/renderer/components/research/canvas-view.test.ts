@@ -227,7 +227,7 @@ describe('状态条 + 阶段文档（交付 run，运行中视角）', () => {
     expect(live().status).toEqual({
       phase: 'report 报告',
       budget: '6 / 8',
-      counts: 'LIVE 2 · CONTESTED 11 · REFUTED 0',
+      counts: '○ 未定 2 · ? 有争议 11 · ✕ 被否定 0',
       latest: '第 62 行 · 10-15 12:50 · 账本检查通过',
       next: '已结束',
     })

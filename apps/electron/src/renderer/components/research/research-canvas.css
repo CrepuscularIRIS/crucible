@@ -181,8 +181,8 @@
 .workbench-caution { display: flex; align-items: start; gap: 8px; color: var(--research-observed); font-size: 13px; line-height: 1.6; }
 .workbench-probe-toolbar { display: flex; align-items: center; gap: 10px; }
 .workbench-probe-toolbar > button { margin-left: auto; flex-shrink: 0; font-size: 12px; }
-.workbench-probe-nav { display: flex; gap: 6px; overflow-x: auto; padding: 2px; scrollbar-width: thin; }
-.workbench-probe-nav button { display: flex; align-items: center; gap: 8px; padding: 9px 12px; white-space: nowrap; border-radius: 7px; border: 1px solid transparent; font-size: 13px; }
+.workbench-probe-nav { display: flex; flex-wrap: wrap; gap: 6px; padding: 2px; } /* 换行而不是横滚：P5 以后不再藏在细滚动条外 */
+.workbench-probe-nav button { display: flex; align-items: center; gap: 8px; padding: 6px 10px; white-space: nowrap; border-radius: 7px; border: 1px solid transparent; font-size: 13px; }
 .workbench-probe-nav button > span:last-child { color: hsl(var(--muted-foreground)); font-size: 12px; }
 .workbench-probe-nav button[aria-pressed='true'] { border-color: var(--research-prediction); background: var(--research-paper); color: var(--research-prediction); }
 .workbench-probe-nav button:hover { background: hsl(var(--muted) / .5); }

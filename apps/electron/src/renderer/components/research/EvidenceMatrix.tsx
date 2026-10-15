@@ -56,10 +56,11 @@ export function EvidenceMatrix({ view, narrow, onSelect }: {
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full border-collapse text-[12px]">
+      {/* 实验列不换行：表按内容撑宽、横向滚动，假设列固定在左侧（不再被挤成一字一行） */}
+      <table className="w-max min-w-full border-collapse text-[12px]">
         <thead>
           <tr className="text-left text-[11px] text-muted-foreground">
-            <th className="py-1 pr-2 font-normal">假设（派生）</th>
+            <th className="sticky left-0 z-10 bg-card py-1 pr-2 font-normal">假设（派生）</th>
             <th className="py-1 pr-2 font-normal">状态</th>
             {matrix.columns.map((col) => (
               <th key={col.pid} className="whitespace-nowrap py-1 pr-2 font-normal">
@@ -71,13 +72,13 @@ export function EvidenceMatrix({ view, narrow, onSelect }: {
         <tbody>
           {claims.map((c, i) => (
             <tr key={c.id} className="border-t border-border/60 align-top">
-              <td className="py-1 pr-2" style={{ paddingLeft: c.depth * 14 }}>
-                {claimButton(c.id, <>{c.depth > 0 && <span className="text-muted-foreground">└ </span>}<span className="font-medium">{c.id}</span> <span title={c.statement}>{c.name}</span></>)}
+              <td className="sticky left-0 z-10 min-w-[12rem] bg-card py-1 pr-3" style={{ paddingLeft: c.depth * 14 }}>
+                <div className="max-w-[20rem]">{claimButton(c.id, <span className="line-clamp-2">{c.depth > 0 && <span className="text-muted-foreground">└ </span>}<span className="font-medium">{c.id}</span> <span title={c.statement}>{c.name}</span></span>)}
                 {c.verdicts.map((v) => (
                   <span key={v.node} className="ml-1 whitespace-nowrap text-[11px] text-muted-foreground" title={`${v.node} ${v.title}（审计注记，只读）`}>
                     {v.node} 当时{v.atTime} 事后{v.hindsight}
                   </span>
-                ))}
+                ))}</div>
               </td>
               <td className="whitespace-nowrap py-1 pr-2">{c.stateLabel}</td>
               {matrix.rows[i]!.cells.map((cell) => (
