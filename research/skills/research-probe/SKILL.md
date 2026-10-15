@@ -1,7 +1,7 @@
 ---
 name: research-probe
 description: Use when 存在 ≥2 条 LIVE 假设有可判别差异、而没有覆盖这个差异的已落地探针时；或 triage 出口要求重新预登记一个探针时。
-version: 0.6.5
+version: 0.6.6
 ---
 
 # research-probe —— 判别性探针
@@ -33,6 +33,9 @@ FAILED 重登一个，代价远小于一条作废的证据链。（赛事模板 
    第一次为某个研究方向花真实测量成本前，先做
    `references/candidate-screen.md` 六问；失败的是候选问题，不是等待更多 GPU 的
    探针。候选通过后再写设计。
+   世界任务的候选设计**必须含阻断剂格**：每个候选在 `task["blockers"]` 的每个阻断剂下各仿真一遍、
+   各算 `r*`；某个阻断剂把 null 与对手分开所需的 reps 更少 → 优先它（`research-loop` 的
+   `references/world-engine.md` I4）。
    各自填频段表后用 `research_kit.disjoint_pairs(bands)` 数互斥对，按
    **P(kill)/成本** 排序——最快能杀死东西的优先；同分选顺手产出可复用仪器的。
    先问“能否用一个更便宜的诊断 probe 砍掉整条方向，再做完整实验？”claim 涉及
@@ -58,7 +61,8 @@ FAILED 重登一个，代价远小于一条作废的证据链。（赛事模板 
      （纪律：schema 只查 question 非空，这句话的存在与诚实由你负责）
      判别度、仿真引用、出处、报告首句只写在这里**不算**——宿主只读下面的结构字段。
    - **测量方式，二选一**【结构】：
-     - **observe**（世界任务**只收**这一种）：`{world, seed, protocol, reps}`——要判别的
+     - **observe**（世界任务**只收**这一种）：`{world, seed, protocol, reps, blockers}`（`blockers` 可选，
+       `task["blockers"]` 里的名字逗号分隔；同协议加阻断剂是另一个格子）——要判别的
        那次计量观测本身。`probe_run` 由 server 经 meter 执行、扣同一份预算，raw 就是这次
        测量；只收 `metricKind: "json"`、`metricSpec: "spike_count"`【结构】。
        **已观测过的格子（同 world/seed/protocol/blockers）登记即被拒**【结构】：同格计量

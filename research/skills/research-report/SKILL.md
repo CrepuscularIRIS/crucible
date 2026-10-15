@@ -1,7 +1,7 @@
 ---
 name: research-report
 description: Use when 用户要结论，或坟场与 SUPPORTED 已足以回答战役问题、且每个进结论的主张都已挨过攻击时。
-version: 0.4.5
+version: 0.4.6
 ---
 
 # research-report —— 报告纪律
@@ -90,9 +90,13 @@ failure boundary、prediction error 与 post-transition adversary；按
 
 ### identify 模式（锚 `MODE: identify`）追加
 
-- **预报**：`终局预报误差 <value> (F)`；逐 held-out 的预报值与 `(sim:H#)` / `(extrap)` 来源、仿真记录 id
-  写在 `research-work/<run>/forecast.md`，REPORT 只引用该路径——不要为了过 reconcile 把小数改成整数
-  （"格式化掉出处"是 finding，不是修复）。
+- **预报**：`终局预报误差 <value> (F)`；然后**逐 held-out 标签一行**：标签原文 + 该值的出处
+  `(sim:<记录 id>)`（没有可仿真候选时 `(extrap)`），例 `- 预报 <标签>：值见 forecast.md (sim:<记录 id>)`。
+  出处带括号写：reconcile 跳过括号内的记录 id（id 里含小数点也无妨），但只认 `research-work/<run>/sim/` 下真实存在的记录；去掉括号或 id 不存在都算裸小数。
+  数值本身连同同一个 `(sim:<记录 id>)` 写在 `research-work/<run>/forecast.md`——REPORT 里没有 (P#) 的小数
+  会被 reconcile 拒，不要为了过 reconcile 把小数改成整数（"格式化掉出处"是 finding，不是修复）。
+- **预算**：`已花 s / 总额 b`（整数）；有剩余 → 写一行为什么没花（01 K2-1：没花完的预算记为失败；
+  只记账，从不阻止 declare）。
 - **等价类**：有 RULING `equiv{H#…}` 时，结论写"在 <协议集> 下 H5 与 H7 不可分（max min |Δpred|/σ 见
   sim 记录）"，不挑胜者。
 - **网格 claim**：自由参数只写网格（"g ∈ {…} 均复现"），不写点估计为真。

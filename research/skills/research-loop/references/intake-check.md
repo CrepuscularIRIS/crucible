@@ -87,7 +87,7 @@ N_score    = [recall 开] 1(S1) + n_admit(S7) + m·n_S + n_L
 
 典型值（未实测，按此量级报）：identify light ≈ 10、open light ≈ 15；墙钟 light 1.5–3 h、
 full 3–5 h。一句话提示词默认 `light`；原话含"深入 / 全面 / 认真"或 mode=open 时推荐 `full`。
-实际超过估计只在锚上 ⚠，不阻止。探针 / 计量预算预留约 10% 给 K3 审计、forecast 与报告。
+实际超过估计只在锚上 ⚠，不阻止。K3 审计、forecast 与报告不扣计量预算：计量预算花完（01 K2-1），时间与上下文预留约 10% 给它们。
 
 ## 4. 写草稿、停、确认
 

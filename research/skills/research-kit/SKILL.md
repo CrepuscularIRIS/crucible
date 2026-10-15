@@ -1,7 +1,7 @@
 ---
 name: research-kit
 description: Use when 在 kernel 里需要读信念状态时——立锚/计数器、构造对抗者视图、比较探针判别力、出校准账本、回收子代理攻击；或给 rlm 窗口建作业目录、阻塞等待并回收 out.md。
-version: 0.5.1
+version: 0.5.2
 ---
 
 # research-kit —— kernel 侧只读工具箱
@@ -60,7 +60,7 @@ run 名——同一 cell 里含 `.proma-research` 的路径会让隔离守卫连
 | `EQUIV (RULING)` | `RULINGS.md` 最新一行 `equiv{H#, …}` | 等价类出口；覆盖全部 LIVE 时算"收缩到等价类" |
 | `LESSONS` | `research-work/<run>/lessons.md` 的 `- [global\|direction\|leaf] …` 行 | 本 run 教训；global = 本 run 全局 |
 | `NUGGET:` | `RULINGS.md` 最新一行 `nugget: …` | open 下为空时打 ⚠ |
-| `NEXT:` | 状态 + mode | 一步动作 · in 路径 · out 路径 · why；`NEXT: synthesize lessons` 按 lessons.md 的 `through-seq:` 与 journal 计数 |
+| `NEXT:` | 状态 + mode | 一步动作 · in 路径 · out 路径 · why；`NEXT: synthesize lessons` 按 lessons.md 的 `through-seq:` 与 journal 计数；identify 的计量预算 = `PROMA_EVAL_BUDGET`（缺省 8）− journal 的 `world.observe` cost：有剩余且活对手未分开 → `剩余预算 N → 选判别度最高的下一探针（含阻断剂）`，forecast / 报告行带 `预算剩 N`（01 K2-1） |
 ⚠ 提示的调度表在 `research-moves` 的 SKILL.md。
 
 ## collect_attacks 的落点约定

@@ -527,6 +527,31 @@ describe('受管 research 默认 Skills', () => {
     }
   })
 
+  it('F1 B6/B7/B9：判别搜索含阻断剂格、observe 收 blockers；预算没花完时锚继续点名探针、报告写明为何没花；预报逐标签带 (sim:<记录 id>)', () => {
+    const read = (rel: string) => readFileSync(join(researchSkillsRoot, rel), 'utf-8')
+    const engine = read('research-loop/references/world-engine.md')
+    const intake = read('research-loop/references/intake-check.md')
+    const probe = read('research-probe/SKILL.md')
+    const report = read('research-report/SKILL.md')
+    const anchorSrc = readFileSync(KIT_ANCHOR_PARTS, 'utf-8')
+    // B6：阻断剂进判别比较（只写方法，不点名任何阻断剂）；observe 的格子含 blockers
+    for (const src of [engine, probe]) expect(src).toContain('阻断剂下各仿真')
+    expect(engine).toContain('`spec.observe.blockers`')
+    expect(probe).toContain('{world, seed, protocol, reps, blockers}')
+    // B9：剩余预算 > 0 且活对手未分开 → 锚点名下一探针；等价类不免花预算；10% 保留额不是计量 reps
+    expect(anchorSrc).toContain('→ 选判别度最高的下一探针（含阻断剂）')
+    expect(engine).toContain('剩余预算 N → 选判别度最高的下一探针（含阻断剂）')
+    for (const src of [engine, report, anchorSrc]) expect(src).toContain('01 K2-1')
+    for (const src of [engine, intake]) expect(src).not.toMatch(/预算预留约 10%|预留约 10% 给 K3/)
+    // B7：预报出处是仿真记录 id，不是 H#；REPORT 逐 held-out 标签一行带出处
+    for (const src of [engine, report, anchorSrc]) {
+      expect(src).not.toContain('(sim:H#)')
+      expect(src).toContain('(sim:<记录 id>)')
+    }
+    expect(report).toContain('逐 held-out 标签一行')
+    expect(report).toContain('reconcile 跳过括号内的记录 id')
+  })
+
   it('P2：锚 NEXT 点名的卡都存在（kit 源码里的 research-<slug>/references/<card>.md）', () => {
     const src = readFileSync(KIT_ANCHOR_PARTS, 'utf-8')
     expect(src).toContain('research-loop/references/world-engine.md') // 解析失效时别让下面空转
@@ -635,12 +660,12 @@ describe('受管 research 默认 Skills', () => {
 
   it('所有改动过的默认 Research Skills 都递增了 patch 版本', () => {
     const expectedVersions: Record<string, string> = {
-      'research-loop': '0.6.1',
+      'research-loop': '0.6.2',
       'research-abduce': '0.5.4',
-      'research-probe': '0.6.5',
+      'research-probe': '0.6.6',
       'research-grill': '0.4.5',
-      'research-report': '0.4.5',
-      'research-kit': '0.5.1',
+      'research-report': '0.4.6',
+      'research-kit': '0.5.2',
       'research-moves': '0.2.4',
       'research-scoop': '0.1.2',
     }

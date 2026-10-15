@@ -12,7 +12,7 @@
 
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js'
@@ -20,6 +20,7 @@ import { buildServer } from '../src/server'
 import { runPreregGate } from './prereg'
 import { runReconcileGate } from './reconcile'
 import { runTraceGate } from './trace'
+import { sha256 } from '../src/state'
 
 let researchCwd: string
 let client: Client
@@ -263,6 +264,27 @@ describe('gate 间不矛盾（F1 回归锁）', () => {
     const result = runReconcileGate(runRoot)
     expect(result.failures.some((f) => /H3/.test(f.reason))).toBe(false)
     expect(result.passed).toBe(true)
+  })
+
+  it('预报出处 (sim:<记录 id>) 里的小数不算裸数字；括号外的同一小数照样拒', async () => {
+    const runRoot = await buildHonestRun()
+    const check = (line: string) => {
+      const text = `${HONEST_REPORT}\n${line}\n`
+      writeFileSync(join(runRoot, 'REPORT-sim.md'), text, 'utf-8')
+      return runReconcileGate(runRoot, { path: 'REPORT-sim.md', sha256: sha256(text) })
+    }
+    // 只有真实存在的仿真记录才免检：先建 research-work/<run>/sim/grid-k1-g9.99.json
+    const simDir = join(dirname(dirname(runRoot)), 'research-work', basename(runRoot), 'sim')
+    mkdirSync(simDir, { recursive: true })
+    writeFileSync(join(simDir, 'grid-k1-g9.99.json'), '{"counts_mean": 1}\n', 'utf-8')
+    expect(check('- 预报 held A：值见 forecast.md (sim:grid-k1-g9.99)').passed).toBe(true)
+    // 假 id（不存在的记录）照样按裸数字拒（评审 W1）
+    expect(check('- 预报 HO25：(sim:0.82)').passed).toBe(false)
+    expect(check('- 终局 R² (sim:0.82) 比基线高').passed).toBe(false)
+    const leaked = check('- 预报 held A：9.99 (sim:grid-k1-g9.99)')
+    expect(leaked.passed).toBe(false)
+    expect(leaked.failures.some((f) => /9\.99 缺少 \(P#\) 出处/.test(f.reason))).toBe(true)
+    expect(check('- 预报 held A：值见 forecast.md sim:grid-k1-g9.99').passed).toBe(false)
   })
 
   it('trace 会读取 world 事件：forecast 的预算快照与此前 observe 不符时变红', async () => {

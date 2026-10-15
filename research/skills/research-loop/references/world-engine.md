@@ -125,11 +125,15 @@ for ch in mech["extra"]:
    （观测均值的 2 个标准误 ≤ Δ）。
 3. **零基线检出**：若一方在仿真里 0 次出峰（≥64 reps），另一方单次出峰概率为 p，则"至少见到 1 峰"
    所需 reps：`r* = ⌈ln 0.05 / ln(1 − p)⌉`；一个峰就足以否定零出峰的一方。
-4. 先挑 `r*` 最小的格（候选格：池内协议 × `task["blockers"]` 的组合）。**本探针的真细胞 reps ≥ `r*`**
+4. 先挑 `r*` 最小的格（候选格：池内协议 × `task["blockers"]` 的组合）。**阻断剂格必须进比较**：每一对
+   （含 H0 对每个对手）都在**每个阻断剂下各仿真**一遍、各算 `r*`——某个阻断剂格把 null 与对手分开所需的
+   reps 比无阻断格少，就优先登记它（`spec.observe.blockers`）。已观测的格子不能再登记，同协议加阻断剂是
+   新格子。**本探针的真细胞 reps ≥ `r*`**
    才可以拿它下 REFUTED / SUPPORTED；reps < `r*` 时**照测**，结论按检出限写（"在 r 次、该精度下未检出；
    该协议下效应 ≤ x"），该结论封顶 `lead`。
 5. 全部候选格的 `r*` 都超过剩余预算 → 预算**照花**（花在 `r*` 最小的格上），结论一律按第 4 条的
-   检出限写法，不写"不存在"。没花完的预算本身就是失败。
+   检出限写法，不写"不存在"。没花完的预算本身就是失败（01 K2-1）：剩余预算 > 0 且活对手未分开时，
+   锚的 NEXT 是 `剩余预算 N → 选判别度最高的下一探针（含阻断剂）`，排在 forecast 之前。
 6. **永不凭一组参数否定一个家族**：否定一个家族之前，它的每个自由参数至少扫 3 个点，全部落在观测的
    2 SE 之外才可以；否则只否定那个参数点（statement 写参数点），家族留 LIVE。
 7. `prereg_write` 的结构字段（宿主只读这些；只写在 `question` 里的同名内容不算）：
@@ -149,7 +153,7 @@ kill 或 support 分支只靠 `asserted` / `invented` 带 → 结论封顶 `lead
 ## I5 预登记 / 计量
 
 `prereg_write`（`spec.observe`）→ `probe_run`。看过的格子不许再登记（同格计量是确定性的）——
-换格子，或在 nbsim 里仿真。计量扣预算；预留约 10% 给 K3、forecast 与报告。
+换格子，或在 nbsim 里仿真。计量扣预算；K3、forecast 与报告不扣计量预算——不要为它们留着计量 reps 不花。
 
 ## I6 迁移（K3）
 
@@ -167,21 +171,24 @@ W3 镜头：**可辨识性**（自由参数是否欠定：两组参数给出同�
 一行：本次缩小了什么（LIVE / 等价类 / 新 constraint / 新 lesson）。锚出现
 `NEXT: synthesize lessons` → `references/w5-lessons.md`。
 
-**等价类出口**：剩余 LIVE 在可用协议与剩余预算下 max min |Δpred|/σ < 1（找不到能把它们分开 1σ 的格）
+**等价类出口**：剩余 LIVE 在可用协议（含阻断剂格）与剩余预算下 max min |Δpred|/σ < 1（找不到能把它们分开 1σ 的格）
 → 写 RULING `Ruling: equiv{H5, H7} — max min |Δpred|/σ = <值>（sim:<id>）— <押错代价>`。锚渲染它，
 并把它算作谓词里的"收缩到等价类"。锚的存活数与 MCP 同一个活集（LIVE / lead / narrowed / SUPPORTED）。
 narrowed claim 可以入 bands；它的 `scoped_statement` 与存活者确实不重叠、不该再算时，在 RULINGS 写一行
-理由再走 I9（NEXT 是建议，偏离要写明）。
+理由再走 I9（NEXT 是建议，偏离要写明）。等价类**不免花预算**：剩余预算 > 0 时锚仍点名下一探针——
+先按 I4 第 5 条花在 `r*` 最小的格（检出限写法），预算花完再走 I9。
 
 ## I9 预报
 
 只在 K7 前、**一次**提交**全部** held-out：每个标签用最好的候选（或等价类各成员）在 nbsim 里仿真
-≥64 reps 取均值，记为 `(sim:H#)`；只有没有可仿真候选时才用 `(extrap)`。逐标签的值与 sim 记录 id
-写进 `research-work/<run>/forecast.md`，再调 `world_forecast`。
+≥64 reps 取均值，记为 `(sim:<记录 id>)`（`sim/<id>.json` 那条记录）；只有没有可仿真候选时才用 `(extrap)`。
+逐标签的值与 `(sim:<记录 id>)` 写进 `research-work/<run>/forecast.md`，再调 `world_forecast`。
+预算没花完就提交 → REPORT 写一行为什么没花（01 K2-1：记为失败，只记账，从不阻止 forecast 或声明）。
 
 ## I10 报告
 
-research-report 的 identify 段：机制 + 等价类 + `value (F)` + 未覆盖协议 + 网格 claim + 框定行。
+research-report 的 identify 段：机制 + 等价类 + `value (F)` + 逐 held-out 标签的 `(sim:<记录 id>)` +
+预算（已花 / 总额，剩余要写原因）+ 未覆盖协议 + 网格 claim + 框定行。
 
 ## 禁止
 

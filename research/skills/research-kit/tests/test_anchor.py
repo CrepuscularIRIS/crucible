@@ -20,6 +20,7 @@ RUN = "r1"
 @pytest.fixture(autouse=True)
 def _cwd(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("PROMA_EVAL_BUDGET", raising=False)  # 锚读 kernel 的预算 env；缺省 8 与 server 一致
 
 
 def _claim(cid: str, state: str = "LIVE", **extra: Any) -> dict[str, Any]:
@@ -222,7 +223,7 @@ def test_legacy_run_keeps_scoped_in_graveyard() -> None:
 def test_equivalence_ruling_is_rendered_and_counts_as_contraction() -> None:
     _rulings("Ruling: depth=light — x — y\nRuling: equiv{H5, H7} — max min |Δpred|/σ = 0.6 < 1 — 报告写等价类\n")
     info = {"ts": "t1", "op": "world.info"}
-    _run([_init("identify"), info], claims=[_claim("H5"), _claim("H7")], graveyard=[_claim("H0", "REFUTED")])
+    _run([_init("identify"), info, _observe(8)], claims=[_claim("H5"), _claim("H7")], graveyard=[_claim("H0", "REFUTED")])
     out = research_kit.anchor(RUN)
     assert "EQUIV" in out and "{H5, H7}" in out
     assert "world_forecast" in _next_lines(out)[0]
@@ -341,3 +342,64 @@ def test_lead_transition_counts_toward_lessons_synthesis() -> None:
     _lessons("## W5 · through-seq: 5\n- [leaf] x (cites: P1)\n")
     synth = [line for line in _next_lines(research_kit.anchor(RUN)) if line.startswith("NEXT: synthesize lessons")]
     assert len(synth) == 1 and "2 次终态/lead 迁移" in synth[0]
+
+
+# ---------- 预算（01 K2-1）：没花完的预算记为失败；活对手未分开时锚继续点名下一探针（含阻断剂） ----------
+
+
+def _observe(cost: int, blockers: str = "") -> dict[str, Any]:
+    """与 MCP world.observe 事件同形（server.ts：cost = reps，blockers 逗号分隔）。"""
+    return {"ts": "t", "op": "world.observe", "cost": cost, "blockers": blockers}
+
+
+_INFO = {"ts": "t1", "op": "world.info"}
+
+
+def test_budget_left_with_unseparated_rivals_names_next_probe_with_blockers() -> None:
+    _run([_init("identify"), _INFO, _observe(4)], claims=[_claim("H0"), _claim("H1"), _claim("H2")])
+    (line,) = _next_lines(research_kit.anchor(RUN))
+    assert line.startswith("NEXT: 剩余预算 4 → 选判别度最高的下一探针（含阻断剂）"), line
+    assert "prereg_write" in line and "world-engine.md" in line and "world_forecast" not in line
+
+
+def test_budget_total_comes_from_kernel_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("PROMA_EVAL_BUDGET", "12")
+    _run([_init("identify"), _INFO, _observe(3), _observe(2, "X")], claims=[_claim("H0"), _claim("H1")])
+    assert _next_lines(research_kit.anchor(RUN))[0].startswith("NEXT: 剩余预算 7 →")
+
+
+def test_equivalence_ruling_does_not_skip_unspent_budget() -> None:
+    _rulings("Ruling: equiv{H5, H7} — max min |Δpred|/σ = 0.6 < 1 — 报告写等价类\n")
+    _run([_init("identify"), _INFO, _observe(4)], claims=[_claim("H5"), _claim("H7")], graveyard=[_claim("H0", "REFUTED")])
+    (line,) = _next_lines(research_kit.anchor(RUN))
+    assert line.startswith("NEXT: 剩余预算 4 → 选判别度最高的下一探针（含阻断剂）"), line
+
+
+def test_lead_rivals_with_budget_left_keep_probing() -> None:
+    _identify_lead_run()
+    (line,) = [ln for ln in _next_lines(research_kit.anchor(RUN)) if not ln.startswith("NEXT: synthesize")]
+    assert line.startswith("NEXT: 剩余预算 8 →"), line
+
+
+def test_budget_spent_with_unseparated_rivals_routes_to_forecast() -> None:
+    _run([_init("identify"), _INFO, _observe(8)], claims=[_claim("H0"), _claim("H1")])
+    (line,) = _next_lines(research_kit.anchor(RUN))
+    assert "world_forecast" in line and "预算已尽" in line and "equiv" in line, line
+
+
+def test_single_survivor_with_budget_left_forecasts_but_report_must_say_why() -> None:
+    base = [_init("identify"), _INFO, _observe(4)]
+    _run(base, claims=[_claim("H5")], graveyard=[_claim("H0", "REFUTED")])
+    (line,) = _next_lines(research_kit.anchor(RUN))
+    assert "world_forecast" in line and "(sim:<记录 id>)" in line, line
+    assert "预算剩 4" in line and "01 K2-1" in line
+
+    _run(base + [{"ts": "t2", "op": "world.forecast"}], claims=[_claim("H5")], graveyard=[_claim("H0", "REFUTED")])
+    (line,) = _next_lines(research_kit.anchor(RUN))
+    assert "report_declare" in line and "预算剩 4" in line and "01 K2-1" in line, line
+
+
+def test_forecast_closes_probing_even_with_budget_and_rivals_left() -> None:
+    _run([_init("identify"), _INFO, _observe(2), {"ts": "t2", "op": "world.forecast"}], claims=[_claim("H0"), _claim("H1")])
+    (line,) = _next_lines(research_kit.anchor(RUN))
+    assert "report_declare" in line and "剩余预算" not in line, line

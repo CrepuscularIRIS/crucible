@@ -17,7 +17,7 @@
  */
 
 import { existsSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import { readJournal, sha256 } from '../src/state'
 import {
   fail,
@@ -36,6 +36,18 @@ const NUMBER_WITH_SOURCE = /-?\d+(?:\.\d+)?\s*\(P(\d+)\)/g
 const NUMBER_FROM_FORECAST = /-?\d+(?:\.\d+)?\s*\(F\)/g
 /** 裸数字（同一行没有 (P#) 出处）。 */
 const BARE_NUMBER = /-?\d+\.\d+/
+/** 仿真记录出处 `(sim:grid-g9.99)`：记录 id 里的小数是名字，不是报告数字。 */
+const SIM_CITATION = /\(sim:[^()\s]*\)/g
+
+/**
+ * 只有真实存在的仿真记录 `<cwd>/research-work/<run>/sim/<id>.json` 才免检；
+ * 否则 `(sim:0.82)` 这种假 id 就成了绕过裸数字检查的口子（评审 W1）。
+ */
+function simRecordExists(runRoot: string, id: string): boolean {
+  if (!/^[\w.-]+$/.test(id) || id.includes('..')) return false
+  const simDir = join(dirname(dirname(runRoot)), 'research-work', basename(runRoot), 'sim')
+  return existsSync(join(simDir, `${id}.json`))
+}
 
 /** declare 内嵌裁决时报告尚未入 journal，用 override 直接校验目标文件。 */
 export interface ReconcileReportOverride {
@@ -117,7 +129,10 @@ export function runReconcileGate(runRoot: string, reportOverride?: ReconcileRepo
       }
     }
     // 已带出处的数字摘掉后再查裸小数：一个 (P#)/(F) 不能替同一行别的数字背书
-    const unsourced = masked.replace(NUMBER_WITH_SOURCE, ' ').replace(NUMBER_FROM_FORECAST, ' ')
+    const unsourced = masked
+      .replace(NUMBER_WITH_SOURCE, ' ')
+      .replace(NUMBER_FROM_FORECAST, ' ')
+      .replace(SIM_CITATION, (m) => (simRecordExists(runRoot, m.slice(5, -1)) ? ' ' : m))
     if (BARE_NUMBER.test(unsourced)) {
       const bare = unsourced.match(BARE_NUMBER)?.[0]
       reasons.push(`第 ${lineNo} 行的数字 ${bare} 缺少 (P#) 出处（报告数字必须可对账）→ 只引用 metric_recompute 的返回值并标注 (P#)`)

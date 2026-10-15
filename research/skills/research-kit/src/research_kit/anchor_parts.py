@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 from pathlib import Path
 from typing import Any
@@ -23,6 +24,13 @@ _MAX_LESSONS = 12  # 锚预算 ≈1k token；更早的教训仍在 lessons.md �
 # W5 每 N 次落地或每次终态迁移触发（01 §6.4，N=3）
 _LANDED_PER_SYNTHESIS = 3
 H0 = "H0"  # research_init 内置登记的对照（identify null / score incumbent）
+
+
+def budget_left(events: list[dict[str, Any]]) -> int:
+    """计量预算余额：总额 = kernel 的 PROMA_EVAL_BUDGET（缺省 8，与 server 回落值一致），已花 = journal 的 world.observe cost。"""
+    total = int(os.environ.get("PROMA_EVAL_BUDGET", "").strip() or 8)
+    spent = sum(int(e.get("cost") or 0) for e in events if e.get("op") == "world.observe")
+    return max(total - spent, 0)
 
 
 def base_dir(root: Path) -> Path | None:
@@ -203,14 +211,24 @@ def next_line(
         if not rivals:
             return _fmt("I1 召回机制族（W1）+ I3 对手完整性 → claim_propose", f"{work}/ledger.md",
                         f"{work}/recall/families.md", "LIVE 里只有内置 H0")
-        if len(live) <= 1 or (equiv and set(live) <= set(equiv)):
-            if "world.forecast" in ops:
-                return report
-            return _fmt("I9 world_forecast（全部 held-out 一次提交，每值带 (sim:H#) 或 (extrap)）",
-                        f"{work}/sim/", "journal", "活对手（含 lead / narrowed）已收缩到 1 个或一个写明的等价类")
-        return _fmt("I2+I4 nbsim 矩阵 → Δ/σ 表 → prereg_write（r* 最小的格；research-loop/references/world-engine.md）",
-                    f"{work}/nbsim, {work}/recall/families.md", f"{work}/sim/matrix.csv, {work}/sim/<id>.json",
-                    f"{len(live)} 条活对手（含 lead / narrowed）待判别")
+        # 01 K2-1：没花完的预算记为失败（记账，不阻止 forecast / declare）；等价类 RULING 不免花预算
+        left = budget_left(events)
+        unspent = f" · 预算剩 {left}：REPORT 写明为何没花（01 K2-1）" if left else ""
+        if "world.forecast" in ops:
+            return report + unspent
+        if len(live) > 1 and left > 0:
+            return _fmt(f"剩余预算 {left} → 选判别度最高的下一探针（含阻断剂）：I2+I4 nbsim 矩阵 → Δ/σ 表 → "
+                        "prereg_write（r* 最小的格；research-loop/references/world-engine.md）",
+                        f"{work}/nbsim, {work}/recall/families.md", f"{work}/sim/matrix.csv, {work}/sim/<id>.json",
+                        f"{len(live)} 条活对手（含 lead / narrowed）未分开")
+        if len(live) <= 1:
+            why = "活对手（含 lead / narrowed）已收缩到 1 个"
+        elif equiv and set(live) <= set(equiv):
+            why = "预算已尽；等价类 RULING 在案"
+        else:
+            why = "预算已尽、活对手未分开：先写 I8 equiv RULING，或在 REPORT 列出未分开的对手"
+        return _fmt("I9 world_forecast（全部 held-out 一次提交，每值带 (sim:<记录 id>) 或 (extrap)）",
+                    f"{work}/sim/", f"journal, {work}/forecast.md", why + unspent)
     if mode == "open":
         if not claims:
             return _fmt("O1–O4 召回 → 残差 → 生成（P5 前：research-abduce + research-scoop）→ claim_propose",
