@@ -40,9 +40,11 @@ describe('LivePanel：运行中看得见 AI 在做什么', () => {
       { name: 'rivals-K1-44d9', status: 'ok', task: 'K1 对手完整性审查', finding: '补 3 族 <b>H10</b>', brief: '# K1', out: '# K1\nSTATUS: ok PATH: x' },
       { name: 'w5-lessons-1', status: 'running', task: 'W5 教训综合', finding: '' },
     ]} />)
-    expect(html).toContain('共 2 个 · 进行中 1 · 完成 1 · 受阻或异常 0')
+    expect(html).toContain('共 2 个 · 未见回报 1 · 完成 1 · 受阻或异常 0')
     expect(html).toContain('带回：补 3 族 &lt;b&gt;H10&lt;/b&gt;')
     expect(html).toContain('回报 out.md')
+    expect(html).toContain('仅凭文件缺失不能判断任务是否仍在执行')
+    expect(html).not.toContain('在独立窗口里工作')
     expect(html.indexOf('W5 教训综合')).toBeLessThan(html.indexOf('K1 对手完整性审查'))
   })
 })

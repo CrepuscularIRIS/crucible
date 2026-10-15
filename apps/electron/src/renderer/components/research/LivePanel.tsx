@@ -9,7 +9,7 @@ import { REFINE_MODES } from '../agent/refine-view'
 import { liveActions, liveSaying, type ChildCard, type LiveAction } from './live-view'
 
 const CHILD_STATUS: Record<ChildCard['status'], [string, string]> = {
-  running: ['进行中', 'text-sky-600 dark:text-sky-400'],
+  running: ['未见回报', 'text-sky-600 dark:text-sky-400'],
   ok: ['完成', 'text-emerald-600 dark:text-emerald-400'],
   blocked: ['受阻', 'text-amber-600 dark:text-amber-400'],
   failed: ['失败', 'text-destructive'],
@@ -72,13 +72,13 @@ export function ChildCards({ cards }: { cards: ChildCard[] }): React.ReactElemen
   if (!cards.length) return <p className="text-[12px] text-muted-foreground">还没有派出子任务。主 agent 用 research_kit.new_job + rlm 派出后，这里出现任务卡。</p>
   const running = cards.filter((c) => c.status === 'running').length
   return <div className="space-y-2">
-    <p className="text-[11px] text-muted-foreground">共 {cards.length} 个 · 进行中 {running} · 完成 {cards.filter((c) => c.status === 'ok').length} · 受阻或异常 {cards.filter((c) => c.status !== 'ok' && c.status !== 'running').length}</p>
+    <p className="text-[11px] text-muted-foreground">共 {cards.length} 个 · 未见回报 {running} · 完成 {cards.filter((c) => c.status === 'ok').length} · 受阻或异常 {cards.filter((c) => c.status !== 'ok' && c.status !== 'running').length}</p>
     {[...cards].reverse().map((c) => {
       const [label, tone] = CHILD_STATUS[c.status]
       return <details key={c.name} className="rounded-md border border-border/60 p-3">
         <summary className="cursor-pointer list-none">
           <div className="flex items-baseline gap-2"><span className={`shrink-0 text-[11px] ${tone}`}>{label}</span><span className="min-w-0 text-[12px] font-medium">{c.task}</span></div>
-          {c.finding ? <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground">带回：{c.finding}</p> : c.status === 'running' && <p className="mt-1.5 text-[11px] text-muted-foreground">在独立窗口里工作，返回后显示结论</p>}
+          {c.finding ? <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground">带回：{c.finding}</p> : c.status === 'running' && <p className="mt-1.5 text-[11px] text-muted-foreground">尚未读取到回报；仅凭文件缺失不能判断任务是否仍在执行。</p>}
           <p className="mt-1 font-mono text-[10px] text-muted-foreground/70">{c.name} · 点开看任务书与完整回报</p>
         </summary>
         {c.brief && <><h3 className="mt-3 text-[11px] text-muted-foreground">任务书 brief.md</h3><pre className="mt-1 max-h-64 overflow-auto whitespace-pre-wrap rounded bg-muted/40 p-2 text-[11px]">{c.brief}</pre></>}
