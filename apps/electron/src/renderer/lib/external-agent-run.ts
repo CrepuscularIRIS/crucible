@@ -3,7 +3,7 @@ import type { AgentStreamState } from '@/atoms/agent-atoms'
 
 export interface ExternalAgentRunTab {
   id: string
-  type: 'chat' | 'agent' | 'scratch' | 'preview' | 'tutorial'
+  type: 'chat' | 'agent' | 'scratch' | 'preview' | 'tutorial' | 'research'
   sessionId: string
   title: string
 }
@@ -46,7 +46,8 @@ export function buildExternalAgentRunActivation(
 ): ExternalAgentRunActivation {
   const session = input.sessions.find((item) => item.id === input.sessionId)
   const title = input.title ?? session?.title ?? '新 Agent 会话'
-  const tabsWithoutPreview = input.tabs.filter((tab) => tab.type !== 'preview')
+  // 附属 Tab：预览一律丢；研究 Tab 只留本会话的
+  const tabsWithoutPreview = input.tabs.filter((tab) => tab.type !== 'preview' && !(tab.type === 'research' && tab.sessionId !== input.sessionId))
   const existingTab = tabsWithoutPreview.find((tab) => tab.type === 'agent' && tab.sessionId === input.sessionId)
   const tabs = existingTab
     ? (tabsWithoutPreview.length === input.tabs.length ? input.tabs : tabsWithoutPreview)

@@ -1,8 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
+import type { ComponentProps } from 'react'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { canvasView, nodeDetail, type CanvasOptions } from './canvas-view'
-import { loadRecord, ONE_DIR } from './test-fixtures'
+import { DELIVERY_DIR, loadRecord, ONE_DIR } from './test-fixtures'
 import { ResearchCanvasView } from './ResearchCanvasView'
 
 const one = loadRecord(ONE_DIR)
@@ -61,5 +62,45 @@ describe('ResearchCanvasView renderToStaticMarkup（ONE 回放，04 §5.3 第 2 
     expect(html).toContain('请求暂停（软）')
     expect(html).toContain('软暂停')
     expect(html).not.toContain('回放 · 只读')
+  })
+})
+
+describe('状态条 + 阶段文档（交付 run，实时视角）', () => {
+  const delivery = loadRecord(DELIVERY_DIR)
+  const workdir = { docs: [{ path: 'forecast.md', mtimeMs: Date.parse('2026-10-15T04:14:47Z'), size: 9 }, { path: '_P2.json', mtimeMs: Date.parse('2026-10-15T02:27:00Z'), size: 9 }] }
+  const view = canvasView(delivery, { mode: 'live', bridge: false, workdir, budgetTotal: 8 })
+  const renderLive = (openDoc: ComponentProps<typeof ResearchCanvasView>['openDoc'] = null) => renderToStaticMarkup(
+    <TooltipProvider>
+      <ResearchCanvasView view={view} detail={null} narrow={false} onSelect={noop} onControl={noop} onOpenDoc={noop} openDoc={openDoc} onCloseDoc={noop} />
+    </TooltipProvider>,
+  )
+
+  test('顶部状态条：阶段、预算、计数、最新事件、下一步', () => {
+    const html = renderLive()
+    expect(html).toContain('report 报告')
+    expect(html).toContain('6 / 8')
+    expect(html).toContain('LIVE 2 · CONTESTED 11 · REFUTED 0')
+    expect(html).toContain('第 62 行 · 10-15 12:50 · 账本检查通过')
+    expect(html).toContain('已结束')
+    expect(html.indexOf('report 报告')).toBeLessThan(html.indexOf('假设与证据'))
+  })
+
+  test('阶段文档列表：新的在前，可点开', () => {
+    const html = renderLive()
+    expect(html).toContain('阶段文档')
+    expect(html.indexOf('forecast.md')).toBeLessThan(html.indexOf('_P2.json'))
+    expect(html).toContain('10-15 12:14')
+  })
+
+  test('打开的 md 文档渲染成 markdown（只读，原始 HTML 不执行）', () => {
+    const html = renderLive({ path: 'forecast.md', time: '10-15 12:14', text: '# 预报表\n\n<script>alert(1)</script>' })
+    expect(html).toContain('<h1>预报表</h1>')
+    expect(html).not.toContain('<script>')
+    expect(html).toContain('只读')
+  })
+
+  test('打开的 json 文档缩进显示；读失败显示原因', () => {
+    expect(renderLive({ path: '_P2.json', text: '{"pid":"P2"}' })).toContain('{\n  &quot;pid&quot;: &quot;P2&quot;\n}')
+    expect(renderLive({ path: 'x.md', error: '阶段文档太大' })).toContain('阶段文档太大')
   })
 })

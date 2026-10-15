@@ -126,7 +126,7 @@ export function TabBar(): React.ReactElement {
     if (tab.type === 'chat') {
       setAppMode('chat')
       setCurrentConversationId(tab.sessionId)
-    } else if (tab.type === 'agent' || tab.type === 'preview') {
+    } else if (tab.type === 'agent' || tab.type === 'preview' || tab.type === 'research') {
       setAppMode('agent')
       setCurrentAgentSessionId(tab.sessionId)
 

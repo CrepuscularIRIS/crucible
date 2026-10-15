@@ -34,8 +34,6 @@ import { interfaceVariantAtom } from '@/atoms/theme'
 import { cn } from '@/lib/utils'
 import { browserPanelMinimizedMapAtom, browserPanelOpenMapAtom, browserPendingNavigationMapAtom, browserStateMapAtom } from '@/atoms/browser-atoms'
 import { BrowserPanel } from '@/components/browser/BrowserPanel'
-import { researchCanvasOpenMapAtom } from '@/atoms/research-atoms'
-import { ResearchCanvasPane } from '@/components/research/ResearchCanvasPane'
 
 export function MainArea(): React.ReactElement {
   // 记录每个会话上次停留的视图（对话 / 预览），供切回时重建预览 Tab
@@ -105,11 +103,8 @@ export function MainArea(): React.ReactElement {
     return () => { cancelled = true }
   }, [browserSessionId, publishBrowserState])
 
-  // 研究画布占草稿的槽位：与浏览器、草稿互斥，可与预览并排（04 §3.1 / Q8）
-  const [researchCanvasOpenMap, setResearchCanvasOpenMap] = useAtom(researchCanvasOpenMapAtom)
-  // 画布是用户显式打开的，优先于受管浏览器；浏览器面板卸载即隐藏原生视图，关画布后恢复
-  const researchCanvasOpen = !!browserSessionId && (researchCanvasOpenMap.get(browserSessionId) ?? false)
-  const showBrowserPanel = !!browserSessionId && (browserOpenMap.get(browserSessionId) ?? false) && activeView === 'conversations' && !researchCanvasOpen
+  // 研究画布在顶部研究 Tab 里（ResearchTabContent），不占右侧槽位
+  const showBrowserPanel = !!browserSessionId && (browserOpenMap.get(browserSessionId) ?? false) && activeView === 'conversations'
   const browserState = browserSessionId ? browserStateMap.get(browserSessionId) ?? null : null
   const previewOpen =
     activeTab?.type === 'agent' && (previewOpenMap.get(activeTab.sessionId) ?? false) && !showBrowserPanel
@@ -117,9 +112,7 @@ export function MainArea(): React.ReactElement {
   const scratchPanelOpen = useAtomValue(scratchPadPanelOpenAtom)
   const showScratchPanel =
     activeTab?.type === 'agent' && scratchPanelOpen && activeView === 'conversations' && !showBrowserPanel
-  const showResearchCanvas =
-    researchCanvasOpen && activeView === 'conversations' && !showScratchPanel
-  const showSecondRightPanel = showScratchPanel || showResearchCanvas
+  const showSecondRightPanel = showScratchPanel
 
   // 关闭动画状态：当 previewOpen 从 true → false 时，播放退出动画再移除 DOM
   // 在 render 阶段同步派生 closing，避免中间帧出现 flex: 1 1 auto 导致左侧瞬间跳到 100% 宽
@@ -353,14 +346,6 @@ export function MainArea(): React.ReactElement {
                 {showScratchPanel && (
                   <div className="min-w-0 h-full overflow-hidden" style={scratchPaneStyle}>
                     <ScratchPadPane onClose={handleCloseScratchPanel} />
-                  </div>
-                )}
-                {showResearchCanvas && previewSessionId && (
-                  <div className="min-w-0 h-full overflow-hidden" style={scratchPaneStyle}>
-                    <ResearchCanvasPane
-                      sessionId={previewSessionId}
-                      onClose={() => setResearchCanvasOpenMap((previous) => { const next = new Map(previous); next.set(previewSessionId, false); return next })}
-                    />
                   </div>
                 )}
               </div>

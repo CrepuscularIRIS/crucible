@@ -12,8 +12,11 @@ import {
   evidenceCells,
   feedbackChange,
   flags as recordFlags,
+  fmtTime,
   focusAt,
   namedBy,
+  PHASE_LABEL,
+  runStatus,
   probeCycles,
   simsBefore,
   stageReport,
@@ -26,6 +29,7 @@ import {
   type Mark,
   type ResearchRecord,
 } from '@proma/shared/research-record'
+import type { ResearchWorkdir } from '@/types/research-record'
 import { controlBar, forkOptionView, type ControlBarView, type ControlStateName, type ForkOptionView } from './controls-view'
 
 export interface CanvasControl {
@@ -46,7 +50,17 @@ export interface CanvasOptions {
   annotations?: Annotations | null
   /** 主进程（R1）对快照两条哈希链的校验：null = 完好，字符串 = 第一处断链（快照 integrity 字段） */
   hostIntegrity?: { journal: string | null; interventions: string | null } | null
+  /** 工作目录 research-work/<run>/（快照 workdir）：阶段文档列表；实时模式下也用来推阶段 */
+  workdir?: ResearchWorkdir | null
+  /** 世界计量总预算（快照 budgetTotal）；缺省依次取注记、K0 的 budget 行 */
+  budgetTotal?: number
+  /** K0-intake.md 原文 */
+  k0?: string
 }
+
+/** 状态条（全部从 journal + 工作目录时间推出，不读 agent 写的 ledger.md） */
+export interface StatusView { phase: string; budget: string; counts: string; latest?: string; next?: string }
+export interface DocItem { path: string; time: string; newest: boolean }
 
 export interface Cell { label: string; text: string }
 export interface Warning { code: Flag['code']; pid?: string; text: string }
@@ -85,6 +99,8 @@ export interface CanvasView {
   timeline: { id: string; seq: number; title: string; atTime: string; hindsight: string }[]
   flags: Flag[]
   controls: ControlBarView
+  status: StatusView
+  docs: DocItem[]
 }
 
 export const STATE_LABEL: Record<ClaimState, string> = {
@@ -102,6 +118,35 @@ const CONTROL_LABEL: Record<ControlStateName, string> = {
 }
 
 export const fmt = (n: number): string => String(Math.round(n * 100) / 100)
+/** "MM-DD HH:MM"（UTC+08:00，与评委报告 fmtTime 同口径） */
+const shortTime = (iso: string): string => fmtTime(iso).slice(5, 16)
+
+function statusView(rec: ResearchRecord, opts: CanvasOptions): StatusView {
+  const budgetTotal = opts.budgetTotal ?? opts.annotations?.case?.budget_total
+  const s = runStatus(rec, {
+    ...(opts.k0 !== undefined ? { k0: opts.k0 } : {}),
+    ...(budgetTotal !== undefined ? { budgetTotal } : {}),
+    // 回放到过去某行时，"现在"的工作目录不代表当时在做什么
+    ...(opts.mode === 'live' && opts.workdir ? { activity: opts.workdir } : {}),
+  })
+  return {
+    phase: PHASE_LABEL[s.phase],
+    budget: s.budget.total === undefined ? String(s.budget.spent) : `${s.budget.spent} / ${s.budget.total}`,
+    counts: `LIVE ${s.counts.LIVE} · CONTESTED ${s.counts.CONTESTED} · REFUTED ${s.counts.REFUTED}${s.counts.SUPPORTED ? ` · SUPPORTED ${s.counts.SUPPORTED}` : ''}`,
+    ...(s.latest ? { latest: `第 ${s.latest.seq} 行 · ${shortTime(s.latest.ts)} · ${s.latest.summary}` } : {}),
+    ...(s.next ? { next: s.next } : {}),
+  }
+}
+
+/** 阶段文档的只读渲染方式：md 走 markdown（不渲染原始 HTML），json 缩进，坏 JSON 显示原文 */
+export function stageDocView(path: string, text: string): { kind: 'markdown' | 'json' | 'text'; text: string } {
+  if (path.endsWith('.md')) return { kind: 'markdown', text }
+  try {
+    return { kind: 'json', text: JSON.stringify(JSON.parse(text), null, 2) }
+  } catch {
+    return { kind: 'text', text }
+  }
+}
 const bandText = ([lo, hi]: [number, number]): string => `[${fmt(lo)}, ${fmt(hi)}]`
 const inBand = (x: number, [lo, hi]: [number, number]): boolean => x >= lo && x <= hi
 
@@ -210,7 +255,7 @@ function focusView(rec: ResearchRecord, seq: number, opts: CanvasOptions): Focus
     }
     case 'done': {
       const s = stageReport(rec, seq)
-      return { ...base, lines: [`已知：${s.known.join('；') || '无'}`, `未知：${s.unknown.join('；') || '无'}`], warnings: [] }
+      return { ...base, lines: [`已知：${s.known.join('；') || '暂无记录'}`, `未知：${s.unknown.join('；') || '记录未列出未决项，不代表没有不确定性'}`], warnings: [] }
     }
     case 'next': {
       const open = [...claimsAt(rec).values()].filter((c) => c.state === 'LIVE' || c.state === 'CONTESTED')
@@ -342,6 +387,8 @@ export function canvasView(full: ResearchRecord, opts: CanvasOptions): CanvasVie
       wired: control?.wired ?? false,
       canCancelChildren: control?.canCancelChildren ?? false,
     }),
+    status: statusView(rec, opts),
+    docs: (opts.workdir?.docs ?? []).map((d, i) => ({ path: d.path, time: shortTime(new Date(d.mtimeMs).toISOString()), newest: i === 0 })),
   }
 }
 

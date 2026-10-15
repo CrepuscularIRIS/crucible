@@ -10,7 +10,7 @@ import { IPC_CHANNELS, CHANNEL_IPC_CHANNELS, CHAT_IPC_CHANNELS, AGENT_IPC_CHANNE
 import { USER_PROFILE_IPC_CHANNELS, SETTINGS_IPC_CHANNELS, SCRATCH_PAD_IPC_CHANNELS, APP_ICON_IPC_CHANNELS, DOCK_BADGE_IPC_CHANNELS, STORAGE_IPC_CHANNELS } from '../types'
 import { parseAgentSendIpcArguments } from '../common/agent-send-input'
 import { RESEARCH_RECORD_IPC_CHANNELS } from '../types/research-record'
-import type { ResearchArchiveEntry, ResearchInterveneInput, ResearchInterveneResult, ResearchRecordSnapshot } from '../types/research-record'
+import type { ResearchArchiveEntry, ResearchInterveneInput, ResearchInterveneResult, ResearchJudgeReportInput, ResearchJudgeReportResult, ResearchRecordSnapshot, ResearchStageDocInput, ResearchStageDocResult } from '../types/research-record'
 import type {
   RuntimeStatus,
   GitRepoStatus,
@@ -571,6 +571,10 @@ export interface ElectronAPI {
   interveneResearch: (input: ResearchInterveneInput) => Promise<ResearchInterveneResult>
   /** 研究记录变化推送 */
   onResearchRecordChanged: (callback: (data: { sessionId: string; snapshot: ResearchRecordSnapshot | null }) => void) => () => void
+  /** 读一份阶段文档（research-work/<run>/ 下，只读） */
+  readResearchStageDoc: (input: ResearchStageDocInput) => Promise<ResearchStageDocResult>
+  /** 评委报告 HTML（需要 annotations.json；没有时返回 error） */
+  getResearchJudgeReport: (input: ResearchJudgeReportInput) => Promise<ResearchJudgeReportResult>
 
   /** 迁移 Chat 对话记录到 Agent 会话 */
   migrateChatToAgent: (conversationId: string, agentSessionId: string) => Promise<void>
@@ -1820,6 +1824,12 @@ const electronAPI: ElectronAPI = {
     const listener = (_: unknown, data: { sessionId: string; snapshot: ResearchRecordSnapshot | null }): void => callback(data)
     ipcRenderer.on(RESEARCH_RECORD_IPC_CHANNELS.RECORD_CHANGED, listener)
     return () => { ipcRenderer.removeListener(RESEARCH_RECORD_IPC_CHANNELS.RECORD_CHANGED, listener) }
+  },
+  readResearchStageDoc: (input: ResearchStageDocInput) => {
+    return ipcRenderer.invoke(RESEARCH_RECORD_IPC_CHANNELS.READ_STAGE_DOC, input)
+  },
+  getResearchJudgeReport: (input: ResearchJudgeReportInput) => {
+    return ipcRenderer.invoke(RESEARCH_RECORD_IPC_CHANNELS.JUDGE_REPORT, input)
   },
   deleteAgentSession: (id: string) => {
     return ipcRenderer.invoke(AGENT_IPC_CHANNELS.DELETE_SESSION, id)

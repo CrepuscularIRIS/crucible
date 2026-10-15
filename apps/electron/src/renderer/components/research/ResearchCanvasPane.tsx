@@ -4,13 +4,14 @@ import type { Annotations, ResearchRecord } from '@proma/shared/research-record'
 
 import { researchCanvasSourceMapAtom, type ResearchCanvasSource } from '@/atoms/research-atoms'
 import { agentChannelIdAtom, agentSessionChannelMapAtom, agentSessionsAtom } from '@/atoms/agent-atoms'
-import type { ResearchArchiveEntry, ResearchControlView, ResearchInterveneResult, ResearchRecordSnapshot } from '@/types/research-record'
+import type { ResearchArchiveEntry, ResearchControlView, ResearchInterveneResult, ResearchRecordSnapshot, ResearchWorkdir } from '@/types/research-record'
 import { ArchivePicker } from './ArchivePicker'
 import { ResearchCanvasView } from './ResearchCanvasView'
 import { canvasView, nodeDetail, type NodeSelection } from './canvas-view'
 import type { ControlAction } from './controls-view'
 import { annotationsFromFiles, latestTicket, recordFromFiles, researchBridge } from './research-bridge'
 import { SAMPLE_RUN } from './sample-run'
+import type { OpenStageDoc } from './StageDocViewer'
 
 interface Loaded {
   record: ResearchRecord
@@ -18,7 +19,13 @@ interface Loaded {
   control: ResearchControlView | null
   label: string
   integrity: ResearchRecordSnapshot['integrity'] | null
+  workdir: ResearchWorkdir | null
+  budgetTotal?: number
+  k0?: string
 }
+
+/** 打开中的阶段文档 + 读到时的版本 mtime:size（快照里版本变了就重读） */
+type OpenDocState = OpenStageDoc & { version?: string }
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e))
 
@@ -53,6 +60,7 @@ export function ResearchCanvasPane({ sessionId, onClose }: { sessionId: string; 
   const [selection, setSelection] = React.useState<NodeSelection | null>(null)
   const [error, setError] = React.useState<string | null>(null)
   const [busy, setBusy] = React.useState(false)
+  const [openDoc, setOpenDoc] = React.useState<OpenDocState | null>(null)
   const pendingAsk = React.useRef<string | null>(null)
   const [rootEl, setRootEl] = React.useState<HTMLDivElement | null>(null)
   const narrow = useNarrow(rootEl)
@@ -64,14 +72,19 @@ export function ResearchCanvasPane({ sessionId, onClose }: { sessionId: string; 
   const setSource = React.useCallback((next: ResearchCanvasSource | null) => {
     setSourceMap((prev) => { const map = new Map(prev); if (next) map.set(sessionId, next); else map.delete(sessionId); return map })
     ticket()
-    setLoaded(null); setSeq(undefined); setSelection(null); setError(null)
+    setLoaded(null); setSeq(undefined); setSelection(null); setError(null); setOpenDoc(null)
   }, [sessionId, setSourceMap, ticket])
 
   const applySnapshot = React.useCallback(async (snapshot: ResearchRecordSnapshot, label: string) => {
     const current = ticket()
     const record = await recordFromFiles(snapshot.files)
     if (!current()) return
-    setLoaded({ record, annotations: annotationsFromFiles(snapshot.files), control: snapshot.control, label, integrity: snapshot.integrity })
+    setLoaded({
+      record, annotations: annotationsFromFiles(snapshot.files), control: snapshot.control, label, integrity: snapshot.integrity,
+      workdir: snapshot.workdir ?? null,
+      ...(snapshot.budgetTotal !== undefined ? { budgetTotal: snapshot.budgetTotal } : {}),
+      ...(snapshot.files['K0-intake.md'] !== undefined ? { k0: snapshot.files['K0-intake.md'] } : {}),
+    })
   }, [ticket])
 
   // getResearchRecord 在主进程开了轮询：面板卸载 / 换会话即释放（M-5）
@@ -83,8 +96,12 @@ export function ResearchCanvasPane({ sessionId, onClose }: { sessionId: string; 
     let cancelled = false
     const probe = autoLive.current && bridge.getResearchRecord ? bridge.getResearchRecord(sessionId) : Promise.resolve(null)
     probe.then((snap) => { if (!cancelled && snap) setSource({ kind: 'live' }) }, () => undefined)
+    // 画布先于 research_init 打开（K0 阶段还没有 run 目录）：run 目录一出现，推送到达即切到实时
+    const off = bridge.onResearchRecordChanged?.((event) => {
+      if (!cancelled && autoLive.current && event.sessionId === sessionId && event.snapshot) setSource({ kind: 'live' })
+    })
     if (bridge.listResearchArchives) bridge.listResearchArchives(sessionId).then((a) => { if (!cancelled) setArchives(a) }, () => setArchives(null))
-    return () => { cancelled = true }
+    return () => { cancelled = true; off?.() }
   }, [bridge, sessionId, source, setSource])
 
   // 载入所选数据源；实时模式订阅推送
@@ -94,7 +111,7 @@ export function ResearchCanvasPane({ sessionId, onClose }: { sessionId: string; 
     const guard = (p: Promise<void>) => p.catch((e) => { if (!cancelled) setError(`载入失败：${message(e)}`) })
     if (source.kind === 'sample') {
       void guard(recordFromFiles(SAMPLE_RUN.files).then((record) => {
-        if (!cancelled) setLoaded({ record, annotations: null, control: null, label: SAMPLE_RUN.path, integrity: null }) // 注记不打包（M-3）
+        if (!cancelled) setLoaded({ record, annotations: null, control: null, label: SAMPLE_RUN.path, integrity: null, workdir: null }) // 注记不打包（M-3）
       }))
       return () => { cancelled = true }
     }
@@ -121,7 +138,44 @@ export function ResearchCanvasPane({ sessionId, onClose }: { sessionId: string; 
     control: loaded.control,
     annotations: loaded.annotations,
     hostIntegrity: loaded.integrity,
+    workdir: loaded.workdir,
+    ...(loaded.budgetTotal !== undefined ? { budgetTotal: loaded.budgetTotal } : {}),
+    ...(loaded.k0 !== undefined ? { k0: loaded.k0 } : {}),
   }), [bridge, live, loaded, seq])
+
+  // 阶段文档：实时 run 读会话 cwd 下的工作目录，归档读归档里的；示例 run 没有
+  const canReadDocs = typeof bridge.readResearchStageDoc === 'function' && (source?.kind === 'live' || source?.kind === 'archive')
+  const archivePath = source?.kind === 'archive' ? source.path : undefined
+  /** 文档版本 = mtime:size（同一毫秒内截断再写，size 也会变） */
+  const docVersion = (path: string) => {
+    const d = loaded?.workdir?.docs.find((x) => x.path === path)
+    return d ? `${d.mtimeMs}:${d.size}` : undefined
+  }
+  const fetchDoc = React.useCallback((path: string) => {
+    const read = bridge.readResearchStageDoc
+    if (!read) return
+    read({ sessionId, path, ...(archivePath ? { archivePath } : {}) }).then(
+      (doc) => setOpenDoc((cur) => (cur?.path === path ? { path, time: cur.time, text: doc.text, version: `${doc.mtimeMs}:${doc.size}` } : cur)),
+      // 保留 version：文档之后再变仍会重读
+      (e) => setOpenDoc((cur) => (cur?.path === path ? { path, time: cur.time, error: `读取失败：${message(e)}`, ...(cur.version ? { version: cur.version } : {}) } : cur)),
+    )
+  }, [archivePath, bridge, sessionId])
+  const onOpenDoc = React.useCallback((path: string) => {
+    const time = view?.docs.find((d) => d.path === path)?.time
+    const version = docVersion(path)
+    setOpenDoc({ path, ...(time ? { time } : {}), ...(version ? { version } : {}) })
+    fetchDoc(path)
+  }, [fetchDoc, view])
+  // 运行中 agent 改写了打开着的文档 → 快照里版本变了，重读（旧文本留着，读完再换，不闪）
+  const openPath = openDoc?.path
+  const openVersion = openDoc?.version
+  const latestVersion = openPath ? docVersion(openPath) : undefined
+  React.useEffect(() => {
+    if (!openPath || latestVersion === undefined || latestVersion === openVersion) return
+    const time = view?.docs.find((d) => d.path === openPath)?.time
+    setOpenDoc((cur) => (cur?.path === openPath ? { ...cur, ...(time ? { time } : {}), version: latestVersion } : cur))
+    fetchDoc(openPath)
+  }, [fetchDoc, latestVersion, openVersion, openPath, view])
   const detail = React.useMemo(
     () => (loaded && view && selection ? nodeDetail(loaded.record, selection, view.seq, loaded.annotations) : null),
     [loaded, selection, view],
@@ -191,10 +245,14 @@ export function ResearchCanvasPane({ sessionId, onClose }: { sessionId: string; 
         detail={detail}
         narrow={narrow}
         onSelect={setSelection}
+        selection={selection}
         onClose={onClose}
         busy={busy}
         error={error}
         onChangeSource={() => { autoLive.current = false; setSource(null) }}
+        openDoc={openDoc}
+        onCloseDoc={() => setOpenDoc(null)}
+        {...(canReadDocs ? { onOpenDoc } : {})}
         {...(live ? { onControl, ...(forkAnswerable ? { onForkAnswer } : {}) } : { onSeq: setSeq })}
       />
     </div>

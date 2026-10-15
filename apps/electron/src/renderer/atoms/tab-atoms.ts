@@ -22,7 +22,7 @@ import type { PreviewFile } from './preview-atoms'
 // ===== 类型定义 =====
 
 /** 标签页类型（Settings 不作为 Tab，保留独立视图） */
-export type TabType = 'chat' | 'agent' | 'scratch' | 'preview' | 'tutorial'
+export type TabType = 'chat' | 'agent' | 'scratch' | 'preview' | 'tutorial' | 'research'
 
 /** Scratch Pad 专用的固定 sessionId */
 export const SCRATCH_PAD_ID = '__scratch-pad__'
@@ -33,6 +33,9 @@ export const TUTORIAL_TAB_TITLE = 'Proma 使用教程'
 
 /** 会话预览 Tab 的 ID 前缀：运行时临时入口，不参与持久化 */
 const PREVIEW_TAB_PREFIX = '__preview__:'
+
+/** 研究 Tab（科研进度 / 评委）的 ID 前缀：绑定所属 Agent 会话，运行时入口，不持久化 */
+const RESEARCH_TAB_PREFIX = '__research__:'
 
 /** Scratch Pad 标签默认标题 */
 export const SCRATCH_PAD_TITLE = 'Scratch Pad'
@@ -267,6 +270,23 @@ export function isPreviewTab(tab: TabItem): boolean {
   return tab.type === 'preview' || tab.id.startsWith(PREVIEW_TAB_PREFIX)
 }
 
+export function createResearchTabId(sessionId: string): string {
+  return `${RESEARCH_TAB_PREFIX}${sessionId}`
+}
+
+export function isResearchTab(tab: TabItem): boolean {
+  return tab.type === 'research' || tab.id.startsWith(RESEARCH_TAB_PREFIX)
+}
+
+/** 绑定在某个会话上的附属 Tab（文件预览 / 研究）：不持久化，随会话关闭 */
+function isBoundTab(tab: TabItem): boolean {
+  return isPreviewTab(tab) || isResearchTab(tab)
+}
+
+/** 同一会话已打开的研究 Tab：在该会话内切换（会话入口 / 文件预览）时保留 */
+const keptResearchTab = (tabs: TabItem[], sessionId: string): TabItem[] =>
+  tabs.filter((t) => t.id === createResearchTabId(sessionId))
+
 /** Agent 会话及其归属的文件预览 Tab 都可操作 Agent 侧面板。 */
 export function isAgentContextTab(tab: TabItem | undefined): boolean {
   return tab?.type === 'agent' || (tab !== undefined && isPreviewTab(tab))
@@ -277,7 +297,7 @@ function isSessionTab(tab: TabItem): boolean {
 }
 
 function getPersistentTabs(tabs: TabItem[]): TabItem[] {
-  return tabs.filter((tab) => tab.id !== SCRATCH_PAD_ID && tab.id !== TUTORIAL_TAB_ID && !isPreviewTab(tab))
+  return tabs.filter((tab) => tab.id !== SCRATCH_PAD_ID && tab.id !== TUTORIAL_TAB_ID && !isBoundTab(tab))
 }
 
 export function getPersistableTabState(
@@ -286,7 +306,7 @@ export function getPersistableTabState(
 ): PersistedTabState {
   const persistentTabs = getPersistentTabs(tabs)
   const activeTab = activeTabId ? tabs.find((tab) => tab.id === activeTabId) : null
-  const persistentActiveTabId = activeTab && isPreviewTab(activeTab)
+  const persistentActiveTabId = activeTab && isBoundTab(activeTab)
     ? persistentTabs.find((tab) => tab.sessionId === activeTab.sessionId && tab.type === 'agent')?.id
       ?? persistentTabs.at(-1)?.id
       ?? null
@@ -327,12 +347,22 @@ export function openTab(
     }
   }
 
-  if (item.type === 'preview') {
+  if (item.type === 'preview' || item.type === 'research') {
     const ownerAgentTab = tabs.find((t) => t.type === 'agent' && t.sessionId === item.sessionId) ?? {
       id: item.sessionId,
       type: 'agent' as const,
       sessionId: item.sessionId,
       title: 'Agent 会话',
+    }
+    if (item.type === 'research') {
+      const researchTab: TabItem = {
+        id: createResearchTabId(item.sessionId),
+        type: 'research',
+        sessionId: item.sessionId,
+        title: item.title,
+      }
+      const preview = tabs.filter((t) => t.id === createPreviewTabId(item.sessionId))
+      return { tabs: [scratchTab, ownerAgentTab, ...preview, researchTab], activeTabId: researchTab.id }
     }
     const previewTab: TabItem = {
       id: createPreviewTabId(item.sessionId),
@@ -342,7 +372,7 @@ export function openTab(
     }
 
     return {
-      tabs: [scratchTab, ownerAgentTab, previewTab],
+      tabs: [scratchTab, ownerAgentTab, previewTab, ...keptResearchTab(tabs, item.sessionId)],
       activeTabId: previewTab.id,
     }
   }
@@ -364,13 +394,13 @@ export function openTab(
       title: restore.previewTitle,
     }
     return {
-      tabs: [scratchTab, sessionTab, previewTab],
+      tabs: [scratchTab, sessionTab, previewTab, ...keptResearchTab(tabs, item.sessionId)],
       activeTabId: restore.lastView === 'preview' ? previewTab.id : sessionTab.id,
     }
   }
 
   return {
-    tabs: [scratchTab, sessionTab],
+    tabs: [scratchTab, sessionTab, ...keptResearchTab(tabs, item.sessionId)],
     activeTabId: sessionTab.id,
   }
 }
@@ -407,13 +437,15 @@ export function closeTab(
   const tabIndex = tabs.findIndex((t) => t.id === tabId)
   if (tabIndex === -1) return { tabs, activeTabId }
   const closingTab = tabs[tabIndex]!
-  const boundPreviewId = isSessionTab(closingTab) ? createPreviewTabId(closingTab.sessionId) : null
+  const boundIds = isSessionTab(closingTab)
+    ? [createPreviewTabId(closingTab.sessionId), createResearchTabId(closingTab.sessionId)]
+    : []
 
-  const newTabs = tabs.filter((t) => t.id !== tabId && (!boundPreviewId || t.id !== boundPreviewId))
+  const newTabs = tabs.filter((t) => t.id !== tabId && !boundIds.includes(t.id))
 
   // 如果关闭的是当前激活的标签，切换到相邻标签
   let newActiveTabId = activeTabId
-  if (activeTabId === tabId || (boundPreviewId !== null && activeTabId === boundPreviewId)) {
+  if (activeTabId === tabId || (activeTabId !== null && boundIds.includes(activeTabId))) {
     if (newTabs.length > 0) {
       const nextIndex = Math.min(tabIndex, newTabs.length - 1)
       newActiveTabId = newTabs[nextIndex]!.id
@@ -447,14 +479,14 @@ export function updateTabTitle(
   title: string,
 ): TabItem[] {
   return tabs.map((t) =>
-    t.sessionId === sessionId && !isPreviewTab(t) ? { ...t, title } : t
+    t.sessionId === sessionId && !isBoundTab(t) ? { ...t, title } : t
   )
 }
 
 /** 确保 Scratch Pad 标签存在并位于首位，同时只保留一个会话入口 */
 export function ensureScratchPadTab(tabs: TabItem[]): TabItem[] {
   const scratchTab = tabs.find((t) => t.id === SCRATCH_PAD_ID)
-  const sessionTab = tabs.filter((t) => t.id !== SCRATCH_PAD_ID && !isPreviewTab(t)).at(-1)
+  const sessionTab = tabs.filter((t) => t.id !== SCRATCH_PAD_ID && !isBoundTab(t)).at(-1)
   if (scratchTab) {
     return sessionTab ? [scratchTab, sessionTab] : [scratchTab]
   }

@@ -21,7 +21,6 @@ import {
 } from '@/atoms/agent-atoms'
 import { appModeAtom } from '@/atoms/app-mode'
 import { currentConversationIdAtom } from '@/atoms/chat-atoms'
-import { researchCanvasOpenMapAtom } from '@/atoms/research-atoms'
 
 interface ScratchPadAgentSession {
   id: string
@@ -87,11 +86,6 @@ export function openScratchInSplit(store: JotaiStore): boolean {
     }).catch(console.error)
   }
 
-  // 草稿与研究画布占同一槽位：打开草稿即关画布，与 ResearchCanvasToggle 对称
-  store.set(researchCanvasOpenMapAtom, (previous) => {
-    if (!previous.get(agentTab.sessionId)) return previous
-    const next = new Map(previous); next.set(agentTab.sessionId, false); return next
-  })
   store.set(scratchPadPanelOpenAtom, true)
   return true
 }

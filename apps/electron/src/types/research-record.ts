@@ -11,6 +11,10 @@ export const RESEARCH_RECORD_IPC_CHANNELS = {
   LIST_ARCHIVES: 'research:list-archives',
   OPEN_ARCHIVE: 'research:open-archive',
   INTERVENE: 'research:intervene',
+  /** 读 research-work/<run>/ 下的一份阶段文档（只读） */
+  READ_STAGE_DOC: 'research:read-stage-doc',
+  /** 评委报告 HTML（research/report/judge-report.ts；需要 annotations.json） */
+  JUDGE_REPORT: 'research:judge-report',
   /** 主进程 → 渲染层推送：{ sessionId, snapshot } */
   RECORD_CHANGED: 'research:record-changed',
 } as const
@@ -91,7 +95,43 @@ export interface ResearchRecordSnapshot {
   /** null = 链完好；字符串 = 第一处断链说明 */
   integrity: { journal: string | null; interventions: string | null }
   control: ResearchControlView | null
+  /** 工作目录 `research-work/<run>/`（live：会话 cwd 下；归档：归档目录下）；不存在为 null */
+  workdir: ResearchWorkdir | null
+  /** 世界计量总预算（live：PROMA_EVAL_BUDGET，缺省同 MCP 的 8）；归档不给，由 K0 的 budget 行推 */
+  budgetTotal?: number
 }
+
+/** 阶段文档：工作目录里任意深度的 .md + 顶层 .json（不含 sim/、nbsim/） */
+export interface ResearchStageDoc {
+  /** 相对工作目录，`/` 分隔 */
+  path: string
+  mtimeMs: number
+  size: number
+}
+
+export interface ResearchWorkdir {
+  /** 新的在前 */
+  docs: ResearchStageDoc[]
+  /** sim/、recall/ 目录的 mtime（新增文件即变）：状态条据此推"正在仿真 / 检索" */
+  simMtimeMs?: number
+  recallMtimeMs?: number
+}
+
+/** 读阶段文档：live 只给 sessionId；归档另给 archivePath（同 open-archive 白名单） */
+export interface ResearchStageDocInput {
+  sessionId: string
+  archivePath?: string
+  path: string
+}
+
+export type ResearchStageDocResult = ResearchStageDoc & { text: string }
+
+export interface ResearchJudgeReportInput {
+  sessionId: string
+  archivePath?: string
+}
+
+export type ResearchJudgeReportResult = { html: string } | { error: string }
 
 export interface ResearchArchiveEntry {
   path: string

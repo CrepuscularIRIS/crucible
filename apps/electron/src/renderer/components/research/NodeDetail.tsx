@@ -5,8 +5,12 @@ import type { NodeDetailView } from './canvas-view'
 
 /** 节点详情（04 §3.5）：点选后在画布底部展开，Esc 收起；原始记录行内联显示（不跳行） */
 export function NodeDetail({ detail, onClose }: { detail: NodeDetailView; onClose: () => void }): React.ReactElement {
+  const section = React.useRef<HTMLElement>(null)
+  React.useEffect(() => {
+    section.current?.scrollIntoView({ block: 'nearest' })
+  }, [detail.title])
   return (
-    <section className="rounded-md border border-border bg-card p-3" aria-label="节点详情">
+    <section ref={section} className="research-panel p-5" aria-label="节点详情">
       <div className="flex items-center gap-2">
         <h3 className="min-w-0 flex-1 truncate text-[13px] font-semibold">{detail.title}</h3>
         <button type="button" onClick={onClose} className="flex size-6 items-center justify-center rounded text-muted-foreground hover:bg-muted/50 hover:text-foreground" aria-label="收起详情（Esc）">

@@ -14,6 +14,8 @@ import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, realp
 import { basename, delimiter, isAbsolute, join, resolve, sep } from 'node:path'
 import type { AgentStreamPayload, AskUserRequest } from '@proma/shared'
 import { childJobs, verifyInterventions } from '@proma/shared/research-record'
+import { renderJudgeReport } from '../../../../../research/report/judge-report'
+import { readStageDocAt, readWorkdir } from './research-stage-docs'
 import {
   controlState,
   getResearchChildCanceller,
@@ -33,7 +35,12 @@ import type {
   ResearchInterveneInput,
   ResearchInterveneResult,
   ResearchIntervention,
+  ResearchJudgeReportInput,
+  ResearchJudgeReportResult,
   ResearchRecordSnapshot,
+  ResearchStageDocInput,
+  ResearchStageDocResult,
+  ResearchWorkdir,
 } from '../../types/research-record'
 
 export interface ResearchRecordDeps {
@@ -258,7 +265,25 @@ function liveContext(sessionId: string): LiveContext | undefined {
   return { cwd, runDir, bundle, events, view: controlView(sessionId, bundle, events) }
 }
 
-function snapshotOf(source: 'live' | 'archive', root: string, bundle: Record<string, string>, control: ResearchControlView | null, sessionId?: string): ResearchRecordSnapshot {
+/** 工作目录 `<cwd>/research-work/<run>/`（K0 副作用信封；run = run 目录名） */
+const liveWorkdirSegs = (runDir: string) => ['research-work', basename(runDir)]
+const ARCHIVE_WORKDIR = ['research-work']
+
+/** 与 MCP 同一口径：PROMA_EVAL_BUDGET，缺省 8（packages/research-mcp/src/server.ts EVAL_BUDGET） */
+function evalBudget(): number | undefined {
+  const v = Number((deps.env ?? process.env).PROMA_EVAL_BUDGET?.trim() || 8)
+  return Number.isInteger(v) && v > 0 ? v : undefined
+}
+
+function snapshotOf(
+  source: 'live' | 'archive',
+  root: string,
+  bundle: Record<string, string>,
+  control: ResearchControlView | null,
+  workdir: ResearchWorkdir | null,
+  sessionId?: string,
+): ResearchRecordSnapshot {
+  const budgetTotal = source === 'live' ? evalBudget() : undefined
   return {
     source,
     ...(sessionId ? { sessionId } : {}),
@@ -273,12 +298,14 @@ function snapshotOf(source: 'live' | 'archive', root: string, bundle: Record<str
         : verifyInterventions(bundle['interventions.jsonl'], bundle['journal.jsonl'] ?? '', sha256)?.note ?? null,
     },
     control,
+    workdir,
+    ...(budgetTotal !== undefined ? { budgetTotal } : {}),
   }
 }
 
 function liveSnapshot(sessionId: string): ResearchRecordSnapshot | null {
   const ctx = liveContext(sessionId)
-  return ctx ? snapshotOf('live', ctx.runDir, ctx.bundle, ctx.view, sessionId) : null
+  return ctx ? snapshotOf('live', ctx.runDir, ctx.bundle, ctx.view, readWorkdir(ctx.cwd, liveWorkdirSegs(ctx.runDir)), sessionId) : null
 }
 
 // ===== 推送：轮询签名 =====
@@ -300,7 +327,9 @@ function signature(sessionId: string): string {
       return `${key}:-`
     }
   })
-  return [runDir, ...stats, deps.isRunning(sessionId), askPending.has(sessionId), isWired(sessionId), getResearchChildCanceller() !== undefined].join('|')
+  const workdir = readWorkdir(cwd, liveWorkdirSegs(runDir))
+  const work = workdir ? [workdir.simMtimeMs, workdir.recallMtimeMs, ...workdir.docs.map((d) => `${d.path}:${d.size}:${d.mtimeMs}`)].join(',') : '-'
+  return [runDir, ...stats, work, deps.isRunning(sessionId), askPending.has(sessionId), isWired(sessionId), getResearchChildCanceller() !== undefined].join('|')
 }
 
 /**
@@ -371,16 +400,66 @@ export function listArchives(sessionId?: string): ResearchArchiveEntry[] {
   return out
 }
 
-/** research:open-archive —— 只认白名单根（realpath 比对，挡 .. 与符号链接逃逸）；归档只读、无控制。 */
-export function openArchive(path: string, sessionId?: string): ResearchRecordSnapshot {
-  const real = isAbsolute(path) && existsSync(path) ? realpathSync(path) : undefined
+/** 只认白名单根（realpath 比对，挡 .. 与符号链接逃逸），且必须是研究归档；返回 realpath。 */
+function resolveArchive(path: string, sessionId?: string): string {
+  const real = typeof path === 'string' && isAbsolute(path) && existsSync(path) ? realpathSync(path) : undefined
   const inside = real !== undefined && archiveRoots(sessionId).allowed.some((root) => {
     const r = realpathSync(root)
     return real === r || real.startsWith(r + sep)
   })
   if (!real || !inside) throw new Error(`归档路径不在白名单根内: ${path}`)
   if (!existsSync(join(real, 'journal.jsonl'))) throw new Error(`不是研究归档（缺 journal.jsonl）: ${path}`)
-  return snapshotOf('archive', real, readArchiveBundle(real), null)
+  return real
+}
+
+/** research:open-archive —— 归档只读、无控制。 */
+export function openArchive(path: string, sessionId?: string): ResearchRecordSnapshot {
+  const real = resolveArchive(path, sessionId)
+  return snapshotOf('archive', real, readArchiveBundle(real), null, readWorkdir(real, ARCHIVE_WORKDIR))
+}
+
+// ===== 阶段文档 / 评委报告 =====
+
+/** 文档所在的 base + 工作目录段：归档 = <归档>/research-work，live = <cwd>/research-work/<run> */
+function workdirOf(sessionId: string, archivePath?: string): [base: string, segs: string[]] {
+  if (archivePath !== undefined) return [resolveArchive(archivePath, sessionId), ARCHIVE_WORKDIR]
+  const cwd = deps.resolveCwd(sessionId)
+  const runDir = findLiveRunDir(cwd)
+  if (!cwd || !runDir) throw new Error('该会话没有实时研究记录')
+  return [cwd, liveWorkdirSegs(runDir)]
+}
+
+const optString = (v: unknown) => v === undefined || typeof v === 'string'
+
+/** research:read-stage-doc —— 只读；路径限定在工作目录内、不跟随符号链接（research-stage-docs.ts）。 */
+export function readStageDoc(input: ResearchStageDocInput): ResearchStageDocResult {
+  if (typeof input?.sessionId !== 'string' || typeof input.path !== 'string' || !optString(input.archivePath)) {
+    throw new Error('research:read-stage-doc 参数不合法')
+  }
+  const [base, segs] = workdirOf(input.sessionId, input.archivePath)
+  return readStageDocAt(base, segs, input.path)
+}
+
+/**
+ * research:judge-report —— 与答辩页同一渲染（research/report/judge-report.ts renderJudgeReport），
+ * 输入是画布同一份归档捆（readArchiveBundle：固定文件名集合，不遍历整棵目录）。
+ * 报告需要审计注记 annotations.json，只有归档、补写注记之后才有；实时 run 与无注记归档返回原因，不抛。
+ */
+export function judgeReport(input: ResearchJudgeReportInput): ResearchJudgeReportResult {
+  if (typeof input?.sessionId !== 'string' || !optString(input.archivePath)) throw new Error('research:judge-report 参数不合法')
+  if (input.archivePath === undefined) {
+    return { error: '实时 run 还没有审计注记（annotations.json）。评委报告要在 run 归档、补写注记后才能生成；可在「科研进度」里换一个有注记的归档。' }
+  }
+  const dir = resolveArchive(input.archivePath, input.sessionId)
+  const files = readArchiveBundle(dir)
+  if (files['annotations.json'] === undefined) {
+    return { error: `${basename(dir)} 还没有审计注记（annotations.json）。评委报告要在 run 归档、补写注记后才能生成；可在「科研进度」里换一个有注记的归档。` }
+  }
+  try {
+    return { html: renderJudgeReport(files, { archive: basename(dir) }) }
+  } catch (e) {
+    return { error: `评委报告生成失败：${e instanceof Error ? e.message : String(e)}` }
+  }
 }
 
 // ===== 写：interventions.jsonl =====

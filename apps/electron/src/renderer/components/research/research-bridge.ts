@@ -10,7 +10,11 @@ import type {
   ResearchArchiveEntry,
   ResearchInterveneInput,
   ResearchInterveneResult,
+  ResearchJudgeReportInput,
+  ResearchJudgeReportResult,
   ResearchRecordSnapshot,
+  ResearchStageDocInput,
+  ResearchStageDocResult,
 } from '@/types/research-record'
 
 export interface ResearchBridge {
@@ -20,6 +24,8 @@ export interface ResearchBridge {
   openResearchArchive: (path: string, sessionId?: string) => Promise<ResearchRecordSnapshot>
   interveneResearch: (input: ResearchInterveneInput) => Promise<ResearchInterveneResult>
   onResearchRecordChanged: (cb: (event: { sessionId: string; snapshot: ResearchRecordSnapshot | null }) => void) => () => void
+  readResearchStageDoc: (input: ResearchStageDocInput) => Promise<ResearchStageDocResult>
+  getResearchJudgeReport: (input: ResearchJudgeReportInput) => Promise<ResearchJudgeReportResult>
 }
 
 /** preload 上可能缺任一方法；调用方逐个判断 typeof === 'function' */

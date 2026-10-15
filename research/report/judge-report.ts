@@ -69,8 +69,12 @@ function feedback(rec: ResearchRecord, ann: Annotations): ReportModel['feedback'
 }
 
 export function buildReport(dir: string, opts: { archive?: string; nav?: ReportModel['nav'] } = {}): string {
-  const files = readArchive(dir)
-  if (files['annotations.json'] === undefined) throw new JudgeError(`${dir} 没有 annotations.json`)
+  return renderJudgeReport(readArchive(dir), { archive: opts.archive ?? dir, ...(opts.nav ? { nav: opts.nav } : {}) })
+}
+
+/** 文件捆（相对路径 → 原文）→ 报告 HTML。Proma 主进程用它渲染自己读好的归档捆（不再走 readArchive）。 */
+export function renderJudgeReport(files: Record<string, string>, opts: { archive: string; nav?: ReportModel['nav'] }): string {
+  if (files['annotations.json'] === undefined) throw new JudgeError(`${opts.archive} 没有 annotations.json`)
   const rec = parseBundle(files, { sha256 })
   const ann = JSON.parse(files['annotations.json']) as Annotations
   if (ann.schema !== 'crucible.annotations/2') throw new JudgeError(`annotations schema ${ann.schema} 不认识`)
@@ -87,7 +91,7 @@ export function buildReport(dir: string, opts: { archive?: string; nav?: ReportM
   const html = renderReport({
     rec,
     ann: { ...ann, unknowns: ann.unknowns.map((u) => interpolate(u, rc)) },
-    archive: opts.archive ?? dir,
+    archive: opts.archive,
     answers: caseAnswers(rec, ann, rc),
     nodes,
     feedback: feedback(rec, ann),

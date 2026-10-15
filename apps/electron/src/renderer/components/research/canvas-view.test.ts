@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import type { Annotations } from '@proma/shared/research-record'
-import { archivePickerView, canvasView, nodeDetail, sliceRecord } from './canvas-view'
-import { loadRecord, ONE_DIR, P0R_DIR, readBundle } from './test-fixtures'
+import { archivePickerView, canvasView, nodeDetail, sliceRecord, stageDocView } from './canvas-view'
+import { DELIVERY_DIR, loadRecord, ONE_DIR, P0R_DIR, readBundle } from './test-fixtures'
 
 const one = loadRecord(ONE_DIR)
 const replay = (seq: number, extra: Partial<Parameters<typeof canvasView>[1]> = {}) =>
@@ -206,5 +206,58 @@ describe('latestTicket：异步哈希期间新快照到达，旧的不能覆盖�
     expect(newer()).toBe(true)
     next() // 换数据源也会作废在途的
     expect(newer()).toBe(false)
+  })
+})
+
+describe('状态条 + 阶段文档（交付 run，运行中视角）', () => {
+  const delivery = loadRecord(DELIVERY_DIR)
+  const k0 = readBundle(DELIVERY_DIR)['K0-intake.md']!
+  const ms = (iso: string) => Date.parse(iso)
+  const workdir = {
+    docs: [
+      { path: 'REPORT.md', mtimeMs: ms('2026-10-15T04:49:55Z'), size: 6311 },
+      { path: 'forecast.md', mtimeMs: ms('2026-10-15T04:14:47Z'), size: 900 },
+      { path: 'lessons.md', mtimeMs: ms('2026-10-15T03:11:49Z'), size: 1200 },
+    ],
+    simMtimeMs: ms('2026-10-15T04:14:40Z'),
+  }
+  const live = (seq?: number) => canvasView(delivery, { ...(seq ? { seq } : {}), mode: 'live', bridge: false, workdir, budgetTotal: 8, k0 })
+
+  test('结案时：阶段 / 预算 / 计数 / 最新事件（UTC+08:00）/ 下一步', () => {
+    expect(live().status).toEqual({
+      phase: 'report 报告',
+      budget: '6 / 8',
+      counts: 'LIVE 2 · CONTESTED 11 · REFUTED 0',
+      latest: '第 62 行 · 10-15 12:50 · 账本检查通过',
+      next: '已结束',
+    })
+  })
+
+  test('阶段文档：新的在前，时间按 UTC+08:00，最新一份标出', () => {
+    expect(live().docs).toEqual([
+      { path: 'REPORT.md', time: '10-15 12:49', newest: true },
+      { path: 'forecast.md', time: '10-15 12:14', newest: false },
+      { path: 'lessons.md', time: '10-15 11:11', newest: false },
+    ])
+  })
+
+  test('回放不拿"现在"的工作目录推阶段；没有预算总额时只显示已用；没有 workdir → 文档列表为空', () => {
+    const r = canvasView(delivery, { seq: 21, mode: 'replay', bridge: false, workdir })
+    expect(r.status.phase).toBe('probe 测量')
+    expect(r.status.budget).toBe('1')
+    expect(r.status.next).toBe('判读结果 P1')
+    expect(canvasView(delivery, { mode: 'replay', bridge: false }).docs).toEqual([])
+  })
+
+  test('K0 的 budget 行兜底预算总额', () => {
+    expect(canvasView(delivery, { mode: 'replay', bridge: false, k0 }).status.budget).toBe('6 / 8')
+  })
+})
+
+describe('stageDocView：只读渲染方式', () => {
+  test('md → markdown；json → 缩进后的 JSON；坏 JSON → 原文', () => {
+    expect(stageDocView('a/x.md', '# 标题')).toEqual({ kind: 'markdown', text: '# 标题' })
+    expect(stageDocView('_P2.json', '{"pid":"P2","bands":{"H1":[1,2]}}')).toEqual({ kind: 'json', text: '{\n  "pid": "P2",\n  "bands": {\n    "H1": [\n      1,\n      2\n    ]\n  }\n}' })
+    expect(stageDocView('bad.json', '{oops')).toEqual({ kind: 'text', text: '{oops' })
   })
 })

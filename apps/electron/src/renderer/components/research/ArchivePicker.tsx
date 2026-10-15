@@ -1,5 +1,5 @@
 import React from 'react'
-import { X } from 'lucide-react'
+import { ArrowUpRight, FlaskConical, History, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import type { ResearchArchiveEntry } from '@/types/research-record'
@@ -24,24 +24,27 @@ export function ArchivePicker({ archives, onPick, onClose }: {
     navigator.clipboard.writeText(SAMPLE_PROMPT).then(() => setCopied(true), () => setCopied(false))
   }
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-content-area titlebar-no-drag">
+    <div className="research-canvas flex h-full flex-col overflow-hidden bg-content-area titlebar-no-drag">
       <div className="flex h-[34px] flex-shrink-0 items-center border-b border-border/30 px-3">
         <span className="truncate text-xs text-muted-foreground">研究画布</span>
         <button type="button" onClick={onClose} className="ml-auto flex size-6 items-center justify-center rounded text-muted-foreground hover:bg-muted/50 hover:text-foreground" aria-label="关闭研究画布">
           <X className="size-3.5" />
         </button>
       </div>
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3 text-[13px]">
-        <section className="space-y-1">
-          <p>研究画布把一次研究的运行记录摊开：当前在问什么、下一步要决定什么、每个解释被哪次测量支持或否定。</p>
-          <p className="text-muted-foreground">本会话还没有研究 run（工作目录下没有 .proma-research/）。可以先回放一次已完成的研究。</p>
+      <div className="research-canvas-scroll"><div className="research-canvas-body text-[13px]">
+        <section className="research-panel p-7">
+          <FlaskConical className="mb-5 size-7 text-muted-foreground" aria-hidden />
+          <p className="research-eyebrow">START WITH A QUESTION</p>
+          <h1 className="mb-3 mt-3 text-2xl font-semibold tracking-tight">让研究过程，看得见。</h1>
+          <p className="max-w-2xl leading-7 text-muted-foreground">从一个问题出发，追踪竞争假设、实验反馈与每一次判断变化。研究者与评委，共用一份可追溯的记录。</p>
+          <p className="mt-5 border-t border-border pt-4 text-[12px] leading-relaxed text-muted-foreground">本会话尚未载入研究记录。如果正在等待 K0 开局确认，请回到对话处理；记录建立后，画布会自动接入。也可以先回放已有研究。</p>
         </section>
 
-        <section className="space-y-1">
-          <h3 className="text-[11px] text-muted-foreground">回放</h3>
+        <section className="research-panel p-5 space-y-3">
+          <h3 className="flex items-center gap-2 font-medium"><History className="size-4" aria-hidden />从一份真实记录开始</h3>
           {picker.sample ? (
             <Button type="button" variant="outline" size="sm" className="h-auto w-full justify-start whitespace-normal py-1.5 text-left text-[13px]" onClick={() => onPick(picker.sample!)}>
-              {SAMPLE_RUN.label}
+              {SAMPLE_RUN.label}<ArrowUpRight className="ml-auto size-4 shrink-0" aria-hidden />
             </Button>
           ) : (
             <p className="text-[11px] text-muted-foreground">本构建没有打包示例 run（容器镜像不含 research/campaigns，避免评测里的 agent 读到历史测量）。</p>
@@ -55,7 +58,7 @@ export function ArchivePicker({ archives, onPick, onClose }: {
           ))}
         </section>
 
-        <section className="space-y-1">
+        <section className="research-panel p-5 space-y-3">
           <h3 className="text-[11px] text-muted-foreground">示例任务</h3>
           <p className="text-muted-foreground">示例 run 的原始一句话提示词（GLM，2026-10-14）。在研究会话里发出它，画布就会显示实时记录。</p>
           <pre className="whitespace-pre-wrap rounded-md border border-border bg-card p-2 text-[12px]">{SAMPLE_PROMPT}</pre>
@@ -63,6 +66,7 @@ export function ArchivePicker({ archives, onPick, onClose }: {
             {copied ? '已复制' : '复制示例提示词'}
           </Button>
         </section>
+      </div>
       </div>
     </div>
   )

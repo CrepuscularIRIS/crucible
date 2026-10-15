@@ -15,6 +15,7 @@ import { PreviewTabContent } from '@/components/diff/PreviewTabContent'
 import { MarkdownRichEditor } from '@/components/diff/MarkdownRichEditor'
 import { MarkdownToc } from '@/components/diff/MarkdownToc'
 import { ScratchPadView } from '@/components/scratch-pad/ScratchPadView'
+import { ResearchTabContent } from '@/components/research/ResearchTabContent'
 import { TabErrorBoundary } from './TabErrorBoundary'
 
 export interface TabContentProps {
@@ -52,6 +53,14 @@ export function TabContent({ tabId }: TabContentProps): React.ReactElement {
     return (
       <TabErrorBoundary key={tab.sessionId} sessionId={tab.sessionId}>
         <ChatView conversationId={tab.sessionId} />
+      </TabErrorBoundary>
+    )
+  }
+
+  if (tab.type === 'research') {
+    return (
+      <TabErrorBoundary key={tab.id} sessionId={tab.sessionId}>
+        <ResearchTabContent sessionId={tab.sessionId} />
       </TabErrorBoundary>
     )
   }

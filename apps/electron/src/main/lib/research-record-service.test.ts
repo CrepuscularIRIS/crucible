@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { createHash } from 'node:crypto'
-import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { basename, join, resolve } from 'node:path'
+import { buildReport } from '../../../../../research/report/judge-report'
 import type { AgentStreamPayload, AskUserRequest } from '@proma/shared'
 import { parseBundle } from '@proma/shared/research-record'
 import {
@@ -11,8 +12,10 @@ import {
   handleAgentEvent,
   handleAskUserAnswered,
   intervene,
+  judgeReport,
   listArchives,
   openArchive,
+  readStageDoc,
   readArchiveBundle,
   readLiveBundle,
   releaseRecord,
@@ -23,7 +26,9 @@ import { attach, gate, syncGate } from './research-control'
 import type { ResearchIntervention, ResearchRecordSnapshot } from '../../types/research-record'
 
 const sha = (s: string) => createHash('sha256').update(s).digest('hex')
-const P0R = resolve(import.meta.dir, '../../../../../research/campaigns/2026-10-14-glm53flash-p0-oneline-ca_rebound')
+const CAMPAIGNS = resolve(import.meta.dir, '../../../../../research/campaigns')
+const P0R = join(CAMPAIGNS, '2026-10-14-glm53flash-p0-oneline-ca_rebound')
+const ONE = join(CAMPAIGNS, '2026-10-14-glm53flash-oneline-ca_rebound')
 
 /** 按 MCP 的链规则（prev = 上一行原文 sha256）写 journal。 */
 function writeJournal(file: string, ops: Array<Record<string, unknown>>): void {
@@ -292,5 +297,107 @@ describe('分叉与 eventBus（fork_open / fork_answer / 代记 resume）', () =
     expect(gate(SID).readOnly).toBe(false)
     attach(SID)
     expect(gate(SID)).toMatchObject({ readOnly: true, stopAtTurn: true, reason: 'U1' })
+  })
+})
+
+describe('阶段文档与状态条输入（research-work/<run>/）', () => {
+  const work = () => join(cwd, 'research-work', 'r1')
+  const reconfigure = (env: NodeJS.ProcessEnv, archiveRoots: string[] = []) => configureResearchRecord({
+    resolveCwd: (sid) => (sid === SID ? cwd : undefined),
+    isRunning: () => running,
+    push: (sessionId, snapshot) => pushes.push({ sessionId, snapshot }),
+    archiveRoots,
+    env,
+  })
+
+  beforeEach(() => {
+    mkdirSync(join(work(), 'sim'), { recursive: true })
+    writeFileSync(join(work(), 'sim', 'a.json'), '{}')
+    writeFileSync(join(work(), 'rivals.md'), '# 补族')
+    utimesSync(join(work(), 'rivals.md'), 1_000, 1_000)
+    writeFileSync(join(work(), 'lessons.md'), '# 教训')
+    utimesSync(join(work(), 'lessons.md'), 2_000, 2_000)
+  })
+
+  it('快照带工作目录文档（新的在前，不含 sim/）与预算总额（PROMA_EVAL_BUDGET，缺省 = MCP 的 8）', () => {
+    reconfigure({})
+    const snap = getRecord(SID)!
+    expect(snap.workdir!.docs.map((d) => d.path)).toEqual(['lessons.md', 'rivals.md'])
+    expect(snap.workdir!.simMtimeMs).toBeGreaterThan(0)
+    expect(snap.budgetTotal).toBe(8)
+    reconfigure({ PROMA_EVAL_BUDGET: '5' })
+    expect(getRecord(SID)!.budgetTotal).toBe(5)
+  })
+
+  it('没有工作目录 → workdir null，快照照常', () => {
+    rmSync(join(cwd, 'research-work'), { recursive: true, force: true })
+    expect(getRecord(SID)!.workdir).toBeNull()
+  })
+
+  it('agent 新写一份文档 → 200 ms 内推送快照（运行中打开的画布也能看到）', async () => {
+    getRecord(SID)
+    writeFileSync(join(work(), 'forecast.md'), '# 预报')
+    await new Promise((r) => setTimeout(r, 200))
+    const last = pushes.at(-1)?.snapshot
+    expect(last?.workdir?.docs[0]?.path).toBe('forecast.md')
+  })
+
+  it('readStageDoc：live 读会话 cwd 下的工作目录；越界拒绝', () => {
+    expect(readStageDoc({ sessionId: SID, path: 'lessons.md' })).toMatchObject({ path: 'lessons.md', text: '# 教训' })
+    expect(() => readStageDoc({ sessionId: SID, path: '../../.proma-research/r1/journal.jsonl' })).toThrow()
+    expect(() => readStageDoc({ sessionId: SID, path: 'sim/a.json' })).toThrow()
+    expect(() => readStageDoc({ sessionId: 'other', path: 'lessons.md' })).toThrow()
+    expect(() => readStageDoc({ sessionId: SID, path: 42 as unknown as string })).toThrow('参数不合法')
+  })
+
+  it('readStageDoc / openArchive：归档读 <归档>/research-work/，归档路径走同一白名单', () => {
+    const arch = join(cwd, 'arch')
+    mkdirSync(join(arch, 'research-work'), { recursive: true })
+    writeJournal(join(arch, 'journal.jsonl'), [{ op: 'run.init' }])
+    writeFileSync(join(arch, 'research-work', 'REPORT.md'), '# 草稿')
+    expect(openArchive(arch, SID).workdir!.docs.map((d) => d.path)).toEqual(['REPORT.md'])
+    expect(readStageDoc({ sessionId: SID, archivePath: arch, path: 'REPORT.md' }).text).toBe('# 草稿')
+    const outside = mkdtempSync(join(tmpdir(), 'proma-outside-'))
+    try {
+      mkdirSync(join(outside, 'research-work'))
+      writeFileSync(join(outside, 'research-work', 'x.md'), 'x')
+      writeJournal(join(outside, 'journal.jsonl'), [{ op: 'run.init' }])
+      expect(() => readStageDoc({ sessionId: SID, archivePath: outside, path: 'x.md' })).toThrow('白名单')
+    } finally {
+      rmSync(outside, { recursive: true, force: true })
+    }
+  })
+})
+
+describe('评委报告（research/report/judge-report.ts，同一份记录）', () => {
+  it('live run 没有 annotations.json → 说明原因，不抛', () => {
+    const r = judgeReport({ sessionId: SID })
+    expect('error' in r && r.error).toContain('annotations.json')
+  })
+
+  it('有注记的归档 → 确定性 HTML（与答辩页同一生成器）', () => {
+    configureResearchRecord({ resolveCwd: () => cwd, isRunning: () => false, push: () => {}, archiveRoots: [CAMPAIGNS] })
+    const r = judgeReport({ sessionId: SID, archivePath: ONE })
+    const title = (JSON.parse(readFileSync(join(ONE, 'annotations.json'), 'utf-8')) as { case: { title: string } }).case.title
+    expect('html' in r && r.html).toContain(title)
+    expect(judgeReport({ sessionId: SID, archivePath: ONE })).toEqual(r)
+  })
+
+  it('画布读的归档捆与答辩页生成器读整棵目录，出的 HTML 字节相同', () => {
+    configureResearchRecord({ resolveCwd: () => cwd, isRunning: () => false, push: () => {}, archiveRoots: [CAMPAIGNS] })
+    const r = judgeReport({ sessionId: SID, archivePath: ONE })
+    expect('html' in r && r.html).toBe(buildReport(ONE, { archive: basename(ONE) }))
+  })
+
+  it('无注记的归档 → 说明原因', () => {
+    const arch = join(cwd, 'arch')
+    mkdirSync(arch)
+    writeJournal(join(arch, 'journal.jsonl'), [{ op: 'run.init' }])
+    const r = judgeReport({ sessionId: SID, archivePath: arch })
+    expect('error' in r && r.error).toContain('annotations.json')
+  })
+
+  it('归档不在白名单 → 抛错', () => {
+    expect(() => judgeReport({ sessionId: SID, archivePath: ONE })).toThrow('白名单')
   })
 })
