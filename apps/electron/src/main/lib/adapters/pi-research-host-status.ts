@@ -175,11 +175,20 @@ const ARM_MEANING: Record<ResearchRefineMode, string> = {
   learning: 'deterministic reviewer; harness writes only via approved refine',
 }
 
+/**
+ * 每个臂都一样：harness 写入只走宿主（SE2b 在 turn_end 恢复任何直写）。Prime 的基础提示与
+ * "Continual Harness State" 概览却在教 `rlm.harness.create_*`、`global_=True` 与"何时 refine"——
+ * 2026-10-14 终版验收 run 在 report_declare 之后照着它直写了三次，臂因此 contaminated。
+ */
+const HARNESS_READ_ONLY_LINE =
+  'harness: read-only to you in this session — never call rlm.harness.create_memory / create_* / update_* / delete_* / record_refinement (local or global_=True); Prime\'s "when to refine the continual harness" guidance does not apply here. Put lessons in research-work/<run>/lessons.md. The host undoes any harness write at turn end and it voids this run\'s arm.'
+
 export function renderResearchHostStatus(status: ResearchHostStatus): string {
   const { arm, globalHarness: g } = status
   const lines = [
     '<research_host_status>',
     `arm: ${arm.mode} (${arm.source}) — ${ARM_MEANING[arm.mode]}`,
+    HARNESS_READ_ONLY_LINE,
     ...(arm.contaminated ? [`⚠ arm contaminated: ${arm.reasons.join('; ')}`] : []),
     `global harness: sha256 ${g.sha256?.slice(0, 12) ?? 'missing'} · unmanaged entries ${g.unmanagedEntries} · global skill entries ${g.globalSkillEntries}`,
     ...(g.unapproved.length > 0

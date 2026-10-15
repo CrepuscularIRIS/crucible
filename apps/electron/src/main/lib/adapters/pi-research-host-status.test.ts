@@ -79,6 +79,17 @@ describe('SE7b · K0 宿主状态块', () => {
     expect(block).toContain('memory:sneak')
   })
 
+  it('每个臂都对模型明令 harness 只读（Prime 概览在教 create_memory / global_=True；终版验收 run 收口后直写三次）', () => {
+    for (const mode of ['off', 'frozen', 'learning'] as const) {
+      const status = collectResearchHostStatus({ arm: { mode, source: 'ui-explicit' }, globalHarnessPath: join(tmp(), 'none.json') })
+      const line = renderResearchHostStatus(status).split('\n').find((l) => l.startsWith('harness: read-only'))
+      expect(line).toBeDefined()
+      expect(line).toContain('rlm.harness.create_memory')
+      expect(line).toContain('global_=True')
+      expect(line).toContain('lessons.md')
+    }
+  })
+
   it('global harness 干净时臂不带 contaminated；缺文件时 sha 为 null', () => {
     const status = collectResearchHostStatus({ arm: { mode: 'off', source: 'headless-default' }, globalHarnessPath: join(tmp(), 'none.json') })
     expect(status.globalHarness.sha256).toBeNull()
