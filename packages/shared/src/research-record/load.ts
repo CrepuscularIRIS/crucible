@@ -7,9 +7,11 @@
 import type {
   BranchAction,
   ChildJob,
+  Draft,
   Intervention,
   JournalEvent,
   Prereg,
+  Rejection,
   ResearchRecord,
 } from './types.ts'
 
@@ -63,6 +65,8 @@ function parsePrereg(text: string, sha256: LoadOptions['sha256']): Prereg {
     question: String(d.question ?? ''),
     protocol: String(observe.protocol ?? ''),
     reps: Number(observe.reps ?? 1),
+    blockers: String(observe.blockers ?? ''),
+    ...(typeof d.metricSpec === 'string' ? { metricSpec: d.metricSpec } : {}),
     bands: (d.bands ?? {}) as Prereg['bands'],
     branches: ((d.branches ?? []) as any[]).map((b) => ({
       band: b.band,
@@ -151,6 +155,57 @@ function parseInterventions(text: string): Intervention[] {
   return out
 }
 
+function parseRejections(text: string): Rejection[] {
+  const out: Rejection[] = []
+  text.split('\n').forEach((l, i) => {
+    if (l.trim() === '') return
+    let d: Record<string, any>
+    try {
+      d = JSON.parse(l) as Record<string, any>
+    } catch {
+      return // 撕裂行跳过：rejections.jsonl 只作展示，不参与裁决
+    }
+    if (d === null || typeof d !== 'object' || Array.isArray(d)) return
+    const spec = d.args?.spec
+    const isSpec = spec !== null && typeof spec === 'object' && !Array.isArray(spec)
+    out.push({
+      line: i + 1,
+      ts: String(d.ts ?? ''),
+      op: String(d.op ?? ''),
+      error: String(d.error ?? ''),
+      ...(isSpec && typeof spec.pid === 'string' ? { pid: spec.pid } : {}),
+      ...(isSpec ? { spec } : {}),
+    })
+  })
+  return out
+}
+
+const DRAFT = /^research-work\/(_P[^/]*\.json)$/
+
+/** 工作目录顶层 _P*.json：pid / 观测格取内容；坏 JSON 仍列出（pid 退回文件名里的 P#） */
+function parseDrafts(files: Record<string, string>, sha256: LoadOptions['sha256']): Draft[] {
+  const out: Draft[] = []
+  for (const [key, text] of Object.entries(files)) {
+    const path = DRAFT.exec(key)?.[1]
+    if (!path) continue
+    let d: Record<string, any> | undefined
+    try {
+      d = JSON.parse(text) as Record<string, any>
+    } catch {
+      d = undefined
+    }
+    const pid = typeof d?.pid === 'string' ? d.pid : /^_(P\d+)/.exec(path)?.[1]
+    const o = d?.observe
+    out.push({
+      path,
+      sha256: sha256(text),
+      ...(pid ? { pid } : {}),
+      ...(o && typeof o === 'object' ? { observe: { protocol: String(o.protocol ?? ''), blockers: String(o.blockers ?? '') } } : {}),
+    })
+  }
+  return out.sort((a, b) => a.path.localeCompare(b.path))
+}
+
 export function parseBundle(files: Record<string, string>, opts: LoadOptions): ResearchRecord {
   const journal = files['journal.jsonl']
   if (journal === undefined) throw new Error('bundle 缺 journal.jsonl')
@@ -194,5 +249,7 @@ export function parseBundle(files: Record<string, string>, opts: LoadOptions): R
     interventions: interventionsText === undefined ? null : parseInterventions(interventionsText),
     ...(interventionsBroken ? { interventionsBroken } : {}),
     fileSha256,
+    rejections: files['rejections.jsonl'] === undefined ? null : parseRejections(files['rejections.jsonl']),
+    drafts: parseDrafts(files, opts.sha256),
   }
 }

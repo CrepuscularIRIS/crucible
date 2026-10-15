@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { basename, join, resolve } from 'node:path'
 import { buildReport } from '../../../../../research/report/judge-report'
 import type { AgentStreamPayload, AskUserRequest } from '@proma/shared'
-import { parseBundle } from '@proma/shared/research-record'
+import { parseBundle, workbench } from '@proma/shared/research-record'
 import {
   configureResearchRecord,
   getRecord,
@@ -29,6 +29,7 @@ const sha = (s: string) => createHash('sha256').update(s).digest('hex')
 const CAMPAIGNS = resolve(import.meta.dir, '../../../../../research/campaigns')
 const P0R = join(CAMPAIGNS, '2026-10-14-glm53flash-p0-oneline-ca_rebound')
 const ONE = join(CAMPAIGNS, '2026-10-14-glm53flash-oneline-ca_rebound')
+const DELIVERY = join(CAMPAIGNS, '2026-10-15-glm53flash-delivery-oneline-ca_rebound')
 
 /** 按 MCP 的链规则（prev = 上一行原文 sha256）写 journal。 */
 function writeJournal(file: string, ops: Array<Record<string, unknown>>): void {
@@ -146,6 +147,30 @@ describe('记录快照（R1）', () => {
     expect(files['child-jobs/sim-mechspace/out.md']).toContain('COMPLETED')
     expect(files['child-jobs/RULINGS.md']).toBeDefined()
     expect(verifyChain(files['journal.jsonl']!, false)).toBeNull()
+  })
+  it('工作台数据源：live 带 rejections.jsonl 与 research-work/<run>/_P*.json（压成 research-work/_P*.json）；草稿变动即推送', async () => {
+    writeFileSync(join(runDir, 'rejections.jsonl'), '{"ts":"x","op":"prereg_write","args":{"spec":{"pid":"P1"}},"error":"e"}\n')
+    const work = join(cwd, 'research-work', 'r1')
+    mkdirSync(work, { recursive: true })
+    writeFileSync(join(work, '_P1.json'), '{"pid":"P1"}')
+    writeFileSync(join(work, 'ledger.md'), 'x')
+    const snap = getRecord(SID)!
+    expect(snap.files['rejections.jsonl']).toContain('prereg_write')
+    expect(Object.keys(snap.files).filter((k) => k.startsWith('research-work/'))).toEqual(['research-work/_P1.json'])
+    const secret = join(cwd, 'secret.json')
+    writeFileSync(secret, '{"pid":"leak"}')
+    symlinkSync(secret, join(work, '_P9.json'))
+    expect(readLiveBundle(cwd, runDir)['research-work/_P9.json']).toBeUndefined()
+    writeFileSync(join(work, '_P2.json'), '{"pid":"P2"}')
+    await Bun.sleep(200)
+    expect(pushes.at(-1)?.snapshot?.files['research-work/_P2.json']).toBe('{"pid":"P2"}')
+  })
+  it('交付归档 → parseBundle → workbench：三组字段都有数据', () => {
+    const rec = parseBundle(readArchiveBundle(DELIVERY), { sha256: sha })
+    const wb = workbench(rec)
+    expect(wb.timeline).toHaveLength(62)
+    expect(wb.probeCards.map((c) => c.pid)).toEqual(['P1', 'P2', 'P3', 'P4', 'P5', 'P7'])
+    expect(wb.versionChains.find((v) => v.id === 'prereg/P2.json')?.path).toBe('_P2cd.json')
   })
 })
 

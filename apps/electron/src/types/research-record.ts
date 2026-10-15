@@ -90,7 +90,11 @@ export interface ResearchRecordSnapshot {
   /** run 目录（live）或归档目录 */
   root: string
   run: string
-  /** 归档布局的相对路径 → 原文（live 布局在主进程里归一：作业目录压平成 child-jobs/<job_name>/） */
+  /**
+   * 归档布局的相对路径 → 原文（live 布局在主进程里归一：作业目录压平成 child-jobs/<job_name>/）。
+   * 工作台三栏（@proma/shared/research-record 的 workbench(parseBundle(files), seq)）另用：
+   * `rejections.jsonl`（run 目录）与 `research-work/_P*.json`（工作目录顶层草稿）。
+   */
   files: Record<string, string>
   /** null = 链完好；字符串 = 第一处断链说明 */
   integrity: { journal: string | null; interventions: string | null }

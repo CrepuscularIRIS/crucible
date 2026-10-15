@@ -20,6 +20,10 @@ export interface Prereg {
   question: string
   protocol: string
   reps: number
+  /** observe.blockers 原文（'' / 'none' = 无阻断剂） */
+  blockers: string
+  /** metricSpec 原文（观测量名称） */
+  metricSpec?: string
   bands: Record<string, Band>
   branches: { band: Band; action: BranchAction; target: string; scopeNote?: string }[]
   frozenAt?: string
@@ -90,6 +94,29 @@ export interface ResearchRecord {
   interventionsBroken?: { line: number; note: string }
   /** 其余原文件的 sha256（annotations / recompute 等），按相对路径 */
   fileSha256: Record<string, string>
+  /** rejections.jsonl（MCP 被拒调用，无哈希链）；null = 本记录没有该文件 */
+  rejections: Rejection[] | null
+  /** 工作目录顶层的 _P*.json 草稿（agent 写的当前内容，无历史、无时间） */
+  drafts: Draft[]
+}
+
+/** rejections.jsonl 一行；`line` 1 起算。prereg_write 的 spec 原样保留。 */
+export interface Rejection {
+  line: number
+  ts: string
+  op: string
+  error: string
+  pid?: string
+  spec?: Record<string, unknown>
+}
+
+export interface Draft {
+  /** 相对工作目录（可直接交给 research:read-stage-doc） */
+  path: string
+  sha256: string
+  /** 内容里的 pid；解析失败时取文件名里的 P#，再不行为 undefined */
+  pid?: string
+  observe?: { protocol: string; blockers: string }
 }
 
 export type ClaimState = 'LIVE' | 'SUPPORTED' | 'REFUTED' | 'SCOPED' | 'CONTESTED'

@@ -75,7 +75,7 @@ export function budgetFromK0(k0: string | undefined): number | undefined {
 
 const s = (v: unknown) => (v === undefined || v === null ? '' : String(v))
 
-function summarize(e: JournalEvent): string {
+export function summarize(e: JournalEvent): string {
   const d = e.data
   switch (e.op) {
     case 'claim.propose': return `提出 ${s(d.id)}`

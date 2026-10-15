@@ -65,7 +65,7 @@ export function configureResearchRecord(next: ResearchRecordDeps): void {
 
 // ===== 读：文件捆 =====
 
-const TOP_FILES = ['journal.jsonl', 'REPORT.md', 'register.json', 'interventions.jsonl', 'K0-intake.md', 'annotations.json', 'recompute.json']
+const TOP_FILES = ['journal.jsonl', 'REPORT.md', 'register.json', 'interventions.jsonl', 'K0-intake.md', 'annotations.json', 'recompute.json', 'rejections.jsonl']
 const JSON_DIRS = ['prereg', 'pending']
 
 export const sha256 = (text: string): string => createHash('sha256').update(text).digest('hex')
@@ -135,8 +135,25 @@ function readPairs(pairs: PathPair[]): Record<string, string> {
   return out
 }
 
-export const readLiveBundle = (cwd: string, runDir: string) => readPairs(livePaths(cwd, runDir))
-export const readArchiveBundle = (dir: string) => readPairs(archivePaths(dir))
+/**
+ * 工作台版本链的草稿：工作目录顶层 _P*.json → `research-work/_P*.json`。agent 写的文件，走阶段文档同一套
+ * 防护（逐段 lstat、O_NOFOLLOW、2 MB 上限）；变动由轮询签名里的 workdir 部分触发推送。
+ */
+function readDrafts(base: string, segs: string[]): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const d of readWorkdir(base, segs)?.docs ?? []) {
+    if (!/^_P[^/]*\.json$/.test(d.path)) continue
+    try {
+      out[`research-work/${d.path}`] = readStageDocAt(base, segs, d.path).text
+    } catch {
+      // 读的瞬间被删 / 换成链接：下一次快照会补齐
+    }
+  }
+  return out
+}
+
+export const readLiveBundle = (cwd: string, runDir: string) => ({ ...readPairs(livePaths(cwd, runDir)), ...readDrafts(cwd, liveWorkdirSegs(runDir)) })
+export const readArchiveBundle = (dir: string) => ({ ...readPairs(archivePaths(dir)), ...readDrafts(dir, ARCHIVE_WORKDIR) })
 
 const lines = (text: string | undefined): string[] => (text ?? '').split('\n').filter((l) => l.trim() !== '')
 
