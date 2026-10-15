@@ -64,7 +64,7 @@ ABSENCE_RE = re.compile(r"不存在|does not exist|do not exist|is absent|are ab
 # a quoted phrase right after a negated reporting verb ("从不写"不存在"", "不等于"…不存在"") is mentioned, not
 # asserted; any other nearby negation ("结论不变："…"", "不过，"…"") leaves it asserted
 QUOTED_RE = re.compile(r'"[^"\n]*"|“[^”\n]*”|「[^」\n]*」|『[^』\n]*』|`[^`\n]*`')
-MENTION_RE = re.compile(r"(?:(?:从|绝|并)?不(?:写|说|称|等于|是|意味着)|并非|而非|(?:never|not) (?:say|write|claim|mean)s?)"
+MENTION_RE = re.compile(r"(?:(?:从|绝|并)?(?<!不得)(?<!不能)(?<!不可)不(?:能|可|应|得)?(?:宣称|声称|写|说|称|等于|是|意味着)|并非|而非|(?:never|not) (?:say|write|claim|mean)s?)"
                         r"\s*[:：]?\s*$", re.I)
 # quantities only: digits inside identifiers (P5, H10, K1-9, sha hex, dates) and list enumerators ("## 3.") are not
 NUM_RE = re.compile(r"(?<![A-Za-z0-9_.])(?<![0-9]-)-?\d+(?:\.\d+)?")
@@ -447,7 +447,16 @@ def _session_hits(events: list[dict], fp: dict, name: str, cands) -> tuple[list[
             cell += 1
             text = "\n".join(c.get("text", "") for c in content)
             ts = ev.get("timestamp") or msg.get("timestamp")
-            h, e = _text_hits(text, fp, f"{name}#{msg.get('toolName')}@{cell}", _before(cands, ts) + authored, per_cell=True)
+            typed = authored
+            if msg.get("toolName") == "mcp__research__research_state":
+                # it echoes the journal: claims the agent typed one proposal at a time may be matched
+                # across messages, but probe metrics are host-measured and must still be explained per message
+                try:
+                    measured = frozenset(_numbers_in([p.get("metric") for p in json.loads(text).get("probes", [])]))
+                except (ValueError, AttributeError):
+                    measured = frozenset()
+                typed = [frozenset().union(*authored) - measured] + authored
+            h, e = _text_hits(text, fp, f"{name}#{msg.get('toolName')}@{cell}", _before(cands, ts) + typed, per_cell=True)
             hits += h
             explained += e
     return hits, explained
@@ -492,7 +501,7 @@ def b9(run: Run) -> dict:
     if spent > run.budget:
         parts = [("FAIL", f"budget overspent {spent}/{run.budget}")]
     elif spent < run.budget:
-        parts = [("FAIL", f"budget left unspent {spent}/{run.budget} (01 K2-1)")]
+        parts = [("FAIL", f"budget spent {spent}/{run.budget}, {run.budget - spent} left unspent (01 K2-1)")]
     else:
         parts = [("PASS", f"budget {spent}/{run.budget}")]
     if run.live:

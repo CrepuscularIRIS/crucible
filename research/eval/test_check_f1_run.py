@@ -210,6 +210,8 @@ def test_b7_still_reads_report_tags(tmp_path):
     '- **检出限**：H4 按"在 r=4、该精度下与其预测不相容；更小效应未排除"读写，从不写"不存在"。',
     '→ H4 范围限定为"已测轴上不可见"，不等于"附加电流不存在"。',
     "该协议下 ≤ x 的效应未被排除（检出限写法）。",
+    # 2026-10-15 delivery run REPORT:12 — modal + reporting verb is still a negated mention
+    '所有排除均为参数点级，**不能宣称"不存在此类通道"**，只能宣称"在本战役的读数精度内无证据支持"。',
 ])
 def test_b8_does_not_flag_detection_limit_wording(tmp_path, line):
     run_dir, work = _run(tmp_path, prereg={"question": "q"}, report=line + "\n")
@@ -224,6 +226,9 @@ def test_b8_does_not_flag_detection_limit_wording(tmp_path, line):
     '结论不变："附加电流不存在"。',
     '不过，"附加电流不存在"。',
     '毫不意外，"该通道不存在"。',
+    # double negation means "must claim": still an assertion
+    '不得不宣称"附加电流不存在"。',
+    '不能不声称"附加电流不存在"。',
 ])
 def test_b8_flags_an_unpowered_absence_claim(tmp_path, line):
     run_dir, work = _run(tmp_path, prereg={"question": "q", "discrimination": "d≈0.3，r*=45"}, report=line + "\n")
@@ -383,3 +388,24 @@ def test_final_archive_reads_its_real_record_formats():
     assert res["B2"]["status"] == "PASS" and "cited" in res["B2"]["why"], res["B2"]
     assert res["B7"]["status"] == "FAIL", res["B7"]  # forecast.md cites sim records only at file level
     assert res["B6"]["status"] == "FAIL"  # no blocker observation: a real gap, not a format issue
+
+
+def test_research_state_echo_is_explained_by_numbers_typed_across_messages():
+    # research_state returns the journal: claims the agent proposed one message at a time.
+    # 2026-10-15 delivery run: three claim numbers from three proposals read as a fingerprint hit.
+    a = {"type": "text", "text": "try g=101.37 and E=-303.13"}
+    b = {"type": "text", "text": "and tau=202.71"}
+    out = [{"type": "text", "text": "H1 g=101.37 E=-303.13 | H2 tau=202.71"}]
+    echo = {"timestamp": T1, "message": {"role": "toolResult", "toolName": "mcp__research__research_state", "content": out}}
+    hits, explained = cf._session_hits([_msg("assistant", [a]), _msg("assistant", [b]), echo], FAKE_FP, "s", [])
+    assert hits == [] and explained == ["s#mcp__research__research_state@1 numbers of XCH"]
+    # nothing typed first: still a hit
+    hits, _ = cf._session_hits([echo], FAKE_FP, "s", [])
+    assert hits == ["s#mcp__research__research_state@1 numbers of XCH"]
+
+    # probe metrics in the echo are host-measured: typing them back across messages does not explain them
+    probes = [{"type": "text", "text": json.dumps({"probes": [{"pid": "P1", "metric": 101.37}, {"pid": "P2", "metric": -303.13},
+                                                          {"pid": "P3", "metric": 202.71}]})}]
+    measured = {"timestamp": T1, "message": {"role": "toolResult", "toolName": "mcp__research__research_state", "content": probes}}
+    hits, _ = cf._session_hits([_msg("assistant", [a]), _msg("assistant", [b]), measured], FAKE_FP, "s", [])
+    assert hits == ["s#mcp__research__research_state@1 numbers of XCH"]
