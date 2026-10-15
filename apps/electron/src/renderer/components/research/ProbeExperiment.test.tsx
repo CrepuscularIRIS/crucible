@@ -108,12 +108,12 @@ describe('第一次看的评委：两分钟读懂一轮实验', () => {
     expect(chart).toMatch(/data-hit="false"[^>]*>[^<]*落空/)
     expect(svg(render(fixture({ status: 'pending' })))).not.toContain('data-hit=')
   })
-  test('Given 本轮迁移 When 图下 Then 一句话说明改变了什么；无迁移则明说没有改变', () => {
+  test('Given 本轮迁移 When 图下 Then 一句话说明关联迁移；缺记录不等于判断没变', () => {
     const html = render(fixture({ closed: true, bands: [{ hid: 'H3', low: 11, high: 15 }, { hid: 'H4', low: 1, high: 2 }, { hid: 'H5', low: 18, high: 22 }], changes: [
       { seq: 3, hid: 'H4', from: 'LIVE', to: 'CONTESTED', reason: '' }, { seq: 4, hid: 'H5', from: 'LIVE', to: 'CONTESTED', reason: '' }] }))
-    expect(html).toContain('H4、H5 → 有争议；H3 保留')
+    expect(html).toContain('H4、H5 → 有争议；H3 无本轮关联迁移')
     expect(html.indexOf('H4、H5 → 有争议')).toBeLessThan(html.indexOf('这一轮改变了什么'))
-    expect(render(fixture({ closed: true, changes: [] }))).toContain('本轮没有改变任何判断')
+    expect(render(fixture({ closed: true, changes: [] }))).toContain('尚未记录判断迁移')
     expect(render(fixture({ status: 'pending', changes: [] }))).not.toContain('本轮没有改变任何判断')
   })
   test('Given 假设名称 When 画图 Then 行标签写 H# · 短名，过长截断且保留完整名提示', () => {
@@ -147,5 +147,8 @@ describe('判断尚在记录中时不下结论', () => {
     expect(partial).toContain('H5 → 被否定')
     expect(partial).not.toContain('保留')
     expect(at(105).closed).toBe(true)
+    // H4 在第69行有无 by_probe 的变化，不能把缺少关联称作保留。
+    expect(render(at(105))).toContain('H4 无本轮关联迁移')
+    expect(render(at(105))).not.toContain('H4 保留')
   })
 })

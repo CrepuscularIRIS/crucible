@@ -115,6 +115,27 @@
 }
 
 /* 超宽窗口仍保持实验图的阅读尺寸。 */
+.stage-explanation { display: grid; gap: 10px; max-width: 960px; margin-inline: auto; }
+.stage-explanation-header { border-top: 2px solid hsl(var(--primary)); padding: 10px 0 0; }
+.stage-explanation-kicker { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; font-size: 10px; color: hsl(var(--muted-foreground)); letter-spacing: .04em; }
+.stage-explanation h2 { margin: 8px 0 4px; font-size: 19px; line-height: 1.35; font-weight: 600; letter-spacing: -.03em; }
+.stage-explanation-caption { font-size: 11px; line-height: 1.7; color: hsl(var(--muted-foreground)); }
+.stage-question, .stage-question-detail { margin-top: 6px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; line-height: 1.7; }
+.stage-question-detail summary { font-size: 13px; color: hsl(var(--foreground)); cursor: pointer; }
+.stage-question-detail summary span { font-size: 10px; color: hsl(var(--muted-foreground)); }
+.stage-question-detail[open] summary { font-size: 11px; color: hsl(var(--muted-foreground)); }
+.stage-reading-path { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 10px 0 4px; padding-top: 8px; border-top: 1px solid hsl(var(--border)); color: hsl(var(--muted-foreground)); font-size: 10px; }
+.stage-reading-path b { margin-right: 4px; color: hsl(var(--primary)); font-variant-numeric: tabular-nums; font-weight: 500; }
+.stage-source-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px; font-size: 10px; color: hsl(var(--muted-foreground)); }
+.stage-source-link { text-decoration: underline; text-underline-offset: 3px; }
+.stage-source-link:focus-visible, .stage-explanation summary:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 3px; }
+.stage-round-status { display: flex; flex-wrap: wrap; gap: 6px 20px; padding: 9px 12px; background: hsl(var(--muted) / .5); border-radius: 5px; font-size: 11px; color: hsl(var(--muted-foreground)); }
+.stage-next { padding: 18px; border: 1px solid hsl(var(--border)); border-radius: 8px; background: hsl(var(--card)); }
+.stage-next h3 { margin: 10px 0 6px; font-size: 15px; font-weight: 500; }
+.stage-next p { margin: 8px 0; font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; }
+.stage-next summary, .stage-boundary summary { cursor: pointer; font-size: 11px; color: hsl(var(--muted-foreground)); }
+.stage-boundary { padding: 12px 0; border-top: 1px solid hsl(var(--border)); }
+.stage-boundary p { margin-top: 8px; font-size: 11px; line-height: 1.8; color: hsl(var(--muted-foreground)); }
 .workbench-artifact-content svg[role="img"] { max-width: 880px; margin-inline: auto; }
 /* 将内部滚动范围约束在工作台，避免聚焦长内容时滚动外层应用壳。 */
 .research-workspace { contain: layout paint; }

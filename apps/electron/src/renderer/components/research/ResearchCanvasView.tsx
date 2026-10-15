@@ -8,7 +8,7 @@ import { EvidenceMatrix } from './EvidenceMatrix'
 import { FocusCard } from './FocusCard'
 import { NodeDetail } from './NodeDetail'
 import { HypothesisMap } from './HypothesisMap'
-import { ProbeExperiment } from './ProbeExperiment'
+import { StageExplanation } from './StageExplanation'
 import { ProbeVersions } from './ProbeVersions'
 import { ResearchTimeline } from './ResearchTimeline'
 import { StageDocViewer, type OpenStageDoc } from './StageDocViewer'
@@ -178,7 +178,10 @@ export function ResearchCanvasView(props: ResearchCanvasViewProps): React.ReactE
                   </nav>
                   <Button type="button" size="sm" variant="ghost" onClick={() => patch({ inspector: 'versions', versionPid: pid, mobilePane: 'inspector' })}>方案版本<ArrowUpRight className="ml-1 size-3.5" aria-hidden /></Button>
                 </div>}
-                <ProbeExperiment probe={probe} claimNames={claimNames} onSelectClaim={(hid) => select({ kind: 'claim', id: hid })} />
+                <StageExplanation probe={probe} probes={probes} events={events} seq={view.seq} claimNames={claimNames}
+                  onSelectClaim={(hid) => select({ kind: 'claim', id: hid })}
+                  onSelectProbe={(id, reveal) => { select({ kind: 'prereg', id }, reveal); artifactScroll.current?.scrollTo({ top: 0 }) }}
+                  onSeq={onSeq ? (seq) => { patch({ playing: false }); onSeq(seq) } : undefined} />
                 {view.feedback && <details className="workbench-feedback"><summary>实验如何迭代 <span>查看一次反馈改变</span></summary><ul className="space-y-2 text-[12px] leading-relaxed text-muted-foreground">{view.feedback.map((line, i) => <li key={i}>{line}</li>)}</ul></details>}
               </TabsContent>
               <TabsContent forceMount value="map" className="m-0 data-[state=inactive]:hidden"><section className="research-panel p-4" aria-label="假设与证据"><h2 className="mb-2 text-[13px] font-semibold">假设与证据</h2><p className="mb-4 text-[11px] leading-relaxed text-muted-foreground">{view.derivationNote ?? '连线表示已记录的派生关系；实验支持关系见证据矩阵。'}</p><HypothesisMap claims={view.claims} selectedId={props.selection?.kind === 'claim' ? props.selection.id : undefined} onSelect={select} /></section></TabsContent>

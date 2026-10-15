@@ -6,6 +6,8 @@ interface ProbeExperimentProps {
   probe: ProbeCardView | null
   onSelectClaim?: (hid: string) => void
   claimNames?: Record<string, string>
+  /** 阶段解释已经呈现问题与来源时，省去重复的协议页头。 */
+  embedded?: boolean
 }
 
 const STATUS = { pending: '等待测量', measured: '已记录测量', failed: '测量失败' }
@@ -25,21 +27,21 @@ const LEFT = 180
 const WIDTH = 460
 
 /**
- * 图下一句话：按本轮记录的迁移分组，本轮测到但没动的假设记为保留；待测时不下结论。
+ * 图下一句话：按本轮记录的迁移分组，未关联的假设明确标为无本轮关联迁移；待测时不下结论。
  * 落地与迁移是不同行：该轮未收口（closed）时只报已记录的迁移，不说"没有改变 / 保留"。
  */
 function changeLine(probe: ProbeCardView): string | null {
   if (probe.status === 'pending') return null
   const last = new Map(probe.changes.map((change) => [change.hid, change.to]))
-  if (!last.size) return probe.closed ? '本轮没有改变任何判断' : '尚未记录判断迁移'
+  if (!last.size) return '尚未记录判断迁移'
   const groups = new Map<string, string[]>()
   for (const [hid, to] of last) groups.set(to, [...(groups.get(to) ?? []), hid])
   const kept = probe.closed ? [...new Set(probe.bands.map((band) => band.hid))].filter((hid) => !last.has(hid)) : []
-  return [...[...groups].map(([to, hids]) => `${hids.join('、')} → ${stateText(to)}`), ...(kept.length ? [`${kept.join('、')} 保留`] : [])].join('；')
+  return [...[...groups].map(([to, hids]) => `${hids.join('、')} → ${stateText(to)}`), ...(kept.length ? [`${kept.join('、')} 无本轮关联迁移`] : [])].join('；')
 }
 
 /** 展示预测与观测的关系；科学判断仅来自投影中的 changes，不根据图形位置推断。 */
-export function ProbeExperiment({ probe, onSelectClaim, claimNames }: ProbeExperimentProps): React.ReactElement {
+export function ProbeExperiment({ probe, onSelectClaim, claimNames, embedded = false }: ProbeExperimentProps): React.ReactElement {
   const chartId = useId()
   if (!probe) return <section className="rounded-xl border border-dashed border-border p-8 text-center" aria-label="实验产物">
     <h3 className="text-sm font-medium">实验产物将在这里生长</h3>
@@ -64,7 +66,7 @@ export function ProbeExperiment({ probe, onSelectClaim, claimNames }: ProbeExper
   const tickValues = low === high ? [low] : [low, low / 2 + high / 2, high]
 
   return <section className="research-probe-product min-w-0 overflow-hidden rounded-xl border border-border bg-background" aria-label={`${probe.pid} 实验产物`}>
-    <header className="border-b border-border px-5 py-3">
+    {!embedded && <header className="border-b border-border px-5 py-3">
       <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground">
         <h3 className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground" title={heading}>{heading}</h3>
         <span className={probe.status === 'failed' ? 'text-destructive' : ''}>{STATUS[probe.status]}</span>
@@ -79,10 +81,10 @@ export function ProbeExperiment({ probe, onSelectClaim, claimNames }: ProbeExper
       <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
         <span>重复次数 {valueText(probe.reps)}</span>
       </div>
-    </header>
+    </header>}
     <div className="px-5 py-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div><h4 className="text-sm font-medium">预测与实测</h4><p className="mt-1 text-[11px] text-muted-foreground">{probe.metric || '观测值（单位未记录）'} · 同一数轴比较</p></div>
+        <div><h4 className="text-sm font-medium">预测与实测</h4><p className="mt-1 text-[11px] text-muted-foreground">{probe.metric || '观测值（单位未记录）'} · 同一数轴比较{embedded && ` · 重复 ${valueText(probe.reps)} 次`}</p></div>
         <div className="text-right"><span className="text-[11px] text-muted-foreground">实测值</span><p className="font-mono text-xl font-semibold tabular-nums">{observed !== undefined ? valueText(observed) : '—'}</p></div>
       </div>
       {values.length > 0 ? <div className="research-probe-chart mt-2 overflow-x-auto"><svg className="block h-auto w-full min-w-[520px] text-foreground" viewBox={`0 0 720 ${chartHeight}`} role="img" aria-labelledby={`${chartId}-title ${chartId}-desc`}>
