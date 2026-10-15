@@ -43,6 +43,7 @@ import type {
   AgentSessionMeta,
   SetAgentSessionActiveWorktreeInput,
   SDKMessage,
+  AgentLiveRunSnapshot,
   AgentSendInput,
   AgentThinkingLevel,
   AgentStreamEvent,
@@ -526,6 +527,9 @@ export interface ElectronAPI {
 
   /** 获取 Agent 会话 SDKMessage（Phase 4 新格式） */
   getAgentSessionSDKMessages: (id: string) => Promise<SDKMessage[]>
+
+  /** 运行中一轮的内存快照（无运行时为 null） */
+  getAgentLiveRun: (id: string) => Promise<AgentLiveRunSnapshot | null>
 
   /** 更新 Agent 会话标题 */
   updateAgentSessionTitle: (id: string, title: string) => Promise<AgentSessionMeta>
@@ -1757,6 +1761,10 @@ const electronAPI: ElectronAPI = {
 
   getAgentSessionSDKMessages: (id: string) => {
     return ipcRenderer.invoke(AGENT_IPC_CHANNELS.GET_SDK_MESSAGES, id)
+  },
+
+  getAgentLiveRun: (id: string) => {
+    return ipcRenderer.invoke(AGENT_IPC_CHANNELS.GET_LIVE_RUN, id)
   },
 
   updateAgentSessionTitle: (id: string, title: string) => {

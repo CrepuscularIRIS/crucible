@@ -20,7 +20,7 @@ import { join, dirname } from 'node:path'
 import { accessSync, constants, existsSync, mkdirSync, realpathSync } from 'node:fs'
 import type { ToolDefinition } from '@earendil-works/pi-coding-agent'
 import { app } from 'electron'
-import type { AgentSendInput, AgentMessage, AgentGenerateTitleInput, AgentProviderAdapter, AgentSessionMeta, CodexOAuthCredentials, XaiOAuthCredentials, TypedError, SDKMessage, SDKAssistantMessage, AgentStreamPayload, AgentAssistantDeltaPayload, RewindSessionResult, SkillActivation } from '@proma/shared'
+import type { AgentSendInput, AgentMessage, AgentGenerateTitleInput, AgentProviderAdapter, AgentSessionMeta, CodexOAuthCredentials, XaiOAuthCredentials, TypedError, SDKMessage, SDKAssistantMessage, AgentStreamPayload, AgentAssistantDeltaPayload, RewindSessionResult, SkillActivation, AgentLiveRunSnapshot } from '@proma/shared'
 import {
   PROMA_DEFAULT_PERMISSION_MODE,
   PROMA_PERMISSION_MODE_CONFIG,
@@ -239,6 +239,8 @@ export class AgentOrchestrator {
     resolve: () => void
   }>()
   private nextRunGeneration = 0
+  /** 运行中一轮的累积消息（与 accumulatedMessages 同一数组），供中途打开的页面接上 */
+  private liveRuns = new Map<string, { generation: number; startedAt: number; messages: SDKMessage[] }>()
 
   /** 队列消息本地记录（sessionId → UUID 集合，用于防重） */
   private queuedMessageUuids = new Map<string, Set<string>>()
@@ -885,6 +887,9 @@ export class AgentOrchestrator {
     }
     const runGeneration = ++this.nextRunGeneration
     this.activeSessions.set(sessionId, runGeneration)
+    // 与 run_started 同时登记：中途打开的页面在预检阶段也能看到运行态
+    const accumulatedMessages: SDKMessage[] = []
+    this.liveRuns.set(sessionId, { generation: runGeneration, startedAt: streamStartedAt, messages: accumulatedMessages })
     let resolveRunSettlement: () => void = () => {}
     const runSettlement = new Promise<void>((resolve) => { resolveRunSettlement = resolve })
     this.runSettlements.set(sessionId, {
@@ -903,6 +908,7 @@ export class AgentOrchestrator {
         this.sessionPermissionModes.delete(sessionId)
         this.queuedMessageUuids.delete(sessionId)
       }
+      if (this.liveRuns.get(sessionId)?.generation === runGeneration) this.liveRuns.delete(sessionId)
       const settlement = this.runSettlements.get(sessionId)
       if (settlement?.generation === runGeneration) {
         this.runSettlements.delete(sessionId)
@@ -940,7 +946,7 @@ export class AgentOrchestrator {
     console.log(`[Agent 编排] Resume 状态: sdkSessionId=${existingSdkSessionId || '无'}, proma sessionId=${sessionId}`)
 
     // 5. 状态初始化
-    const accumulatedMessages: SDKMessage[] = []
+    // accumulatedMessages 已在 2.1 创建并登记到 liveRuns
     let pendingSkillActivations: SkillActivation[] = []
     const recordSkillActivation = (
       activations: SkillActivation[],
@@ -2158,6 +2164,13 @@ export class AgentOrchestrator {
     if (runGeneration != null && settlement?.generation === runGeneration) {
       await settlement.promise
     }
+  }
+
+  /** 运行中一轮的快照：落盘之后、本轮结束之前的消息只在这里 */
+  getLiveRun(sessionId: string): AgentLiveRunSnapshot | null {
+    const run = this.liveRuns.get(sessionId)
+    if (!run || this.activeSessions.get(sessionId) !== run.generation) return null
+    return { startedAt: run.startedAt, messages: [...run.messages] }
   }
 
   /** 检查指定会话是否正在处理中 */

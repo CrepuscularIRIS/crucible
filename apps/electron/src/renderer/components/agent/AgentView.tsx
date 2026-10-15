@@ -125,6 +125,7 @@ import { getFilePanelDragData, INSERT_FILE_MENTION_EVENT, type FilePanelDragItem
 import { buildQuotedSelectionBlock, expandAgentHistoryQuoteMentions } from '@/lib/quoted-selection'
 import { createClipboardPendingFile, createClipboardTextDraft, makeUniqueAttachmentName } from '@/lib/clipboard-text-attachment'
 import { copyTextToClipboard } from '@/lib/clipboard'
+import { attachLiveRun } from '@/lib/agent-live-run'
 import {
   buildQueuedMessageSendPayload,
   createAgentQueuedMessage,
@@ -1239,6 +1240,16 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
             return map
           })
         })
+        // 页面在 run 中途打开 / 重载：持久化只到上一轮，本轮运行态与已产出的消息向主进程要。
+        // 在持久化快照之后再取，落盘竞态只会漏不会重。
+        // 刷新版本变了 = 期间已收到 STREAM_COMPLETE，快照作废，避免复活已结束的一轮。
+        window.electronAPI.getAgentLiveRun(sessionId)
+          .then((run) => {
+            if (!run || cancelled || requestId !== messagesRequestIdRef.current) return
+            if ((store.get(agentMessageRefreshAtom).get(sessionId) ?? 0) !== refreshVersion) return
+            attachLiveRun(store, sessionId, run)
+          })
+          .catch(console.error)
       })
       .catch((error) => {
         if (cancelled) return

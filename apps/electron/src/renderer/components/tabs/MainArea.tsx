@@ -105,7 +105,11 @@ export function MainArea(): React.ReactElement {
     return () => { cancelled = true }
   }, [browserSessionId, publishBrowserState])
 
-  const showBrowserPanel = !!browserSessionId && (browserOpenMap.get(browserSessionId) ?? false) && activeView === 'conversations'
+  // 研究画布占草稿的槽位：与浏览器、草稿互斥，可与预览并排（04 §3.1 / Q8）
+  const [researchCanvasOpenMap, setResearchCanvasOpenMap] = useAtom(researchCanvasOpenMapAtom)
+  // 画布是用户显式打开的，优先于受管浏览器；浏览器面板卸载即隐藏原生视图，关画布后恢复
+  const researchCanvasOpen = !!browserSessionId && (researchCanvasOpenMap.get(browserSessionId) ?? false)
+  const showBrowserPanel = !!browserSessionId && (browserOpenMap.get(browserSessionId) ?? false) && activeView === 'conversations' && !researchCanvasOpen
   const browserState = browserSessionId ? browserStateMap.get(browserSessionId) ?? null : null
   const previewOpen =
     activeTab?.type === 'agent' && (previewOpenMap.get(activeTab.sessionId) ?? false) && !showBrowserPanel
@@ -113,11 +117,8 @@ export function MainArea(): React.ReactElement {
   const scratchPanelOpen = useAtomValue(scratchPadPanelOpenAtom)
   const showScratchPanel =
     activeTab?.type === 'agent' && scratchPanelOpen && activeView === 'conversations' && !showBrowserPanel
-  // 研究画布占草稿的槽位：与浏览器、草稿互斥，可与预览并排（04 §3.1 / Q8）
-  const [researchCanvasOpenMap, setResearchCanvasOpenMap] = useAtom(researchCanvasOpenMapAtom)
   const showResearchCanvas =
-    !!previewSessionId && (researchCanvasOpenMap.get(previewSessionId) ?? false) &&
-    activeView === 'conversations' && !showBrowserPanel && !showScratchPanel
+    researchCanvasOpen && activeView === 'conversations' && !showScratchPanel
   const showSecondRightPanel = showScratchPanel || showResearchCanvas
 
   // 关闭动画状态：当 previewOpen 从 true → false 时，播放退出动画再移除 DOM

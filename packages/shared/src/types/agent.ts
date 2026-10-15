@@ -1341,6 +1341,14 @@ export interface StopTaskInput {
 
 // ===== Agent 流式事件载荷 =====
 
+/** 运行中一轮的内存快照：页面中途打开 / 重载时接上，之后靠 STREAM_EVENT 推送续接 */
+export interface AgentLiveRunSnapshot {
+  /** 与 run_started / sdk_delta.runStartedAt / STREAM_COMPLETE 同一个值 */
+  startedAt: number
+  /** 本轮已完成、尚未落盘的消息 */
+  messages: SDKMessage[]
+}
+
 /**
  * Agent 流式事件（主进程 → 渲染进程推送）
  */
@@ -1727,6 +1735,8 @@ export const AGENT_IPC_CHANNELS = {
   CREATE_SESSION: 'agent:create-session',
   /** 获取会话 SDKMessage（Phase 4 新格式） */
   GET_SDK_MESSAGES: 'agent:get-sdk-messages',
+  /** 读取运行中一轮的内存快照（无运行时为 null） */
+  GET_LIVE_RUN: 'agent:get-live-run',
   /** 更新会话标题 */
   UPDATE_TITLE: 'agent:update-title',
   /** 更新会话模型选择 */

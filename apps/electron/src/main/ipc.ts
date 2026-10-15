@@ -113,6 +113,7 @@ import type {
   WeChatConfig,
   WeChatBridgeState,
   SDKMessage,
+  AgentLiveRunSnapshot,
   GetFileDiffInput,
   DetachedPreviewWindowInput,
   RevertFileInput,
@@ -284,7 +285,7 @@ import {
   searchAgentSessionReferences,
   resolveAgentCwd,
 } from './lib/agent-session-manager'
-import { runAgent, stopAgent, generateAgentTitle, saveFilesToAgentSession, saveFilesToWorkspaceFiles, isAgentSessionActive, isAgentSessionBusy, reserveAgentSessionStart, queueAgentMessage, enqueueAgentQueuedMessage, cancelAgentQueuedMessage, moveAgentQueuedMessage, clearAgentQueuedMessages, updateAgentPermissionMode, rewindAgentSession, setVisibleAgentSession , refineAgentSession, getAgentRefineState, agentEventBus } from './lib/agent-service'
+import { runAgent, stopAgent, generateAgentTitle, saveFilesToAgentSession, saveFilesToWorkspaceFiles, isAgentSessionActive, isAgentSessionBusy, reserveAgentSessionStart, queueAgentMessage, enqueueAgentQueuedMessage, cancelAgentQueuedMessage, moveAgentQueuedMessage, clearAgentQueuedMessages, updateAgentPermissionMode, rewindAgentSession, setVisibleAgentSession , refineAgentSession, getAgentLiveRun, getAgentRefineState, agentEventBus } from './lib/agent-service'
 import { configureResearchRecord, getRecord as getResearchRecord, releaseRecord as releaseResearchRecord, handleAgentEvent as handleResearchAgentEvent, handleAskUserAnswered as handleResearchAskUserAnswered, intervene as interveneResearch, listArchives as listResearchArchives, openArchive as openResearchArchive } from './lib/research-record-service'
 import { RESEARCH_RECORD_IPC_CHANNELS, type ResearchInterveneInput } from '../types/research-record'
 import { permissionService } from './lib/agent-permission-service'
@@ -2190,6 +2191,12 @@ export function registerIpcHandlers(): void {
     async (_, id: string): Promise<SDKMessage[]> => {
       return getAgentSessionSDKMessages(id)
     }
+  )
+
+  // 运行中一轮的内存快照（页面中途打开 / 重载时接上运行态）
+  ipcMain.handle(
+    AGENT_IPC_CHANNELS.GET_LIVE_RUN,
+    async (_, id: string): Promise<AgentLiveRunSnapshot | null> => getAgentLiveRun(id),
   )
 
   // 更新 Agent 会话标题

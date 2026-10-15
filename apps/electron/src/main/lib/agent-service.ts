@@ -32,7 +32,8 @@ import type {
   AgentExternalRunSource,
   AgentMessage,
   AgentRefineNowResult,
-  AgentRefineState } from '@proma/shared'
+  AgentRefineState,
+  AgentLiveRunSnapshot } from '@proma/shared'
 import { PiAgentAdapter } from './adapters/pi-agent-adapter'
 import { PiUtilityAdapter } from './adapters/pi-utility-adapter'
 import { AgentEventBus } from './agent-event-bus'
@@ -496,6 +497,11 @@ export async function rewindAgentSession(
  */
 export function isAgentSessionActive(sessionId: string): boolean {
   return orchestrator.isActive(sessionId)
+}
+
+/** 运行中一轮的内存快照，供中途打开 / 重载的页面接上 */
+export function getAgentLiveRun(sessionId: string): AgentLiveRunSnapshot | null {
+  return orchestrator.getLiveRun(sessionId)
 }
 
 /** 是否存在任意运行中 Agent，供更新器等全局生命周期服务安全判断。 */
