@@ -1,31 +1,22 @@
 import React from 'react'
-import { AlertTriangle, ArrowRight, FileText, GitBranch, Layers, X } from 'lucide-react'
+import { atom, useAtom } from 'jotai'
+import { AlertTriangle, FileText, FlaskConical, GitBranch, History, Layers, Pause, Play, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-
 import { ControlBar } from './ControlBar'
 import { EvidenceMatrix } from './EvidenceMatrix'
 import { FocusCard } from './FocusCard'
 import { NodeDetail } from './NodeDetail'
 import { HypothesisMap } from './HypothesisMap'
+import { ProbeExperiment } from './ProbeExperiment'
+import { ProbeVersions } from './ProbeVersions'
+import { ResearchTimeline } from './ResearchTimeline'
 import { StageDocViewer, type OpenStageDoc } from './StageDocViewer'
 import type { CanvasView, NodeDetailView, NodeSelection } from './canvas-view'
 import type { ControlAction } from './controls-view'
+import type { WorkbenchEvent } from './workbench-view'
 import './research-canvas.css'
-
-function Card({ title, children }: { title: string; children: React.ReactNode }): React.ReactElement {
-  return (
-    <section className="research-panel">
-      <h3 className="research-panel-heading">{title}</h3>
-      <div className="research-panel-body">{children}</div>
-    </section>
-  )
-}
-
-const List = ({ items }: { items: string[] }) => (
-  <ul className="space-y-0.5 text-[13px]">{items.map((t, i) => <li key={i}>{t}</li>)}</ul>
-)
 
 export interface ResearchCanvasViewProps {
   view: CanvasView
@@ -34,212 +25,162 @@ export interface ResearchCanvasViewProps {
   onSelect: (sel: NodeSelection | null) => void
   selection?: NodeSelection | null
   onClose?: () => void
-  /** 回放：拖动时间滑块 */
   onSeq?: (seq: number) => void
   onControl?: (action: ControlAction, text?: string) => void
   onForkAnswer?: (label: string) => void
   busy?: boolean
   error?: string | null
-  /** 回放时切换数据源 */
   onChangeSource?: () => void
-  /** 点开一份阶段文档（主进程能读时才给） */
   onOpenDoc?: (path: string) => void
   openDoc?: OpenStageDoc | null
   onCloseDoc?: () => void
 }
 
-/** 顶部状态条：一眼看到 run 走到哪（阶段 / 预算 / 假设计数 / 最新事件 / 下一步） */
-function StatusStrip({ status }: { status: CanvasView['status'] }): React.ReactElement {
-  const items: [string, string | undefined][] = [
-    ['阶段', status.phase],
-    ['预算', status.budget],
-    ['假设', status.counts],
-    ['最新', status.latest],
-    ['下一步', status.next],
-  ]
-  return (
-    <div className="research-status" aria-label="研究进度">
-      {items.filter(([, v]) => v).map(([k, v]) => (
-        <span key={k} className="min-w-0"><span className="text-muted-foreground">{k} </span><span className="tabular-nums">{v}</span></span>
-      ))}
-    </div>
-  )
+interface WorkbenchUI {
+  surface: 'probe' | 'map' | 'matrix'
+  inspector: 'evidence' | 'versions' | 'run'
+  mobilePane: 'process' | 'artifact' | 'inspector'
+  probeId?: string
+  versionPid?: string
+  eventSeq?: number
+  playing: boolean
 }
 
-function StageDocs(props: ResearchCanvasViewProps): React.ReactElement | null {
-  const { view, onOpenDoc, openDoc } = props
-  if (!view.docs.length && !onOpenDoc) return null
-  return (
-    <Card title="阶段文档">
-      <p className="mb-3 text-[11px] text-muted-foreground">研究产物 · 点击阅读 · 时间 UTC+08:00{props.onSeq && ' · 文件当前版本，不随回放回退'}</p>
-      {view.docs.length === 0 ? (
-        <p className="text-[12px] text-muted-foreground">工作目录里还没有文档</p>
-      ) : (
-        <ul className="research-doc-grid text-[13px]">
-          {view.docs.map((d) => (
-            <li key={d.path} className="min-w-0">
-              <button
-                type="button"
-                className="research-doc w-full"
-                aria-pressed={openDoc?.path === d.path}
-                disabled={!onOpenDoc}
-                onClick={() => onOpenDoc?.(d.path)}
-              >
-                <FileText className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                <span className="min-w-0"><span className="block truncate font-medium">{d.path}</span><span className="mt-1 block text-[11px] tabular-nums text-muted-foreground">{d.time}{d.newest ? ' · 最新' : ''}</span></span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </Card>
-  )
+function StageDocs({ view, onOpenDoc, openDoc, onSeq }: ResearchCanvasViewProps): React.ReactElement {
+  return <section aria-label="阶段文档" className="space-y-3 p-3">
+    <p className="text-[11px] leading-relaxed text-muted-foreground">阶段文档 · 时间 UTC+08:00{onSeq ? ' · 文件当前版本，不随回放回退' : ' · 文件更新后同步显示'}</p>
+    {!view.docs.length ? <p className="py-6 text-[12px] text-muted-foreground">工作目录里还没有文档。阶段产物生成后会出现在这里。</p> :
+      <ul className="space-y-2">{view.docs.map((d) => <li key={d.path}>
+        <button type="button" className="research-doc w-full" aria-pressed={openDoc?.path === d.path} disabled={!onOpenDoc} onClick={() => onOpenDoc?.(d.path)}>
+          <FileText className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+          <span className="min-w-0"><span className="block break-all text-[12px] font-medium">{d.path}</span><span className="mt-1 block text-[10px] text-muted-foreground">{d.time}{d.newest ? ' · 最新' : ''}</span></span>
+        </button>
+      </li>)}</ul>}
+  </section>
 }
 
-/** 研究画布主体（04 §3.1 布局）：纯渲染，数据由 ResearchCanvasPane 准备 */
+function RunNotes({ view, onSelect }: Pick<ResearchCanvasViewProps, 'view' | 'onSelect'>): React.ReactElement {
+  return <div className="space-y-5 p-4 text-[12px] leading-relaxed">
+    <p className="text-muted-foreground">{view.status.counts}</p>
+    <div className="space-y-3" role="group" aria-label="运行状态与结论">{view.cells.map((cell) => <section key={cell.label}>
+      <h3 className="mb-1 text-[11px] text-muted-foreground">{cell.label}{cell.label === '科学结论' && ' · 记录中的判断'}</h3><p>{cell.text}</p>
+    </section>)}</div>
+    <section><h3 className="mb-2 font-medium">阶段报告</h3>{([['已知', view.stage.known], ['未知', view.stage.unknown], ['下一步', view.stage.next]] as const).map(([label, items]) => <div key={label} className="research-stage-section">
+      <h4 className="text-[11px] text-muted-foreground">{label}</h4><ul>{(items.length ? items : ['暂无记录']).map((text, i) => <li key={i}>{text}</li>)}</ul>
+    </div>)}</section>
+    {view.children.length > 0 && <section><h3 className="mb-2 font-medium">子任务</h3><ul className="space-y-2">{view.children.map((child) => <li key={child.name}>
+      <button type="button" className="break-all text-left underline underline-offset-4" onClick={() => onSelect({ kind: 'child', id: child.name })}>{child.name}</button><p className="text-muted-foreground">{child.statusLabel}</p>
+    </li>)}</ul><p className="mt-2 text-[10px] text-muted-foreground">子任务为当前快照，不随回放回退。</p></section>}
+    {view.interventions.length > 0 && <section><h3 className="mb-2 font-medium">人的干预</h3><ul className="space-y-2">{view.interventions.map((entry) => <li key={entry.id}>
+      <button type="button" className="text-left underline underline-offset-4" onClick={() => onSelect({ kind: 'intervention', id: entry.id })}>{entry.id} · {entry.kind}</button><p>{entry.text}</p><p className="text-muted-foreground">{entry.status}</p>
+    </li>)}</ul></section>}
+    {!!view.flags.length && <section><h3 className="mb-2 font-medium">画布标记（只打标，宿主不强制）</h3><ul className="space-y-2">{view.flags.map((flag, i) => <li key={i} className="text-amber-700 dark:text-amber-400">{flag.code} · 第 {flag.seq} 行 · {flag.note}</li>)}</ul></section>}
+  </div>
+}
+
+/** 三栏共用同一时点：左侧导航，中间研究产物，右侧证据与版本；新快照不抢焦点。 */
 export function ResearchCanvasView(props: ResearchCanvasViewProps): React.ReactElement {
-  const { view, detail, narrow, onSelect } = props
-  const replay = !!props.onSeq
-  return (
-    <div className="research-canvas flex h-full min-w-0 flex-col overflow-hidden bg-content-area text-foreground titlebar-no-drag">
-      <div className="research-canvas-scroll">
-      <div className="research-canvas-body">
-      <header className="research-heading">
-        <div className="min-w-0"><div className="research-eyebrow">RESEARCH CANVAS / {replay ? 'REPLAY' : 'LIVE'}</div><h1>{view.title}</h1><p className="mt-2 break-all text-[11px] text-muted-foreground">{view.modeLabel}</p></div>
-        <div className="flex shrink-0 items-center gap-1">
-          {props.onChangeSource && (
-            <Button type="button" variant="outline" size="sm" className="h-8 text-[11px]" onClick={props.onChangeSource}>切换记录</Button>
-          )}
-          {props.onClose && (
-            <button type="button" onClick={props.onClose} className="flex size-6 items-center justify-center rounded text-muted-foreground hover:bg-muted/50 hover:text-foreground" aria-label="关闭研究画布">
-              <X className="size-3.5" />
-            </button>
-          )}
-        </div>
-      </header>
-        <StatusStrip status={view.status} />
-        {view.integrityNote && (
-          <p className="flex items-center gap-1 text-[12px] text-destructive"><AlertTriangle className="size-3" aria-hidden />{view.integrityNote}</p>
-        )}
-        {props.error && <p className="text-[12px] text-destructive">{props.error}</p>}
-        {!replay && <ControlBar bar={view.controls} onAction={props.onControl} busy={props.busy} />}
+  const { view, detail, narrow, onSelect, onSeq } = props
+  const probePickerId = React.useId()
+  const versionPickerId = React.useId()
+  const replay = !!onSeq
+  const uiAtom = React.useMemo(() => atom<WorkbenchUI>({ surface: 'probe', inspector: 'evidence', mobilePane: 'artifact', playing: false }), [view.title])
+  const [ui, setUI] = useAtom(uiAtom)
+  const patch = (value: Partial<WorkbenchUI>) => setUI((prev) => ({ ...prev, ...value }))
+  const probes = view.workbench?.probes ?? []
+  const selectedPid = props.selection?.kind === 'prereg' ? props.selection.id : ui.probeId
+  const probe = probes.find((p) => p.pid === selectedPid) ?? probes.at(-1) ?? null
+  const pid = probe?.pid ?? selectedPid
+  const events = view.workbench?.events ?? []
+  const versions = view.workbench?.versions ?? []
+  const versionPids = [...new Set(versions.map((version) => version.pid))]
+  const versionPid = ui.versionPid && versionPids.includes(ui.versionPid) ? ui.versionPid : pid ?? versionPids[0]
 
-        <div className="research-summary" role="group" aria-label="运行状态与结论">
-          {view.cells.map((c) => (
-            <div key={c.label}>
-              <div className="research-summary-label">{c.label}{c.label === '科学结论' && <span> · 记录中的判断</span>}</div>
-              <div className="research-summary-value tabular-nums">{c.text}</div>
-            </div>
-          ))}
-        </div>
+  React.useEffect(() => {
+    if (!ui.playing || !onSeq) return
+    if (view.seq >= view.maxSeq) { setUI((prev) => ({ ...prev, playing: false })); return }
+    const timer = window.setTimeout(() => onSeq(view.seq + 1), 800)
+    return () => window.clearTimeout(timer)
+  }, [ui.playing, view.seq, view.maxSeq, onSeq, setUI])
 
-        {replay && (
-          <div className="research-panel space-y-3 p-4">
-            <div className="flex items-center gap-2 text-[12px] font-medium"><Layers className="size-3.5" aria-hidden />沿记录回看<span className="ml-auto text-[11px] font-normal text-muted-foreground">拖动查看当时的判断</span></div>
-            <label className="flex items-center gap-2 text-[11px] text-muted-foreground">
-              <span className="shrink-0 tabular-nums">第 {view.seq} / {view.maxSeq} 行</span>
-              <input
-                type="range"
-                min={1}
-                max={view.maxSeq}
-                value={view.seq}
-                onChange={(e) => props.onSeq!(Number(e.target.value))}
-                className="w-full accent-primary"
-                aria-label="回放到运行记录第几行"
-              />
-            </label>
-            {view.timeline.length > 0 && (
-              <div className="flex flex-wrap gap-1 text-[11px]">
-                {view.timeline.map((t) => (
-                  <button key={t.id} type="button" className="rounded border border-border px-1 tabular-nums hover:bg-muted/50" title={`${t.title}（审计注记，只读）`} onClick={() => props.onSeq!(t.seq)}>
-                    {t.id} 当时{t.atTime} 事后{t.hindsight} · {t.seq}
-                  </button>
-                ))}
-              </div>
-            )}
+  const select = (selection: NodeSelection | null, reveal = true) => {
+    onSelect(selection)
+    patch({
+      inspector: 'evidence',
+      ...(reveal ? { mobilePane: 'inspector' } : {}),
+      // 从默认实验检查假设时也固定当前实验，避免新快照抢走正在阅读的产物。
+      ...(selection?.kind === 'prereg' ? { probeId: selection.id, versionPid: selection.id } : { probeId: pid }),
+    })
+  }
+  const chooseEvent = (event: WorkbenchEvent) => {
+    patch({ playing: false, eventSeq: event.seq, mobilePane: 'artifact', inspector: 'evidence', ...(event.pid ? { surface: 'probe' } : event.hids.length ? { surface: 'map' } : {}) })
+    onSeq?.(event.seq)
+    if (event.pid) select({ kind: 'prereg', id: event.pid }, false)
+    else if (event.hids[0]) select({ kind: 'claim', id: event.hids[0] }, false)
+    else select(null, false)
+    props.onCloseDoc?.()
+  }
+  const showSurface = (surface: string) => {
+    if (surface !== 'probe' && surface !== 'map' && surface !== 'matrix') return
+    props.onCloseDoc?.()
+    patch({ surface, mobilePane: 'artifact' })
+  }
+  const openDoc = (path: string) => { patch({ mobilePane: 'artifact', playing: false }); props.onOpenDoc?.(path) }
+
+  return <div className="research-canvas research-workbench h-full min-w-0 bg-content-area text-foreground titlebar-no-drag">
+    <header className="workbench-header">
+      <div className="min-w-0"><div className="research-eyebrow">{replay ? 'RESEARCH REPLAY' : 'RESEARCH WORKSPACE'}</div><h1 className="mt-1 truncate text-lg font-semibold tracking-tight">{view.title}</h1></div>
+      <div className="workbench-status"><span>{view.status.phase}</span><span>预算 <strong className="font-medium tabular-nums text-foreground">{view.status.budget}</strong></span><span className="workbench-status-mode">{replay ? '回放 · 只读' : view.modeLabel}</span></div>
+      <div className="ml-auto flex items-center gap-2">{props.onChangeSource && <Button type="button" variant="outline" size="sm" onClick={props.onChangeSource}>切换记录</Button>}{props.onClose && <Button type="button" variant="ghost" size="icon" className="size-8" onClick={props.onClose} aria-label="关闭研究画布"><X className="size-4" /></Button>}</div>
+    </header>
+    {(view.integrityNote || props.error) && <div className="border-b border-border px-4 py-2 text-[12px] text-destructive" role="alert"><AlertTriangle className="mr-1 inline size-3" aria-hidden />{view.integrityNote}{props.error ? ` ${props.error}` : ''}</div>}
+    {!replay && <div className="workbench-controls"><ControlBar bar={view.controls} onAction={props.onControl} busy={props.busy} /></div>}
+    <nav className="workbench-mobile-nav" aria-label="工作台区域">{([['process', '过程与文件'], ['artifact', '研究产物'], ['inspector', '证据与版本']] as const).map(([pane, label]) => <Button key={pane} type="button" size="sm" variant={ui.mobilePane === pane ? 'secondary' : 'ghost'} aria-pressed={ui.mobilePane === pane} onClick={() => patch({ mobilePane: pane })}>{label}</Button>)}</nav>
+    <div className="workbench-columns" data-mobile-pane={ui.mobilePane}>
+      <aside className="workbench-process" aria-label="研究过程与文件">
+        <Tabs defaultValue="events" className="workbench-pane-tabs">
+          <div className="workbench-pane-heading"><History className="size-3.5" aria-hidden /><h2>研究过程</h2><span className="ml-auto font-mono text-[10px] text-muted-foreground">{view.seq} / {view.maxSeq}</span></div>
+          <TabsList className="workbench-tabs" aria-label="过程导航"><TabsTrigger value="events">事件</TabsTrigger><TabsTrigger value="documents">文件 <span className="ml-1 text-muted-foreground">{view.docs.length}</span></TabsTrigger></TabsList>
+          <TabsContent value="events" className="workbench-scroll m-0 p-3"><ResearchTimeline events={events} seq={replay ? view.seq : ui.eventSeq ?? view.seq} replay={replay} onEvent={chooseEvent} /></TabsContent>
+          <TabsContent forceMount value="documents" className="workbench-scroll m-0 data-[state=inactive]:hidden"><StageDocs {...props} onOpenDoc={props.onOpenDoc ? openDoc : undefined} /></TabsContent>
+        </Tabs>
+      </aside>
+      <main className="workbench-artifact" aria-label="研究产物">
+        <Tabs value={props.openDoc ? 'document' : ui.surface} onValueChange={showSurface} className="workbench-pane-tabs">
+          <div className="workbench-artifact-bar"><TabsList className="workbench-tabs" aria-label="研究产物视图"><TabsTrigger value="probe"><FlaskConical className="mr-1.5 size-3.5" aria-hidden />实验对照</TabsTrigger><TabsTrigger value="map"><GitBranch className="mr-1.5 size-3.5" aria-hidden />假设图</TabsTrigger><TabsTrigger value="matrix"><Layers className="mr-1.5 size-3.5" aria-hidden />证据矩阵</TabsTrigger>{props.openDoc && <TabsTrigger value="document"><FileText className="mr-1.5 size-3.5" aria-hidden />文档</TabsTrigger>}</TabsList>
+            <span className="workbench-revision">记录 #{view.seq}</span>
           </div>
-        )}
-
-        <FocusCard focus={view.focus} busy={props.busy} onAnswer={replay ? undefined : props.onForkAnswer} />
-
-        <section className="research-panel" aria-label="假设与证据">
-          <Tabs defaultValue="map">
-            <div className="research-panel-heading">
-              <GitBranch className="size-4 text-muted-foreground" aria-hidden /><h2>假设与证据</h2>
-              <span className="text-[11px] font-normal text-muted-foreground">{view.claims.length} 个解释 · {view.matrix.columns.length} 个实验</span>
-              <TabsList className="ml-auto h-8" aria-label="假设呈现方式">
-                <TabsTrigger value="map" className="px-3 text-[11px] transition-none">假设图</TabsTrigger>
-                <TabsTrigger value="matrix" className="px-3 text-[11px] transition-none">证据矩阵</TabsTrigger>
-              </TabsList>
-            </div>
-            <p className="px-[18px] py-3 text-[11px] text-muted-foreground">{view.derivationNote ?? '缩进表示已记录的派生关系；实验支持关系见证据矩阵。'}</p>
-            <TabsContent value="map" className="research-evidence m-0">
-              <HypothesisMap claims={view.claims} selectedId={props.selection?.kind === 'claim' ? props.selection.id : undefined} onSelect={onSelect} />
-            </TabsContent>
-            <TabsContent value="matrix" className="research-evidence m-0">
-              <EvidenceMatrix view={view} narrow={narrow} onSelect={onSelect} />
-            </TabsContent>
-          </Tabs>
-          {view.matrix.columns.length > 0 && <div className="border-t border-border/60 p-[18px]">
-            <p className="mb-3 text-[11px] text-muted-foreground">实验记录 · 按登记顺序 · 点击查看预测、测量与判读</p>
-            <div className="research-path">{view.matrix.columns.map((col, i) => <React.Fragment key={col.pid}>
-              {i > 0 && <ArrowRight className="size-3 text-muted-foreground" aria-hidden />}
-              <button type="button" title={col.label} onClick={() => onSelect({ kind: 'prereg', id: col.pid })}><span className="font-mono">{col.pid}</span><span className="max-w-40 truncate text-muted-foreground">{col.label.replace(col.pid, '').trim()}</span></button>
-            </React.Fragment>)}</div>
-          </div>}
-        </section>
-
-        {detail && <NodeDetail detail={detail} onClose={() => onSelect(null)} />}
-
-        {view.feedback && <Card title="一次反馈改变"><List items={view.feedback} /></Card>}
-
-        {view.children.length > 0 && (
-          <Card title="子任务">
-            <ul className="space-y-1 text-[13px]">
-              {view.children.map((c) => (
-                <li key={c.name}>
-                  <button type="button" className="hover:underline" onClick={() => onSelect({ kind: 'child', id: c.name })}>{c.name}</button>
-                  <span className="ml-2 text-muted-foreground">{c.statusLabel}</span>
-                  {c.detail && <div className="truncate text-[11px] text-muted-foreground" title={c.detail}>{c.detail}</div>}
-                </li>
-              ))}
-            </ul>
-          </Card>
-        )}
-
-        {view.interventions.length > 0 && (
-          <Card title="人的干预">
-            <ul className="space-y-1 text-[13px]">
-              {view.interventions.map((i) => (
-                <li key={i.id}>
-                  <button type="button" className="hover:underline" onClick={() => onSelect({ kind: 'intervention', id: i.id })}>{i.id} · {i.kind}</button>
-                  <span className="ml-2">{i.text}</span>
-                  <span className="ml-2 text-[11px] text-muted-foreground">{i.status}</span>
-                </li>
-              ))}
-            </ul>
-          </Card>
-        )}
-
-        <div className="research-bottom-grid">
-          <Card title="阶段报告">
-            {([['已知', view.stage.known], ['未知', view.stage.unknown], ['下一步', view.stage.next]] as const).map(([label, items]) => (
-              <div key={label} className="research-stage-section"><h4 className="text-[11px] font-medium text-muted-foreground">{label}</h4><ul>{(items.length ? items : ['暂无记录']).map((text, i) => <li key={i}>{text}</li>)}</ul></div>
-            ))}
-          </Card>
-          <StageDocs {...props} />
-        </div>
-        {props.openDoc && <StageDocViewer doc={props.openDoc} onClose={props.onCloseDoc} />}
-
-        {view.flags.length > 0 && (
-          <Card title="画布标记（只打标，宿主不强制）">
-            <ul className="space-y-0.5 text-[12px] text-amber-600 dark:text-amber-400">
-              {view.flags.map((f, i) => <li key={i}>{f.code} · 第 {f.seq} 行 · {f.note}</li>)}
-            </ul>
-          </Card>
-        )}
-      </div>
-      </div>
+          <div className="workbench-scroll workbench-artifact-content">
+            <FocusCard focus={view.focus} busy={props.busy} onAnswer={replay ? undefined : props.onForkAnswer} />
+            {props.openDoc ? <TabsContent value="document" className="m-0"><p className="mb-3 text-[11px] text-muted-foreground">当前文件内容{replay ? ' · 不随回放回退，不能作为该时点已经产生的证据' : ' · 文件更新后同步显示'}</p><StageDocViewer doc={props.openDoc} onClose={props.onCloseDoc} autoScroll={false} /></TabsContent> : <>
+              <TabsContent forceMount value="probe" className="m-0 space-y-4 data-[state=inactive]:hidden">
+                {!!view.matrix.columns.length && <div className="flex flex-wrap items-center gap-2 text-[12px]"><label htmlFor={probePickerId} className="text-muted-foreground">实验</label><select id={probePickerId} className="workbench-select" value={pid ?? ''} onChange={(event) => select({ kind: 'prereg', id: event.target.value }, false)}>{!pid && <option value="">选择实验</option>}{view.matrix.columns.map((column) => <option key={column.pid} value={column.pid}>{column.label}</option>)}</select><Button type="button" size="sm" variant="ghost" className="ml-auto text-[11px]" onClick={() => patch({ inspector: 'versions', mobilePane: 'inspector' })}>查看版本</Button></div>}
+                <ProbeExperiment probe={probe} onSelectClaim={(hid) => select({ kind: 'claim', id: hid })} />
+                {view.feedback && <section className="research-panel p-4"><h2 className="mb-3 text-[13px] font-medium">一次反馈改变</h2><ul className="space-y-2 text-[12px] leading-relaxed text-muted-foreground">{view.feedback.map((line, i) => <li key={i}>{line}</li>)}</ul></section>}
+              </TabsContent>
+              <TabsContent forceMount value="map" className="m-0 data-[state=inactive]:hidden"><section className="research-panel p-4" aria-label="假设与证据"><h2 className="mb-2 text-[13px] font-semibold">假设与证据</h2><p className="mb-4 text-[11px] leading-relaxed text-muted-foreground">{view.derivationNote ?? '连线表示已记录的派生关系；实验支持关系见证据矩阵。'}</p><HypothesisMap claims={view.claims} selectedId={props.selection?.kind === 'claim' ? props.selection.id : undefined} onSelect={select} /></section></TabsContent>
+              <TabsContent forceMount value="matrix" className="m-0 data-[state=inactive]:hidden"><section className="research-panel p-4" aria-label="证据矩阵"><h2 className="mb-4 text-[13px] font-semibold">假设与证据</h2><EvidenceMatrix view={view} narrow={narrow} onSelect={select} /></section></TabsContent>
+            </>}
+          </div>
+        </Tabs>
+      </main>
+      <aside className="workbench-inspector" aria-label="证据与版本">
+        <Tabs value={ui.inspector} onValueChange={(value) => { if (value === 'evidence' || value === 'versions' || value === 'run') patch({ inspector: value }) }} className="workbench-pane-tabs">
+          <div className="workbench-pane-heading"><FileText className="size-3.5" aria-hidden /><h2>证据与版本</h2><span className="ml-auto font-mono text-[10px] text-muted-foreground">{props.openDoc ? 'DOC' : (ui.inspector === 'versions' ? versionPid : props.selection?.id ?? pid) ?? 'RUN'}</span></div>
+          <TabsList className="workbench-tabs" aria-label="对象检查"><TabsTrigger value="evidence">证据</TabsTrigger><TabsTrigger value="versions">版本</TabsTrigger><TabsTrigger value="run">运行</TabsTrigger></TabsList>
+          <TabsContent value="evidence" className="workbench-scroll m-0"><div className="space-y-4 p-3">{detail ? <NodeDetail detail={detail} onClose={() => select(null)} autoScroll={false} /> : <div className="research-panel p-4 text-[12px] leading-relaxed"><h3 className="mb-2 font-medium">查看判断的依据</h3><p className="text-muted-foreground">选择一个事件、假设或实验，在这里展开预测、测量与原始记录。</p>{pid && <Button type="button" variant="outline" size="sm" className="mt-4 w-full" onClick={() => select({ kind: 'prereg', id: pid })}>查看 {pid} 的证据</Button>}</div>}<details className="research-panel p-3"><summary className="cursor-pointer text-[11px] text-muted-foreground">记录状态与科学结论</summary><div className="mt-3 space-y-3">{view.cells.map((cell) => <p key={cell.label} className="text-[12px] leading-relaxed"><span className="block text-[10px] text-muted-foreground">{cell.label}</span>{cell.text}</p>)}</div></details></div></TabsContent>
+          <TabsContent value="versions" className="workbench-scroll m-0 p-3">
+            {versionPids.length > 0 && <div className="mb-4 flex items-center gap-2 text-xs"><label htmlFor={versionPickerId}>方案</label><select id={versionPickerId} className="workbench-select min-w-0" value={versionPid ?? ''} onChange={(event) => patch({ versionPid: event.target.value })}>{versionPids.map((id) => <option key={id} value={id}>{id}</option>)}</select></div>}
+            <ProbeVersions versions={versions} pid={versionPid} />
+          </TabsContent>
+          <TabsContent forceMount value="run" className="workbench-scroll m-0 data-[state=inactive]:hidden"><RunNotes view={view} onSelect={select} /></TabsContent>
+        </Tabs>
+      </aside>
     </div>
-  )
+    <footer className="workbench-footer">{replay ? <>
+      <Button type="button" variant="ghost" size="icon" className="size-7 shrink-0" aria-label={ui.playing ? '暂停回放' : '播放研究回放'} disabled={view.maxSeq < 1} onClick={() => { if (!ui.playing && view.seq >= view.maxSeq) onSeq(1); patch({ playing: !ui.playing }) }}>{ui.playing ? <Pause className="size-3.5" /> : <Play className="size-3.5" />}</Button>
+      <input type="range" min={view.maxSeq ? 1 : 0} max={view.maxSeq} value={view.seq} onChange={(event) => { patch({ playing: false }); onSeq(Number(event.target.value)) }} className="min-w-0 flex-1 accent-primary" aria-label="回放到运行记录第几行" disabled={view.maxSeq < 1} />
+      <span className="shrink-0 font-mono text-[10px] tabular-nums">第 {view.seq} / {view.maxSeq} 行</span>
+    </> : <><span className="size-1.5 rounded-full bg-primary" aria-hidden /><span className="truncate">{view.status.latest ?? '等待下一条研究记录'}</span><span className="ml-auto shrink-0">{view.status.next}</span></>}</footer>
+  </div>
 }

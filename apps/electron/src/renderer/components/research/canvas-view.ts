@@ -20,6 +20,7 @@ import {
   probeCycles,
   simsBefore,
   stageReport,
+  workbench,
   type Annotations,
   type CellMark,
   type ClaimState,
@@ -30,6 +31,7 @@ import {
   type ResearchRecord,
 } from '@proma/shared/research-record'
 import type { ResearchWorkdir } from '@/types/research-record'
+import type { WorkbenchView } from './workbench-view'
 import { controlBar, forkOptionView, type ControlBarView, type ControlStateName, type ForkOptionView } from './controls-view'
 
 export interface CanvasControl {
@@ -82,6 +84,8 @@ export interface ClaimRow {
 }
 export interface MatrixCell { pid: string; mark: CellMark; label: string; judgmentSeq?: number }
 export interface CanvasView {
+  /** 三栏工作台的数据适配口；投影未接入时显示空状态，不合成实验或版本。 */
+  workbench?: WorkbenchView
   title: string
   modeLabel: string
   seq: number
@@ -325,8 +329,9 @@ function integrityNote(full: ResearchRecord, host: CanvasOptions['hostIntegrity'
 
 export function canvasView(full: ResearchRecord, opts: CanvasOptions): CanvasView {
   const maxSeq = full.events.length
-  const seq = Math.max(1, Math.min(opts.seq ?? maxSeq, maxSeq))
+  const seq = maxSeq === 0 ? 0 : Math.max(1, Math.min(opts.seq ?? maxSeq, maxSeq))
   const rec = sliceRecord(full, seq)
+  const wb = workbench(full, seq)
   const budgetTotal = opts.annotations?.case?.budget_total
   const { rows, note } = claimRows(rec, seq, opts.annotations)
   const cycles = probeCycles(rec)
@@ -341,6 +346,7 @@ export function canvasView(full: ResearchRecord, opts: CanvasOptions): CanvasVie
     modeLabel,
     seq,
     maxSeq,
+    workbench: { events: wb.timeline, probes: wb.probeCards, versions: wb.versionChains },
     ...integrityNote(full, opts.hostIntegrity),
     cells: statusCells(rec, budgetTotal),
     focus: focusView(rec, seq, opts),

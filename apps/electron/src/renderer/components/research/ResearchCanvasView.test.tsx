@@ -104,3 +104,16 @@ describe('状态条 + 阶段文档（交付 run，实时视角）', () => {
     expect(renderLive({ path: 'x.md', error: '阶段文档太大' })).toContain('阶段文档太大')
   })
 })
+
+
+describe('阶段文档与回放时点的边界', () => {
+  test('Given 早期回放正在看最终报告 When 渲染 Then 中央文档明确标为当前文件', () => {
+    const html = renderToStaticMarkup(<TooltipProvider><ResearchCanvasView
+      view={canvasView(one, replayAt(30))} detail={null} narrow onSelect={noop} onSeq={noop}
+      openDoc={{ path: 'REPORT.md', text: '# 最终报告' }} onCloseDoc={noop}
+    /></TooltipProvider>)
+    expect(html).toContain('不随回放回退，不能作为该时点已经产生的证据')
+    expect(html).toContain('当前文件内容')
+    expect(html).toContain('<h1>最终报告</h1>')
+  })
+})

@@ -261,3 +261,27 @@ describe('stageDocView：只读渲染方式', () => {
     expect(stageDocView('bad.json', '{oops')).toEqual({ kind: 'text', text: '{oops' })
   })
 })
+
+
+describe('三栏工作台的时点契约', () => {
+  test('Given 待测时点 When 投影 Then 没有未来的实测值与迁移', () => {
+    const before = replay(63).workbench!
+    expect(before.events).toHaveLength(63)
+    const probe = before.probes.find((p) => p.pid === 'P2')!
+    expect(probe.status).toBe('pending')
+    expect(probe.observed).toBeUndefined()
+    expect(probe.changes).toEqual([])
+    expect(before.probes.some((p) => p.pid === 'P3')).toBe(false)
+    expect(before.versions.every((v) => v.seq === undefined || v.seq <= 63)).toBe(true)
+    const after = replay(66).workbench!.probes.find((p) => p.pid === 'P2')!
+    expect(after.status).toBe('measured')
+    expect(after.observed).toBe(13)
+  })
+
+  test('Given 空运行 When 投影 Then 计数为 0 且三组产物为空', () => {
+    const view = canvasView({ ...one, events: [], preregs: {}, rejections: [], drafts: [] }, { mode: 'replay', bridge: false })
+    expect(view.seq).toBe(0)
+    expect(view.maxSeq).toBe(0)
+    expect(view.workbench).toEqual({ events: [], probes: [], versions: [] })
+  })
+})

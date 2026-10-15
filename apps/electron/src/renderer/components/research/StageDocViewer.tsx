@@ -13,10 +13,10 @@ export interface OpenStageDoc {
 }
 
 /** 阶段文档只读视图：markdown 渲染（react-markdown，不渲染原始 HTML），JSON 缩进 */
-export function StageDocViewer({ doc, onClose }: { doc: OpenStageDoc; onClose?: () => void }): React.ReactElement {
+export function StageDocViewer({ doc, onClose, autoScroll = true }: { doc: OpenStageDoc; onClose?: () => void; autoScroll?: boolean }): React.ReactElement {
   const shown = doc.text === undefined ? null : stageDocView(doc.path, doc.text)
   const viewer = React.useRef<HTMLDivElement>(null)
-  React.useEffect(() => { viewer.current?.scrollIntoView({ block: 'nearest' }) }, [doc.path])
+  React.useEffect(() => { if (autoScroll) viewer.current?.scrollIntoView({ block: 'nearest' }) }, [doc.path, autoScroll])
   return (
     <div ref={viewer} className="research-panel overflow-hidden" role="region" aria-label={`阶段文档 ${doc.path}`}>
       <div className="flex items-center gap-2 border-b border-border/40 px-2 py-1 text-[11px] text-muted-foreground">
