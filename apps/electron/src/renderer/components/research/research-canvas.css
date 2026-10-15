@@ -254,3 +254,4 @@
 .timeline-group[open] > summary .timeline-event-title::after { content: ' −'; }
 .timeline-group .timeline-event::before { display: none; }
 .research-probe-verdict { margin-top: 10px; padding: 8px 12px; border-left: 2px solid var(--research-observed); background: hsl(var(--muted) / .35); font-size: 13px; line-height: 1.6; }
+.research-runtime-controls { display: flex; flex: 0 0 auto; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 7px 20px; border-bottom: 1px solid hsl(var(--border) / .6); background: hsl(var(--card)); font-size: 12px; line-height: 1.6; }

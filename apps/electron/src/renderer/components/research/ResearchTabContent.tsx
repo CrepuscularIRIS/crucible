@@ -12,6 +12,7 @@ import type { ResearchJudgeReportResult } from '@/types/research-record'
 import { JudgeReportFrame } from './JudgeReportFrame'
 import { LiveStrip } from './LivePanel'
 import { ResearchCanvasPane } from './ResearchCanvasPane'
+import { ResearchRuntimeControls } from './ResearchRuntimeControls'
 import { researchBridge } from './research-bridge'
 import './research-canvas.css'
 
@@ -72,6 +73,7 @@ export function ResearchTabContent({ sessionId }: { sessionId: string }): React.
           ))}
         </TabsList>
       </div>
+      {view === 'progress' && <ResearchRuntimeControls sessionId={sessionId} sourceKind={source?.kind} />}
       <TabsContent value="progress" className="m-0 min-h-0 flex-1 overflow-hidden">
         <ResearchCanvasPane sessionId={sessionId} onClose={() => requestClose(createResearchTabId(sessionId))} />
       </TabsContent>
