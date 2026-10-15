@@ -20,7 +20,7 @@ const VIEWS: [ResearchTabView, string][] = [['progress', '科研进度'], ['judg
  * 评委视图：当前数据源（画布里选的实时 run / 归档）交给主进程，用 research/report/judge-report.ts 生成。
  * 报告要审计注记 annotations.json，实时 run 与未注记的归档会得到原因说明。
  */
-function JudgeReportPane({ sessionId }: { sessionId: string }): React.ReactElement {
+function JudgeReportPane({ sessionId, onBackToResearch }: { sessionId: string; onBackToResearch: () => void }): React.ReactElement {
   const source = useAtomValue(researchCanvasSourceMapAtom).get(sessionId)
   const dark = useAtomValue(resolvedThemeAtom) === 'dark'
   const [result, setResult] = React.useState<ResearchJudgeReportResult | null>(null)
@@ -46,8 +46,8 @@ function JudgeReportPane({ sessionId }: { sessionId: string }): React.ReactEleme
     return () => { cancelled = true }
   }, [archivePath, sessionId, source])
 
-  if (!source) return <JudgeReportFrame result={{ error: '先在「科研进度」里选择一份研究记录（实时或归档）。评委报告会使用同一份记录中的证据与审查注记。' }} dark={dark} />
-  return <JudgeReportFrame result={result} dark={dark} />
+  if (!source) return <JudgeReportFrame result={{ error: '先在「科研进度」里选择一份研究记录（实时或归档）。评委报告会使用同一份记录中的证据与审查注记。' }} dark={dark} onBackToResearch={onBackToResearch} />
+  return <JudgeReportFrame result={result} dark={dark} onBackToResearch={onBackToResearch} />
 }
 
 /** 顶部研究 Tab：同一份 run 记录的两种读法——科研进度（研究者画布，运行中实时）/ 评委（评委报告） */
@@ -73,7 +73,7 @@ export function ResearchTabContent({ sessionId }: { sessionId: string }): React.
         <ResearchCanvasPane sessionId={sessionId} onClose={() => requestClose(createResearchTabId(sessionId))} />
       </TabsContent>
       <TabsContent value="judge" className="m-0 min-h-0 flex-1 overflow-hidden">
-        <JudgeReportPane sessionId={sessionId} />
+        <JudgeReportPane sessionId={sessionId} onBackToResearch={() => setView('progress')} />
       </TabsContent>
     </Tabs>
   )

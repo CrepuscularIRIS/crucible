@@ -48,4 +48,13 @@ describe('实验方案版本链', () => {
     expect(html).toContain('未记录具体拒绝原因')
     expect(html).toContain('事件序号未记录')
   })
+  test('Given 版本有工程溯源，Then 先展示结果与原因，工程内容默认折叠', () => {
+    const html = renderToStaticMarkup(<ProbeVersions versions={versions} pid="P1" />)
+    expect(html.indexOf('未通过')).toBeLessThan(html.indexOf('预测区间未冻结'))
+    expect(html.indexOf('预测区间未冻结')).toBeLessThan(html.indexOf('<details'))
+    expect(html.indexOf('<details')).toBeLessThan(html.indexOf('SHA-256'))
+    expect(html.match(/<details /g)).toHaveLength(4)
+    expect(html).not.toContain('<details open')
+    expect(html).toContain('拒绝记录仅用于展示，不参与裁决')
+  })
 })

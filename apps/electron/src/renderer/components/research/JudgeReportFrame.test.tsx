@@ -30,4 +30,11 @@ describe('评委报告页（同一份记录，主进程用 research/report/judge
   test('还在生成：占位', () => {
     expect(renderToStaticMarkup(<JudgeReportFrame result={null} dark={false} />)).toContain('正在生成评委报告')
   })
+
+  test('Given 缺审计注记 When 评委打开报告 Then 显示阅读路径及返回证据入口，不冒充结论', () => {
+    const html = renderToStaticMarkup(<JudgeReportFrame result={{ error: '缺少审计注记' }} dark onBackToResearch={() => {}} />)
+    for (const label of ['缺少审计注记', '研究什么', '为何这样做', '反馈改变什么', '哪里仍不确定', '返回科研进度，查看原始证据']) expect(html).toContain(label)
+    expect(html).toContain('aria-busy="false"')
+    expect(html).not.toContain('<iframe')
+  })
 })

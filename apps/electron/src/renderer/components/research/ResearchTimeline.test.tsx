@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { ResearchTimeline } from './ResearchTimeline'
+import { ResearchTimeline, timelineEvents, timelineTitle } from './ResearchTimeline'
 import type { WorkbenchEvent } from './workbench-view'
 
 const events: WorkbenchEvent[] = [
@@ -22,7 +22,7 @@ describe('研究过程时间线', () => {
     expect(html.match(/aria-current="step"/g)).toHaveLength(1)
     expect(html).not.toContain('记录解释变化')
     expect(html).not.toContain('reconcile')
-    expect(html.match(/type="button"/g)).toHaveLength(2)
+    expect(html.match(/class="timeline-event-button/g)).toHaveLength(2)
   })
   test('Given 实时视图，Then 不将后续事件标记为尚未发生', () => {
     const html = renderToStaticMarkup(<ResearchTimeline events={events} seq={3} replay={false} onEvent={() => {}} />)
@@ -43,5 +43,32 @@ describe('研究过程时间线', () => {
     expect(html).toContain('还没有可展示的研究事件')
     expect(html).not.toContain('<button')
     expect(html).not.toContain('aria-current')
+  })
+  test('Given 已知机械事件和未知事件，Then 关键筛选只移除明确噪声且可完整恢复', () => {
+    const mixed: WorkbenchEvent[] = ['world.simulate', 'world.info', 'world.env', 'env.snapshot', 'world.env.verify', 'new.future.operation', 'claim.transition'].map((op, index) => ({ seq: index + 1, ts: '', op, title: op, hids: [] }))
+    expect(timelineEvents(mixed, 7, false, false).map((event) => event.op)).toEqual(['world.env.verify', 'new.future.operation', 'claim.transition'])
+    expect(timelineEvents(mixed, 7, false, true)).toEqual(mixed)
+    expect(timelineEvents(mixed, 5, true, true).map((event) => event.seq)).toEqual([1, 2, 3, 4, 5])
+    expect(timelineEvents(mixed, 5, true, false).map((event) => event.op)).toEqual(['world.env.verify'])
+    const html = renderToStaticMarkup(<ResearchTimeline events={mixed} seq={5} replay onEvent={() => {}} />)
+    expect(html).toContain('显示 1 / 5 条')
+    expect(html).toContain('关键进展')
+    expect(html).toContain('全部记录')
+    expect(html).not.toContain('new.future.operation')
+  })
+  test('Given 只有机械事件，Then 解释筛选结果并保留全部记录入口', () => {
+    const html = renderToStaticMarkup(<ResearchTimeline events={[{ seq: 1, ts: '', op: 'world.simulate', title: '模拟数据', hids: [] }]} seq={1} replay onEvent={() => {}} />)
+    expect(html).toContain('当前只有环境或模拟记录')
+    expect(html).toContain('显示 0 / 1 条')
+    expect(html).toContain('全部记录')
+  })
+  test('Given 科学状态标题，Then 中文解释保持原判断及未知词', () => {
+    expect(timelineTitle('H1 → SCOPED；请求 REFUTED 被封顶')).toBe('H1 → 收窄范围；请求 已被否定 被封顶')
+    expect(timelineTitle('LIVE SUPPORTED CONTESTED UNKNOWN LIVE_TEST')).toBe('待检验 得到支持 仍有争议 UNKNOWN LIVE_TEST')
+    const html = renderToStaticMarkup(<ResearchTimeline events={[{ seq: 1, ts: '', op: 'claim.transition', title: 'H1 → SCOPED', hids: ['H1'] }]} seq={1} replay onEvent={() => {}} />)
+    expect(html).toContain('H1 → 收窄范围')
+    expect(html).toContain('<details')
+    expect(html).not.toContain('<details open')
+    expect(html).toContain('H1 → SCOPED')
   })
 })

@@ -14,6 +14,7 @@ describe('实验产物的数值与科学边界', () => {
     expect(html).toContain('查看假设 H5')
     expect(html).toContain('观测不符合预注册预测')
     expect(html).toContain('落入区间不等于假设成立')
+    expect(html).toContain('预测范围，不是置信区间')
     expect(html).toContain('11 – 15')
   })
   test('Given 未选实验，Then 显示空状态', () => {
@@ -50,8 +51,11 @@ describe('实验产物的数值与科学边界', () => {
   test('Given 请求 REFUTED 被封顶为 CONTESTED，Then 展示实际结果及封顶原因', () => {
     const html = render(fixture({ changes: [{ seq: 26, hid: 'H5', from: 'LIVE', to: 'CONTESTED', requested: 'REFUTED', lead: ['no_audit'], reason: '测量与预测不符' }] }))
     expect(html).toContain('LIVE → CONTESTED')
+    expect(html).toContain('未定 → 有争议')
+    expect(html).toContain('请求被否定 → 实际有争议')
     expect(html).toContain('请求 REFUTED → 实际 CONTESTED')
-    expect(html).toContain('原因：no_audit')
+    expect(html).toContain('原因：缺少审计记录')
+    expect(html).toContain('原因码：no_audit')
     expect(html).not.toContain('LIVE → REFUTED')
   })
   test('Given 阻断剂信息可选，Then 显示具体阻断剂，空值明确无而缺字段不编造', () => {
@@ -64,5 +68,32 @@ describe('实验产物的数值与科学边界', () => {
     const html = render(fixture({ changes: [{ seq: 26, hid: 'H5', to: 'CONTESTED', requested: 'REFUTED', reason: '' }] }))
     expect(html).toContain('原因：未记录')
     expect(html).toContain('此前状态未记录 → CONTESTED')
+  })
+  test('Given 长研究问题和完整协议，Then 短标题独立且可展开读取完整原文', () => {
+    const question = '这里保留原始问题和未删减的研究背景。'.repeat(30)
+    const protocol = '原始实验设置\n第二行完整参数'
+    const html = render(fixture({ question, protocol }))
+    expect(html).toMatch(/<h3[^>]*>P2 · 实验对照<\/h3>/)
+    expect(html).toContain('展开完整问题与实验设置')
+    expect(html).toContain(question)
+    expect(html).toContain(protocol)
+    const details = html.match(/<details[^>]*>[\s\S]*?<\/details>/)?.[0]
+    expect(details).toContain(question)
+    expect(details).toContain(protocol)
+  })
+  test('Given 部分假设有名称，Then 图旁和数值表使用提供的名字且不生成其他解释', () => {
+    const html = renderToStaticMarkup(<ProbeExperiment probe={fixture()} claimNames={{ H3: '基础通道解释' }} />)
+    expect(html).toContain('aria-label="图中假设名称"')
+    expect(html.match(/基础通道解释/g)).toHaveLength(2)
+    expect(html).toContain('H5')
+    expect(html).not.toContain('undefined')
+  })
+  test('Given 未识别状态与原因码，Then 不推断中文含义且原始码仍可展开', () => {
+    const html = render(fixture({ changes: [{ seq: 27, hid: 'H5', to: 'CUSTOM_STATE', requested: 'CUSTOM_REQUEST', lead: ['custom_reason'], reason: '原始解释' }] }))
+    expect(html).toContain('未识别状态（见原始记录）')
+    expect(html).toContain('其他限制（见原始记录）')
+    expect(html).toContain('展开原始状态记录')
+    expect(html).toContain('请求 CUSTOM_REQUEST → 实际 CUSTOM_STATE')
+    expect(html).toContain('原因码：custom_reason')
   })
 })
