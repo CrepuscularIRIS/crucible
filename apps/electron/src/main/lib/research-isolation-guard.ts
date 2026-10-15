@@ -35,7 +35,13 @@ const BASH_METER_RUN = /(?:^|[\s;&|'"`])(?:python[23]?|bun|node)\s+[^\n;&|]*worl
 const BASH_RESEARCH_IMPORT = /(?:^|[\s;&|])python[23]?\s+(?:-[^\s]+\s+)*-c\s+(['"])[^\n]*\b(?:import\s+neuronbench|from\s+neuronbench)\b[^\n]*\1/i
 const RESEARCH_ENV_EXPANSION = /\$(?:\{)?(?:NEURONBENCH_ROOT|PROMA_RESEARCH_DENY)(?:\})?/i
 const PROCESS_CONTROL = /(?:^|[!\s;&|()])(?:sudo\s+)?(?:[^\s;&|()]+\/)?(?:kill|killall|pkill)\b|\bos\.kill(?:pg)?\b|\bprocess\.kill\b|\.(?:kill|terminate|send_signal)\s*\(/i
-const BASH_DIRECTORY_CHANGE = /(?:^|[\s;&|()])(?:(?:command|builtin)\s+(?:--\s+)?)?(?:cd|pushd)\b/i
+const BASH_DIRECTORY_CHANGE = /(?:^|[\s;&|()])(?:(?:command|builtin)\s+(?:--\s+)?)?(?:cd|pushd|popd)\b/i
+const BASH_DIRECTORY_CHANGE_ALL = new RegExp(BASH_DIRECTORY_CHANGE.source, 'gi')
+/**
+ * 花括号展开形状的路径：`/be{nch,x}`、`{a..b}`，组内带引号或转义空白也算（bash 照样展开）。
+ * 带冒号或未转义空白的不算，所以 Python 字典、JSON、Markdown `{a: 1}` 放行；Python 集合字面量 `{'a','b'}` 会被误拦（罕见）。
+ */
+const PATH_BRACE_EXPANSION = /\{(?:[^{}\s:]|\\\s)*(?:,|\.\.)(?:[^{}\s:]|\\\s)*\}/
 const PYTHON_DIRECTORY_CHANGE = /\b(?:os\.)?chdir\s*\(/i
 const IPYTHON_SYSTEM_ESCAPE = /\bget_ipython\s*\(\s*\)\s*\.system\s*\(/i
 const PYTHON_PROCESS_COMMAND = /^\s*subprocess\.(?:run|call|check_call|check_output|Popen)\s*\(\s*(?:args\s*=\s*)?(?:[[(]\s*(?:['"](?:[^'"]*\/)?(?:sudo|env)['"]\s*,\s*(?:['"](?:--?[^'"]*|[A-Za-z_][A-Za-z0-9_]*=[^'"]*)['"]\s*,\s*)*)*['"](?:[^'"]*\/)?(?:kill|killall|pkill)['"]|['"](?:(?:[^'"\s]*\/)?(?:sudo|env)(?:\s+(?:--?\S+|[A-Za-z_][A-Za-z0-9_]*=\S+))*\s+)*(?:[^'"\s]*\/)?(?:kill|killall|pkill)(?:\s|['"]))/i
@@ -335,32 +341,95 @@ function directoryChangeTarget(unit: string, cwd: string): string | undefined {
   const pythonMatch = /\b(?:os\.)?chdir\s*\(\s*(?:[rRuUbB]{1,2})?(['"])([^'"]+)\1\s*\)/i.exec(unit)
   const raw = pythonMatch?.[2] ?? bashMatch?.[1]
   const candidate = raw ? expandHome(stripToken(raw)) : undefined
-  if (!candidate || /[$`]/.test(candidate)) return undefined
-  return resolve(cwd, candidate)
+  // 静态解析不了的一律不认：变量 / 命令替换、`cd -` 与选项、`~user`、带空白的目标
+  if (!candidate || /[$`\s]/.test(candidate) || candidate.startsWith('-') || /^~(?!\/|$)/.test(candidate)) return undefined
+  // 解析成真实路径：符号链接指向哪里就按哪里算；目录不存在（cd 会失败、后面的相对路径落回旧 cwd）也不认
+  try {
+    return realpathSync(resolve(cwd, candidate))
+  } catch {
+    return undefined
+  }
 }
 
 function sourceTouchesRootsFollowingDirectoryChanges(source: string, roots: string[], cwd: string, toolName: 'bash' | 'ipython'): boolean {
   let currentCwd = cwd
   const vars = new Map<string, string>()
   for (const unit of splitExecutionUnits(source)) {
-    if (roots.some((root) => isPathWithin(currentCwd, root))) return true
+    if (isWithinAny(currentCwd, roots)) return true
     const substituted = substitutePathVariables(unit, vars, toolName)
     if (sourceTouchesRoots(unit, roots, currentCwd, substituted === unit ? [] : joinedCandidates(substituted, true))) return true
     recordPathVariables(unit, vars, toolName, roots, currentCwd)
     const nextCwd = directoryChangeTarget(unit, currentCwd)
     if (nextCwd) {
       currentCwd = nextCwd
-      if (roots.some((root) => isPathWithin(currentCwd, root))) return true
+      if (isWithinAny(currentCwd, roots)) return true
     }
   }
   return false
 }
 
-function hasUnsafeExecutionSyntax(source: string, toolName: 'bash' | 'ipython'): boolean {
+/**
+ * 不交给 shell 的引号 heredoc 正文不做 bash 语法扫描：bash 从不在 heredoc 正文里做花括号展开，
+ * 引号定界符连 `$(…)` 也不展开。喂给 bash/sh 等 shell 的、或未加引号且含 `$`/反引号的正文照常扫描；
+ * 其余检查（禁区、账本写入、写后执行）仍看完整原文。
+ */
+function stripDataHeredocBodies(source: string): string {
+  const lines = source.split('\n')
+  const out: string[] = []
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index] ?? ''
+    out.push(line)
+    const masked = maskBashQuotedAndCommentText(line)
+    const start = HEREDOC_START.exec(line)
+    if (!start || masked.slice(start.index, start.index + 2) !== '<<' || !isDataHeredocConsumer(masked, start.index)) continue
+    const delimiter = start[3]
+    const end = lines.findIndex((next, at) => at > index && (start[1] ? next.replace(/^\t+/, '') : next) === delimiter)
+    if (end < 0) continue
+    const body = lines.slice(index + 1, end)
+    if (!start[2] && body.some((next) => /[$`]/.test(next))) continue
+    // 正文里起进程的（写成脚本稍后再跑、或直接喂给 python）照常扫描：路径可能藏在花括号展开里
+    if (PYTHON_PROCESS_CALL.test(body.join('\n')) || PYTHON_SCRIPT_RUN.test(body.join('\n')) || SHELL_SCRIPT_RUN.test(body.join('\n'))) continue
+    out.push(...body.map(() => ''))
+    index = end - 1
+  }
+  return out.join('\n')
+}
+
+/**
+ * heredoc 的消费者是否只把正文当数据：白名单，只认 `cat`（重定向到文件）、`tee 文件`、`python -`。
+ * 正文再经管道或进程替换交给别的命令的，不算。
+ */
+function isDataHeredocConsumer(maskedLine: string, at: number): boolean {
+  if (/[<>]\(/.test(maskedLine)) return false
+  if (/\|(?!\|)/.test(maskedLine.slice(at).replace(/\|\|/g, ''))) return false
+  const command = (maskedLine.slice(0, at).split(/&&|\|\||[;|]/).at(-1) ?? '').trim()
+  return /^cat(?:\s+(?:>>?\s*\S+))?$/.test(command) || /^tee(?:\s+-a)?\s+[^\s-]\S*$/.test(command) || /^python[0-9.]*\s+-$/.test(command)
+}
+
+/**
+ * 只放行一种 `cd`：整条命令里唯一一次目录切换，位于开头，紧跟 `&&`，目标是存在的字面量目录。
+ * 目标必须存在，cd 实际不会失败；万一失败，`&&` 挡住紧随的一段，但之后的 `;`、换行、`||` 仍会在旧目录里执行——
+ * 所以"目标存在"是这条规则成立的前提。成功时后面每一段都在目标目录里，追踪器的 cwd 就是真实 cwd。
+ * 其余形状（多次切换、pushd/popd、子 shell、管道、`;`/`||` 之后）一律按无法追踪拒绝。
+ * ponytail: `env -C`、`git -C`、`make -C` 换目录不追踪（改动前同样如此）；要堵就把它们并进 BASH_DIRECTORY_CHANGE。
+ */
+function hasUntrackableDirectoryChange(source: string, cwd: string): boolean {
+  const masked = maskBashQuotedAndCommentText(source)
+  const changes = masked.match(BASH_DIRECTORY_CHANGE_ALL)?.length ?? 0
+  if (changes === 0) return false
+  if (changes > 1) return true
+  const leading = /^\s*cd\s+(\S+)\s*&&/.exec(masked)
+  if (!leading) return true
+  return !directoryChangeTarget(source.slice(0, source.indexOf('&&')).trim(), cwd)
+}
+
+function hasUnsafeExecutionSyntax(source: string, toolName: 'bash' | 'ipython', cwd: string): boolean {
   if (toolName === 'bash') {
-    const executable = maskBashQuotedAndCommentText(source)
-    return BASH_DIRECTORY_CHANGE.test(executable)
-      || STATIC_SHELL_BRACE_EXPANSION.test(executable)
+    const scanned = stripDataHeredocBodies(source)
+    return hasUntrackableDirectoryChange(scanned, cwd)
+      || STATIC_SHELL_BRACE_EXPANSION.test(maskBashQuotedAndCommentText(scanned))
+      // 数据正文不当 shell 扫，但写成文件后可能被下一次调用拿去执行：路径形状的花括号仍拒
+      || (scanned !== source && PATH_BRACE_EXPANSION.test(source))
   }
 
   if (/^\s*(?:!|%%bash\b|%sx\b|%system\b)/im.test(source)) return true
@@ -386,7 +455,7 @@ function hasUnsafeStateMutation(source: string, config: ResearchIsolationConfig,
       ? source.replace(PYTHON_TRIPLE_QUOTED, '""')
       : source
   for (const unit of splitExecutionUnits(scanned)) {
-    const touchesState = protectedStateRoots(config).some((root) => isPathWithin(currentCwd, root))
+    const touchesState = isWithinAny(currentCwd, protectedStateRoots(config))
       || unitTouchesProtectedState(unit, config, currentCwd)
       || mentionsVariable(unit, tainted)
     if (touchesState) {
@@ -540,7 +609,7 @@ export function classifyResearchToolCall(
   }
   const source = normalizedTool === 'bash' ? stripReportHeredocBodies(rawSource, config) : rawSource
   if (
-    hasUnsafeExecutionSyntax(source, normalizedTool)
+    hasUnsafeExecutionSyntax(source, normalizedTool, config.cwd)
     ||
     hasDirectResearchSource(source, normalizedTool)
     || sourceTouchesRootsFollowingDirectoryChanges(source, config.denyRoots, config.cwd, normalizedTool)

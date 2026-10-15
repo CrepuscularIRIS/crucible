@@ -1,4 +1,4 @@
-import { linkSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { linkSync, mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, describe, expect, it } from 'bun:test'
@@ -422,7 +422,7 @@ describe('SE2a：带正文的 REPORT 写入（2026-08-27 归档里 5 次 heredoc
     ['阶段文档写完再当脚本跑（bash）', 'bash', { command: "cat > research-work/r1/x.md << 'EOF'\nrm -rf /root/.proma-research/r1\nEOF\nbash research-work/r1/x.md" }],
     ['阶段文档写完再当脚本跑（python3）', 'bash', { command: "cat > research-work/r1/x.md << 'EOF'\nimport shutil; shutil.rmtree('/root/.proma-research/r1')\nEOF\npython3 research-work/r1/x.md" }],
     ['工作目录里的非 .md 文件正文照常扫描', 'bash', { command: "cat > /root/research-work/r1/run.sh << 'EOF'\nrm -rf /root/.proma-research/r1\nEOF" }],
-    ['工作目录更深一层的 .md 不算阶段文档', 'bash', { command: "cat > /root/research-work/r1/sub/x.md << 'EOF'\n{a}\nEOF" }],
+    ['工作目录更深一层的文件写完再当脚本跑', 'bash', { command: "cat > /root/research-work/r1/sub/x.md << 'EOF'\nrm -rf /root/.proma-research/r1\nEOF\nbash /root/research-work/r1/sub/x.md" }],
     ['exec 三引号代码不剥离', 'ipython', { code: 'exec("""open(\'/root/.proma-research/r1/journal.jsonl\',\'a\').write(\'x\')""")' }],
   ] as const)('拒绝：%s', (_label, toolName, input) => {
     expect(classifyResearchToolCall(toolName, input, config)).toMatchObject({ block: true })
@@ -745,4 +745,61 @@ describe('Wave 1 复审：经 glob 或递归工具读 deny 根', () => {
   ] as const)('不误杀: %s %j', (toolName, input) => {
     expect(classifyResearchToolCall(toolName, input, config)).toBeUndefined()
   })
+})
+
+describe('ML04 2026-10-15：普通 cd 与写 Python 文件被误拦（真实目录，含指向账本的符号链接）', () => {
+  const T = realpathSync(mkdtempSync(join(tmpdir(), 'guard-ml04-')))
+  for (const d of ['arc-ML04/submission/code', '.proma-research/r1', '.prime/agent/harness', '.prime/agent/kernel-venv', 'research-work/r1']) mkdirSync(join(T, d), { recursive: true })
+  symlinkSync(join(T, '.proma-research/r1'), join(T, 'linky'))
+  const config = buildResearchIsolationConfig(['/bench/neuronbench'], T, [join(T, '.prime/agent/kernel-venv'), join(T, '.prime/agent/harness')])
+  afterAll(() => rmSync(T, { recursive: true, force: true }))
+
+  it.each([
+    ['cd 到存在的字面量目录', `cd ${T}/arc-ML04 && pwd`],
+    ['cd 到 /tmp', 'cd /tmp && ls'],
+    ['cd 后编译工作区代码', `cd ${T}/arc-ML04/submission/code && python3 -m py_compile scaling_knn_lib.py`],
+    ['heredoc 写 Python 文件（正文有字典）', `cat > ${T}/arc-ML04/submission/code/x.py <<'EOF'\nd = {'a': 1}\nEOF`],
+    ['先建目录再 heredoc 写文件', `mkdir -p ${T}/arc-ML04/submission/code && cat > ${T}/arc-ML04/submission/code/y.py <<'EOF'\nd = {'a': 1}\nEOF`],
+    ['heredoc 喂给 python（正文有字典）', "python3 - <<'PY'\nprint({'a': 1})\nPY"],
+    ['tee 写文件', `tee ${T}/research-work/r1/notes.md <<'EOF'\n{a, b}\nEOF`],
+    ['heredoc 写 Markdown 回报（有花括号）', `cat > ${T}/research-work/r1/out.md <<'EOF'\n- 读数 {acc: 0.91, f1: 0.88}\nEOF`],
+    ['heredoc 写 JSON', `cat > ${T}/arc-ML04/m.json <<'EOF'\n{"acc": 0.9, "f1": 0.8}\nEOF`],
+  ] as const)('放行：%s', (_label, command) => {
+    expect(classifyResearchToolCall('bash', { command }, config)).toBeUndefined()
+  })
+
+  it.each([
+    ['cd 目标是变量', `d=${T}/arc-ML04; cd "$d" && ls`],
+    ['cd -', 'cd - && ls'],
+    ['裸 cd', 'cd && ls'],
+    ['cd 带选项', `cd -P ${T}/arc-ML04 && ls`],
+    ['cd ~user', 'cd ~root && ls'],
+    ['cd 到不存在的目录后接相对路径', `cd ${T}/nope; rm -rf .prime/agent/harness`],
+    ['cd 进指向账本的符号链接再删', `cd ${T}/linky && rm journal.jsonl`],
+    ['cd 进账本目录再删', `cd ${T}/.proma-research/r1 && rm -rf journal.jsonl`],
+    ['cd 后用相对路径删账本', `cd ${T} && rm -rf .proma-research/r1`],
+    ['cd 进 harness 改状态', `cd ${T}/.prime/agent/harness && echo {} > harness_state.json`],
+    ['cd 进禁区', 'cd /bench/neuronbench && cat worlds.py'],
+    ['cd 后写脚本再执行', `cd /tmp && cat > run.sh <<'EOF'\nrm -rf ${T}/.proma-research/r1\nEOF\nbash run.sh`],
+    ['heredoc 喂给 bash 时正文照常扫描', "bash <<'EOF'\necho /be{nch,x}\nEOF"],
+    ['heredoc 经管道交给 sh', "cat <<'EOF' | sh\necho /be{nch,x}\nEOF"],
+    ['heredoc 经进程替换交给 bash', "tee >(bash) <<'EOF'\necho /be{nch,x}\nEOF"],
+    ['不在白名单里的 shell', "busybox sh <<'EOF'\necho /be{nch,x}\nEOF"],
+    ['未加引号 heredoc 正文里有命令替换', `cat > ${T}/x.txt <<EOF\n$(echo /be{nch,x})\nEOF`],
+    ['两次 cd', `cd /tmp && ls; cd ${T}/linky && rm journal.jsonl`],
+    ['cd 不在开头（|| 之后，可能被跳过）', `true || cd ${T}/arc-ML04; rm -rf .prime/agent/harness`],
+    ['cd 后接 ; 而不是 &&', `cd ${T}/arc-ML04; ls`],
+    ['pushd / popd', `pushd ${T}/arc-ML04 && popd && rm -rf .prime/agent/harness`],
+    ['cd 放进后台', `cd ${T}/arc-ML04 & rm -rf .prime/agent/harness`],
+    ['数据 heredoc 写脚本，路径藏在花括号里（下一次调用再执行）', `cat > ${T}/run.sh <<'EOF'\ncat /be{nch,x}/neuronbench/w.py\nEOF`],
+    ['数据 heredoc 正文里的序列展开', `cat > ${T}/run.sh <<'EOF'\nrm ${T}/.proma-research/r{0..9}/journal.jsonl\nEOF`],
+    ['数据 heredoc 正文里带引号的花括号路径', `cat > ${T}/run.sh <<'EOF'\ncat /be{"nch",x}/neuronbench/w.py\nEOF`],
+    ['数据 heredoc 正文里带转义空白的花括号路径', `cat > ${T}/run.sh <<'EOF'\ncat /be{nch,x\\ y}/neuronbench/w.py\nEOF`],
+    ['喂给 python 的 heredoc 正文删账本', `python3 - <<'PY'\nimport shutil; shutil.rmtree('${T}/.proma-research/r1')\nPY`],
+    ['喂给 python 的 heredoc 正文读禁区', "python3 - <<'PY'\nopen('/bench/neuronbench/worlds.py').read()\nPY"],
+  ] as const)('拒绝：%s', (_label, command) => {
+    expect(classifyResearchToolCall('bash', { command }, config)).toMatchObject({ block: true })
+  })
+  // ponytail: 引号里的花括号（Python 字符串交给 shell=True 的子进程）文本扫描看不见——`python3 -c` 同样放行，改动前也放行。
+  // 已知上限：禁区靠探针沙箱遮蔽、账本靠哈希链与宿主重算兜底；要堵就得在子进程层做沙箱，不在这里追字符串。
 })

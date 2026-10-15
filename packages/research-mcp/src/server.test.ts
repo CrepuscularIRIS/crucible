@@ -53,6 +53,15 @@ const spec = {
   ],
 }
 
+describe('research_init 建好 K0 信封里的工作目录', () => {
+  // ML04 2026-10-15：score 任务没有仿真包，research-work/<run>/ 从没被建过，agent 只能自己 mkdir（还被守卫误拦）
+  it('init 后 research-work/<run>/ 已存在，且不在状态根里', async () => {
+    await callTool('research_init', { run: 'workdir-made', mode: 'score', success_predicate: 'x' })
+    expect(statSync(join(researchCwd, 'research-work', 'workdir-made')).isDirectory()).toBe(true)
+    expect(existsSync(join(researchCwd, '.proma-research', 'workdir-made', 'research-work'))).toBe(false)
+  })
+})
+
 describe('诚实路径：init → 登记 → 预登记 → 执行 → 终态 → graveyard', () => {
   it('完整走通且 graveyard 可见（约束 5）', async () => {
     await callTool('research_init', { run: 'honest' })

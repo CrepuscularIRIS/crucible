@@ -461,6 +461,8 @@ export function buildServer(): McpServer {
       const existing = existsSync(join(root, 'journal.jsonl')) ? (requireInit(root), replay(root)) : undefined
       const plan = planInit(existing, contractInput)
       mkdirSync(root, { recursive: true })
+      // K0 信封里的工作目录：草稿、仿真记录、报告都写这里；score 任务没有仿真包时以前从没人建它
+      mkdirSync(workDir(run), { recursive: true })
       appendEvent(root, 'run.init', { run: sanitizeRunName(run), ...plan.fields })
       const h0 = plan.fresh && plan.contract ? BUILTIN_H0[plan.contract.mode] : undefined
       if (h0) appendEvent(root, 'claim.propose', { id: 'H0', ...h0, builtin: true })
