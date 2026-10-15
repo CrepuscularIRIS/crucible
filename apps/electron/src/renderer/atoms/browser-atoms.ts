@@ -21,15 +21,3 @@ export const currentSessionBrowserStateAtom = atom<BrowserViewState | null>((get
   const sessionId = get(currentAgentSessionIdAtom)
   return sessionId ? get(browserStateMapAtom).get(sessionId) ?? null : null
 })
-
-/** Web 入口只展开说明，不启动桌面导航或更改宿主浏览器状态。 */
-export const showWebBrowserNoticeAtom = atom(null, (_get, set, request: { sessionId: string; url?: string }) => {
-  set(browserPendingNavigationMapAtom, (previous) => {
-    const next = new Map(previous)
-    if (request.url) next.set(request.sessionId, request.url)
-    else next.delete(request.sessionId)
-    return next
-  })
-  set(browserPanelMinimizedMapAtom, (previous) => { const next = new Map(previous); next.delete(request.sessionId); return next })
-  set(browserPanelOpenMapAtom, (previous) => new Map(previous).set(request.sessionId, true))
-})

@@ -77,6 +77,8 @@ trap terminate TERM INT
 # --no-sandbox：容器内没有 setuid sandbox 所需的用户命名空间权限。
 # 这不降低本部署的隔离——容器本身就是边界，且模型生成的代码另有 bwrap 沙箱。
 cd /crucible/apps/electron
+# Web 端通过只读快照观察 Agent；离屏渲染让后台标签也能正常布局、点击和截图。
+export PROMA_BROWSER_OFFSCREEN="${PROMA_BROWSER_OFFSCREEN:-1}"
 log "启动 Electron 主进程"
 bunx electron . --no-sandbox --disable-gpu --disable-dev-shm-usage &
 ELECTRON_PID=$!

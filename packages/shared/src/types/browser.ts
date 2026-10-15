@@ -104,3 +104,13 @@ export interface BrowserCreateTabInput {
   sessionId: string
   url?: string
 }
+
+/** Web 面板的只读页面快照，不代表 Agent 已观察或操作。 */
+export interface BrowserPagePreview {
+  sessionId: string
+  tabId: string
+  url: string
+  mimeType: 'image/png'
+  base64: string
+  capturedAt: number
+}

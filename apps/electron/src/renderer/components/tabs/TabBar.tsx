@@ -37,12 +37,12 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { TabBarItem } from './TabBarItem'
 import { getTabBarActionLayout } from './tab-bar-action-layout'
 import { useCloseTab } from '@/hooks/useCloseTab'
-import { detectIsWindows, isWebSurface, WINDOW_CONTROLS_INSET_RIGHT } from '@/lib/platform'
+import { detectIsWindows, WINDOW_CONTROLS_INSET_RIGHT } from '@/lib/platform'
 import { registerShortcut } from '@/lib/shortcut-registry'
 import { cn } from '@/lib/utils'
 import { shortcutGuideOpenAtom } from '@/atoms/shortcut-guide'
 import { faqDialogOpenAtom } from '@/atoms/faq-dialog'
-import { showWebBrowserNoticeAtom, browserFilePanelManualRestoreSessionIdsAtom, browserPanelMinimizedMapAtom, browserPanelOpenMapAtom, browserStateMapAtom } from '@/atoms/browser-atoms'
+import { browserFilePanelManualRestoreSessionIdsAtom, browserPanelMinimizedMapAtom, browserPanelOpenMapAtom, browserStateMapAtom } from '@/atoms/browser-atoms'
 // 浏览器入口对所有 Agent 会话开放；来源限制由主进程浏览器策略处理。
 
 export function TabBar(): React.ReactElement {
@@ -267,20 +267,15 @@ function TabBarInner({
     setSidePanelOpen(!isPanelOpen)
   }, [activeAgentSession, activeTab, browserOpenMap, isPanelOpen, setBrowserFilePanelManualRestoreSessionIds, setSidePanelOpen])
 
-  const showWebBrowserNotice = useSetAtom(showWebBrowserNoticeAtom)
   const openBrowser = React.useCallback(async () => {
     if (!activeAgentSession) return
-    if (isWebSurface()) {
-      showWebBrowserNotice({ sessionId: activeAgentSession.id })
-      return
-    }
     const open = (window.electronAPI as Partial<typeof window.electronAPI>).openAgentBrowser
     if (typeof open !== 'function') return
     const state = await open(activeAgentSession.id)
     setBrowserStateMap((previous) => { const next = new Map(previous); next.set(activeAgentSession.id, state); return next })
     setBrowserMinimizedMap((previous) => { const next = new Map(previous); next.delete(activeAgentSession.id); return next })
     setBrowserOpenMap((previous) => { const next = new Map(previous); next.set(activeAgentSession.id, true); return next })
-  }, [activeAgentSession, setBrowserMinimizedMap, setBrowserOpenMap, setBrowserStateMap, showWebBrowserNotice])
+  }, [activeAgentSession, setBrowserMinimizedMap, setBrowserOpenMap, setBrowserStateMap])
 
   React.useEffect(() => {
     const sessionId = activeAgentSession?.id ?? null

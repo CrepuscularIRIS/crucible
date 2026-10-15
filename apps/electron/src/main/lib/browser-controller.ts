@@ -1,6 +1,6 @@
-import { app, BrowserWindow, WebContentsView, session as electronSession, type DownloadItem, type Session, type WebContents } from 'electron'
+import { app, BrowserWindow, WebContentsView, nativeImage, session as electronSession, type DownloadItem, type Session, type WebContents } from 'electron'
 import path from 'node:path'
-import type { BrowserExecutionSource, BrowserOperationStatus, BrowserSessionClosed, BrowserTraceAction, BrowserTraceItem, BrowserViewLayout, BrowserViewState, BrowserTabState } from '@proma/shared'
+import type { BrowserPagePreview, BrowserExecutionSource, BrowserOperationStatus, BrowserSessionClosed, BrowserTraceAction, BrowserTraceItem, BrowserViewLayout, BrowserViewState, BrowserTabState } from '@proma/shared'
 import { AGENT_IPC_CHANNELS } from '@proma/shared'
 import { assertSafeBrowserDestination, assertSafeBrowserDestinationWithFallback, assertSafeBrowserDownloadUrl, assertSafeBrowserUrl, isSupportedBrowserPopupUrl, isTransientBrowserPopupUrl, USER_NEW_TAB_URL } from './browser-policy'
 import { createAuthorizedPreviewUrl, isAuthorizedPreviewProtocol } from './browser-preview-service'
@@ -37,7 +37,9 @@ type CdpResponse = Record<string, unknown>
 type RefEntry = { backendNodeId: number; generation: number; label: string; editable: boolean }
 type BrowserTabRecord = {
   tabId: string
-  view: WebContentsView
+  view: WebContentsView | null
+  offscreenWindow: BrowserWindow | null
+  contents: WebContents
   state: BrowserTabState
   refs: Map<string, RefEntry>
   /** 页面文档/观察代际；导航、关闭、调试器恢复后即失效。 */
@@ -343,9 +345,9 @@ export class BrowserController {
   private updateNavigationState(browserSession: BrowserSessionRecord, tab: BrowserTabRecord): void {
     // Navigation callbacks can arrive after the tab was closed or its session removed.
     if (this.sessions.get(browserSession.sessionId) !== browserSession) return
-    if (browserSession.tabs.get(tab.tabId) !== tab || tab.view.webContents.isDestroyed()) return
+    if (browserSession.tabs.get(tab.tabId) !== tab || tab.contents.isDestroyed()) return
 
-    const contents = tab.view.webContents
+    const contents = tab.contents
     try {
       tab.state.url = contents.getURL()
       tab.state.title = contents.getTitle() || '未命名页面'
@@ -428,7 +430,7 @@ export class BrowserController {
 
   private assertCurrentDocument(tab: BrowserTabRecord, generation: number, signal?: AbortSignal): void {
     throwIfBrowserOperationAborted(signal)
-    if (tab.generation !== generation || tab.view.webContents.isDestroyed()) {
+    if (tab.generation !== generation || tab.contents.isDestroyed()) {
       throw new Error('页面已变化或标签已关闭，请先重新调用 BrowserObserve。')
     }
   }
@@ -444,7 +446,7 @@ export class BrowserController {
       const tab = browserSession.tabs.get(agentTabId)
       if (tab) {
         this.invalidateTabDocument(tab)
-        try { tab.view.webContents.stop() } catch { /* WebContents 已销毁 */ }
+        try { tab.contents.stop() } catch { /* WebContents 已销毁 */ }
         this.trace(browserSession, tab, 'tab', 'Agent 已停止浏览器操作；已发送指令的结果未知，请重新观察页面。', 'unknown')
       }
     }
@@ -523,7 +525,7 @@ export class BrowserController {
     for (const browserSession of this.sessions.values()) {
       if (browserSession.browserSession !== electronBrowserSession) continue
       for (const tab of browserSession.tabs.values()) {
-        if (!tab.view.webContents.isDestroyed() && tab.view.webContents === webContents) return { browserSession, tab }
+        if (!tab.contents.isDestroyed() && tab.contents === webContents) return { browserSession, tab }
       }
     }
     return null
@@ -573,7 +575,7 @@ export class BrowserController {
   private createTab(browserSession: BrowserSessionRecord, isLocalPreview = false, claimAsAgent = false, popupOptions?: Pick<BrowserTabOptions, 'openedByPopup' | 'openerTabId' | 'popupInitialUrl' | 'viewOptions'>): BrowserTabRecord {
     if (!this.owner || this.owner.isDestroyed()) throw new Error('主窗口尚未就绪，无法创建浏览器标签。')
     const tabId = `tab-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-    const view = new WebContentsView(popupOptions?.viewOptions ?? {
+    const options = popupOptions?.viewOptions ?? {
       webPreferences: {
         partition: browserSession.partition,
         nodeIntegration: false,
@@ -581,11 +583,20 @@ export class BrowserController {
         sandbox: true,
         webSecurity: true,
       },
-    })
+    }
+    // WebContentsView 的离屏表面会共享宿主尺寸，多标签时会丢失截图表面。
+    // 容器为每个标签保留一个不显示的离屏窗口；桌面仍使用原生 View。
+    const offscreenWindow = process.env.PROMA_BROWSER_OFFSCREEN === '1'
+      ? new BrowserWindow({ ...options, show: false, width: 1280, height: 800, webPreferences: { ...options.webPreferences, offscreen: true, backgroundThrottling: false } })
+      : null
+    const view = offscreenWindow ? null : new WebContentsView(options)
+    const contents = offscreenWindow?.webContents ?? view!.webContents
     const popupInitialUrl = popupOptions?.popupInitialUrl ?? null
     const tab: BrowserTabRecord = {
       tabId,
       view,
+      contents,
+      offscreenWindow,
       state: emptyTabState(tabId),
       refs: new Map(),
       generation: 0,
@@ -599,8 +610,13 @@ export class BrowserController {
       lastActivityAt: Date.now(),
       attachedOwner: null,
     }
-    view.setVisible(false)
-    view.webContents.setWindowOpenHandler(({ url }) => {
+    if (offscreenWindow) {
+      // popup 可能沿用 Chromium 预建的普通 guest，不能假定 offscreen 选项生效。
+      contents.setBackgroundThrottling(false)
+      if (contents.isOffscreen()) contents.setFrameRate(5)
+    }
+    view?.setVisible(false)
+    contents.setWindowOpenHandler(({ url }) => {
       if (!isSupportedBrowserPopupUrl(url)) {
         this.trace(browserSession, tab, 'popup', '已阻止不安全或不受支持的新窗口链接', 'failed')
         return { action: 'deny' }
@@ -623,11 +639,11 @@ export class BrowserController {
           })
           this.activateDisplayTab(browserSession, popup)
           this.trace(browserSession, popup, 'popup', isTransientBrowserPopupUrl(url) ? '已打开临时新窗口' : '已打开新窗口', 'dispatched')
-          return popup.view.webContents
+          return popup.contents
         },
       }
     })
-    view.webContents.on('will-navigate', (event, url) => {
+    contents.on('will-navigate', (event, url) => {
       // 在校验及真正导航前失效，避免 Observe 后在新页面按旧坐标操作。
       this.invalidateTabDocument(tab)
       try {
@@ -643,12 +659,12 @@ export class BrowserController {
         this.trace(browserSession, tab, 'navigate', '已阻止不安全的页面跳转', 'failed')
       }
     })
-    view.webContents.on('did-start-loading', () => { this.invalidateTabDocument(tab); this.updateNavigationState(browserSession, tab) })
-    view.webContents.on('did-stop-loading', () => this.updateNavigationState(browserSession, tab))
-    view.webContents.on('page-title-updated', () => this.updateNavigationState(browserSession, tab))
-    view.webContents.on('did-navigate', () => { tab.popupInitialNavigationPending = false; this.invalidateTabDocument(tab); this.updateNavigationState(browserSession, tab) })
-    view.webContents.on('did-navigate-in-page', () => { tab.popupInitialNavigationPending = false; this.invalidateTabDocument(tab); this.updateNavigationState(browserSession, tab) })
-    view.webContents.on('destroyed', () => {
+    contents.on('did-start-loading', () => { this.invalidateTabDocument(tab); this.updateNavigationState(browserSession, tab) })
+    contents.on('did-stop-loading', () => this.updateNavigationState(browserSession, tab))
+    contents.on('page-title-updated', () => this.updateNavigationState(browserSession, tab))
+    contents.on('did-navigate', () => { tab.popupInitialNavigationPending = false; this.invalidateTabDocument(tab); this.updateNavigationState(browserSession, tab) })
+    contents.on('did-navigate-in-page', () => { tab.popupInitialNavigationPending = false; this.invalidateTabDocument(tab); this.updateNavigationState(browserSession, tab) })
+    contents.on('destroyed', () => {
       if (!browserSession.tabs.has(tab.tabId)) return
       this.disposePopupChildren(browserSession, tab.tabId)
       browserSession.tabs.delete(tab.tabId)
@@ -661,7 +677,7 @@ export class BrowserController {
       }
       this.emit(browserSession)
     })
-    try { view.webContents.debugger.attach('1.3') } catch (error) { console.warn('[受管浏览器] CDP attach 失败:', error) }
+    try { contents.debugger.attach('1.3') } catch (error) { console.warn('[受管浏览器] CDP attach 失败:', error) }
     browserSession.tabs.set(tabId, tab)
     if (!browserSession.activeTabId) browserSession.activeTabId = tabId
     if (claimAsAgent) browserSession.agentTabId = tabId
@@ -683,7 +699,7 @@ export class BrowserController {
    */
   private async cdp(tab: BrowserTabRecord, method: string, params?: Record<string, unknown>, timeoutMs?: number, signal?: AbortSignal): Promise<CdpResponse> {
     throwIfBrowserOperationAborted(signal)
-    const debuggerClient = tab.view.webContents.debugger
+    const debuggerClient = tab.contents.debugger
     if (!debuggerClient.isAttached()) throw new Error('浏览器调试通道不可用。')
     try {
       return await withBrowserCdpTimeout(
@@ -701,7 +717,7 @@ export class BrowserController {
   private recoverDebugger(tab: BrowserTabRecord, timedOutMethod: string): void {
     // 重连会使所有 backend node/ref 的有效性不可判定。
     this.invalidateTabDocument(tab)
-    const debuggerClient = tab.view.webContents.debugger
+    const debuggerClient = tab.contents.debugger
     try {
       if (debuggerClient.isAttached()) debuggerClient.detach()
       debuggerClient.attach('1.3')
@@ -715,6 +731,7 @@ export class BrowserController {
   private async highlightAgentTarget(tab: BrowserTabRecord, backendNodeId: number): Promise<void> {
     if (tab.highlightTimer) clearTimeout(tab.highlightTimer)
     try {
+      await this.cdp(tab, 'DOM.enable')
       await this.cdp(tab, 'Overlay.enable')
       await this.cdp(tab, 'Overlay.highlightNode', {
         backendNodeId,
@@ -786,9 +803,9 @@ export class BrowserController {
 
   /** 隐藏时从原生 View 树移除，避免 Chromium 继续按前台 WebContentsView 调度。 */
   private detachTabView(tab: BrowserTabRecord): void {
-    try { tab.view.setVisible(false) } catch { /* WebContents/View 已销毁 */ }
+    try { tab.view?.setVisible(false) } catch { /* WebContents/View 已销毁 */ }
     const attachedOwner = tab.attachedOwner
-    if (!attachedOwner) return
+    if (!attachedOwner || !tab.view) return
     tab.attachedOwner = null
     try {
       if (!attachedOwner.isDestroyed()) attachedOwner.contentView.removeChildView(tab.view)
@@ -797,8 +814,9 @@ export class BrowserController {
 
   /** 重新展示时只恢复原生挂载、bounds 和 visible，不重建 WebContents。 */
   private attachTabView(tab: BrowserTabRecord): boolean {
+    if (!tab.view) return false
     const owner = this.owner
-    if (!owner || owner.isDestroyed() || tab.view.webContents.isDestroyed()) {
+    if (!owner || owner.isDestroyed() || tab.contents.isDestroyed()) {
       this.detachTabView(tab)
       return false
     }
@@ -966,9 +984,10 @@ export class BrowserController {
     this.disposePopupChildren(browserSession, tab.tabId)
     browserSession.tabs.delete(tab.tabId)
     this.clearAgentTargetHighlight(tab)
-    try { if (tab.view.webContents.debugger.isAttached()) tab.view.webContents.debugger.detach() } catch { /* 已销毁 */ }
+    try { if (tab.contents.debugger.isAttached()) tab.contents.debugger.detach() } catch { /* 已销毁 */ }
     this.detachTabView(tab)
-    if (!tab.view.webContents.isDestroyed()) tab.view.webContents.close()
+    if (tab.offscreenWindow && !tab.offscreenWindow.isDestroyed()) tab.offscreenWindow.destroy()
+    else if (!tab.contents.isDestroyed()) tab.contents.close()
   }
 
   /**
@@ -1085,7 +1104,7 @@ export class BrowserController {
 
   private async loadUrl(tab: BrowserTabRecord, url: string, signal?: AbortSignal, timeoutMs = BROWSER_OBSERVE_TIMEOUT_MS + 3_000): Promise<void> {
     throwIfBrowserOperationAborted(signal)
-    await withBrowserCdpTimeout(() => tab.view.webContents.loadURL(url), 'Page.navigate', timeoutMs, signal)
+    await withBrowserCdpTimeout(() => tab.contents.loadURL(url), 'Page.navigate', timeoutMs, signal)
   }
 
   /** 默认 Google 页面在 3 秒内未完成加载时停止旧导航，并在同一标签页加载 Bing。 */
@@ -1095,7 +1114,7 @@ export class BrowserController {
       return { loadedUrl: url, usedFallback: false }
     } catch (error) {
       if (!fallbackUrl || !(error instanceof BrowserCdpTimeoutError)) throw error
-      try { tab.view.webContents.stop() } catch { /* WebContents 已销毁时由后续加载统一报错 */ }
+      try { tab.contents.stop() } catch { /* WebContents 已销毁时由后续加载统一报错 */ }
       throwIfBrowserOperationAborted(signal)
       await this.loadUrl(tab, fallbackUrl, signal)
       return { loadedUrl: fallbackUrl, usedFallback: true }
@@ -1158,7 +1177,7 @@ export class BrowserController {
     const browserSession = this.getOrCreateSession(sessionId)
     this.assertRiskDisclaimerAcknowledged()
     const tab = this.getAgentTab(browserSession, tabId)
-    if (tab.view.webContents.canGoBack()) tab.view.webContents.goBack()
+    if (tab.contents.canGoBack()) tab.contents.goBack()
     this.updateNavigationState(browserSession, tab)
     return structuredClone(this.buildState(browserSession))
   }
@@ -1172,7 +1191,7 @@ export class BrowserController {
     const browserSession = this.getOrCreateSession(sessionId)
     this.assertRiskDisclaimerAcknowledged()
     const tab = this.getAgentTab(browserSession, tabId)
-    if (tab.view.webContents.canGoForward()) tab.view.webContents.goForward()
+    if (tab.contents.canGoForward()) tab.contents.goForward()
     this.updateNavigationState(browserSession, tab)
     return structuredClone(this.buildState(browserSession))
   }
@@ -1186,7 +1205,7 @@ export class BrowserController {
     const browserSession = this.getOrCreateSession(sessionId)
     this.assertRiskDisclaimerAcknowledged()
     const tab = this.getAgentTab(browserSession, tabId)
-    tab.view.webContents.reload()
+    tab.contents.reload()
     this.updateNavigationState(browserSession, tab)
     return structuredClone(this.buildState(browserSession))
   }
@@ -1430,31 +1449,58 @@ export class BrowserController {
     })
   }
 
+  private async captureTab(tab: BrowserTabRecord, signal?: AbortSignal, forPreview = false): Promise<{ mimeType: 'image/png'; base64: string }> {
+    const generation = tab.generation
+    throwIfBrowserOperationAborted(signal)
+    const image = await withBrowserCdpTimeout(async () => {
+      if (!tab.contents.isOffscreen()) return tab.contents.capturePage()
+      // 直接截取 compositor 当前帧，不运行页面脚本；被动快照超时也不能
+      // 经 cdp() 的恢复逻辑重连 debugger、使 Agent 的 Observe ref 失效。
+      const shot = await tab.contents.debugger.sendCommand('Page.captureScreenshot', { format: 'png' }) as { data?: string }
+      if (typeof shot.data !== 'string') throw new Error('浏览器未返回截图数据。')
+      return nativeImage.createFromBuffer(Buffer.from(shot.data, 'base64'))
+    }, 'Page.captureScreenshot', BROWSER_OBSERVE_TIMEOUT_MS + 3_000, signal)
+    this.assertCurrentDocument(tab, generation, signal)
+    if (image.isEmpty()) throw new Error('截图为空：浏览器页面尚未完成可捕获布局，请稍后重试或改用 BrowserObserve。')
+    const { width, height } = image.getSize()
+    if (width <= 0 || height <= 0) throw new Error('截图尺寸无效，请稍后重试或改用 BrowserObserve。')
+    const scale = forPreview ? Math.min(1, 960 / width, 720 / height) : 1
+    const output = scale < 1 ? image.resize({ width: Math.max(1, Math.round(width * scale)), height: Math.max(1, Math.round(height * scale)) }) : image
+    const buffer = output.toPNG()
+    if (!isValidImageBytes('image/png', buffer)) throw new Error('截图 PNG 数据无效，请稍后重试或改用 BrowserObserve。')
+    if (buffer.byteLength > MAX_SCREENSHOT_BYTES) throw new Error('截图过大，请缩小页面或改用 BrowserObserve。')
+    return { mimeType: 'image/png', base64: buffer.toString('base64') }
+  }
+
+  /** 用户查看现有标签：不创建会话、不切换 Agent 标签，也不写 Agent 账本。 */
+  async preview(sessionId: string, tabId: string): Promise<BrowserPagePreview> {
+    this.assertRiskDisclaimerAcknowledged()
+    const browserSession = this.sessions.get(sessionId)
+    if (!browserSession) throw new Error('受管浏览器已关闭，请重新打开。')
+    const tab = this.getDisplayTab(browserSession, tabId)
+    tab.lastActivityAt = Date.now()
+    return this.runTabOperation(browserSession, tab, undefined, async () => {
+      if (this.sessions.get(sessionId) !== browserSession || browserSession.tabs.get(tabId) !== tab) throw new Error('浏览器标签已关闭。')
+      const url = tab.state.url
+      const image = await this.captureTab(tab, undefined, true)
+      return { sessionId, tabId, url, ...image, capturedAt: Date.now() }
+    })
+  }
+
   async screenshot(sessionId: string, tabId?: string, signal?: AbortSignal): Promise<{ tabId: string; url: string; mimeType: string; base64: string }> {
     const browserSession = this.getOrCreateSession(sessionId)
     this.assertRiskDisclaimerAcknowledged()
     const tab = this.getAgentTab(browserSession, tabId)
     return this.runTabOperation(browserSession, tab, signal ?? browserSession.agentAbortController.signal, async (operationSignal) => {
-      throwIfBrowserOperationAborted(operationSignal)
-      const image = await withBrowserCdpTimeout(() => tab.view.webContents.capturePage(), 'Page.captureScreenshot', BROWSER_OBSERVE_TIMEOUT_MS + 3_000, operationSignal)
-      throwIfBrowserOperationAborted(operationSignal)
-      if (image.isEmpty()) {
-        this.trace(browserSession, tab, 'screenshot', '截图为空，已拒绝返回无效图片', 'failed')
-        throw new Error('截图为空：浏览器页面尚未完成可捕获布局，请稍后重试或改用 BrowserObserve。')
+      const url = tab.state.url
+      try {
+        const image = await this.captureTab(tab, operationSignal)
+        this.trace(browserSession, tab, 'screenshot', '截取当前页面', 'verified')
+        return { tabId: tab.tabId, url, ...image }
+      } catch (error) {
+        this.trace(browserSession, tab, 'screenshot', error instanceof BrowserOperationAbortedError ? '截图已停止，未返回图片' : '截图失败，未返回图片', error instanceof BrowserOperationAbortedError ? 'unknown' : 'failed')
+        throw error
       }
-      const { width, height } = image.getSize()
-      if (width <= 0 || height <= 0) {
-        this.trace(browserSession, tab, 'screenshot', '截图尺寸无效，已拒绝返回无效图片', 'failed')
-        throw new Error('截图尺寸无效：浏览器页面尚未完成可捕获布局，请稍后重试或改用 BrowserObserve。')
-      }
-      const buffer = image.toPNG()
-      if (!isValidImageBytes('image/png', buffer)) {
-        this.trace(browserSession, tab, 'screenshot', '截图 PNG 数据无效，已拒绝返回无效图片', 'failed')
-        throw new Error('截图 PNG 数据无效，请稍后重试或改用 BrowserObserve。')
-      }
-      if (buffer.byteLength > MAX_SCREENSHOT_BYTES) throw new Error('截图过大，请缩小页面或改用 browser_observe。')
-      this.trace(browserSession, tab, 'screenshot', '截取当前页面', 'verified')
-      return { tabId: tab.tabId, url: tab.state.url, mimeType: 'image/png', base64: buffer.toString('base64') }
     })
   }
 
@@ -1468,9 +1514,10 @@ export class BrowserController {
     if (this.presentation?.sessionId === sessionId) this.presentation = null
     for (const tab of browserSession.tabs.values()) {
       this.clearAgentTargetHighlight(tab)
-      try { if (tab.view.webContents.debugger.isAttached()) tab.view.webContents.debugger.detach() } catch { /* 已销毁 */ }
+      try { if (tab.contents.debugger.isAttached()) tab.contents.debugger.detach() } catch { /* 已销毁 */ }
       this.detachTabView(tab)
-      if (!tab.view.webContents.isDestroyed()) tab.view.webContents.close()
+      if (tab.offscreenWindow && !tab.offscreenWindow.isDestroyed()) tab.offscreenWindow.destroy()
+      else if (!tab.contents.isDestroyed()) tab.contents.close()
     }
     browserSession.tabs.clear()
     this.emitClosed(sessionId)

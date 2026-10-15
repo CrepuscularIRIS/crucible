@@ -18,7 +18,7 @@ import { BROWSER_RISK_DISCLAIMER_VERSION } from '@/types/settings'
 import { detectIsWindows, getWindowControlsPaddingClass, isWebSurface } from '@/lib/platform'
 import { cn } from '@/lib/utils'
 import { browserPendingNavigationMapAtom } from '@/atoms/browser-atoms'
-import { WebBrowserNotice } from './WebBrowserNotice'
+import { WebBrowserPreview } from './WebBrowserPreview'
 import { BrowserSlot } from './BrowserSlot'
 import { shouldReuseInitialBrowserTab } from './agent-browser-link-utils'
 
@@ -29,16 +29,9 @@ interface BrowserPanelProps {
   onClose: () => void
 }
 
-export function BrowserPanel(props: BrowserPanelProps): React.ReactElement {
-  const pendingUrl = useAtomValue(browserPendingNavigationMapAtom).get(props.sessionId)
-  if (isWebSurface()) {
-    return <WebBrowserNotice url={pendingUrl ?? props.state?.url} onClose={props.onMinimize} />
-  }
-  return <NativeBrowserPanel {...props} />
-}
-
-function NativeBrowserPanel({ sessionId, state, onMinimize, onClose }: BrowserPanelProps): React.ReactElement {
+export function BrowserPanel({ sessionId, state, onMinimize, onClose }: BrowserPanelProps): React.ReactElement {
   const [url, setUrl] = React.useState(state?.url ?? '')
+  const [actionError, setActionError] = React.useState<string | null>(null)
   const [riskAcknowledged, setRiskAcknowledged] = React.useState<boolean | null>(null)
   const [savingRiskAcknowledgement, setSavingRiskAcknowledgement] = React.useState(false)
   const pendingNavigationUrl = useAtomValue(browserPendingNavigationMapAtom).get(sessionId)
@@ -62,12 +55,16 @@ function NativeBrowserPanel({ sessionId, state, onMinimize, onClose }: BrowserPa
     const value = url.trim()
     const navigateBrowser = (window.electronAPI as Partial<typeof window.electronAPI>).navigateAgentBrowser
     if (!value || typeof navigateBrowser !== 'function') return
-    try { await navigateBrowser({ sessionId, url: value }) } catch (error) { console.error('[受管浏览器] 导航失败:', error) }
+    setActionError(null)
+    try { await navigateBrowser({ sessionId, url: value }) } catch (error) { setActionError(error instanceof Error ? error.message : '导航失败，请重试。') }
   }, [sessionId, url])
 
   const openInDefaultBrowser = React.useCallback(() => {
     const value = url.trim()
-    if (value.startsWith('http://') || value.startsWith('https://')) void window.electronAPI.openExternal(value)
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+      if (isWebSurface()) window.open(value, '_blank', 'noopener,noreferrer')
+      else void window.electronAPI.openExternal(value)
+    }
   }, [url])
 
   const close = React.useCallback(async () => {
@@ -94,6 +91,7 @@ function NativeBrowserPanel({ sessionId, state, onMinimize, onClose }: BrowserPa
 
   const acceptRiskDisclaimer = React.useCallback(async () => {
     setSavingRiskAcknowledgement(true)
+    setActionError(null)
     try {
       await window.electronAPI.updateSettings({ browserRiskDisclaimerVersion: BROWSER_RISK_DISCLAIMER_VERSION })
       setRiskAcknowledged(true)
@@ -107,7 +105,7 @@ function NativeBrowserPanel({ sessionId, state, onMinimize, onClose }: BrowserPa
             await window.electronAPI.createAgentBrowserTab({ sessionId, url: pendingNavigationUrl })
           }
         } catch (error) {
-          console.error('[受管浏览器] 打开待处理链接失败:', error)
+          setActionError(error instanceof Error ? error.message : '打开待处理链接失败，请在地址栏重试。')
         } finally {
           setPendingNavigationMap((previous) => {
             const next = new Map(previous)
@@ -120,7 +118,7 @@ function NativeBrowserPanel({ sessionId, state, onMinimize, onClose }: BrowserPa
         await window.electronAPI.openAgentBrowser(sessionId)
       }
     } catch (error) {
-      console.error('[受管浏览器] 保存风险告知确认失败:', error)
+      setActionError(error instanceof Error ? error.message : '保存确认失败，请重试。')
     } finally {
       setSavingRiskAcknowledgement(false)
     }
@@ -209,8 +207,11 @@ function NativeBrowserPanel({ sessionId, state, onMinimize, onClose }: BrowserPa
         ))}
         <Tooltip><TooltipTrigger asChild><Button type="button" variant="ghost" size="icon" className="size-6 shrink-0" disabled={riskBlocked} onClick={() => void createTab()} aria-label="新建浏览器标签"><Plus className="size-3.5" /></Button></TooltipTrigger><TooltipContent>新建标签</TooltipContent></Tooltip>
       </div>
+      {actionError && <p role="alert" className="px-3 py-2 text-xs text-destructive">{actionError}</p>}
       {riskAcknowledged === true ? (
-        <BrowserSlot key={activeTabId} sessionId={sessionId} tabId={activeTabId} />
+        isWebSurface()
+          ? <WebBrowserPreview key={`${sessionId}:${activeTabId}`} sessionId={sessionId} tabId={activeTabId} />
+          : <BrowserSlot key={activeTabId} sessionId={sessionId} tabId={activeTabId} />
       ) : (
         <div className="flex flex-1 min-h-0 items-center justify-center bg-muted/15 px-8 text-center">
           <div className="max-w-sm space-y-2 text-muted-foreground">
@@ -235,6 +236,7 @@ function NativeBrowserPanel({ sessionId, state, onMinimize, onClose }: BrowserPa
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {actionError && <p role="alert" className="text-sm text-destructive">{actionError}</p>}
           <AlertDialogFooter>
             <AlertDialogCancel disabled={savingRiskAcknowledgement}>暂不使用</AlertDialogCancel>
             <Button type="button" disabled={savingRiskAcknowledgement} onClick={() => void acceptRiskDisclaimer()}>

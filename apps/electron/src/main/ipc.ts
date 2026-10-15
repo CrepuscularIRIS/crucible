@@ -161,6 +161,7 @@ import type {
 import type { UserProfile, AppSettings } from '../types'
 import { getRuntimeStatus, getGitRepoStatus, reinitializeRuntime } from './lib/runtime-init'
 import { browserController } from './lib/browser-controller'
+import { registerBrowserPreviewIpc } from './lib/browser-preview-ipc'
 import { resolveBrowserProfileKey } from './lib/browser-profile-policy'
 import { getUnstagedChanges, invalidateGitDiffCache, getFileDiff, getUntrackedContent, revertFile, getDiffContents, listWorktrees, getWorktreeChanges, getMainRepoRoot } from './lib/git-diff-service'
 import { registerPromaDirectoryPath, registerPromaFilePath } from './lib/local-file-protocol'
@@ -2127,6 +2128,7 @@ export function registerIpcHandlers(): void {
       return browserController.getState(sessionId)
     },
   )
+  registerBrowserPreviewIpc(browserController, assertBrowserSessionAccess)
   ipcMain.handle(
     AGENT_IPC_CHANNELS.SET_BROWSER_LAYOUT,
     async (event, layout: BrowserViewLayout): Promise<void> => {

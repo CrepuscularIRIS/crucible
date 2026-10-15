@@ -1821,6 +1821,7 @@ export const AGENT_IPC_CHANNELS = {
   SELECT_BROWSER_TAB: 'agent:select-browser-tab',
   CLOSE_BROWSER_TAB: 'agent:close-browser-tab',
   GET_BROWSER_STATE: 'agent:get-browser-state',
+  GET_BROWSER_PREVIEW: 'agent:get-browser-preview',
   SET_BROWSER_LAYOUT: 'agent:set-browser-layout',
   MINIMIZE_BROWSER: 'agent:minimize-browser',
   NAVIGATE_BROWSER: 'agent:navigate-browser',

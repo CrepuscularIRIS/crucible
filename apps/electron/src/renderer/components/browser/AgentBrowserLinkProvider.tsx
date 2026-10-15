@@ -3,14 +3,12 @@ import { useSetAtom } from 'jotai'
 import type { BrowserStateChange, BrowserViewState } from '@proma/shared'
 import { BROWSER_RISK_DISCLAIMER_VERSION } from '@/types/settings'
 import {
-  showWebBrowserNoticeAtom,
   browserPanelMinimizedMapAtom,
   browserPanelOpenMapAtom,
   browserPendingNavigationMapAtom,
   browserStateMapAtom,
 } from '@/atoms/browser-atoms'
 import { shouldReuseInitialBrowserTab } from './agent-browser-link-utils'
-import { isWebSurface } from '@/lib/platform'
 
 interface AgentBrowserLinkContextValue {
   openLink: (url: string) => void
@@ -58,12 +56,7 @@ export function AgentBrowserLinkProvider({
     })
   }, [setBrowserOpenMap, setBrowserMinimizedMap, setBrowserStateMap, setPendingNavigationMap])
 
-  const showWebBrowserNotice = useSetAtom(showWebBrowserNoticeAtom)
   const openLink = React.useCallback((url: string) => {
-    if (isWebSurface()) {
-      showWebBrowserNotice({ sessionId, url })
-      return
-    }
     const openBrowser = (window.electronAPI as Partial<typeof window.electronAPI>).openAgentBrowser
     if (typeof openBrowser !== 'function') {
       void window.electronAPI.openExternal(url)
@@ -107,7 +100,7 @@ export function AgentBrowserLinkProvider({
     void nextNavigation.finally(() => {
       if (navigationQueues.get(sessionId) === nextNavigation) navigationQueues.delete(sessionId)
     })
-  }, [publishBrowserState, sessionId, setBrowserMinimizedMap, setPendingNavigationMap, showWebBrowserNotice])
+  }, [publishBrowserState, sessionId, setBrowserMinimizedMap, setPendingNavigationMap])
 
   const value = React.useMemo(() => ({ openLink }), [openLink])
   return <AgentBrowserLinkContext.Provider value={value}>{children}</AgentBrowserLinkContext.Provider>
