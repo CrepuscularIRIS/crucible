@@ -3,8 +3,9 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import type { ComponentProps } from 'react'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { canvasView, nodeDetail, type CanvasOptions } from './canvas-view'
-import { DELIVERY_DIR, loadRecord, ONE_DIR } from './test-fixtures'
-import { ResearchCanvasView } from './ResearchCanvasView'
+import type { Annotations } from '@proma/shared/research-record'
+import { DELIVERY_DIR, loadRecord, ONE_DIR, P0R_DIR } from './test-fixtures'
+import { pickProbe, ResearchCanvasView } from './ResearchCanvasView'
 
 const one = loadRecord(ONE_DIR)
 const noop = () => {}
@@ -115,5 +116,45 @@ describe('阶段文档与回放时点的边界', () => {
     expect(html).toContain('不随回放回退，不能作为该时点已经产生的证据')
     expect(html).toContain('当前文件内容')
     expect(html).toContain('<h1>最终报告</h1>')
+  })
+})
+
+describe('评审修正：回放时点不泄露未来，开发记录显示审计注记', () => {
+  const renderAt = (seq: number, selection: { kind: 'prereg'; id: string }) => renderToStaticMarkup(<TooltipProvider><ResearchCanvasView
+    view={canvasView(one, replayAt(seq))} detail={nodeDetail(one, selection, seq)} narrow={false} onSelect={noop} onSeq={noop} selection={selection}
+  /></TooltipProvider>)
+
+  test('Given 选中的实验在该时点尚未登记 When 回放 Then 不显示该实验编号与证据入口', () => {
+    const early = renderAt(10, { kind: 'prereg', id: 'P2' })
+    expect(early).not.toContain('查看 P2 的证据')
+    expect(early).not.toMatch(/>P2</)
+    expect(renderAt(63, { kind: 'prereg', id: 'P3' })).not.toMatch(/>P3</)
+  })
+
+  test('Given 审计注记与子任务 When 打开开发记录 Then 显示当时 / 事后与跳转行号、子任务末行', () => {
+    const annotations = {
+      nodes: [{ id: 'D6', seq: [67, 68], kind: 'refute', layer: '推理层', key: true, title_plain: '一次测量否定整个 T 型家族',
+        at_time: { mark: 'no', text: '…' }, hindsight: { mark: 'partial', text: '…' }, basis: [] }],
+    } as unknown as Annotations
+    const html = renderToStaticMarkup(<TooltipProvider><ResearchCanvasView
+      view={canvasView(one, { ...replayAt(105), annotations })} detail={null} narrow={false} onSelect={noop} onSeq={noop}
+    /></TooltipProvider>)
+    expect(html).toContain('一次测量否定整个 T 型家族')
+    expect(html).toContain('当时 ✕')
+    expect(html).toContain('事后 ◐')
+    expect(html).toContain('跳到第 67 行')
+    const p0r = canvasView(loadRecord(P0R_DIR), { mode: 'replay', bridge: false })
+    const child = renderToStaticMarkup(<TooltipProvider><ResearchCanvasView view={p0r} detail={null} narrow={false} onSelect={noop} onSeq={noop} /></TooltipProvider>)
+    for (const c of p0r.children) expect(child).toContain(renderToStaticMarkup(<>{c.detail}</>))
+  })
+})
+
+describe('pickProbe：只在回放时点已登记的实验里选', () => {
+  const probes = [{ pid: 'P1' }, { pid: 'P2' }]
+  test('Given 选中或固定的是未来实验 When 选择 Then 退回固定的已登记实验或最新一个', () => {
+    expect(pickProbe(probes, 'P3', 'P1')?.pid).toBe('P1')
+    expect(pickProbe(probes, undefined, 'P3')?.pid).toBe('P2')
+    expect(pickProbe(probes, 'P1', 'P2')?.pid).toBe('P1')
+    expect(pickProbe([], 'P2', 'P2')).toBeNull()
   })
 })

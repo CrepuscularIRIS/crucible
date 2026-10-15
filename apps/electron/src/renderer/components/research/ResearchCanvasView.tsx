@@ -1,5 +1,4 @@
 import React from 'react'
-import { atom, useAtom } from 'jotai'
 import { AlertTriangle, ArrowUpRight, FileText, FlaskConical, GitBranch, History, Layers, Pause, Play, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -59,7 +58,7 @@ function StageDocs({ view, onOpenDoc, openDoc, onSeq }: ResearchCanvasViewProps)
   </section>
 }
 
-function RunNotes({ view, onSelect }: Pick<ResearchCanvasViewProps, 'view' | 'onSelect'>): React.ReactElement {
+function RunNotes({ view, onSelect, onJump }: Pick<ResearchCanvasViewProps, 'view' | 'onSelect'> & { onJump?: (seq: number) => void }): React.ReactElement {
   return <div className="space-y-5 p-4 text-[12px] leading-relaxed">
     <p className="text-muted-foreground">{view.status.counts}</p>
     <div className="space-y-3" role="group" aria-label="运行状态与结论">{view.cells.map((cell) => <section key={cell.label}>
@@ -69,13 +68,23 @@ function RunNotes({ view, onSelect }: Pick<ResearchCanvasViewProps, 'view' | 'on
       <h4 className="text-[11px] text-muted-foreground">{label}</h4><ul>{(items.length ? items : ['暂无记录']).map((text, i) => <li key={i}>{text}</li>)}</ul>
     </div>)}</section>
     {view.children.length > 0 && <section><h3 className="mb-2 font-medium">子任务</h3><ul className="space-y-2">{view.children.map((child) => <li key={child.name}>
-      <button type="button" className="break-all text-left underline underline-offset-4" onClick={() => onSelect({ kind: 'child', id: child.name })}>{child.name}</button><p className="text-muted-foreground">{child.statusLabel}</p>
+      <button type="button" className="break-all text-left underline underline-offset-4" onClick={() => onSelect({ kind: 'child', id: child.name })}>{child.name}</button><p className="text-muted-foreground">{child.statusLabel}</p>{child.detail && <p className="break-all font-mono text-[11px] text-muted-foreground">{child.detail}</p>}
     </li>)}</ul><p className="mt-2 text-[10px] text-muted-foreground">子任务为当前快照，不随回放回退。</p></section>}
     {view.interventions.length > 0 && <section><h3 className="mb-2 font-medium">人的干预</h3><ul className="space-y-2">{view.interventions.map((entry) => <li key={entry.id}>
       <button type="button" className="text-left underline underline-offset-4" onClick={() => onSelect({ kind: 'intervention', id: entry.id })}>{entry.id} · {entry.kind}</button><p>{entry.text}</p><p className="text-muted-foreground">{entry.status}</p>
     </li>)}</ul></section>}
+    {view.timeline.length > 0 && <section><h3 className="mb-2 font-medium">审计注记（当时 / 事后）</h3><ul className="space-y-2">{view.timeline.map((node) => <li key={node.id}>
+      <p><span className="font-mono text-muted-foreground">{node.id}</span> {node.title}</p>
+      <p className="text-muted-foreground">当时 {node.atTime} · 事后 {node.hindsight} · {onJump ? <button type="button" className="underline underline-offset-4" onClick={() => onJump(node.seq)}>跳到第 {node.seq} 行</button> : `第 ${node.seq} 行`}</p>
+    </li>)}</ul><p className="mt-2 text-[10px] text-muted-foreground">审计者事后写的注记，不是运行时记录。</p></section>}
     {!!view.flags.length && <section><h3 className="mb-2 font-medium">画布标记（只打标，宿主不强制）</h3><ul className="space-y-2">{view.flags.map((flag, i) => <li key={i} className="text-amber-700 dark:text-amber-400">{flag.code} · 第 {flag.seq} 行 · {flag.note}</li>)}</ul></section>}
   </div>
+}
+
+/** 只认回放时点已登记的实验；选中或固定的是"未来"实验时退回固定的已登记实验或最新一个，不泄露编号 */
+export function pickProbe<P extends { pid: string }>(probes: P[], selectedId: string | undefined, pinnedId: string | undefined): P | null {
+  const present = (id: string | undefined) => probes.find((p) => p.pid === id)
+  return present(selectedId) ?? present(pinnedId) ?? probes.at(-1) ?? null
 }
 
 /** 三栏共用同一时点：左侧导航，中间研究产物，右侧证据与版本；新快照不抢焦点。 */
@@ -84,13 +93,12 @@ export function ResearchCanvasView(props: ResearchCanvasViewProps): React.ReactE
   const artifactScroll = React.useRef<HTMLDivElement>(null)
   const versionPickerId = React.useId()
   const replay = !!onSeq
-  const uiAtom = React.useMemo(() => atom<WorkbenchUI>({ surface: 'probe', inspector: 'evidence', mobilePane: 'artifact', playing: false }), [view.title])
-  const [ui, setUI] = useAtom(uiAtom)
+  // 换数据源时由调用方用 key 重挂载（ResearchCanvasPane），这里不按标题重置
+  const [ui, setUI] = React.useState<WorkbenchUI>({ surface: 'probe', inspector: 'evidence', mobilePane: 'artifact', playing: false })
   const patch = (value: Partial<WorkbenchUI>) => setUI((prev) => ({ ...prev, ...value }))
   const probes = view.workbench?.probes ?? []
-  const selectedPid = props.selection?.kind === 'prereg' ? props.selection.id : ui.probeId
-  const probe = probes.find((p) => p.pid === selectedPid) ?? probes.at(-1) ?? null
-  const pid = probe?.pid ?? selectedPid
+  const probe = pickProbe(probes, props.selection?.kind === 'prereg' ? props.selection.id : undefined, ui.probeId)
+  const pid = probe?.pid
   const claimNames = Object.fromEntries(view.claims.map((claim) => [claim.id, claim.name]))
   const events = view.workbench?.events ?? []
   const versions = view.workbench?.versions ?? []
@@ -181,14 +189,14 @@ export function ResearchCanvasView(props: ResearchCanvasViewProps): React.ReactE
       </main>
       <aside className="workbench-inspector" aria-label="证据与版本">
         <Tabs value={ui.inspector} onValueChange={(value) => { if (value === 'evidence' || value === 'versions' || value === 'run') patch({ inspector: value }) }} className="workbench-pane-tabs">
-          <div className="workbench-pane-heading"><FileText className="size-3.5" aria-hidden /><h2>证据与版本</h2><span className="ml-auto font-mono text-[10px] text-muted-foreground">{props.openDoc ? 'DOC' : (ui.inspector === 'versions' ? versionPid : props.selection?.id ?? pid) ?? 'RUN'}</span></div>
+          <div className="workbench-pane-heading"><FileText className="size-3.5" aria-hidden /><h2>证据与版本</h2><span className="ml-auto font-mono text-[10px] text-muted-foreground">{props.openDoc ? 'DOC' : (ui.inspector === 'versions' ? versionPid : (detail ? props.selection?.id : undefined) ?? pid) ?? 'RUN'}</span></div>
           <TabsList className="workbench-tabs" aria-label="对象检查"><TabsTrigger value="evidence">证据</TabsTrigger><TabsTrigger value="versions">版本</TabsTrigger><TabsTrigger value="run">开发记录</TabsTrigger></TabsList>
           <TabsContent value="evidence" className="workbench-scroll m-0"><div className="space-y-4 p-3">{detail ? <NodeDetail detail={detail} onClose={() => select(null)} autoScroll={false} /> : <div className="workbench-inspector-guide"><span className="workbench-guide-icon"><FileText className="size-5" aria-hidden /></span><h3>每个判断，都有来处</h3><p>点选假设或实验，沿着证据检查这次判断。</p><ol><li><span>01</span>执行前，预测了什么</li><li><span>02</span>实验实际测到了什么</li><li><span>03</span>判断为什么改变</li></ol>{pid && <Button type="button" variant="outline" size="sm" className="mt-4 w-full" onClick={() => select({ kind: 'prereg', id: pid })}>查看 {pid} 的证据</Button>}</div>}<details className="research-panel p-3"><summary className="cursor-pointer text-[11px] text-muted-foreground">记录状态与科学结论</summary><div className="mt-3 space-y-3">{view.cells.map((cell) => <p key={cell.label} className="text-[12px] leading-relaxed"><span className="block text-[10px] text-muted-foreground">{cell.label}</span>{cell.text}</p>)}</div></details></div></TabsContent>
           <TabsContent value="versions" className="workbench-scroll m-0 p-3">
             {versionPids.length > 0 && <div className="mb-4 flex items-center gap-2 text-xs"><label htmlFor={versionPickerId}>方案</label><select id={versionPickerId} className="workbench-select min-w-0" value={versionPid ?? ''} onChange={(event) => patch({ versionPid: event.target.value })}>{versionPids.map((id) => <option key={id} value={id}>{id}</option>)}</select></div>}
             <ProbeVersions versions={versions} pid={versionPid} />
           </TabsContent>
-          <TabsContent forceMount value="run" className="workbench-scroll m-0 data-[state=inactive]:hidden"><RunNotes view={view} onSelect={select} /></TabsContent>
+          <TabsContent forceMount value="run" className="workbench-scroll m-0 data-[state=inactive]:hidden"><RunNotes view={view} onSelect={select} {...(onSeq ? { onJump: (seq: number) => { patch({ playing: false }); onSeq(seq) } } : {})} /></TabsContent>
         </Tabs>
       </aside>
     </div>

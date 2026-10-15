@@ -9,9 +9,10 @@ import './research-canvas.css'
  * 评委报告生成器的输出是页面片段（无 doctype/head，靠宿主包壳，见 research/report/template.ts）。
  * 这里补齐壳：charset + 主题（模板认 :root[data-theme]）。
  * <base href="about:srcdoc">：srcdoc 里的 #锚点默认按父页面 URL 解析，目录链接会把 iframe 导航到应用自己的页面。
+ * CSP：报告只用内联样式与 data: 图片，禁止加载任何外部资源（防记录里的 URL 外连）。
  */
 export function judgeReportDocument(html: string, dark: boolean): string {
-  return `<!doctype html><html lang="zh-CN" data-theme="${dark ? 'dark' : 'light'}"><head><base href="about:srcdoc"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head><body>${html}</body></html>`
+  return `<!doctype html><html lang="zh-CN" data-theme="${dark ? 'dark' : 'light'}"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:"><base href="about:srcdoc"><meta name="viewport" content="width=device-width, initial-scale=1"></head><body>${html}</body></html>`
 }
 
 /**

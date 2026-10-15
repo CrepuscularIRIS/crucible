@@ -20,6 +20,8 @@ export interface ProbeCardView {
   observed?: number
   changes: { seq: number; hid: string; from?: string; to: string; reason: string; requested?: string; lead?: string[] }[]
   note?: string
+  /** 该轮判断已收口（之后登记了新实验或已声明报告）；未收口时不说"没有改变 / 保留" */
+  closed?: boolean
 }
 
 export interface ProbeVersionView {
@@ -37,4 +39,11 @@ export interface WorkbenchView {
   events: WorkbenchEvent[]
   probes: ProbeCardView[]
   versions: ProbeVersionView[]
+}
+
+/** 实验的一行标题：编号 · 协议原文 · 阻断剂；只拼记录字段并压成一行，不改写、不翻译（缺阻断剂字段时不写）。 */
+export function probeHeading({ pid, protocol, blockers }: { pid: string; protocol: string; blockers?: string }): string {
+  const b = blockers?.trim()
+  const blocker = b === undefined ? '' : !b || b.toLowerCase() === 'none' ? '，无阻断剂' : `，阻断剂 ${b}`
+  return `${pid} · ${protocol.replace(/\s+/g, ' ').trim() || '实验协议未记录'}${blocker}`
 }

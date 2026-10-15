@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { ResearchTimeline, timelineEvents, timelineTitle } from './ResearchTimeline'
+import { ResearchTimeline, timelineEvents, timelineRows, timelineTitle } from './ResearchTimeline'
 import type { WorkbenchEvent } from './workbench-view'
 
 const events: WorkbenchEvent[] = [
@@ -15,7 +15,7 @@ describe('研究过程时间线', () => {
     expect(html).toContain('UTC+08')
     expect(html).toContain('08:15:00')
     expect(html).toContain('09:20:00')
-    expect(html).toContain('probe_run')
+    expect(html).not.toContain('probe_run')
     expect(html).toContain('P1')
     expect(html).toContain('H2')
     expect(html.indexOf('提出竞争解释')).toBeLessThan(html.indexOf('完成测量'))
@@ -67,8 +67,32 @@ describe('研究过程时间线', () => {
     expect(timelineTitle('LIVE SUPPORTED CONTESTED UNKNOWN LIVE_TEST')).toBe('待检验 得到支持 仍有争议 UNKNOWN LIVE_TEST')
     const html = renderToStaticMarkup(<ResearchTimeline events={[{ seq: 1, ts: '', op: 'claim.transition', title: 'H1 → SCOPED', hids: ['H1'] }]} seq={1} replay onEvent={() => {}} />)
     expect(html).toContain('H1 → 收窄范围')
-    expect(html).toContain('<details')
-    expect(html).not.toContain('<details open')
-    expect(html).toContain('H1 → SCOPED')
+    expect(html).not.toContain('<details')
+    expect(html).not.toContain('H1 → SCOPED')
+  })
+})
+
+describe('关键进展的阅读密度', () => {
+  const proposals: WorkbenchEvent[] = [
+    { seq: 1, ts: '', op: 'run.init', title: '开始研究', hids: [] },
+    ...[2, 3, 4].map((seq) => ({ seq, ts: '', op: 'claim.propose', title: `提出 H${seq}`, hids: [`H${seq}`] })),
+    { seq: 5, ts: '', op: 'world.info', title: '世界', hids: [] },
+    { seq: 6, ts: '', op: 'claim.propose', title: '提出 H6', hids: ['H6'] },
+    { seq: 7, ts: '', op: 'prereg.write', title: '登记 P1', pid: 'P1', hids: [] },
+  ]
+  test('Given 连续提出假设（中间只隔机械记录）When 关键进展 Then 合成一行可展开', () => {
+    const rows = timelineRows(timelineEvents(proposals, 7, false, false))
+    expect(rows.map((row) => 'events' in row ? `group:${row.events.length}` : row.op)).toEqual(['run.init', 'group:4', 'prereg.write'])
+    const html = renderToStaticMarkup(<ResearchTimeline events={proposals} seq={7} replay={false} onEvent={() => {}} />)
+    expect(html).toContain('提出 4 个假设')
+    expect(html).toMatch(/<details[^>]*class="timeline-group[\s\S]*提出 H2[\s\S]*提出 H6/)
+  })
+  test('Given 单个提出 When 关键进展 Then 不合并', () => {
+    const single = [proposals[0]!, proposals[1]!, proposals[6]!]
+    expect(timelineRows(single).map((row) => 'events' in row ? 'group' : row.op)).toEqual(['run.init', 'claim.propose', 'prereg.write'])
+  })
+  test('Given 关键进展 When 默认显示 Then 不展开开发记录', () => {
+    const html = renderToStaticMarkup(<ResearchTimeline events={proposals} seq={7} replay={false} onEvent={() => {}} />)
+    expect(html).not.toContain('开发记录')
   })
 })

@@ -241,6 +241,8 @@ export function ResearchCanvasPane({ sessionId, onClose }: { sessionId: string; 
   return (
     <div ref={setRootEl} className="h-full" tabIndex={-1} onKeyDown={(e) => { if (e.key === 'Escape') setSelection(null) }}>
       <ResearchCanvasView
+        // 换数据源（含实时 run 根目录变化）时重挂载，工作台 UI 状态不跨 run 共享
+        key={`${source.kind}:${loaded?.label ?? ''}`}
         view={view}
         detail={detail}
         narrow={narrow}

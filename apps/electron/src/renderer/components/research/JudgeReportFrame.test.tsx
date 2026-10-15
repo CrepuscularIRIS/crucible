@@ -38,3 +38,11 @@ describe('评委报告页（同一份记录，主进程用 research/report/judge
     expect(html).not.toContain('<iframe')
   })
 })
+
+describe('评委报告的资源边界', () => {
+  test('Given 报告 HTML When 包壳 Then CSP 禁止加载任何远程资源', () => {
+    const doc = judgeReportDocument('<img src="https://example.com/x.png">', false)
+    expect(doc).toContain(`<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:">`)
+    expect(doc.indexOf('Content-Security-Policy')).toBeLessThan(doc.indexOf('<body>'))
+  })
+})

@@ -285,3 +285,24 @@ describe('三栏工作台的时点契约', () => {
     expect(view.workbench).toEqual({ events: [], probes: [], versions: [] })
   })
 })
+
+describe('评审修正：时点上限、预算、检查器标题', () => {
+  test('Given journal 中间一行写坏 When 投影 Then maxSeq 取末行行号，默认停在最新事件', () => {
+    const torn = { ...one, events: one.events.filter((e) => e.seq !== 50) }
+    const v = canvasView(torn, { mode: 'replay', bridge: false })
+    expect(v.maxSeq).toBe(105)
+    expect(v.seq).toBe(105)
+    expect(v.focus.kind).toBe('done')
+  })
+
+  test('Given 已知预算总额 When 投影 Then 进度格写"已用 / 总额"', () => {
+    const delivery = loadRecord(DELIVERY_DIR)
+    expect(canvasView(delivery, { mode: 'replay', bridge: false, budgetTotal: 8 }).cells[0]!.text).toContain('预算已用 6 / 8')
+  })
+
+  test('Given 选中实验 When 检查器展示 Then 只给一行标题，不重复中间栏的完整问题', () => {
+    const d = nodeDetail(one, { kind: 'prereg', id: 'P2' }, 105)!
+    expect(d.title).toBe('P2 · brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)，无阻断剂')
+    expect(text(d)).not.toContain(one.preregs.P2!.question)
+  })
+})

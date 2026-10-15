@@ -173,8 +173,6 @@
 .research-probe-product > div { padding: 16px 22px; }
 .research-probe-product > footer { padding: 18px 22px; background: hsl(var(--muted) / .18); }
 .workbench-artifact-content .research-probe-chart svg[role='img'] { max-width: 720px; }
-.research-probe-product .research-probe-claims { gap: 6px; }
-.research-probe-product .research-probe-claims li { background: hsl(var(--muted) / .35); font-size: 12px; }
 .research-probe-product > footer > ul { display: grid; gap: 14px; }
 .research-probe-product > footer > ul > li { border-left: 2px solid var(--research-prediction); padding-left: 12px; margin: 0; font-size: 13px; }
 .workbench-feedback { border-top: 1px solid hsl(var(--border)); padding-top: 16px; font-size: 14px; }
@@ -229,3 +227,9 @@
   .workbench-now-hint { display: none; }
 }
 @media (max-width: 1100px) { .research-review-guide { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.timeline-group > summary { display: block; list-style: none; }
+.timeline-group > summary::-webkit-details-marker { display: none; }
+.timeline-group > summary .timeline-event-title::after { content: ' +'; color: hsl(var(--muted-foreground)); }
+.timeline-group[open] > summary .timeline-event-title::after { content: ' −'; }
+.timeline-group .timeline-event::before { display: none; }
+.research-probe-verdict { margin-top: 10px; padding: 8px 12px; border-left: 2px solid var(--research-observed); background: hsl(var(--muted) / .35); font-size: 13px; line-height: 1.6; }

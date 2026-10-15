@@ -7,6 +7,7 @@
 
 import {
   branchHit,
+  budgetFromK0,
   claimsAt,
   derivation,
   evidenceCells,
@@ -31,7 +32,7 @@ import {
   type ResearchRecord,
 } from '@proma/shared/research-record'
 import type { ResearchWorkdir } from '@/types/research-record'
-import type { WorkbenchView } from './workbench-view'
+import { probeHeading, type WorkbenchView } from './workbench-view'
 import { controlBar, forkOptionView, type ControlBarView, type ControlStateName, type ForkOptionView } from './controls-view'
 
 export interface CanvasControl {
@@ -282,7 +283,7 @@ function statusCells(rec: ResearchRecord, budgetTotal?: number): Cell[] {
     ? '尚无定论'
     : [verdict('SUPPORTED') && `${verdict('SUPPORTED')} 得到支持`, verdict('REFUTED') && `${verdict('REFUTED')} 被否定`].filter(Boolean).join('；') || '已声明，无支持或否定'
   return [
-    { label: '进度', text: `已测 ${cycles.length} 次 · 预算已用 ${spent}${budgetTotal ? `/${budgetTotal}` : ''}` },
+    { label: '进度', text: `已测 ${cycles.length} 次 · 预算已用 ${spent}${budgetTotal === undefined ? '' : ` / ${budgetTotal}`}` },
     { label: '账本检查', text: ledger },
     { label: '科学结论', text: science },
   ]
@@ -328,11 +329,13 @@ function integrityNote(full: ResearchRecord, host: CanvasOptions['hostIntegrity'
 }
 
 export function canvasView(full: ResearchRecord, opts: CanvasOptions): CanvasView {
-  const maxSeq = full.events.length
+  // 中间写坏的行被跳过，events.length 会小于末行行号
+  const maxSeq = full.events.at(-1)?.seq ?? 0
   const seq = maxSeq === 0 ? 0 : Math.max(1, Math.min(opts.seq ?? maxSeq, maxSeq))
   const rec = sliceRecord(full, seq)
   const wb = workbench(full, seq)
-  const budgetTotal = opts.annotations?.case?.budget_total
+  const budgetTotal = opts.budgetTotal ?? opts.annotations?.case?.budget_total ?? budgetFromK0(opts.k0)
+  const declared = rec.events.some((e) => e.op === 'report.declare')
   const { rows, note } = claimRows(rec, seq, opts.annotations)
   const cycles = probeCycles(rec)
   const cells = evidenceCells(rec)
@@ -346,7 +349,7 @@ export function canvasView(full: ResearchRecord, opts: CanvasOptions): CanvasVie
     modeLabel,
     seq,
     maxSeq,
-    workbench: { events: wb.timeline, probes: wb.probeCards, versions: wb.versionChains },
+    workbench: { events: wb.timeline, probes: wb.probeCards.map((p, i, all) => ({ ...p, closed: declared || i < all.length - 1 })), versions: wb.versionChains },
     ...integrityNote(full, opts.hostIntegrity),
     cells: statusCells(rec, budgetTotal),
     focus: focusView(rec, seq, opts),
@@ -469,7 +472,6 @@ function preregDetail(rec: ResearchRecord, pid: string): NodeDetailView | null {
   const write = rec.events.find((e) => e.op === 'prereg.write' && e.data.pid === pid)
   const c = probeCycles(rec).find((x) => x.pid === pid)
   const sections = [
-    { heading: '问题', rows: [p.question] },
     { heading: '登记', rows: [`协议：${p.protocol}`, `重复 ${p.reps} 次`, `冻结：${p.frozenAt ?? '未记录'}`, `spec sha256：${String(write?.data.spec_sha256 ?? '未记录')}`] },
     { heading: '预测区间', rows: Object.entries(p.bands).map(([hid, b]) => `${hid} ${bandText(b)}`) },
     { heading: '预登记分支', rows: p.branches.map((b) => `${bandText(b.band)} → ${ACTION_LABEL[b.action]} ${b.target}`) },
@@ -497,7 +499,8 @@ function preregDetail(rec: ResearchRecord, pid: string): NodeDetailView | null {
   const related = rec.events.filter((e) =>
     (['prereg.write', 'probe.start', 'world.observe', 'probe.land'].includes(e.op) && e.data.pid === pid) ||
     c?.transitions.includes(e) || c?.judgments.includes(e))
-  return { title: `${pid} · ${p.protocol}`, sections, rawLines: raw(related) }
+  // 完整问题已在中间栏的展开里，检查器只给一行标题
+  return { title: probeHeading({ pid, protocol: p.protocol, blockers: p.blockers }), sections, rawLines: raw(related) }
 }
 
 export type { ControlStateName }
