@@ -253,7 +253,7 @@ const ProbeSpecSchema = z.object({
   })),
   discrimination: z.string().optional(),
   provenance: z.record(z.string(), z.string()).optional(),
-  sims: z.array(z.object({ path: z.string(), sha256: z.string() })).optional(),
+  sims: z.array(z.object({ path: z.string(), sha256: z.string().optional() })).optional(),
 })
 
 export function buildServer(): McpServer {
@@ -635,7 +635,7 @@ export function buildServer(): McpServer {
     'prereg_write',
     '预登记一个探针（时间戳 + sha256 冻结）。结构性拒绝装饰性探针：必须有互斥频段对与 kill/scope 分支。bands 至少两个 claim：LIVE/CONTESTED，或 SUPPORTED 作为被挑战对手（至少一个须是 LIVE/CONTESTED；落地后可凭此探针把 SUPPORTED 迁到 REFUTED/SCOPED；迁到 CONTESTED 不需要探针）。必须在 probe_run 之前。'
     + 'mode run 另收：discrimination（判别度 d/σ/r*）、branches[].headline（该分支命中时报告首句）、provenance{H#: sim:<记录>|measured:P#|asserted|invented}、'
-    + 'sims[{path: "sim/<id>.json", sha256}]（research-work/<run>/sim/ 下的仿真记录，宿主核对后冻结）；缺项不拒，只让相应结论封顶 lead（返回值里列出）；内置 H0 可入 bands，SCOPED（narrowed）也可',
+    + 'sims[{path: "sim/<id>.json", sha256?}]（research-work/<run>/sim/ 下的仿真记录；宿主算 sha256 并冻结，给了前缀就核对）；缺项不拒，只让相应结论封顶 lead（返回值里列出）；内置 H0 可入 bands，SCOPED（narrowed）也可',
     { run: z.string(), spec: ProbeSpecSchema },
     async ({ run, spec: input }) => {
       const root = resolveRun(run)

@@ -47,7 +47,8 @@ export interface RunContract {
 /** IR-D3：prereg 引用的仿真记录（<cwd>/research-work/<run>/sim/*.json），宿主核对 sha256 后冻结。 */
 export interface SimCitation {
   path: string
-  sha256: string
+  /** 可省：宿主在预登记时算完整 sha256 并冻结；给了前缀就核对 */
+  sha256?: string
 }
 
 /** 计量观测探针：测量本身即探针，由 server 经 meter 执行（扣预算），不经模型写的命令。 */
@@ -687,6 +688,9 @@ export function validateProbeSpec(
     )
   }
   // 稻草人假设（ARFT A.6）：predicts 说升、频段却整体落在预测降的对侧——注册即注定 kill。
+  // observe 探针不执法：predicts 分协议/阻断剂写，这个协议上的方向从文本推不出来（误杀过合法 prereg）。
+  // world 任务只允许 observe 探针，所以 A.6 实际只覆盖 evalCommand 跑法。
+  if (spec.observe) return
   const directions = Object.entries(spec.bands ?? {})
     .map(([claimId, band]) => ({
       claimId,
@@ -733,7 +737,7 @@ function validateProvenance(spec: ProbeSpec, state: ResearchState): void {
     const sim = /^sim:(.+)$/.exec(tag)
     if (sim && !(spec.sims ?? []).some((citation) => simRefMatches(sim[1], citation))) {
       throw new ResearchStateError(
-        `${claimId} 的频段出处 ${tag} 没有对应的仿真记录引用 → 在 spec.sims 里列出 {path: "sim/<id>.json", sha256}（research-work/<run>/sim/ 下），或改标 asserted`,
+        `${claimId} 的频段出处 ${tag} 没有对应的仿真记录引用 → 在 spec.sims 里列出 {path: "sim/<id>.json"}（research-work/<run>/sim/ 下），或改标 asserted`,
       )
     }
   }

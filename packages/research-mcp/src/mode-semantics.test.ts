@@ -444,6 +444,12 @@ describe('IR-D3：prereg 引用 sim 记录（路径 + sha256，宿主核对）',
       .rejects.toThrow(/不存在/)
   })
 
+  it('只给路径不给 sha256 → 宿主算完整 sha256 并冻结（手抄哈希不是证据，是抄写练习）', async () => {
+    await callTool('prereg_write', { run, spec: { ...base, pid: 'P2', sims: [{ path: 'sim/a.json' }] } })
+    const frozen = JSON.parse(readFileSync(join(runRoot(run), 'prereg', 'P2.json'), 'utf-8'))
+    expect(frozen.sims).toEqual([{ path: `research-work/${run}/sim/a.json`, sha256: sha }])
+  })
+
   it('出处标签指向未引用的 sim 记录或未落地的探针 → 拒绝（出处是可核对的事实）', async () => {
     await expect(callTool('prereg_write', { run, spec: { ...base, provenance: { H1: 'sim:a' } } })).rejects.toThrow(/sim:a/)
     await expect(callTool('prereg_write', { run, spec: { ...base, provenance: { H1: 'measured:P9' } } })).rejects.toThrow(/P9/)

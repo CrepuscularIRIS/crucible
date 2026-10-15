@@ -138,7 +138,7 @@ for ch in mech["extra"]:
    2 SE 之外才可以；否则只否定那个参数点（statement 写参数点），家族留 LIVE。
 7. `prereg_write` 的结构字段（宿主只读这些；只写在 `question` 里的同名内容不算）：
    - `discrimination`：一句写 `d`、`σ`、`r*`、本次 reps、所用仿真记录 id；
-   - `sims[{path, sha256}]`：每个用到的仿真记录，`path` = `sim/<id>.json`，`sha256` ≥ 12 位（宿主复算，不符即拒）；
+   - `sims[{path}]`：每个用到的仿真记录，`path` = `sim/<id>.json`；宿主当场算 sha256 并冻结（不要手抄哈希；给了前缀就核对，不符即拒）；
    - `provenance{H#: …}`：每条 band 的出处，`sim:<记录 id>`（`<id>` = `sims` 里那条记录的文件名去 `.json`）·
      `measured:P#`（已落地探针）· `asserted` · `invented`；
    - `branches[].headline`：该分支命中时报告的第一句（`HYPOTHETICAL`）。

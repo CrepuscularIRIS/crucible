@@ -80,8 +80,8 @@ FAILED 重登一个，代价远小于一条作废的证据链。（赛事模板 
    - **有 mode 的 run 另填四个结构字段**（缺项不拒；命中分支的 kill / support 落成 `CONTESTED + lead`，
      见 `references/k3-audit.md` 封顶表；写进 `question` 的同名内容宿主读不到）：
      - `discrimination`：一句写 `d`、`σ`、`r*`、本次 reps、所用仿真记录 id（缺 → support 封顶）；
-     - `sims[{path, sha256}]`：每个用到的仿真记录，`path` = `sim/<id>.json`（`research-work/<run>/sim/` 下），
-       `sha256` ≥ 12 位——宿主复算，不符即拒；
+     - `sims[{path}]`：每个用到的仿真记录，`path` = `sim/<id>.json`（`research-work/<run>/sim/` 下）；
+       宿主当场算 sha256 并冻结，不要手抄哈希（给了 `sha256` 前缀也行，不符即拒）；
      - `provenance{H#: …}`：每条 band 的出处，取 `sim:<记录 id>`（`<id>` = `sims` 里那条记录的文件名去
        `.json`；不在 `sims` 里即拒）· `measured:P#`（已落地探针）· `asserted` · `invented`；
        kill / support 目标带不是 `sim:` / `measured:` → 封顶；

@@ -41,7 +41,7 @@ export function readNoFollow(cwd: string, file: string): WorkFile | undefined {
 
 /**
  * IR-D3：prereg 引用的仿真记录必须是 <cwd>/research-work/<run>/sim/*.json 的普通文件，且 sha256 与引用相符
- * （给前 ≥12 位即可）。返回规范化引用（cwd 相对路径 + 宿主算的完整 sha256），由 prereg 冻结。
+ * （给前 ≥12 位即可；不给则以宿主此刻算的为准）。返回规范化引用（cwd 相对路径 + 宿主算的完整 sha256），由 prereg 冻结。
  * 不符即拒：引用的是"登记时的那份仿真"，对不上就不是同一份证据。
  */
 export function verifySimCitations(cwd: string, run: string, sims: SimCitation[]): SimCitation[] {
@@ -58,10 +58,10 @@ export function verifySimCitations(cwd: string, run: string, sims: SimCitation[]
     if ('link' in read) throw new ResearchStateError(`仿真记录是链接，拒绝跟随：${read.source} → 写成普通文件`)
     const digest = sha256(read.text)
     const prefix = String(cited ?? '').trim().toLowerCase()
-    if (!/^[0-9a-f]{12,64}$/.test(prefix) || !digest.startsWith(prefix)) {
+    if (prefix !== '' && (!/^[0-9a-f]{12,64}$/.test(prefix) || !digest.startsWith(prefix))) {
       throw new ResearchStateError(
         `仿真记录 ${read.source} 的 sha256 与引用不符（引用 ${prefix.slice(0, 16) || '空'}…，现为 ${digest.slice(0, 12)}…）：`
-        + '记录在引用后被改动，或抄错 → 重算 sha256（≥12 位十六进制）后重新登记',
+        + '记录在引用后被改动，或抄错 → 省略 sha256 让宿主当场计算，或重算（≥12 位十六进制）后重新登记',
       )
     }
     return { path: read.source, sha256: digest }

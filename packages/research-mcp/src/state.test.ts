@@ -160,6 +160,13 @@ describe('约束 6：稻草人频段方向（ARFT A.6）', () => {
       .toThrow(/稻草人/)
   })
 
+  it('observe 探针不执法：predicts 是分协议写的，这个协议上的方向推不出来', () => {
+    const state = minimalState()
+    const observe = { world: 'w', protocol: 'paired long pulses', seed: 0, reps: 1, blockers: 'TEA' }
+    const spec = validSpec({ evalCommand: undefined, observe, metricSpec: 'spike_count', bands: { H1: [0, 0.3], H2: [0.5, 1.0] } })
+    expect(() => validateProbeSpec(spec, state)).not.toThrow()
+  })
+
   it('方向与频段一致 → 通过', () => {
     const state = minimalState()
     expect(() => validateProbeSpec(validSpec(), state)).not.toThrow()
