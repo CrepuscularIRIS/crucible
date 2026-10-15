@@ -54,7 +54,7 @@ slices, each test-first and Opus-reviewed. Design docs live in `mindset/调研/r
   with blockers, 6 of 8 budget spent. B0–B9: P P P F F P P P F F. Still open: no self-written
   protocols (B3), d/σ missing in three preregs (B4), 2 budget units unspent (B9).
 - Final one-sentence run (`d6e5003`): the true T-type family was no longer wrongly refuted
-  (capped to `lead`), forecast MSE 3.33 vs 8.99 / 30.9 in earlier runs, 238 simulations of
+  (capped to `lead`), forecast MSE 3.33 (earlier runs reported 8.99 / 30.9, but under different code, seeds and observation counts, so not comparable), 238 simulations of
   ≥64 reps before the first prereg. Still open: blockers unused, half the budget unspent.
 
 ## 2026-10-14 — first redesign pass
