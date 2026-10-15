@@ -27,6 +27,10 @@ slices, each test-first and Opus-reviewed. Design docs live in `mindset/调研/r
 - **B0–B9 behaviour checker** for acceptance runs (`3baf8f7`).
 
 ### Fixed
+- Two prereg gates rejected valid probes: hand-copied sim hashes are now optional (host
+  freezes the digest) and the band-direction check skips observe probes (`d4c5d5d`).
+- A page opened mid-run now shows the running turn, and the research canvas takes the
+  right panel over the built-in browser (`6c14629`).
 - The agent never writes the research state root; drafts go to `research-work/<run>/` and the
   host copies them in at declare (`1b52704`) — ends a whole class of guard bypasses.
 - Research sessions without a workspace had no `research_kit` in the kernel (`a269383`).
@@ -34,6 +38,10 @@ slices, each test-first and Opus-reviewed. Design docs live in `mindset/调研/r
   limit (`444f74c`).
 
 ### Evidence
+- Delivery one-sentence run (`c2400c7`, image `0388ed3`): held-out forecast MSE **0.73**, all
+  three gates green, 783 simulations before the first prereg, 5 of 6 metered observations
+  with blockers, 6 of 8 budget spent. B0–B9: P P P F F P P P F F. Still open: no self-written
+  protocols (B3), d/σ missing in three preregs (B4), 2 budget units unspent (B9).
 - Final one-sentence run (`d6e5003`): the true T-type family was no longer wrongly refuted
   (capped to `lead`), forecast MSE 3.33 vs 8.99 / 30.9 in earlier runs, 238 simulations of
   ≥64 reps before the first prereg. Still open: blockers unused, half the budget unspent.
