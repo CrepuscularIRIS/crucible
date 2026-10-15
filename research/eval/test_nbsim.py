@@ -113,7 +113,7 @@ def test_planted_world_key_in_task_json_is_red(ns, fp, nb, built, tmp_path):
 
 
 def test_sources_hold_no_truth_literal(ns, fp):
-    for name in ("test_nbsim.py", "nbsim_strip.py", "check_f1_run.py"):
+    for name in ("test_nbsim.py", "nbsim_strip.py", "check_f1_run.py", "test_check_f1_run.py"):
         assert ns.scan_source_literals(HERE / name, fp) == [], name
 
 
