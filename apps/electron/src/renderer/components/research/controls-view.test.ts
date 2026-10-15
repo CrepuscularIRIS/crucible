@@ -18,6 +18,12 @@ describe('controls-view 控制条（04 §3.7 / U2）', () => {
     expect(bar.notes.join('')).toContain('只读')
   })
 
+  test('只读原因（会话共用主目录）：没有按钮，原因原样写出', () => {
+    const bar = controlBar(live({ readOnly: '共用主目录：只看不控' }))
+    expect(bar.buttons).toEqual([])
+    expect(bar.notes).toEqual(['共用主目录：只看不控'])
+  })
+
   test('PAUSED 显示继续 / 问 / 改方向，不显示暂停', () => {
     const a = actions(live({ state: 'PAUSED' }))
     expect(a).toContain('resume')

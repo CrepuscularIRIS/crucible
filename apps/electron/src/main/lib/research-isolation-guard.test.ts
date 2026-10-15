@@ -403,6 +403,8 @@ describe('SE2a：带正文的 REPORT 写入（2026-08-27 归档里 5 次 heredoc
     ['bash', { command: `mkdir -p research-work/r1 && cat >> research-work/r1/REPORT.md <<"EOF"\n${prose}\nEOF` }],
     ['bash', { command: `cat > research-work/r1/lessons.md <<EOF\n- kill 带要先算功效 {x}\nEOF` }],
     ['ipython', { code: `report = """# REPORT\n${prose}\n"""\nopen('/root/research-work/r1/REPORT.md','w').write(report)` }],
+    // ML04 2026-10-15：工作目录里的阶段文档（variants.md）正文有 `{…}`，被当 shell 代码拦下
+    ['bash', { command: `mkdir -p /root/research-work/r1 && cat > /root/research-work/r1/variants.md << 'EOF'\n条件 c ∈ {none, standard, minmax}\nEOF` }],
   ] as const)('放行：正文是数据，不当代码扫描 %s', (toolName, input) => {
     expect(classifyResearchToolCall(toolName, input, config)).toBeUndefined()
   })
@@ -417,6 +419,10 @@ describe('SE2a：带正文的 REPORT 写入（2026-08-27 归档里 5 次 heredoc
     ['只有写 REPORT/lessons 的 heredoc 正文才算数据（归档 ca_rebound-s0:230 的形状）', 'bash', {
       command: "cat > /tmp/update_register.py << 'EOF'\nimport json\nopen('/root/.proma-research/r1/register.json','w').write('{}')\nEOF",
     }],
+    ['阶段文档写完再当脚本跑（bash）', 'bash', { command: "cat > research-work/r1/x.md << 'EOF'\nrm -rf /root/.proma-research/r1\nEOF\nbash research-work/r1/x.md" }],
+    ['阶段文档写完再当脚本跑（python3）', 'bash', { command: "cat > research-work/r1/x.md << 'EOF'\nimport shutil; shutil.rmtree('/root/.proma-research/r1')\nEOF\npython3 research-work/r1/x.md" }],
+    ['工作目录里的非 .md 文件正文照常扫描', 'bash', { command: "cat > /root/research-work/r1/run.sh << 'EOF'\nrm -rf /root/.proma-research/r1\nEOF" }],
+    ['工作目录更深一层的 .md 不算阶段文档', 'bash', { command: "cat > /root/research-work/r1/sub/x.md << 'EOF'\n{a}\nEOF" }],
     ['exec 三引号代码不剥离', 'ipython', { code: 'exec("""open(\'/root/.proma-research/r1/journal.jsonl\',\'a\').write(\'x\')""")' }],
   ] as const)('拒绝：%s', (_label, toolName, input) => {
     expect(classifyResearchToolCall(toolName, input, config)).toMatchObject({ block: true })

@@ -95,7 +95,8 @@ def test_unknown_and_identifying_fields_are_dropped(tmp_path: Path) -> None:
     for secret in ("2401.99999", "SECRET_VENUE", "SECRET_ASSET", "SENTINEL_HYP", "SENTINEL_NESTED", "SENTINEL_TOP", "rubric"):
         assert secret not in text
     card = yaml.safe_load((ws / "task-card.yaml").read_text(encoding="utf-8"))
-    assert set(card) == {"id", "title", "synthesis", "hypotheses", "experiment_design", "deliverables"}
+    assert set(card) == {"id", "title", "synthesis", "hypotheses", "experiment_design", "deliverables", "environment"}
+    assert "scikit-learn" in card["environment"]["probe_sandbox"]
     assert card["hypotheses"] == [{"id": "H1", "statement": "s", "measurable": "m"}]
     assert card["experiment_design"] == {"research_question": "q"}
 

@@ -2610,10 +2610,11 @@ export class PiAgentAdapter implements AgentProviderAdapter {
     if (!resident) return state
 
     const sessionFile = resident.sessionManager.getSessionFile()
-    const { entries, lastTs, recent } = summarizePrimeRefineArtifacts(resident.harnessDir, sessionFile)
+    const { entries, lastTs, recent, arm } = summarizePrimeRefineArtifacts(resident.harnessDir, sessionFile)
     if (entries > 0 || recent.length > 0) {
       state.harness = { entries, ...(lastTs ? { lastTs } : {}), recent }
     }
+    if (arm) state.arm = arm
     return state
   }
 

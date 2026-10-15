@@ -11,6 +11,8 @@ import { canvasView, nodeDetail, type NodeSelection } from './canvas-view'
 import type { ControlAction } from './controls-view'
 import { annotationsFromFiles, latestTicket, recordFromFiles, researchBridge } from './research-bridge'
 import { SAMPLE_RUN } from './sample-run'
+import { LivePanel } from './LivePanel'
+import { childCards, type ChildCard } from './live-view'
 import type { OpenStageDoc } from './StageDocViewer'
 
 interface Loaded {
@@ -22,6 +24,8 @@ interface Loaded {
   workdir: ResearchWorkdir | null
   budgetTotal?: number
   k0?: string
+  /** 子任务卡（brief / out 原文）；快照里的文件不随回放回退 */
+  children: ChildCard[]
 }
 
 /** 打开中的阶段文档 + 读到时的版本 mtime:size（快照里版本变了就重读） */
@@ -83,7 +87,7 @@ export function ResearchCanvasPane({ sessionId, onClose }: { sessionId: string; 
     if (!current()) return
     setLoaded({
       record, annotations: annotationsFromFiles(snapshot.files), control: snapshot.control, label, integrity: snapshot.integrity,
-      workdir: snapshot.workdir ?? null,
+      workdir: snapshot.workdir ?? null, children: childCards(record.childJobs, snapshot.files),
       ...(snapshot.budgetTotal !== undefined ? { budgetTotal: snapshot.budgetTotal } : {}),
       ...(snapshot.files['K0-intake.md'] !== undefined ? { k0: snapshot.files['K0-intake.md'] } : {}),
     })
@@ -125,7 +129,7 @@ export function ResearchCanvasPane({ sessionId, onClose }: { sessionId: string; 
     const guard = (p: Promise<void>) => p.catch((e) => { if (!cancelled) setError(`载入失败：${message(e)}`) })
     if (source.kind === 'sample') {
       void guard(recordFromFiles(SAMPLE_RUN.files).then((record) => {
-        if (!cancelled) setLoaded({ record, annotations: null, control: null, label: SAMPLE_RUN.path, integrity: null, workdir: null }) // 注记不打包（M-3）
+        if (!cancelled) setLoaded({ record, annotations: null, control: null, label: SAMPLE_RUN.path, integrity: null, workdir: null, children: childCards(record.childJobs, SAMPLE_RUN.files) }) // 注记不打包（M-3）
       }))
       return () => { cancelled = true }
     }
@@ -144,18 +148,21 @@ export function ResearchCanvasPane({ sessionId, onClose }: { sessionId: string; 
   }, [applySnapshot, bridge, sessionId, source])
 
   const live = source?.kind === 'live'
+  // 没绑项目的会话共用 $HOME，"最近活动的 run"可能属于别的会话：只看不控（暂停 / 问 / 分叉回答写进那个 run）
+  const sharedHome = !sessions.find((s) => s.id === sessionId)?.workspaceId
   const view = React.useMemo(() => loaded && canvasView(loaded.record, {
     ...(live ? {} : { seq }),
     mode: live ? 'live' : 'replay',
     source: loaded.label,
     bridge: live && typeof bridge.interveneResearch === 'function',
+    ...(sharedHome ? { readOnly: '这个会话没绑项目，与别的会话共用主目录：画布只看不控，暂停或提问请在对话里发。' } : {}),
     control: loaded.control,
     annotations: loaded.annotations,
     hostIntegrity: loaded.integrity,
     workdir: loaded.workdir,
     ...(loaded.budgetTotal !== undefined ? { budgetTotal: loaded.budgetTotal } : {}),
     ...(loaded.k0 !== undefined ? { k0: loaded.k0 } : {}),
-  }), [bridge, live, loaded, seq])
+  }), [bridge, live, loaded, seq, sharedHome])
 
   // 阶段文档：实时 run 读会话 cwd 下的工作目录，归档读归档里的；示例 run 没有
   const canReadDocs = typeof bridge.readResearchStageDoc === 'function' && (source?.kind === 'live' || source?.kind === 'archive')
@@ -242,7 +249,7 @@ export function ResearchCanvasPane({ sessionId, onClose }: { sessionId: string; 
     void intervene({ kind: 'fork_answer', ...(openForkId ? { forkId: openForkId } : {}), chosen: label })
   }, [intervene, openForkId])
 
-  if (!source) return <ArchivePicker archives={bridge.listResearchArchives ? archives : null} pendingIntake={pendingIntake} onPick={setSource} onClose={onClose} />
+  if (!source) return <ArchivePicker archives={bridge.listResearchArchives ? archives : null} pendingIntake={pendingIntake} onPick={setSource} onClose={onClose} live={<LivePanel sessionId={sessionId} childJobs={null} />} />
   if (!view) {
     return (
       <div className="flex h-full flex-col items-start gap-2 bg-content-area p-3 text-[13px] text-muted-foreground titlebar-no-drag">
@@ -251,7 +258,8 @@ export function ResearchCanvasPane({ sessionId, onClose }: { sessionId: string; 
       </div>
     )
   }
-  const forkAnswerable = live && loaded?.control?.state !== 'AWAIT_USER' && loaded?.control?.state !== 'PAUSING' && !!bridge.interveneResearch
+  const controllable = live && !sharedHome
+  const forkAnswerable = controllable && loaded?.control?.state !== 'AWAIT_USER' && loaded?.control?.state !== 'PAUSING' && !!bridge.interveneResearch
   return (
     <div ref={setRootEl} className="h-full" tabIndex={-1} onKeyDown={(e) => { if (e.key === 'Escape') setSelection(null) }}>
       <ResearchCanvasView
@@ -268,8 +276,10 @@ export function ResearchCanvasPane({ sessionId, onClose }: { sessionId: string; 
         onChangeSource={() => { autoLive.current = false; setSource(null) }}
         openDoc={openDoc}
         onCloseDoc={() => setOpenDoc(null)}
+        live={live ? <LivePanel sessionId={sessionId} /> : undefined}
+        childCards={loaded?.children ?? []}
         {...(canReadDocs ? { onOpenDoc } : {})}
-        {...(live ? { onControl, ...(forkAnswerable ? { onForkAnswer } : {}) } : { onSeq: setSeq })}
+        {...(live ? (controllable ? { onControl, ...(forkAnswerable ? { onForkAnswer } : {}) } : {}) : { onSeq: setSeq })}
       />
     </div>
   )

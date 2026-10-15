@@ -10,6 +10,7 @@ import { resolvedThemeAtom } from '@/atoms/theme'
 import { useCloseTab } from '@/hooks/useCloseTab'
 import type { ResearchJudgeReportResult } from '@/types/research-record'
 import { JudgeReportFrame } from './JudgeReportFrame'
+import { LiveStrip } from './LivePanel'
 import { ResearchCanvasPane } from './ResearchCanvasPane'
 import { researchBridge } from './research-bridge'
 import './research-canvas.css'
@@ -61,6 +62,7 @@ export function ResearchTabContent({ sessionId }: { sessionId: string }): React.
     <Tabs value={view} onValueChange={(next) => setView(next as ResearchTabView)} className="research-workspace flex h-full min-h-0 flex-col bg-content-area">
       <div className="research-view-bar titlebar-no-drag">
         <div className="research-brand"><FlaskConical className="size-4" aria-hidden /><span>CRUCIBLE<span className="research-brand-caption">研究工作台</span></span></div>
+        <LiveStrip sessionId={sessionId} />
         <TabsList aria-label="研究 Tab 视图" className="h-10 rounded-md border border-border/60 bg-background/50 p-1">
           {VIEWS.map(([key, label]) => (
             <TabsTrigger key={key} value={key} className="gap-2 px-4 text-[12px] transition-none data-[state=active]:bg-card">

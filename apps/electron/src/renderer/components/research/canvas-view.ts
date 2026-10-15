@@ -49,6 +49,8 @@ export interface CanvasOptions {
   source?: string
   /** 主进程是否提供研究控制接口（轨道 R1） */
   bridge: boolean
+  /** 控制只读的原因（controls-view readOnly） */
+  readOnly?: string
   control?: CanvasControl | null
   annotations?: Annotations | null
   /** 主进程（R1）对快照两条哈希链的校验：null = 完好，字符串 = 第一处断链（快照 integrity 字段） */
@@ -395,6 +397,7 @@ export function canvasView(full: ResearchRecord, opts: CanvasOptions): CanvasVie
       state: control?.state ?? 'IDLE',
       wired: control?.wired ?? false,
       canCancelChildren: control?.canCancelChildren ?? false,
+      ...(opts.readOnly ? { readOnly: opts.readOnly } : {}),
     }),
     status: statusView(rec, opts),
     docs: (opts.workdir?.docs ?? []).map((d, i) => ({ path: d.path, time: shortTime(new Date(d.mtimeMs).toISOString()), newest: i === 0 })),

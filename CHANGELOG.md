@@ -27,6 +27,17 @@ slices, each test-first and Opus-reviewed. Design docs live in `mindset/调研/r
 - **B0–B9 behaviour checker** for acceptance runs (`3baf8f7`).
 
 ### Fixed
+- **Live research view**: the research tab now shows what the agent is doing right
+  now (status line, last actions, what it just said), every RLM child job (what it was sent to do,
+  the SUMMARY it brought back, full brief/out), and what refine learned (summary, rationale,
+  edits, frozen/active arm). The canvas found no record for sessions without a project (it now
+  falls back to `$HOME` like the orchestrator; such shared-home runs are view-only), replay showed
+  none of the delivery run's 9 child jobs (nested archive layout), refine times were always empty
+  (`timestamp`, not `ts`), and the right file panel squeezed the canvas tab.
+- The isolation guard blocked any `research-work/<run>/*.md` heredoc whose body contained `{…}`;
+  stage docs are now data like REPORT.md, and running one as a script stays blocked.
+- ARC ML04 run was void: the probe sandbox had no scikit-learn. The image installs
+  `python3-sklearn` and the staged task card states what the sandbox and kernel provide.
 - Two prereg gates rejected valid probes: hand-copied sim hashes are now optional (host
   freezes the digest) and the band-direction check skips observe probes (`d4c5d5d`).
 - A page opened mid-run now shows the running turn, and the research canvas takes the

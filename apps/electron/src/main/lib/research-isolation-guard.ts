@@ -250,9 +250,13 @@ function reportDraftRoots(config: ResearchIsolationConfig): string[] {
 }
 
 /** `research-work/<run>/{REPORT,lessons}.md`（草稿）或宿主拷入的 `.proma-research/<run>/` 副本。 */
-function isReportShape(path: string, config: ResearchIsolationConfig, draftsOnly = false): boolean {
-  const roots = draftsOnly ? reportDraftRoots(config) : [...reportDraftRoots(config), ...config.stateRoots]
-  return REPORT_FILES.has(basename(path)) && roots.includes(dirname(dirname(path)))
+function isReportShape(path: string, config: ResearchIsolationConfig): boolean {
+  return REPORT_FILES.has(basename(path)) && [...reportDraftRoots(config), ...config.stateRoots].includes(dirname(dirname(path)))
+}
+
+/** `research-work/<run>/*.md`：K0 信封里的阶段文档（REPORT、lessons、variants、ledger…），heredoc 正文是数据 */
+function isDraftDoc(path: string, config: ResearchIsolationConfig): boolean {
+  return path.endsWith('.md') && reportDraftRoots(config).includes(dirname(dirname(path)))
 }
 
 function isProtectedWriteTarget(path: string, config: ResearchIsolationConfig): boolean {
@@ -294,7 +298,7 @@ function stripReportHeredocBodies(source: string, config: ResearchIsolationConfi
     if (!/\bcat\b/.test(masked) || /(?:^|[^|])\|(?!\|)/.test(masked) || SHELL_INTERPRETER.test(masked)) continue
     const targets = shellRedirectTargets(line)
     if (targets.length === 0 || !targets.every((target) => (
-      !/[$`]/.test(target) && isReportShape(resolveUserPath(stripToken(target), config.cwd), config, true)
+      !/[$`]/.test(target) && isDraftDoc(resolveUserPath(stripToken(target), config.cwd), config)
     ))) continue
     const delimiter = start[3]
     const end = lines.findIndex((next, at) => at > index && (start[1] ? next.replace(/^\t+/, '') : next) === delimiter)
@@ -419,7 +423,7 @@ function hasStateLinkOrScriptRun(source: string, config: ResearchIsolationConfig
     if (touchesState && LINK_CREATION.test(executable)) return true
     // Bash 看原文（`"$(bash REPORT)"` 在引号里），命令位上的解释器才算；Python 看去掉字符串后的调用。
     const runScope = toolName === 'bash' ? unit.replace(SHELL_OUTPUT_TARGET, ' ') : unit
-    const touchesWritable = paths(runScope).some((path) => isReportShape(path, config)) || mentionsVariable(runScope, scripted)
+    const touchesWritable = paths(runScope).some((path) => isReportShape(path, config) || isDraftDoc(path, config)) || mentionsVariable(runScope, scripted)
     if (touchesWritable && (toolName === 'bash' ? SHELL_SCRIPT_RUN.test(unit) : PYTHON_SCRIPT_RUN.test(executable))) return true
     for (const name of assignedVariables(unit)) {
       if (touchesState) linked.add(name)

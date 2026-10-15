@@ -149,6 +149,14 @@ describe('记录快照（R1）', () => {
     expect(files['child-jobs/RULINGS.md']).toBeDefined()
     expect(verifyChain(files['journal.jsonl']!, false)).toBeNull()
   })
+  it('交付归档的子任务按 live 嵌套布局存放（child-jobs/<step>/<target>/<nonce>/）也能读出，名字与 live 一致', () => {
+    const files = readArchiveBundle(DELIVERY)
+    expect(files['child-jobs/rivals-K1-44d9/brief.md']).toContain('K1')
+    expect(files['child-jobs/rivals-K1-44d9/out.md']).toContain('STATUS: ok')
+    const record = parseBundle(files, { sha256: sha })
+    expect(record.childJobs.find((j) => j.name === 'rivals-K1-44d9')?.status).toBe('ok')
+    expect(record.childJobs.length).toBeGreaterThanOrEqual(8)
+  })
   it('工作台数据源：live 带 rejections.jsonl 与 research-work/<run>/_P*.json（压成 research-work/_P*.json）；草稿变动即推送', async () => {
     writeFileSync(join(runDir, 'rejections.jsonl'), '{"ts":"x","op":"prereg_write","args":{"spec":{"pid":"P1"}},"error":"e"}\n')
     const work = join(cwd, 'research-work', 'r1')

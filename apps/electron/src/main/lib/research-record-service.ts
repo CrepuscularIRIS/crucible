@@ -120,6 +120,13 @@ function archivePaths(dir: string): PathPair[] {
   for (const f of files(jobs, /\.(md|jsonl)$/)) out.push([`child-jobs/${f}`, join(jobs, f)])
   for (const name of dirs(jobs)) {
     for (const f of files(join(jobs, name), /\.(md|jsonl)$/)) out.push([`child-jobs/${name}/${f}`, join(jobs, name, f)])
+    // 直接拷 .rlm-jobs/<run>/ 的归档保留了 <step>/<target>/<nonce>/ 嵌套：压平成与 live 相同的 job_name
+    for (const target of dirs(join(jobs, name))) {
+      for (const nonce of dirs(join(jobs, name, target))) {
+        const job = join(jobs, name, target, nonce)
+        for (const f of files(job, /^(brief|out)\.md$/)) out.push([`child-jobs/${name}-${target}-${nonce}/${f}`, join(job, f)])
+      }
+    }
   }
   return out
 }

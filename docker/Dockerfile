@@ -53,7 +53,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       fonts-liberation xdg-utils \
       xvfb x11-utils \
       dbus dbus-x11 \
-      python3 python3-venv python3-numpy bubblewrap \
+      python3 python3-venv python3-numpy python3-sklearn bubblewrap \
     && rm -rf /var/lib/apt/lists/*
 
 # uv：research-kit 这个 Python-backed skill 靠它把包装进 ipython kernel 的 venv。

@@ -13,13 +13,15 @@ import { SAMPLE_PROMPT, SAMPLE_RUN } from './sample-run'
  * 示例 run：主进程列出同一 run 时走归档（带注记），否则用打包的无真相副本，都没有（docker）则不显示。
  * 白名单归档要主进程（R1）列出。
  */
-export function ArchivePicker({ archives, pendingIntake, onPick, onClose }: {
+export function ArchivePicker({ archives, pendingIntake, onPick, onClose, live }: {
   /** null = 主进程未提供归档列表 */
   archives: ResearchArchiveEntry[] | null
   /** run 记录建立之前的 K0 草稿原文（等用户确认）；没有为 null */
   pendingIntake: string | null
   onPick: (source: ResearchCanvasSource) => void
   onClose: () => void
+  /** 实时面板：记录建立前也能看到 AI 在做什么 */
+  live?: React.ReactNode
 }): React.ReactElement {
   const [copied, setCopied] = React.useState(false)
   const picker = archivePickerView(archives, SAMPLE_RUN)
@@ -36,13 +38,10 @@ export function ArchivePicker({ archives, pendingIntake, onPick, onClose }: {
       </div>
       <div className="research-canvas-scroll"><div className="research-canvas-body text-[13px]">
         {pendingIntake !== null && <K0PendingCard text={pendingIntake} />}
-        <section className="research-panel p-7">
-          <FlaskConical className="mb-5 size-7 text-muted-foreground" aria-hidden />
-          <p className="research-eyebrow">START WITH A QUESTION</p>
-          <h1 className="mb-3 mt-3 text-2xl font-semibold tracking-tight">让研究过程，看得见。</h1>
-          <p className="max-w-2xl leading-7 text-muted-foreground">从一个问题出发，追踪竞争假设、实验反馈与每一次判断变化。研究者与评委，共用一份可追溯的记录。</p>
-          <p className="mt-5 border-t border-border pt-4 text-[12px] leading-relaxed text-muted-foreground">本会话尚未载入研究记录。如果正在等待 K0 开局确认，请回到对话处理；记录建立后，画布会自动接入。也可以先回放已有研究。</p>
+        <section className="research-panel p-4">
+          <p className="flex items-center gap-2 text-[12px] leading-relaxed text-muted-foreground"><FlaskConical className="size-4 shrink-0" aria-hidden />本会话还没有研究记录：开局确认（K0）后 agent 调 research_init 建档，画布自动接入。下面可以先回放已有研究。</p>
         </section>
+        {live}
 
         <section className="research-panel p-5 space-y-3">
           <h3 className="flex items-center gap-2 font-medium"><History className="size-4" aria-hidden />从一份真实记录开始</h3>
@@ -50,11 +49,11 @@ export function ArchivePicker({ archives, pendingIntake, onPick, onClose }: {
             <Button type="button" variant="outline" size="sm" className="h-auto w-full justify-start whitespace-normal py-1.5 text-left text-[13px]" onClick={() => onPick(picker.sample!)}>
               {SAMPLE_RUN.label}<ArrowUpRight className="ml-auto size-4 shrink-0" aria-hidden />
             </Button>
-          ) : (
-            <p className="text-[11px] text-muted-foreground">本构建没有打包示例 run（容器镜像不含 research/campaigns，避免评测里的 agent 读到历史测量）。</p>
-          )}
+          ) : null}
           {archives === null ? (
             <p className="text-[11px] text-muted-foreground">归档列表不可用：主进程未提供研究记录接口{picker.sample ? '，只能回放随应用打包的示例' : ''}。</p>
+          ) : picker.archives.length === 0 && !picker.sample ? (
+            <p className="text-[11px] text-muted-foreground">没有可回放的归档。</p>
           ) : picker.archives.map((a) => (
             <Button key={a.path} type="button" variant="ghost" size="sm" className="h-auto w-full justify-start whitespace-normal py-1 text-left text-[12px]" onClick={() => onPick({ kind: 'archive', path: a.path })}>
               {a.run} <span className="ml-1 truncate text-muted-foreground">{a.path}</span>
@@ -62,14 +61,14 @@ export function ArchivePicker({ archives, pendingIntake, onPick, onClose }: {
           ))}
         </section>
 
-        <section className="research-panel p-5 space-y-3">
+        {picker.sample && <section className="research-panel p-5 space-y-3">
           <h3 className="text-[11px] text-muted-foreground">示例任务</h3>
           <p className="text-muted-foreground">示例 run 的原始一句话提示词（GLM，2026-10-14）。在研究会话里发出它，画布就会显示实时记录。</p>
           <pre className="whitespace-pre-wrap rounded-md border border-border bg-card p-2 text-[12px]">{SAMPLE_PROMPT}</pre>
           <Button type="button" size="sm" variant="outline" className="h-7 px-2 text-[12px]" onClick={copy}>
             {copied ? '已复制' : '复制示例提示词'}
           </Button>
-        </section>
+        </section>}
       </div>
       </div>
     </div>

@@ -46,6 +46,27 @@ describe('refine 徽标数据源', () => {
     expect(summary.recent[1]?.kind).toBe('prompt')
   })
 
+  it('真实 Prime 条目：时间在 timestamp，改动在 appliedEdits；带出理由、改动标题与研究会话的自进化臂（k0-host.json）', () => {
+    const sdkConfig = join(root, 'case-d', 'sdk-config')
+    const sessionFile = join(sdkConfig, 'sessions', 'abc.jsonl')
+    mkdirSync(join(sdkConfig, 'sessions'), { recursive: true })
+    writeFileSync(sessionFile, JSON.stringify({
+      type: 'custom', customType: 'prime-agent.refinement', id: 'x', timestamp: '2026-10-14T15:20:52.881Z',
+      data: { summary: '记三条本地记忆', rationale: '两个子代理都被拒调 world_simulate', appliedEdits: [{ action: 'create', kind: 'memory', id: 'parent-only', title: '父会话是唯一写入者', content: '长内容' }] },
+    }) + '\n')
+    const artifacts = join(sdkConfig, 'session-artifacts', 'abc', 'research-refine')
+    mkdirSync(artifacts, { recursive: true })
+    writeFileSync(join(artifacts, 'k0-host.json'), JSON.stringify({ arm: { mode: 'frozen', source: 'ui-default', contaminated: false, reasons: [] } }))
+
+    const summary = summarizePrimeRefineArtifacts(join(root, 'case-d', 'harness'), sessionFile)
+    expect(summary.lastTs).toBe('2026-10-14T15:20:52.881Z')
+    expect(summary.recent[0]).toEqual({
+      ts: '2026-10-14T15:20:52.881Z', kind: 'memory', summary: '记三条本地记忆', rationale: '两个子代理都被拒调 world_simulate',
+      edits: [{ action: 'create', kind: 'memory', id: 'parent-only', title: '父会话是唯一写入者' }],
+    })
+    expect(summary.arm).toEqual({ mode: 'frozen', source: 'ui-default', contaminated: false })
+  })
+
   it('反向验证：只有 Prime 从不写的 refinements.jsonl 时读不到任何记录', () => {
     const harnessDir = join(root, 'case-b', 'harness')
     mkdirSync(harnessDir, { recursive: true })

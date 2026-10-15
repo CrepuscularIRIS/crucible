@@ -19,6 +19,8 @@ export interface ControlsInput {
   wired: boolean
   /** IR-C3 是否可用（空闲时取消子任务） */
   canCancelChildren: boolean
+  /** 有值 = 这个画布只读，原因显示给人（如会话没绑项目、与别的会话共用 $HOME） */
+  readOnly?: string
 }
 
 export interface ControlButton {
@@ -55,6 +57,7 @@ const btn = (action: ControlAction, label: string, hint?: string, disabled = fal
 export function controlBar(input: ControlsInput): ControlBarView {
   if (input.mode === 'replay') return { buttons: [], notes: ['回放 · 只读'] }
   if (!input.bridge) return { buttons: [], notes: ['控制不可用：主进程未提供研究控制接口，画布只读。'] }
+  if (input.readOnly) return { buttons: [], notes: [input.readOnly] }
 
   const notes = input.wired ? [] : ['软暂停：未接线（IR-C1），暂停与询问只发引导消息，靠 agent 自觉。']
   const { state } = input

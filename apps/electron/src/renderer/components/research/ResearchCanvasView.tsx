@@ -1,5 +1,5 @@
 import React from 'react'
-import { AlertTriangle, ArrowUpRight, FileText, FlaskConical, GitBranch, History, Layers, Pause, Play, X } from 'lucide-react'
+import { Activity, AlertTriangle, ArrowUpRight, FileText, FlaskConical, GitBranch, History, Layers, Pause, Play, Users, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -15,6 +15,8 @@ import { StageDocViewer, type OpenStageDoc } from './StageDocViewer'
 import type { CanvasView, NodeDetailView, NodeSelection } from './canvas-view'
 import type { ControlAction } from './controls-view'
 import type { WorkbenchEvent } from './workbench-view'
+import { CHILD_HINT, ChildCards } from './LivePanel'
+import type { ChildCard } from './live-view'
 import './research-canvas.css'
 
 export interface ResearchCanvasViewProps {
@@ -33,10 +35,14 @@ export interface ResearchCanvasViewProps {
   onOpenDoc?: (path: string) => void
   openDoc?: OpenStageDoc | null
   onCloseDoc?: () => void
+  /** 实时面板（只在实时 run 给）：AI 此刻在做什么 + 自进化 */
+  live?: React.ReactNode
+  /** 子任务卡：派去做什么、带回了什么 */
+  childCards?: ChildCard[]
 }
 
 interface WorkbenchUI {
-  surface: 'probe' | 'map' | 'matrix'
+  surface: 'live' | 'probe' | 'map' | 'matrix' | 'children'
   inspector: 'evidence' | 'versions' | 'run'
   mobilePane: 'process' | 'artifact' | 'inspector'
   probeId?: string
@@ -94,7 +100,7 @@ export function ResearchCanvasView(props: ResearchCanvasViewProps): React.ReactE
   const versionPickerId = React.useId()
   const replay = !!onSeq
   // 换数据源时由调用方用 key 重挂载（ResearchCanvasPane），这里不按标题重置
-  const [ui, setUI] = React.useState<WorkbenchUI>({ surface: 'probe', inspector: 'evidence', mobilePane: 'artifact', playing: false })
+  const [ui, setUI] = React.useState<WorkbenchUI>({ surface: props.live ? 'live' : 'probe', inspector: 'evidence', mobilePane: 'artifact', playing: false })
   const patch = (value: Partial<WorkbenchUI>) => setUI((prev) => ({ ...prev, ...value }))
   const probes = view.workbench?.probes ?? []
   const probe = pickProbe(probes, props.selection?.kind === 'prereg' ? props.selection.id : undefined, ui.probeId)
@@ -130,7 +136,7 @@ export function ResearchCanvasView(props: ResearchCanvasViewProps): React.ReactE
     props.onCloseDoc?.()
   }
   const showSurface = (surface: string) => {
-    if (surface !== 'probe' && surface !== 'map' && surface !== 'matrix') return
+    if (surface !== 'live' && surface !== 'probe' && surface !== 'map' && surface !== 'matrix' && surface !== 'children') return
     props.onCloseDoc?.()
     patch({ surface, mobilePane: 'artifact' })
   }
@@ -156,7 +162,7 @@ export function ResearchCanvasView(props: ResearchCanvasViewProps): React.ReactE
       </aside>
       <main className="workbench-artifact" aria-label="研究产物">
         <Tabs value={props.openDoc ? 'document' : ui.surface} onValueChange={showSurface} className="workbench-pane-tabs">
-          <div className="workbench-artifact-bar"><TabsList className="workbench-tabs" aria-label="研究产物视图"><TabsTrigger value="probe"><FlaskConical className="mr-1.5 size-3.5" aria-hidden />实验对照</TabsTrigger><TabsTrigger value="map"><GitBranch className="mr-1.5 size-3.5" aria-hidden />假设图</TabsTrigger><TabsTrigger value="matrix"><Layers className="mr-1.5 size-3.5" aria-hidden />证据矩阵</TabsTrigger>{props.openDoc && <TabsTrigger value="document"><FileText className="mr-1.5 size-3.5" aria-hidden />文档</TabsTrigger>}</TabsList>
+          <div className="workbench-artifact-bar"><TabsList className="workbench-tabs" aria-label="研究产物视图">{props.live && <TabsTrigger value="live"><Activity className="mr-1.5 size-3.5" aria-hidden />实时</TabsTrigger>}<TabsTrigger value="probe"><FlaskConical className="mr-1.5 size-3.5" aria-hidden />实验对照</TabsTrigger><TabsTrigger value="map"><GitBranch className="mr-1.5 size-3.5" aria-hidden />假设图</TabsTrigger><TabsTrigger value="matrix"><Layers className="mr-1.5 size-3.5" aria-hidden />证据矩阵</TabsTrigger>{!!props.childCards?.length && <TabsTrigger value="children"><Users className="mr-1.5 size-3.5" aria-hidden />子任务 <span className="ml-1 text-muted-foreground">{props.childCards.length}</span></TabsTrigger>}{props.openDoc && <TabsTrigger value="document"><FileText className="mr-1.5 size-3.5" aria-hidden />文档</TabsTrigger>}</TabsList>
             <span className="workbench-revision">记录 #{view.seq}</span>
           </div>
           <div ref={artifactScroll} className="workbench-scroll workbench-artifact-content">
@@ -185,6 +191,8 @@ export function ResearchCanvasView(props: ResearchCanvasViewProps): React.ReactE
                 {view.feedback && <details className="workbench-feedback"><summary>实验如何迭代 <span>查看一次反馈改变</span></summary><ul className="space-y-2 text-[12px] leading-relaxed text-muted-foreground">{view.feedback.map((line, i) => <li key={i}>{line}</li>)}</ul></details>}
               </TabsContent>
               <TabsContent forceMount value="map" className="m-0 data-[state=inactive]:hidden"><section className="research-panel p-4" aria-label="假设与证据"><h2 className="mb-2 text-[13px] font-semibold">假设与证据</h2><p className="mb-4 text-[11px] leading-relaxed text-muted-foreground">{view.derivationNote ?? '连线表示已记录的派生关系；实验支持关系见证据矩阵。'}</p><HypothesisMap claims={view.claims} selectedId={props.selection?.kind === 'claim' ? props.selection.id : undefined} onSelect={select} /></section></TabsContent>
+              {props.live && <TabsContent forceMount value="live" className="m-0 data-[state=inactive]:hidden">{props.live}</TabsContent>}
+              {!!props.childCards?.length && <TabsContent value="children" className="m-0"><section className="research-panel p-4" aria-label="子任务"><h2 className="text-[13px] font-semibold">子任务 · RLM 子代理</h2><p className="mb-3 mt-1 text-[11px] leading-relaxed text-muted-foreground">{CHILD_HINT}{replay ? ' 子任务为当前快照，不随回放回退。' : ''}</p><ChildCards cards={props.childCards} /></section></TabsContent>}
               <TabsContent forceMount value="matrix" className="m-0 data-[state=inactive]:hidden"><section className="research-panel p-4" aria-label="证据矩阵"><h2 className="mb-4 text-[13px] font-semibold">假设与证据</h2><EvidenceMatrix view={view} narrow={narrow} onSelect={select} /></section></TabsContent>
             </>}
           </div>

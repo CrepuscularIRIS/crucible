@@ -8,7 +8,7 @@ import { ipcMain, nativeTheme, shell, dialog, BrowserWindow, app, clipboard, nat
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { existsSync, realpathSync, readFileSync, writeFileSync, mkdirSync, statSync } from 'node:fs'
 import { writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { homedir, tmpdir } from 'node:os'
 import { IPC_CHANNELS, CHANNEL_IPC_CHANNELS, CHAT_IPC_CHANNELS, AGENT_IPC_CHANNELS, AGENT_ISLAND_IPC_CHANNELS, ENVIRONMENT_IPC_CHANNELS, INSTALLER_IPC_CHANNELS, PROXY_IPC_CHANNELS, GITHUB_RELEASE_IPC_CHANNELS, SYSTEM_PROMPT_IPC_CHANNELS, CHAT_TOOL_IPC_CHANNELS, FEISHU_IPC_CHANNELS, DINGTALK_IPC_CHANNELS, WECHAT_IPC_CHANNELS, AUTOMATION_IPC_CHANNELS, PLANNING_IPC_CHANNELS, PLANNING_CONFLICT_ERROR, MAX_ATTACHMENT_SIZE, isPromaPermissionMode, normalizePathForCompare } from '@proma/shared'
 import { USER_PROFILE_IPC_CHANNELS, SETTINGS_IPC_CHANNELS, SCRATCH_PAD_IPC_CHANNELS, QUICK_TASK_IPC_CHANNELS, VOICE_DICTATION_IPC_CHANNELS, APP_ICON_IPC_CHANNELS, DOCK_BADGE_IPC_CHANNELS, STORAGE_IPC_CHANNELS, WINDOWS_AGENT_ISLAND_IPC_CHANNELS, TRAY_IPC_CHANNELS } from '../types'
 import { parseAgentSendIpcArguments } from '../common/agent-send-input'
@@ -2280,7 +2280,10 @@ export function registerIpcHandlers(): void {
     resolveCwd: (sessionId) => {
       const meta = getAgentSessionMeta(sessionId)
       const ws = meta?.workspaceId ? getAgentWorkspace(meta.workspaceId) : undefined
-      return resolveAgentCwd(ws, sessionId, meta?.agentCwdMode, meta?.activeWorktree)
+      // 与编排器同一回退：没绑项目的会话在 $HOME 运行，记录也在 $HOME/.proma-research（未知会话不回退）
+      // ponytail: 多个未绑项目的会话共用 $HOME，画布显示其中最近活动的 run（控制按钮在渲染层关掉）；要区分时在 run 记录里写会话 id
+      if (!meta) return undefined
+      return resolveAgentCwd(ws, sessionId, meta.agentCwdMode, meta.activeWorktree) ?? homedir()
     },
     isRunning: isAgentSessionActive,
     push: (sessionId, snapshot) => {

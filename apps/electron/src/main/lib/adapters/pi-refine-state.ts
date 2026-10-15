@@ -8,8 +8,8 @@
  */
 
 import { existsSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
-import type { AgentRefineEntrySummary } from '@proma/shared'
+import { basename, dirname, join } from 'node:path'
+import type { AgentRefineArm, AgentRefineEntrySummary } from '@proma/shared'
 
 export interface PrimeRefineArtifactsSummary {
   /** harness 条目总数（prompt/memory/skill/subagent 之和） */
@@ -18,6 +18,8 @@ export interface PrimeRefineArtifactsSummary {
   lastTs?: string
   /** 最近若干条摘要（新→旧） */
   recent: AgentRefineEntrySummary[]
+  /** 研究会话的自进化臂（`session-artifacts/<id>/research-refine/k0-host.json`） */
+  arm?: AgentRefineArm
 }
 
 /** harness_state.json 的 entries 分桶形状（Prime refinement.js HarnessState）。 */
@@ -28,8 +30,30 @@ interface HarnessStateFileShape {
 /** 会话 JSONL 里 prime-agent.refinement custom 条目的 data 载荷。 */
 interface RefinementEntryData {
   summary?: unknown
-  edits?: Array<{ kind?: unknown }>
-  appliedEdits?: Array<{ kind?: unknown }>
+  rationale?: unknown
+  edits?: RefinementEdit[]
+  appliedEdits?: RefinementEdit[]
+}
+
+interface RefinementEdit { action?: unknown; kind?: unknown; id?: unknown; title?: unknown }
+
+const str = (v: unknown): string | undefined => (typeof v === 'string' && v ? v : undefined)
+
+function editSummary(e: RefinementEdit): NonNullable<AgentRefineEntrySummary['edits']>[number] {
+  const action = str(e.action), id = str(e.id), title = str(e.title)
+  return { ...(action ? { action } : {}), kind: String(e.kind ?? 'unknown'), ...(id ? { id } : {}), ...(title ? { title: title.slice(0, 120) } : {}) }
+}
+
+/** sessions/<id>.jsonl → session-artifacts/<id>/research-refine/k0-host.json 的 arm 行 */
+function readArm(sessionFile: string): AgentRefineArm | undefined {
+  const file = join(dirname(dirname(sessionFile)), 'session-artifacts', basename(sessionFile, '.jsonl'), 'research-refine', 'k0-host.json')
+  try {
+    const arm = (JSON.parse(readFileSync(file, 'utf-8')) as { arm?: Record<string, unknown> }).arm
+    const mode = str(arm?.mode)
+    if (!mode) return undefined
+    const source = str(arm?.source)
+    return { mode, ...(source ? { source } : {}), ...(typeof arm?.contaminated === 'boolean' ? { contaminated: arm.contaminated } : {}) }
+  } catch { return undefined }
 }
 
 export function summarizePrimeRefineArtifacts(
@@ -60,14 +84,18 @@ export function summarizePrimeRefineArtifacts(
         } catch { continue }
         if (entry.type !== 'custom' || entry.customType !== 'prime-agent.refinement') continue
         const data = (entry.data ?? {}) as RefinementEntryData
-        const ts = typeof entry.ts === 'string' ? entry.ts : ''
-        const kind = String(data.edits?.[0]?.kind ?? data.appliedEdits?.[0]?.kind ?? 'unknown')
-        const summary = String(data.summary ?? '').slice(0, 120)
+        // Prime 写 timestamp；ts 是旧测试夹具的写法
+        const ts = str(entry.timestamp) ?? str(entry.ts) ?? ''
+        const edits = (data.appliedEdits ?? data.edits ?? []).slice(0, 6).map(editSummary)
+        const kind = edits[0]?.kind ?? 'unknown'
+        const summary = String(data.summary ?? '').slice(0, 240)
+        const rationale = str(data.rationale)?.slice(0, 600)
         if (!lastTs && ts) lastTs = ts
-        recent.push({ ts, kind, summary })
+        recent.push({ ts, kind, summary, ...(rationale ? { rationale } : {}), ...(edits.length ? { edits } : {}) })
       }
     } catch { /* 读取失败按无摘要处理 */ }
   }
 
-  return { entries, ...(lastTs ? { lastTs } : {}), recent }
+  const arm = sessionFile ? readArm(sessionFile) : undefined
+  return { entries, ...(lastTs ? { lastTs } : {}), recent, ...(arm ? { arm } : {}) }
 }

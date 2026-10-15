@@ -1,0 +1,97 @@
+{
+  "arm": {
+    "mode": "frozen",
+    "source": "ui-default",
+    "contaminated": false,
+    "reasons": []
+  },
+  "globalHarness": {
+    "path": "/root/.prime/agent/harness/harness_state.json",
+    "sha256": "6c577fae8a87e7f4138bcc345de0888d75c44c4573318b13b32876fc5c435ad0",
+    "unmanagedEntries": 0,
+    "globalSkillEntries": 0,
+    "unapproved": []
+  },
+  "skills": [
+    {
+      "slug": "research-abduce",
+      "version": "0.5.4",
+      "sha": "31fab7c3391c78e29d4073ff242fe352c571587862e84460d213b39b0eb3e3d7"
+    },
+    {
+      "slug": "research-grill",
+      "version": "0.4.6",
+      "sha": "a177510a6f783bced0195127907e935ba0e21f313ca4fbb6c2b7d04823a99bfa"
+    },
+    {
+      "slug": "research-kit",
+      "version": "0.5.3",
+      "sha": "587290766e2aadadeb1e9fae2fd322483bd8b0e6e509be5c4646d79964fd174b"
+    },
+    {
+      "slug": "research-loop",
+      "version": "0.6.3",
+      "sha": "26dcafe74960f5080e11c82261226f5d274262ef6a8e7724411b3f47cfaec3d3"
+    },
+    {
+      "slug": "research-moves",
+      "version": "0.2.4",
+      "sha": "2244b470806bbb0164bbc555dc91e34e9566904961a450e0292e047f7698b4c6"
+    },
+    {
+      "slug": "research-probe",
+      "version": "0.6.6",
+      "sha": "5f4896c9ae1366567d8b076920a9f1a606ce34648bdaf773646a8f86d31616ea",
+      "warn": "differs from bundled copy of the same version"
+    },
+    {
+      "slug": "research-report",
+      "version": "0.4.6",
+      "sha": "6b461ea65a8f38a35880a4d276dfe1be393afc1a11b5e00ba351fa1d2727bb02"
+    },
+    {
+      "slug": "research-scoop",
+      "version": "0.1.2",
+      "sha": "90bd53a0251191cc858a30891d105e60676c1d47252f12b4f93c6c209c07eae7"
+    }
+  ],
+  "unknownSkills": [
+    "agent-collaboration",
+    "automation",
+    "ccf-common",
+    "ccf-experiment-designer",
+    "ccf-humanization",
+    "ccf-idea-optimizer",
+    "ccf-idea-reviewer",
+    "ccf-integrity-auditor",
+    "ccf-literature-monitor",
+    "ccf-literature-searcher",
+    "ccf-paper-reviewer",
+    "ccf-paper-to-exemplar",
+    "ccf-paper-writer",
+    "ccf-pipeline-orchestrator",
+    "ccf-project-scaffolder",
+    "ccf-rebuttal-writer",
+    "ccf-skill-forger",
+    "ccf-submission-checker",
+    "ccf-visual-composer",
+    "docx",
+    "executing-plans",
+    "find-skills",
+    "guizang-ppt-skill",
+    "in-app-browser",
+    "knowledge-maintenance",
+    "nature-figure",
+    "nature-shared",
+    "nature-writing",
+    "pdf",
+    "pptx",
+    "proma-coach",
+    "prompt-clarifier",
+    "session-cleaner",
+    "skill-creator",
+    "tool-builder",
+    "writing-plans",
+    "xlsx"
+  ]
+}

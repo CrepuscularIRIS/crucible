@@ -1682,6 +1682,17 @@ export interface AgentRefineEntrySummary {
   kind: string
   /** 内容摘要（截断） */
   summary: string
+  /** 为什么这样改（Prime rationale，截断） */
+  rationale?: string
+  /** 实际落下的改动（不含正文） */
+  edits?: Array<{ action?: string; kind: string; id?: string; title?: string }>
+}
+
+/** 研究会话的自进化臂（k0-host.json 的 arm 行）：frozen = 只记录不改 harness */
+export interface AgentRefineArm {
+  mode: string
+  source?: string
+  contaminated?: boolean
 }
 
 /** 会话的 refine 状态（renderer 拉取，用于"经验已记录"提示） */
@@ -1699,6 +1710,8 @@ export interface AgentRefineState {
     /** 最近若干条摘要 */
     recent: AgentRefineEntrySummary[]
   }
+  /** 研究会话的自进化臂；非研究会话没有 */
+  arm?: AgentRefineArm
 }
 
 /** 手动"立即提炼"结果 */

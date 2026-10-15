@@ -50,6 +50,19 @@ DELIVERABLES_WITH_RESULTS_JSON = {
 }
 
 
+# Facts about the staged container, so the agent does not spend its first half hour probing them
+# (ML04 2026-10-15: 26 min of disk searches before giving up). Keep in sync with docker/Dockerfile
+# (system python3 + python3-sklearn, used by the bwrap probe sandbox) and Prime's kernel venv package
+# list (~/oss/prime-agent/packages/coding-agent/src/core/kernel/bootstrap.ts DEFAULT_RLM_EXTRA_PACKAGES).
+ENVIRONMENT = {
+    "probe_sandbox": "prereg evalCommand runs in a bubblewrap sandbox: read-only /, no network, empty env, "
+                     "PATH=/usr/local/bin:/usr/bin:/bin. Its python3 has numpy and scikit-learn; sklearn's bundled "
+                     "toy datasets (e.g. load_wine, load_breast_cancer) load offline. Nothing can be downloaded.",
+    "ipython_kernel": "has numpy, scipy and pandas, not scikit-learn.",
+    "installs": "package installs are refused. If something is missing, say so in the report's scope section.",
+}
+
+
 def find_manifest(task_id: str, arc_root: Path) -> Path:
     hits = sorted((arc_root / "config").glob(f"*/manifests/{task_id}.yaml"))
     if len(hits) != 1:
@@ -74,6 +87,7 @@ def build_card(manifest: dict) -> dict:
         card["requirements"] = [_pick(r, REQUIREMENT_KEYS, "requirement") for r in card["requirements"]]
     needs_results = any(r.get("id") == "req_results_json" for r in card.get("requirements") or [])
     card["deliverables"] = DELIVERABLES_WITH_RESULTS_JSON if needs_results else DELIVERABLES
+    card["environment"] = ENVIRONMENT
     return card
 
 

@@ -1,0 +1,27 @@
+{
+  "run": "ML04-scaling-knn",
+  "claims": [
+    {
+      "id": "H0",
+      "statement": "内置 H0（incumbent）：没有任何变体在冻结评测上超过 incumbent 达 margin",
+      "predicts": [
+        "admit(best) − admit(incumbent) < δ"
+      ],
+      "state": "LIVE",
+      "builtin": true
+    }
+  ],
+  "probes": [],
+  "attacks": [],
+  "reports": [],
+  "gateVerdicts": [],
+  "tampers": [],
+  "graveyard": [],
+  "contract": {
+    "mode": "score",
+    "successPredicate": "H1/H2/H3 各自获得一次预注册探针落地后的裁决（supported/refuted/partially_supported/inconclusive，裁决只依据 probe_run 落地的 metrics），且 task-card deliverables 四项（submission/code/、results/metrics.json、README.md 含 '## Agent-produced writeup'、claims.json）全部交付",
+    "depth": "light",
+    "recall": "off"
+  },
+  "debts": []
+}

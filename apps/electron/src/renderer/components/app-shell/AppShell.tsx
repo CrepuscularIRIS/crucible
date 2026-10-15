@@ -15,7 +15,7 @@ import { AppShellProvider, type AppShellContextType } from '@/contexts/AppShellC
 import { appModeAtom } from '@/atoms/app-mode'
 import { agentSidePanelWidthAtom, currentAgentSessionIdAtom, currentSessionSidePanelOpenAtom } from '@/atoms/agent-atoms'
 import { leftSidebarWidthAtom } from '@/atoms/sidebar-atoms'
-import { sidebarCollapsedAtom } from '@/atoms/tab-atoms'
+import { activeTabAtom, isResearchTab, sidebarCollapsedAtom } from '@/atoms/tab-atoms'
 import { automationFormAtom } from '@/atoms/automation-atoms'
 import { activeViewAtom } from '@/atoms/active-view'
 import { useProjectActions } from '@/hooks/useProjectActions'
@@ -59,7 +59,10 @@ export function AppShell({ contextValue }: AppShellProps): React.ReactElement {
   const isClassic = interfaceVariant === 'classic'
   // 定时任务表单打开时隐藏右侧文件面板，让中间区域扩展到全宽（表单内含自己的右栏配置）
   const activeView = useAtomValue(activeViewAtom)
-  const showRightPanel = appMode === 'agent' && !!currentSessionId && !automationForm.open && activeView !== 'planning' && activeView !== 'agent-skills'
+  // 研究画布 tab 自带三栏，右侧文件面板只会把它挤窄；切回会话 tab 时按会话原设置恢复（不改存储的开关）
+  const activeTab = useAtomValue(activeTabAtom)
+  const researchTabActive = !!activeTab && isResearchTab(activeTab)
+  const showRightPanel = appMode === 'agent' && !!currentSessionId && !automationForm.open && activeView !== 'planning' && activeView !== 'agent-skills' && !researchTabActive
   const isWindows = React.useMemo(() => detectIsWindows(), [])
 
   // 左侧边栏可拖拽宽度
