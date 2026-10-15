@@ -13,6 +13,8 @@ import {
 } from '../../packages/shared/src/research-record/index.ts'
 
 export interface ReportModel {
+  /** 仅检查传给生成器的文件捆；文件存在不表示测量内容已重新核验。 */
+  rawEvidence: { expected: number; provided: number; missing: string[] }
   rec: ResearchRecord
   ann: Annotations
   archive: string
@@ -228,6 +230,11 @@ export function renderReport(m: ReportModel): string {
   const first = rec.events[0]
   const last = rec.events.at(-1)
   const scriptRef = m.scriptRef
+  const neuronSimulation = ['textbook_M', 'z_rebound', 'd_type', 'ca_rebound', 'h_sag', 'na_fatigue'].includes(rec.world ?? '')
+  // 仅澄清展示摘要；逐字引文与原始证据保持原样。
+  const summaryText = (text: string) => esc(neuronSimulation
+    ? text.replace(/计费的真实测量|真实测量/g, '计费仿真观测')
+    : text)
   return `<title>${esc(ann.case.title)}</title>
 ${STYLE}
 <div class="bar"><div class="bar-in"><b>Crucible 评委报告</b><ul>${m.nav
@@ -236,16 +243,19 @@ ${STYLE}
 <main>
 <section id="top" data-kind="first">
 <h1>${esc(ann.case.title)}</h1>
+<p class="small muted" data-kind="scope">历史回放与事后审计，不是现场重新执行。${neuronSimulation ? '本案例为神经元仿真；原文中的“真实测量”指仿真环境的计费观测，不是生物细胞实验。' : '实验环境与适用范围见下方任务说明。'}事后审计不代表系统在运行时已自动发现这些错误。</p>
+${m.rawEvidence.missing.length ? `<p class="small" data-kind="archive-warning">本页输入归档缺少 ${m.rawEvidence.missing.length} 份原始测量输出；页面读数来自运行记录，不能据此宣称已完成原始输出复算。</p>` : ''}
 <p class="headline">${esc(ann.case.headline_plain)}</p>
-<dl class="qa">${m.answers.map((a) => `<div><dt>${a.label}</dt><dd>${esc(a.text)}</dd></div>`).join('')}</dl>
+<dl class="qa">${m.answers.map((a) => `<div><dt>${a.label}</dt><dd>${summaryText(a.text)}</dd></div>`).join('')}</dl>
 </section>
 
 <section id="task">
 <h2>示例任务</h2>
-<p>${esc(ann.case.background)}</p>
+<p>${summaryText(ann.case.background)}</p>
 <p class="small muted">用户发给系统的原话（${esc(ann.case.prompt_source)}）：</p>
 <pre>${esc(ann.case.prompt)}</pre>
-<p class="small">在 Proma 里回放这一次：打开任一 agent 会话 → 底栏“研究画布” → 归档回放 → 选 <code>${esc(m.archive)}</code>。画布上线前，可直接读该目录下的 <code>journal.jsonl</code>（每行一个事件，行号即本页引用的“运行记录第 N 行”）。</p>
+<p class="small">在已载入本案例的 Proma 研究画布中，可按来源行号回看预测、观测与判断。现场展示前须确认归档已可用；本页对应 <code>${esc(m.archive)}</code>，其 <code>journal.jsonl</code> 每行一个事件，行号即本页引用的“运行记录第 N 行”。</p>
+<details data-kind="raw-evidence"><summary>原始输出归档覆盖 ${m.rawEvidence.provided}/${m.rawEvidence.expected}</summary><p class="small">仅检查生成器收到的文件捆是否包含各已落地实验的原始输出，不代表内容正确或已重跑实验。日志哈希链、审计复算值、原始测量输出是不同证据。</p>${m.rawEvidence.missing.length ? `<ul>${m.rawEvidence.missing.map((path) => `<li><code>${esc(path)}</code> 未提供</li>`).join('')}</ul>` : '<p class="small">输入捆未发现此类缺件；科学结论仍需独立审查。</p>'}</details>
 </section>
 
 ${m.feedback
@@ -257,6 +267,7 @@ ${m.feedback
 <p><b>实测</b>：${esc(m.feedback.observed)}</p>
 <p><b>下一组实验</b>（${m.feedback.to}）改为：<span class="to">${esc(m.feedback.toProtocol)}</span></p>
 <p class="why"><b>改变理由</b>（${m.feedback.to} 事先写下的问题，逐字）：${esc(m.feedback.why)}</p>
+<p class="small muted">这里展示后续实验登记的问题；时间相邻本身不能证明选择的因果关系，也不能证明研究效果已经改善。</p>
 <details><summary>证据（原始记录）</summary><pre>${esc(m.feedback.raw.join('\n'))}</pre></details>
 </article>
 </section>`
@@ -307,7 +318,7 @@ ${m.corrections
 <dt>模型</dt><dd>${esc(ann.case.model)}</dd>
 <dt>world / seed</dt><dd class="mono">${esc(rec.world ?? '?')} / ${rec.seed ?? '?'}</dd>
 <dt>时间</dt><dd>${first ? fmtTime(first.ts) : '?'} – ${last ? fmtTime(last.ts) : '?'}</dd>
-<dt>程序检查</dt><dd>${gate ? `${gate.passed === true ? '程序检查通过' : '程序检查未通过'}（预登记 ${ok(gate.prereg)} · 对账 ${ok(gate.reconcile)} · 溯源 ${ok(gate.trace)}）。程序检查通过只说明记录前后一致，不说明结论正确。` : '没有检查记录。'}</dd>
+<dt>历史程序检查</dt><dd>${gate ? `运行当时记录为：${gate.passed === true ? '程序检查通过' : '程序检查未通过'}（预登记 ${ok(gate.prereg)} · 对账 ${ok(gate.reconcile)} · 溯源 ${ok(gate.trace)}）。程序检查通过只说明记录前后一致，不说明结论正确；此处不是本次重新执行检查的结果。` : '没有检查记录。'}</dd>
 <dt>人工干预</dt><dd>${ivText}</dd>
 <dt>运行记录链</dt><dd>${rec.integrity === 'ok' ? `完整（${rec.events.length} 行，逐行哈希相连）` : `第 ${rec.brokenAt} 行断开`}</dd>
 <dt>sha256</dt><dd><ul class="small mono">${m.shas.map(([k, v]) => `<li>${esc(k)} ${v}</li>`).join('')}</ul></dd>

@@ -36,7 +36,10 @@ export function readArchive(dir: string): Record<string, string> {
     for (const name of readdirSync(d).sort()) {
       const p = join(d, name)
       if (statSync(p).isDirectory()) walk(p)
-      else if (TEXT.test(name)) out[relative(dir, p).split('\\').join('/')] = readFileSync(p, 'utf8')
+      else {
+        const path = relative(dir, p).split('\\').join('/')
+        if (TEXT.test(name) || /^probes\/P\d+\/raw\/output\.txt$/.test(path)) out[path] = readFileSync(p, 'utf8')
+      }
     }
   }
   walk(dir)
@@ -80,6 +83,9 @@ export function renderJudgeReport(files: Record<string, string>, opts: { archive
   if (ann.schema !== 'crucible.annotations/2') throw new JudgeError(`annotations schema ${ann.schema} 不认识`)
   const rc = files['recompute.json'] === undefined ? undefined : (JSON.parse(files['recompute.json']) as Recompute)
   const nodes = judgeNodes(rec, ann, rc)
+  const rawPaths = [...new Set(rec.events.filter((event) => event.op === 'probe.land')
+    .map((event) => `probes/${String(event.data.pid)}/raw/output.txt`))]
+  const missingRaw = rawPaths.filter((path) => files[path] === undefined)
   const shas: [string, string][] = [
     ['journal.jsonl', rec.journalSha256],
     ['REPORT.md', rec.report!.sha256],
@@ -100,6 +106,7 @@ export function renderJudgeReport(files: Record<string, string>, opts: { archive
     shas,
     nav: opts.nav ?? [],
     scriptRef: rc?.script ?? '',
+    rawEvidence: { expected: rawPaths.length, provided: rawPaths.length - missingRaw.length, missing: missingRaw },
   })
   // 兜底：任何没填上的 {{键}} 都拒绝出页（"仍不能确定"一节曾漏插值，页面带着占位符上线）。
   const left = html.match(/\{\{[^}]*\}\}/)

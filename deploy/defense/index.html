@@ -92,16 +92,19 @@ blockquote.orig .src{display:block;font-size:.8rem;color:var(--muted)}
 <main>
 <section id="top" data-kind="first">
 <h1>一句话让 AI 研究一个神经元</h1>
+<p class="small muted" data-kind="scope">历史回放与事后审计，不是现场重新执行。本案例为神经元仿真；原文中的“真实测量”指仿真环境的计费观测，不是生物细胞实验。事后审计不代表系统在运行时已自动发现这些错误。</p>
+<p class="small" data-kind="archive-warning">本页输入归档缺少 4 份原始测量输出；页面读数来自运行记录，不能据此宣称已完成原始输出复算。</p>
 <p class="headline">这次结论与真相相反，错在用一次测量否定了一整类解释；三道程序检查都没有拦住它。</p>
-<dl class="qa"><div><dt>研究什么</dt><dd>这个神经元被压低之后，放电为什么会变多？用 8 次真实测量去分清几种解释。</dd></div><div><dt>怎么做的</dt><dd>先写下预测和判定规则再做真实测量：4 组实验，用掉 6/8 次测量，另跑了 65 次免费仿真。</dd></div><div><dt>结果改变了什么</dt><dd>第一次测量后它改做更短的压低实验；但那次只测了 1 次，就否定了 T 型钙电流这一整类解释。</dd></div><div><dt>下一步是什么</dt><dd>先在免费仿真里算清要测几次才分得开；分不开就换阻断剂实验，出一个峰就能排除“无额外电流”。</dd></div></dl>
+<dl class="qa"><div><dt>研究什么</dt><dd>这个神经元被压低之后，放电为什么会变多？用 8 次计费仿真观测去分清几种解释。</dd></div><div><dt>怎么做的</dt><dd>先写下预测和判定规则再做计费仿真观测：4 组实验，用掉 6/8 次测量，另跑了 65 次免费仿真。</dd></div><div><dt>结果改变了什么</dt><dd>第一次测量后它改做更短的压低实验；但那次只测了 1 次，就否定了 T 型钙电流这一整类解释。</dd></div><div><dt>下一步是什么</dt><dd>先在免费仿真里算清要测几次才分得开；分不开就换阻断剂实验，出一个峰就能排除“无额外电流”。</dd></div></dl>
 </section>
 
 <section id="task">
 <h2>示例任务</h2>
-<p>NeuronBench 的 ca_rebound 是一个模拟神经元，叠加了一个身份未知的额外电流。agent 只能做 8 次计费的真实测量，仿真免费；最后要写出机制结论，并预报 6 个没做过的实验。</p>
+<p>NeuronBench 的 ca_rebound 是一个模拟神经元，叠加了一个身份未知的额外电流。agent 只能做 8 次计费仿真观测，仿真免费；最后要写出机制结论，并预报 6 个没做过的实验。</p>
 <p class="small muted">用户发给系统的原话（逐字；会话导出见 mindset/评委视角-作品打磨与轨迹审查-20261014.md §5.1）：</p>
 <pre>帮我研究一下 ca_rebound 这个神经元的放电机制。</pre>
-<p class="small">在 Proma 里回放这一次：打开任一 agent 会话 → 底栏“研究画布” → 归档回放 → 选 <code>research/campaigns/2026-10-14-glm53flash-oneline-ca_rebound</code>。画布上线前，可直接读该目录下的 <code>journal.jsonl</code>（每行一个事件，行号即本页引用的“运行记录第 N 行”）。</p>
+<p class="small">在已载入本案例的 Proma 研究画布中，可按来源行号回看预测、观测与判断。现场展示前须确认归档已可用；本页对应 <code>research/campaigns/2026-10-14-glm53flash-oneline-ca_rebound</code>，其 <code>journal.jsonl</code> 每行一个事件，行号即本页引用的“运行记录第 N 行”。</p>
+<details data-kind="raw-evidence"><summary>原始输出归档覆盖 0/4</summary><p class="small">仅检查生成器收到的文件捆是否包含各已落地实验的原始输出，不代表内容正确或已重跑实验。日志哈希链、审计复算值、原始测量输出是不同证据。</p><ul><li><code>probes/P1/raw/output.txt</code> 未提供</li><li><code>probes/P2/raw/output.txt</code> 未提供</li><li><code>probes/P3/raw/output.txt</code> 未提供</li><li><code>probes/P4/raw/output.txt</code> 未提供</li></ul></details>
 </section>
 
 <section id="feedback">
@@ -112,6 +115,7 @@ blockquote.orig .src{display:block;font-size:.8rem;color:var(--muted)}
 <p><b>实测</b>：测 3 次平均 17.33，落在 H3（无额外电流） 的预测区间；随后 H1 收窄、H2 改为有争议。</p>
 <p><b>下一组实验</b>（P2）改为：<span class="to">brief hyperpol conditioning + test (-30 uA/40 ms, then +12 uA)</span></p>
 <p class="why"><b>改变理由</b>（P2 事先写下的问题，逐字）：brief hyperpol 40ms 协议下真细胞 spike_count（reps=1）：ref/slow_na 校准 13.0、weakIh 校准 17.0、weakT 校准 20.0——三分 H3（无额外效应）/ H4（弱内向，慢 Ih flavour）/ H5（弱内向，快 T flavour）。</p>
+<p class="small muted">这里展示后续实验登记的问题；时间相邻本身不能证明选择的因果关系，也不能证明研究效果已经改善。</p>
 <details><summary>证据（原始记录）</summary><pre>30: {&quot;ts&quot;:&quot;2026-10-14T12:51:13.515Z&quot;,&quot;op&quot;:&quot;prereg.write&quot;,&quot;pid&quot;:&quot;P1&quot;,&quot;spec_sha256&quot;:&quot;f65083b7df25ae7b822ddb0f2f941a07812a169253dc8563f4d73b6c645f094d&quot;,&quot;prereg_path&quot;:&quot;prereg/P1.json&quot;,&quot;prev&quot;:&quot;7cced9b2bb5b0468de9ff7d4f26e4dd6c978e001799bbd31783bb1554a8b9f35&quot;}
 32: {&quot;ts&quot;:&quot;2026-10-14T12:51:23.632Z&quot;,&quot;op&quot;:&quot;world.observe&quot;,&quot;world&quot;:&quot;ca_rebound&quot;,&quot;seed&quot;:20261014,&quot;protocol&quot;:&quot;hyperpol conditioning + depol test (-30 uA/250 ms, then +12 uA)&quot;,&quot;reps&quot;:3,&quot;blockers&quot;:&quot;&quot;,&quot;cost&quot;:3,&quot;spike_count&quot;:17.3333,&quot;pid&quot;:&quot;P1&quot;,&quot;prev&quot;:&quot;0a01983d1a66cd2c64ffda4eda4c58c5c9b91cdeb63270355e4c534574d2e2f8&quot;}
 34: {&quot;ts&quot;:&quot;2026-10-14T12:53:19.969Z&quot;,&quot;op&quot;:&quot;claim.transition&quot;,&quot;id&quot;:&quot;H1&quot;,&quot;to&quot;:&quot;SCOPED&quot;,&quot;by_probe&quot;:&quot;P1&quot;,&quot;note&quot;:&quot;P1 观测 17.33 落入 H3 频段 [14.3,17.4]，未达 H1 冻结带 [18,30]：超极化释放的强瞬态反弹（≥+2.7 于基线）不存在。观测相对基线仅 +2.0，弱效应变体（小电导内向流）留待 H4 判别，故 SCOPED 而非 REFUTED。&quot;,&quot;prev&quot;:&quot;e039ef8f174d97f1167a8872c75c173b3ad5ae0db1bcea0ea8b0cc2517c316ca&quot;}
@@ -222,7 +226,7 @@ blockquote.orig .src{display:block;font-size:.8rem;color:var(--muted)}
 <dt>模型</dt><dd>GLM 5.3 Flash（glm-5.3-flash / high）</dd>
 <dt>world / seed</dt><dd class="mono">ca_rebound / 20261014</dd>
 <dt>时间</dt><dd>2026-10-14 20:41（UTC+08:00） – 2026-10-14 21:23（UTC+08:00）</dd>
-<dt>程序检查</dt><dd>程序检查通过（预登记 ✓ · 对账 ✓ · 溯源 ✓）。程序检查通过只说明记录前后一致，不说明结论正确。</dd>
+<dt>历史程序检查</dt><dd>运行当时记录为：程序检查通过（预登记 ✓ · 对账 ✓ · 溯源 ✓）。程序检查通过只说明记录前后一致，不说明结论正确；此处不是本次重新执行检查的结果。</dd>
 <dt>人工干预</dt><dd>未记录（本归档无干预文件）</dd>
 <dt>运行记录链</dt><dd>完整（105 行，逐行哈希相连）</dd>
 <dt>sha256</dt><dd><ul class="small mono"><li>journal.jsonl c80e0c7a66a9b7b9ef5ef16bc9e36c399ef2660569bd132c2e0e95f42bbce1e2</li><li>REPORT.md 4a3c575f0b1b1c4516bded76f99080942f4b92018dd8afb16aca20367a26e9d6</li><li>prereg/P1.json de54b108e31c0b1609c1233fd0a27f88f4505a4ea2145828be6ac7cb60827eb7</li><li>prereg/P2.json bb0a0723acb1f382a969e54a4bfe0843301ba1ab66ed186f0967def56cee0d76</li><li>prereg/P3.json c3caddec933cb89b9b62d6c50cad1a50020f55c991d8734c4fcc30bfac03a2ad</li><li>prereg/P4.json 07f94c0a7c97e15b5a9d90e88f2f0926663a34b0393777bf26349fe1355c7b68</li><li>annotations.json 5676ecca1f7549846a6c2bee81dd6d9d9124f1f3645aa9a70f7be8a6ec80f88c</li><li>recompute.json 06aaaa9ff91c27d64343c6e7bf8d4861ae5d4ec4ead86daf6f9ff80df6fe1281</li></ul></dd>
